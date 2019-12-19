@@ -1,0 +1,4 @@
+[submodule "multi"]
+	path = multi
+	url = git@github.com:nikki93/multi.git
+	branch = master
