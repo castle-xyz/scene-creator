@@ -1,3 +1,4 @@
+-- Automatically launch and connect to local server if running locally
 if castle.game.getCurrent().url:match('^file://') then
     USE_LOCAL_SERVER = true
     requireLazy = require

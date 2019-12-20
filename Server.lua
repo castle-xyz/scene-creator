@@ -40,10 +40,6 @@ function Game.Server:start()
         self.physics:setLinearDamping(bodyId, 2.8)
     end
 
-    -- for i = 1, 10 do -- Rectangles
-    --     local s = math.random(20, 30)
-    --     createDynamicBody(self.physics:newRectangleShape(s, s))
-    -- end
     for i = 1, 3 do -- Circles
         createDynamicBody(self.physics:newCircleShape(math.random(10, 20)))
     end
@@ -88,12 +84,6 @@ function Game.Server:connect(clientId)
     self.physics:setFixedRotation(bodyId, true)
     self.physics:setOwner(bodyId, clientId, true)
     self:send({ kind = 'addPlayer' }, clientId, bodyId)
-
-    -- Try having client own everything
-    -- local worldId, world = self.physics:getWorld()
-    -- for _, body in ipairs(world:getBodies()) do
-    --     self.physics:setOwner(self.physics:idForObject(body), clientId)
-    -- end
 end
 
 function Game.Server:disconnect(clientId)

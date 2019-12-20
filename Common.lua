@@ -5,7 +5,6 @@ love.physics.setMeter(64)
 
 
 MAIN_RELIABLE_CHANNEL = 0
-TOUCHES_CHANNEL = 50
 
 
 -- Define
