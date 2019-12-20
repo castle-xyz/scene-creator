@@ -153,7 +153,7 @@ function Game.Client:draw()
         end
     end
 
-do -- Player avatars
+    do -- Player avatars
         love.graphics.setColor(1, 1, 1)
         for clientId, player in pairs(self.players) do
             local photoImage = self.photoImages[clientId]
