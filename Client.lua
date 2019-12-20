@@ -1,3 +1,9 @@
+if castle.game.getCurrent().url:match('^file://') then
+    USE_LOCAL_SERVER = true
+    requireLazy = require
+    requireLazy 'Server'
+end
+
 Game = require('multi/client', { root = true })
 
 
