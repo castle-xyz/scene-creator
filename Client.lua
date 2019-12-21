@@ -1,8 +1,16 @@
 -- Automatically launch and connect to local server if running locally
-if castle.game.getCurrent().url:match('^file://') then
-    USE_LOCAL_SERVER = true
-    requireLazy = require
-    requireLazy 'Server'
+do
+    local gameUrl = castle.game.getCurrent().url
+    local isFileUrl = gameUrl:match('^file://')
+    local isLANUrl = gameUrl:match('^http://192') -- NOTE(nikki): May need to add more patterns here...
+    if isFileUrl or isLANUrl then
+        USE_LOCAL_SERVER = true
+        if isLANUrl then
+            LOCAL_SERVER_ADDRESS = gameUrl:match('^http://([^:/]*)')
+        end
+        requireLazy = require
+        requireLazy 'Server'
+    end
 end
 
 Game = require('multi/client', { root = true })
