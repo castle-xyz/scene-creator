@@ -1,4 +1,4 @@
-local Physics = require 'multi/physics'
+local Physics = require 'multi.physics'
 
 
 love.physics.setMeter(64)

@@ -13,7 +13,7 @@ do
     end
 end
 
-Game = require('multi/client', { root = true })
+Game = require('multi.client', { root = true })
 
 
 require 'Common'

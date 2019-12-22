@@ -1,4 +1,4 @@
-Game = require('multi/server', { root = true })
+Game = require('multi.server', { root = true })
 
 
 require 'Common'
