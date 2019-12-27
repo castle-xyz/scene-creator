@@ -48,7 +48,9 @@ end
 
 -- Connect / disconnect
 
-function Game.Server:connect(clientId)
+function Game.Server:syncNewClient(clientId)
+    -- Perform a full synchronization for a new client
+
     local function send(kind, ...) -- Shorthand to send messages to this client only
         self:send({
             kind = kind,
@@ -73,6 +75,10 @@ function Game.Server:connect(clientId)
     for clientId, player in pairs(self.players) do
         send('addPlayer', clientId, player.bodyId)
     end
+end
+
+function Game.Server:connect(clientId)
+    self:syncNewClient(clientId)
 
     -- Add player body and table entry
     local x, y = math.random(70, 800 - 70), 450 - 70
@@ -86,19 +92,9 @@ function Game.Server:connect(clientId)
     self:send('addPlayer', clientId, bodyId)
 end
 
-function Game.Server:disconnect(clientId)
+function Game.Server:reconnect(clientId)
+    self:syncNewClient(clientId)
 end
 
-
--- Update
-
-function Game.Server:update(dt)
-    -- Common update
-    Game.Common.update(self, dt)
-
-    -- Send physics syncs
-    local worldId, world = self.physics:getWorld()
-    if worldId then
-        self.physics:sendSyncs(worldId)
-    end
+function Game.Server:disconnect(clientId)
 end

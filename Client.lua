@@ -1,18 +1,6 @@
--- Automatically launch and connect to local server if running locally
-do
-    local gameUrl = castle.game.getCurrent().url
-    local isFileUrl = gameUrl:match('^file://')
-    local isLANUrl = gameUrl:match('^http://192') -- NOTE(nikki): May need to add more patterns here...
-    if isFileUrl or isLANUrl then
-        USE_LOCAL_SERVER = true
-        if isLANUrl then
-            LOCAL_SERVER_ADDRESS = gameUrl:match('^http://([^:/]*)')
-        end
-        requireLazy = require
-        requireLazy 'Server'
-    end
+function GET_SERVER_MODULE_NAME()
+    return 'Server'
 end
-
 Game = require('multi.client', { root = true })
 
 
@@ -28,7 +16,7 @@ function Game.Client:start()
 end
 
 
--- Connect / disconnect
+-- Connect / reconnect / disconnect
 
 function Game.Client:connect()
     Game.Common.connect(self)
@@ -38,6 +26,15 @@ function Game.Client:connect()
     -- Send `me`
     local me = castle.user.getMe()
     self:send('me', self.clientId, me)
+end
+
+function Game.Client:reconnect()
+    self.connectTime = love.timer.getTime()
+
+    self:startPhysics()
+
+    self.mes = {}
+    self.players = {}
 end
 
 
@@ -116,12 +113,6 @@ function Game.Client:update(dt)
 
     -- Common update
     Game.Common.update(self, dt)
-
-    -- Send physics syncs
-    local worldId, world = self.physics:getWorld()
-    if worldId then
-        self.physics:sendSyncs(worldId)
-    end
 end
 
 
@@ -191,4 +182,25 @@ function Game.Client:draw()
         love.graphics.setColor(0, 0, 0)
         love.graphics.print('fps: ' .. love.timer.getFPS() .. networkText, 22, 2)
     end
+end
+
+
+-- UI
+
+local ui = castle.ui
+
+function Game.Client:uiupdate()
+    if self.connected then
+        ui.markdown("You are connected! Click 'kick' to disconnect yourself.")
+        if ui.button('kick') then
+            self:kick()
+        end
+    elseif not self.connected and self.clientId then
+        ui.markdown("You are disconnected. Click 'retry' to try reconnecting.")
+        if ui.button('retry') then
+            self:retry()
+        end
+    end
+    ui.markdown("Auto-retry automatically retries connecting if a disconnection is noticed.")
+    self.autoRetry = ui.toggle('auto-retry disabled', 'auto-retry enabled', self.autoRetry)
 end

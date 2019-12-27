@@ -44,17 +44,21 @@ end
 
 -- Start / stop
 
-function Game.Common:start()
-    self.mes = {}
-
+function Game.Common:startPhysics()
+    if self.physics then
+        local worldId, world = self.physics:getWorld()
+        world:destroy()
+    end
     self.physics = Physics.new({
         game = self,
-
-        -- Let's send physics reliable messages on the main channel so that we can be sure
-        -- the body is available in `addPlayer` receiver etc.
         reliableChannel = MAIN_RELIABLE_CHANNEL,
     })
+end
 
+function Game.Common:start()
+    self:startPhysics()
+
+    self.mes = {}
     self.players = {}
 end
 
@@ -89,5 +93,6 @@ function Game.Common:update(dt)
     local worldId, world = self.physics:getWorld()
     if worldId then
         self.physics:updateWorld(worldId, dt)
+        self.physics:sendSyncs(worldId)
     end
 end
