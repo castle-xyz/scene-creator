@@ -60,6 +60,15 @@ function Client:update(dt)
 end
 
 
+-- Mouse
+
+function Client:mousepressed(x, y, button)
+    if button == 1 then
+        self:send('remove', x, y)
+    end
+end
+
+
 -- Draw
 
 function Client:draw()

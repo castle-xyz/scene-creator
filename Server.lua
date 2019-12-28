@@ -35,7 +35,7 @@ end
 
 -- Connect / reconnect / disconnect
 
-function Server:syncNewClient(clientId)
+function Server:syncClient(clientId)
     -- Perform a full synchronization for a new or reconnecting client
 
     local function send(kind, ...) -- Shorthand to send messages to this client only
@@ -60,14 +60,49 @@ function Server:syncNewClient(clientId)
 end
 
 function Server:connect(clientId)
-    self:syncNewClient(clientId)
+    self:syncClient(clientId)
 end
 
 function Server:reconnect(clientId)
-    self:syncNewClient(clientId)
+    self:syncClient(clientId)
 end
 
 function Server:disconnect(clientId)
+end
+
+
+-- Test
+
+function Server.receivers:remove(time, x, y)
+    local worldId, world = self.physics:getWorld()
+    if world then
+        -- Find body under touch
+        local body, bodyId
+        world:queryBoundingBox(
+            x - 1, y - 1, x + 1, y + 1,
+            function(fixture)
+                -- The query only tests AABB overlap -- check if we've actually touched the shape
+                if fixture:testPoint(x, y) then
+                    local candidateBody = fixture:getBody()
+                    local candidateBodyId = self.physics:idForObject(candidateBody)
+
+                    -- Skip if the body isn't networked
+                    if not candidateBodyId then
+                        return true
+                    end
+
+                    -- Seems good!
+                    body, bodyId = candidateBody, candidateBodyId
+                    return false
+                end
+                return true
+            end)
+
+        -- If found, add this touch
+        if bodyId then
+            self.physics:destroyObject(bodyId)
+        end
+    end
 end
 
 
