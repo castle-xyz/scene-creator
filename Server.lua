@@ -1,13 +1,15 @@
+-- 'multi' boilerplate
 Game = require('multi.server', { root = true })
-
-
+Common, Server, Client = Game.Common, Game.Server, Game.Client
 require 'Common'
 
 
 -- Start / stop
 
-function Game.Server:start()
-    Game.Common.start(self)
+function Server:start()
+    Common.start(self)
+
+    -- Server-local initialization below
 
 
     local worldId = self.physics:newWorld(0, 32 * 64, true)
@@ -28,28 +30,13 @@ function Game.Server:start()
     createWall(800 / 2, 450 - wallThickness / 2, 800, wallThickness)
     createWall(wallThickness / 2, 450 / 2, wallThickness, 450)
     createWall(800 - wallThickness / 2, 450 / 2, wallThickness, 450)
-
-
-    -- Dynamic bodies
-
-    local function createDynamicBody(shapeId)
-        local bodyId = self.physics:newBody(worldId, math.random(70, 800 - 70), math.random(70, 70), 'dynamic')
-        local fixtureId = self.physics:newFixture(bodyId, shapeId, 1)
-        self.physics:destroyObject(shapeId)
-        self.physics:setFriction(fixtureId, 0.4)
-        self.physics:setLinearDamping(bodyId, 2.8)
-    end
-
-    for i = 1, 3 do -- Circles
-        createDynamicBody(self.physics:newCircleShape(math.random(10, 20)))
-    end
 end
 
 
--- Connect / disconnect
+-- Connect / reconnect / disconnect
 
-function Game.Server:syncNewClient(clientId)
-    -- Perform a full synchronization for a new client
+function Server:syncNewClient(clientId)
+    -- Perform a full synchronization for a new or reconnecting client
 
     local function send(kind, ...) -- Shorthand to send messages to this client only
         self:send({
@@ -70,31 +57,43 @@ function Game.Server:syncNewClient(clientId)
     for clientId, me in pairs(self.mes) do
         send('me', clientId, me)
     end
+end
 
-    -- Sync players
-    for clientId, player in pairs(self.players) do
-        send('addPlayer', clientId, player.bodyId)
+function Server:connect(clientId)
+    self:syncNewClient(clientId)
+end
+
+function Server:reconnect(clientId)
+    self:syncNewClient(clientId)
+end
+
+function Server:disconnect(clientId)
+end
+
+
+-- Update
+
+function Server:update(dt)
+    Common.update(self, dt)
+
+
+    -- Silly test of adding bodies dynamically
+    local worldId, world = self.physics:getWorld()
+    if worldId then
+        if not self.lastBodyCreateTime or self.time - self.lastBodyCreateTime > 3 then
+            local function createDynamicBody(shapeId)
+                local bodyId = self.physics:newBody(worldId, math.random(70, 800 - 70), math.random(70, 70), 'dynamic')
+                local fixtureId = self.physics:newFixture(bodyId, shapeId, 1)
+                self.physics:destroyObject(shapeId)
+                self.physics:setFriction(fixtureId, 0.4)
+                self.physics:setLinearDamping(bodyId, 2.8)
+            end
+
+            for i = 1, 3 do -- Circles
+                createDynamicBody(self.physics:newCircleShape(math.random(10, 20)))
+            end
+
+            self.lastBodyCreateTime = self.time
+        end
     end
-end
-
-function Game.Server:connect(clientId)
-    self:syncNewClient(clientId)
-
-    -- Add player body and table entry
-    local x, y = math.random(70, 800 - 70), 450 - 70
-    local bodyId = self.physics:newBody(self.physics:getWorld(), x, y, 'dynamic')
-    local shapeId = self.physics:newRectangleShape(32, 90)
-    local fixtureId = self.physics:newFixture(bodyId, shapeId, 0)
-    self.physics:setFriction(fixtureId, 0.4)
-    self.physics:setLinearDamping(bodyId, 2.8)
-    self.physics:setFixedRotation(bodyId, true)
-    self.physics:setOwner(bodyId, clientId, true)
-    self:send('addPlayer', clientId, bodyId)
-end
-
-function Game.Server:reconnect(clientId)
-    self:syncNewClient(clientId)
-end
-
-function Game.Server:disconnect(clientId)
 end

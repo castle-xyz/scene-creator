@@ -9,86 +9,55 @@ MAIN_RELIABLE_CHANNEL = 0
 
 -- Define
 
-function Game.Common:define()
-    --
-    -- User
-    --
-
-    -- Client sends user profile info when it connects, forwarded to all and self
+function Common:define()
+    -- Mes
     self:defineMessageKind('me', {
         reliable = true,
         channel = MAIN_RELIABLE_CHANNEL,
         selfSend = true,
         forward = true,
     })
-
-    --
-    -- Players
-    --
-
-    -- Server sends add or remove player events to all
-    self:defineMessageKind('addPlayer', {
-        to = 'all',
-        reliable = true,
-        channel = MAIN_RELIABLE_CHANNEL,
-        selfSend = true,
-    })
-    self:defineMessageKind('removePlayer', {
-        to = 'all',
-        reliable = true,
-        channel = MAIN_RELIABLE_CHANNEL,
-        selfSend = true,
-    })
 end
 
 
 -- Start / stop
 
-function Game.Common:startPhysics()
-    if self.physics then
+function Common:startPhysics()
+    -- (Re)start physics
+
+    if self.physics then -- Destroy underlying world of old physics
         local worldId, world = self.physics:getWorld()
         world:destroy()
+        -- We overwrite `self.physics` below so the old physics module won't
+        -- be referred-to anymore
     end
+
     self.physics = Physics.new({
         game = self,
+        updateRate = 120,
         reliableChannel = MAIN_RELIABLE_CHANNEL,
     })
 end
 
-function Game.Common:start()
+function Common:start()
+    -- Shared initialization
+
     self:startPhysics()
 
     self.mes = {}
-    self.players = {}
 end
 
 
 -- Mes
 
-function Game.Common.receivers:me(time, clientId, me)
+function Common.receivers:me(time, clientId, me)
     self.mes[clientId] = me
-end
-
-
--- Players
-
-function Game.Common.receivers:addPlayer(time, clientId, bodyId)
-    local player = {
-        clientId = clientId,
-        bodyId = bodyId,
-    }
-
-    self.players[clientId] = player
-end
-
-function Game.Common.receivers:removePlayer(time, clientId)
-    self.players[clientId] = nil
 end
 
 
 -- Update
 
-function Game.Common:update(dt)
+function Common:update(dt)
     -- Update physics
     local worldId, world = self.physics:getWorld()
     if worldId then
