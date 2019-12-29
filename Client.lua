@@ -60,21 +60,13 @@ function Client:update(dt)
 end
 
 
--- Mouse
-
-function Client:mousepressed(x, y, button)
-    if button == 1 then
-        self:send('remove', x, y)
-    end
-end
-
-
 -- Draw
 
 function Client:draw()
     do -- Physics bodies
         local worldId, world = self.physics:getWorld()
         if world then
+            love.graphics.setLineWidth(2)
             for _, body in ipairs(world:getBodies()) do
                 local bodyId = self.physics:idForObject(body)
                 local ownerId = self.physics:getOwner(bodyId)
@@ -101,6 +93,17 @@ function Client:draw()
                 end
             end
         end
+    end
+
+    do -- Debug overlay
+        local networkText = ''
+        if self.connected then
+            networkText = networkText .. '    ping: ' .. self.client.getPing() .. 'ms'
+            networkText = networkText .. '    mem: ' .. math.floor(collectgarbage('count')) .. 'kb'
+        end
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.print('fps: ' .. love.timer.getFPS() .. networkText, 22, 2)
     end
 end
 

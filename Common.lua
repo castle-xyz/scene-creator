@@ -17,14 +17,6 @@ function Common:define()
         selfSend = true,
         forward = true,
     })
-
-    -- Test
-    self:defineMessageKind('remove', {
-        reliable = true,
-        channel = MAIN_RELIABLE_CHANNEL,
-        selfSend = false,
-        forward = false,
-    })
 end
 
 

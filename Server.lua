@@ -71,41 +71,6 @@ function Server:disconnect(clientId)
 end
 
 
--- Test
-
-function Server.receivers:remove(time, x, y)
-    local worldId, world = self.physics:getWorld()
-    if world then
-        -- Find body under touch
-        local body, bodyId
-        world:queryBoundingBox(
-            x - 1, y - 1, x + 1, y + 1,
-            function(fixture)
-                -- The query only tests AABB overlap -- check if we've actually touched the shape
-                if fixture:testPoint(x, y) then
-                    local candidateBody = fixture:getBody()
-                    local candidateBodyId = self.physics:idForObject(candidateBody)
-
-                    -- Skip if the body isn't networked
-                    if not candidateBodyId then
-                        return true
-                    end
-
-                    -- Seems good!
-                    body, bodyId = candidateBody, candidateBodyId
-                    return false
-                end
-                return true
-            end)
-
-        -- If found, add this touch
-        if bodyId then
-            self.physics:destroyObject(bodyId)
-        end
-    end
-end
-
-
 -- Update
 
 function Server:update(dt)
@@ -115,20 +80,28 @@ function Server:update(dt)
     -- Silly test of adding bodies dynamically
     local worldId, world = self.physics:getWorld()
     if worldId then
-        if not self.lastBodyCreateTime or self.time - self.lastBodyCreateTime > 3 then
-            local function createDynamicBody(shapeId)
-                local bodyId = self.physics:newBody(worldId, math.random(70, 800 - 70), math.random(70, 70), 'dynamic')
-                local fixtureId = self.physics:newFixture(bodyId, shapeId, 1)
-                self.physics:destroyObject(shapeId)
-                self.physics:setFriction(fixtureId, 0.4)
-                self.physics:setLinearDamping(bodyId, 2.8)
-            end
-
-            for i = 1, 3 do -- Circles
-                createDynamicBody(self.physics:newCircleShape(math.random(10, 20)))
-            end
-
+        if not self.lastBodyCreateTime or self.time - self.lastBodyCreateTime > 0.2 then
             self.lastBodyCreateTime = self.time
+
+            local shapeId = self.physics:newCircleShape(10 + math.random(1, 50) * math.random() * math.random())
+            local bodyId = self.physics:newBody(worldId, math.random(70, 800 - 70), math.random(70, 70), 'dynamic')
+            local fixtureId = self.physics:newFixture(bodyId, shapeId, 1)
+            self.physics:destroyObject(shapeId)
+            self.physics:setFriction(fixtureId, 0.4)
+            self.physics:setLinearDamping(bodyId, 2.8)
+
+            local bodies = world:getBodies()
+            local numToDestroy = #bodies - 20
+            for i = #bodies, 1, -1 do
+                if numToDestroy <= 0 then
+                    break
+                end
+                local body = bodies[i]
+                if body:getFixtures()[1]:getShape():getType() == 'circle' then
+                    self.physics:destroyObject(self.physics:idForObject(body))
+                    numToDestroy = numToDestroy - 1
+                end
+            end
         end
     end
 end
