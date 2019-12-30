@@ -28,7 +28,7 @@ function Client:connect()
 end
 
 function Client:reconnect()
-    Common.start(self) -- This should just re-initialize our shared stuff
+    Common.start(self) -- Only re-intiailize shared state
 end
 
 
