@@ -32,7 +32,7 @@ function Client:reconnect()
 end
 
 
--- Mes
+-- Users
 
 function Client.receivers:me(time, clientId, me)
     Common.receivers.me(self, time, clientId, me)

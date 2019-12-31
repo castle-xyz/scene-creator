@@ -5,18 +5,33 @@ love.physics.setMeter(64)
 
 
 MAIN_RELIABLE_CHANNEL = 0
+SECONDARY_RELIABLE_CHANNEL = 99
 
 
 -- Define
 
 function Common:define()
-    -- Mes
+    -- Users
     self:defineMessageKind('me', {
+        reliable = true,
+        channel = SECONDARY_RELIABLE_CHANNEL,
+        selfSend = true,
+        forward = true,
+    })
+
+    -- Actors / behaviors
+    local actorBehaviorMessageDefaults = {
+        to = 'all',
         reliable = true,
         channel = MAIN_RELIABLE_CHANNEL,
         selfSend = true,
         forward = true,
-    })
+    }
+    self:defineMessageKind('addActor', actorBehaviorMessageDefaults)
+    self:defineMessageKind('removeActor', actorBehaviorMessageDefaults)
+    self:defineMessageKind('linkBehavior', actorBehaviorMessageDefaults)
+    self:defineMessageKind('unlinkBehavior', actorBehaviorMessageDefaults)
+    self:defineMessageKind('setProperty', actorBehaviorMessageDefaults)
 end
 
 
@@ -45,14 +60,22 @@ function Common:start()
     self:startPhysics()
 
     self.mes = {}
+
+    self.actors = {}
+    self.behaviors = {}
+    self.actorBehaviorComponent = {}
+    self.behaviorActorComponent = {}
 end
 
 
--- Mes
+-- Users
 
 function Common.receivers:me(time, clientId, me)
     self.mes[clientId] = me
 end
+
+
+-- Actors / behaviors
 
 
 -- Update
