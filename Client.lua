@@ -28,7 +28,8 @@ function Client:connect()
 end
 
 function Client:reconnect()
-    Common.start(self) -- Only re-intiailize shared state
+    Common.stop(self)
+    Common.start(self)
 end
 
 
@@ -63,38 +64,6 @@ end
 -- Draw
 
 function Client:draw()
-    do -- Physics bodies
-        local worldId, world = self.physics:getWorld()
-        if world then
-            love.graphics.setLineWidth(2)
-            for _, body in ipairs(world:getBodies()) do
-                local bodyId = self.physics:idForObject(body)
-                local ownerId = self.physics:getOwner(bodyId)
-                if ownerId then
-                    local c = ownerId + 1
-                    love.graphics.setColor(c % 2, math.floor(c / 2) % 2, math.floor(c / 4) % 2)
-                else
-                    love.graphics.setColor(1, 1, 1)
-                end
-
-                -- Draw shapes
-                for _, fixture in ipairs(body:getFixtures()) do
-                    local shape = fixture:getShape()
-                    local ty = shape:getType()
-                    if ty == 'circle' then
-                        love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
-                    elseif ty == 'polygon' then
-                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                    elseif ty == 'edge' then
-                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                    elseif ty == 'chain' then
-                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                    end
-                end
-            end
-        end
-    end
-
     do -- Debug overlay
         local networkText = ''
         if self.connected then
