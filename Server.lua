@@ -4,6 +4,18 @@ Common, Server, Client = Game.Common, Game.Server, Game.Client
 require 'Common'
 
 
+-- Utilities
+
+local function unpackProperties(t)
+    local rets, nArgs = {}, 0
+    for k, v in pairs(t) do
+        rets[nArgs + 1], rets[nArgs + 2] = k, v
+        nArgs = nArgs + 2
+    end
+    return unpack(rets, 1, nArgs)
+end
+
+
 -- Start / stop
 
 function Server:start()
@@ -36,16 +48,11 @@ function Server:syncClient(clientId)
             send('addBehavior', behaviorId, behavior.behaviorSpec)
         end
 
-        local args, nArgs = {}, 0
-        for name, value in pairs(behavior.globals) do
-            args[nArgs + 1], args[nArgs + 2] = name, value
-            nArgs = nArgs + 2
-        end
         behavior:setProperties({
             to = clientId,
             selfSend = false,
             channel = MAIN_RELIABLE_CHANNEL,
-        }, unpack(args, 1, nArgs))
+        }, unpackProperties(behavior.globals))
     end
 
     -- Notify `preSyncClient`
@@ -59,22 +66,17 @@ function Server:syncClient(clientId)
     end
 
     -- Components
-    for actorId, behaviorComponent in pairs(self.actors) do
+    for actorId, behaviorComponent in pairs(self.actorBehaviorComponent) do
         for behaviorId, component in pairs(behaviorComponent) do
-            local behavior = self.behaviors[behaviorId]
             send('addComponent', actorId, behaviorId)
 
-            local args, nArgs = {}, 0
-            for name, value in pairs(component.properties) do
-                args[nArgs + 1], args[nArgs + 2] = name, value
-                nArgs = nArgs + 2
-            end
+            local behavior = self.behaviors[behaviorId]
             behavior:setProperties({
                 to = clientId,
                 selfSend = false,
                 channel = MAIN_RELIABLE_CHANNEL,
                 actorId = actorId,
-            }, unpack(args, 1, nArgs))
+            }, unpackProperties(component.properties))
         end
     end
 
