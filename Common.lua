@@ -102,7 +102,6 @@ function BodyBehavior.handlers:preSyncClient(clientId)
 end
 
 function BodyBehavior.handlers:addComponent(component)
-    -- TODO(nikki): If server, create body and set `bodyId`
     if self.game.server then
         local shapeId = self._physics:newRectangleShape(32, 32)
         local bodyId = self._physics:newBody(self.globals.worldId, 400, 200, 'dynamic')
@@ -114,7 +113,6 @@ function BodyBehavior.handlers:addComponent(component)
 end
 
 function BodyBehavior.handlers:removeComponent(component)
-    -- TODO(nikki): If server, destroy body
 end
 
 function BodyBehavior.handlers:perform(dt)
@@ -144,7 +142,7 @@ local ImageBehavior = {
 }
 
 function ImageBehavior.handlers:addComponent(component)
-    component.properties.url = 'https://github.com/nikki93/edit-world/raw/master/assets/checkerboard.png'
+    component.properties.url = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
     component.properties.depth = 0
     component.properties.filter = 'nearest'
 end
@@ -329,7 +327,7 @@ function Common.receivers:addBehavior(time, behaviorId, behaviorSpec)
 end
 
 function Common.receivers:removeBehavior(time, behaviorId)
-    assert(self.behaviors[behaviorId], 'removeBehavior: this `behaviorId` is already used')
+    local behavior = assert(self.behaviors[behaviorId], 'removeBehavior: no such behavior')
 
     -- Notify `removeBehavior`
     behavior:callHandler('removeBehavior')
