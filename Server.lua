@@ -50,9 +50,7 @@ function Server:syncClient(clientId)
 
     -- Notify `preSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
-        if behavior.handlers.preSyncClient then
-            behavior.handlers.preSyncClient(behavior, clientId)
-        end
+        behavior:callHandler('preSyncClient', clientId)
     end
 
     -- Actors
@@ -82,14 +80,17 @@ function Server:syncClient(clientId)
 
     -- Notify `postSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
-        if behavior.handlers.postSyncClient then
-            behavior.handlers.postSyncClient(behavior, send, clientId)
-        end
+        behavior:callHandler('postSyncClient', clientId)
     end
 end
 
 function Server:connect(clientId)
     self:syncClient(clientId)
+
+    local actorId = self:generateId()
+    self:send('addActor', actorId)
+    self:send('addComponent', actorId, self.nameBehavior.Body.behaviorId)
+    self:send('addComponent', actorId, self.nameBehavior.Image.behaviorId)
 end
 
 function Server:reconnect(clientId)

@@ -64,6 +64,19 @@ end
 -- Draw
 
 function Client:draw()
+    do -- Behaviors
+        local order = {}
+        self:forEachBehaviorWithHandler('draw', function(behavior)
+            behavior:callHandler('draw', order)
+        end)
+        table.sort(order, function(o1, o2)
+            return o1.depth < o2.depth
+        end)
+        for _, o in ipairs(order) do
+            o.draw()
+        end
+    end
+
     do -- Debug overlay
         local networkText = ''
         if self.connected then
