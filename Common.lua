@@ -28,28 +28,14 @@ function Behavior:forEachComponent(func)
     end
 end
 
-function Behavior:getComponent(...)
-    local behaviorId, actorId
-    local nArgs = select('#', ...)
-    if nArgs == 2 then
-        local behaviorName
-        behaviorName, actorId = ...
-        behaviorId = self.game.nameBehaviors[behaviorName]
-    else
-        actorId = ...
-        behaviorId = self.behaviorId
-    end
-    return self.game.behaviorActorComponent[behaviorId][actorId]
-end
-
 function Behavior:setProperties(opts, ...)
-    local actorId, newOpts
+    local actorId, sendOpts
     if type(opts) == 'table' then
         actorId = opts.actorId
-        newOpts = setmetatable({ kind = 'setProperties' }, { __index = opts })
+        sendOpts = setmetatable({ kind = 'setProperties' }, { __index = opts })
     else
         actorId = opts
-        newOpts = 'setProperties'
+        sendOpts = 'setProperties'
     end
 
     local function propertyNamesToIds(name, value, ...)
@@ -62,7 +48,7 @@ function Behavior:setProperties(opts, ...)
         end
     end
 
-    self.game:send(newOpts, actorId, self.behaviorId, propertyNamesToIds(...))
+    self.game:send(sendOpts, actorId, self.behaviorId, propertyNamesToIds(...))
 end
 
 
