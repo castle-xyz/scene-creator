@@ -86,7 +86,7 @@ function BodyBehavior.handlers:addBehavior()
     })
 
     if self.game.server then
-        self:setProperties(nil, 'worldId', self._physics:newWorld(0, 32 * 9.8, true))
+        self:setProperties(nil, 'worldId', self._physics:newWorld(0, 1, true))
     end
 end
 
@@ -103,10 +103,13 @@ end
 
 function BodyBehavior.handlers:addComponent(component)
     if self.game.server then
+        local bodyId = self._physics:newBody(self.globals.worldId, math.random(800), math.random(450), 'dynamic')
+
         local shapeId = self._physics:newRectangleShape(32, 32)
-        local bodyId = self._physics:newBody(self.globals.worldId, 400, 200, 'dynamic')
         local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
         self._physics:destroyObject(shapeId)
+
+        self._physics:setGravityScale(bodyId, 0)
 
         self:setProperties(component.actorId, 'bodyId', bodyId, 'fixtureId', fixtureId)
     end
