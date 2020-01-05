@@ -88,8 +88,8 @@ function Server:connect(clientId)
 
     local actorId = self:generateId()
     self:send('addActor', actorId)
-    self:send('addComponent', actorId, self.nameBehavior.Body.behaviorId)
-    self:send('addComponent', actorId, self.nameBehavior.Image.behaviorId)
+    self:send('addComponent', actorId, self.behaviorsByName.Body.behaviorId)
+    self:send('addComponent', actorId, self.behaviorsByName.Image.behaviorId)
 end
 
 function Server:reconnect(clientId)

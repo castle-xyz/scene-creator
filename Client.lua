@@ -90,6 +90,26 @@ function Client:draw()
 end
 
 
+-- Mouse
+
+function Client:mousepressed(x, y, button)
+    if button == 1 then
+        self.behaviorsByName.Body:getWorld():queryBoundingBox(
+            x - 1, y - 1, x + 1, y + 1,
+            function(fixture)
+                if fixture:testPoint(x, y) then
+                    local actorId = self.behaviorsByName.Body:getActorForBody(fixture:getBody())
+                    if actorId then
+                        self:send('removeActor', actorId)
+                        return false
+                    end
+                end
+                return true
+            end)
+    end
+end
+
+
 -- UI
 
 local ui = castle.ui

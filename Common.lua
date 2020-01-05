@@ -71,7 +71,7 @@ function BodyBehavior.handlers:addBehavior()
 end
 
 function BodyBehavior.handlers:removeBehavior()
-    self._physics:objectForId(self.globals.worldId):destroy()
+    self:getWorld():destroy()
 end
 
 function BodyBehavior.handlers:preSyncClient(clientId)
@@ -84,18 +84,20 @@ end
 function BodyBehavior.handlers:addComponent(component)
     if self.game.server then
         local bodyId = self._physics:newBody(self.globals.worldId, math.random(800), math.random(450), 'dynamic')
+        self._physics:setGravityScale(bodyId, 0)
 
         local shapeId = self._physics:newRectangleShape(32, 32)
         local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
         self._physics:destroyObject(shapeId)
 
-        self._physics:setGravityScale(bodyId, 0)
-
-        self:setProperties(component.actorId, 'bodyId', bodyId, 'fixtureId', fixtureId)
+        self._physics:setUserData(bodyId, component.actorId)
+        self:setProperties(component.actorId, 'bodyId', bodyId)
     end
 end
 
 function BodyBehavior.handlers:removeComponent(component)
+    -- Only destroy locally, immediately
+    self.game.receivers.physics_destroyObject(self.game, 0, component.properties.bodyId)
 end
 
 function BodyBehavior.handlers:perform(dt)
@@ -103,8 +105,45 @@ function BodyBehavior.handlers:perform(dt)
     self._physics:sendSyncs(self.globals.worldId)
 end
 
+function BodyBehavior.handlers:draw(order)
+    local world = self:getWorld()
+    if world then
+        table.insert(order, {
+            depth = 100,
+            draw = function()
+                love.graphics.push('all')
+                love.graphics.setColor(0, 1, 0)
+                for _, body in ipairs(world:getBodies()) do
+                    for _, fixture in ipairs(body:getFixtures()) do
+                        local shape = fixture:getShape()
+                        local ty = shape:getType()
+                        if ty == 'circle' then
+                            love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
+                        elseif ty == 'polygon' then
+                            love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                        elseif ty == 'edge' then
+                            love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                        elseif ty == 'chain' then
+                            love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                        end
+                    end
+                end
+                love.graphics.pop()
+            end,
+        })
+    end
+end
+
+function BodyBehavior:getWorld()
+    return self._physics:objectForId(self.globals.worldId)
+end
+
 function BodyBehavior:getBody(actorId)
     return self._physics:objectForId(self.components[actorId].properties.bodyId)
+end
+
+function BodyBehavior:getActorForBody(body)
+    return body:getUserData()
 end
 
 
@@ -139,6 +178,7 @@ function ImageBehavior.handlers:draw(order)
             draw = function()
                 component._imageHolder = resource_loader.loadImage(component.properties.url, component.properties.filter)
                 local image = component._imageHolder.image
+                local width, height = image:getDimensions()
 
                 local body = self.dependencies.Body:getBody(actorId)
 
@@ -146,8 +186,8 @@ function ImageBehavior.handlers:draw(order)
                     image,
                     body:getX(), body:getY(),
                     body:getAngle(),
-                    32 / image:getWidth(), 32 / image:getHeight(),
-                    16, 16)
+                    32 / width, 32 / height,
+                    0.5 * width, 0.5 * height)
             end,
         })
     end
@@ -204,10 +244,8 @@ function Common:start()
 
     self.actors = {} -- `actorId` -> actor
     self.behaviors = {} -- `behaviorId` -> behavior
-    self.nameBehavior = {} -- `behaviorName` -> behavior
-    --self.actorBehaviorComponent = {} -- `actorId` -> `behaviorId` -> component
-    --self.behaviorActorComponent = {} -- `behaviorId` -> `actorId` -> component
-    self.handlerBehaviors = {} -- `handlerName` -> `behaviorId` -> `true`
+    self.behaviorsByName = {} -- `behaviorName` -> behavior
+    self.behaviorsByHandler = {} -- `handlerName` -> `behaviorId` -> `true`
 
     for behaviorId, behaviorSpec in pairs(CORE_BEHAVIORS) do
         self.receivers.addBehavior(self, 0, behaviorId, behaviorSpec)
@@ -243,8 +281,10 @@ end
 function Common.receivers:removeActor(time, actorId)
     local actor = assert(self.actors[actorId], 'removeActor: no such actor')
 
-    for behaviorId in pairs(actor.components) do
-        self.behaviors[behaviorId].components[actorId] = nil
+    for behaviorId, component in pairs(actor.components) do
+        local behavior = self.behaviors[behaviorId]
+        behavior:callHandler('removeComponent', component)
+        behavior.components[actorId] = nil
     end
 
     self.actors[actorId] = nil
@@ -291,18 +331,18 @@ function Common.receivers:addBehavior(time, behaviorId, behaviorSpec)
     -- Reference dependencies
     behavior.dependencies = {}
     for _, dependencyName in pairs(behaviorSpec.dependencies or {}) do
-        behavior.dependencies[dependencyName] = assert(self.nameBehavior[dependencyName],
+        behavior.dependencies[dependencyName] = assert(self.behaviorsByName[dependencyName],
             "dependency '" .. dependencyName .. "' not resolved")
     end
 
     -- Set in maps
     self.behaviors[behaviorId] = behavior
-    self.nameBehavior[behavior.name] = behavior
+    self.behaviorsByName[behavior.name] = behavior
     for handlerName in pairs(behavior.handlers) do
-        if not self.handlerBehaviors[handlerName] then
-            self.handlerBehaviors[handlerName] = {}
+        if not self.behaviorsByHandler[handlerName] then
+            self.behaviorsByHandler[handlerName] = {}
         end
-        self.handlerBehaviors[handlerName][behaviorId] = true
+        self.behaviorsByHandler[handlerName][behaviorId] = true
     end
 
     -- Notify `addBehavior`
@@ -320,12 +360,12 @@ function Common.receivers:removeBehavior(time, behaviorId)
         self.actors[actorId].components[behaviorId] = nil
     end
     for handlerName in pairs(behavior.handlers) do
-        self.handlerBehaviors[handlerName][behaviorId] = nil
-        if not next(self.handlerBehaviors[handlerName]) then
-            self.handlerBehaviors[handlerName] = nil
+        self.behaviorsByHandler[handlerName][behaviorId] = nil
+        if not next(self.behaviorsByHandler[handlerName]) then
+            self.behaviorsByHandler[handlerName] = nil
         end
     end
-    self.nameBehavior[behavior.name] = nil
+    self.behaviorsByName[behavior.name] = nil
     self.behaviors[behaviorId] = nil
 end
 
@@ -387,7 +427,7 @@ function Common.receivers:setProperties(time, actorId, behaviorId, ...)
 end
 
 function Common:forEachBehaviorWithHandler(handlerName, func)
-    local behaviors = self.handlerBehaviors[handlerName]
+    local behaviors = self.behaviorsByHandler[handlerName]
     if behaviors then
         for behaviorId in pairs(behaviors) do
             func(self.behaviors[behaviorId])
