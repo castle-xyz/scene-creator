@@ -22,7 +22,7 @@ function Behavior:callHandler(handlerName, ...)
     end
 end
 
-function Behavior:setProperties(opts, ...)
+function Behavior:sendSetProperties(opts, ...)
     local actorId, sendOpts
     if type(opts) == 'table' then
         actorId = opts.actorId
@@ -66,7 +66,7 @@ function BodyBehavior.handlers:addBehavior(opts)
     })
 
     if self.game.server then
-        self:setProperties(nil, 'worldId', self._physics:newWorld(0, 1, true))
+        self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, 1, true))
     end
 end
 
@@ -91,7 +91,7 @@ function BodyBehavior.handlers:addComponent(component, opts)
         self._physics:destroyObject(shapeId)
 
         self._physics:setUserData(bodyId, component.actorId)
-        self:setProperties(component.actorId, 'bodyId', bodyId)
+        self:sendSetProperties(component.actorId, 'bodyId', bodyId)
     end
 end
 
@@ -246,7 +246,7 @@ function Common:start()
     self.actors = {} -- `actorId` -> actor
     self.behaviors = {} -- `behaviorId` -> behavior
     self.behaviorsByName = {} -- `behaviorName` -> behavior
-    self.behaviorsByHandler = {} -- `handlerName` -> `behaviorId` -> `true`
+    self.behaviorsByHandler = {} -- `handlerName` -> `behaviorId` -> behavior
 
     for behaviorId, behaviorSpec in pairs(CORE_BEHAVIORS) do
         self.receivers.addBehavior(self, 0, self.clientId, behaviorId, behaviorSpec)
@@ -345,7 +345,7 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
         if not self.behaviorsByHandler[handlerName] then
             self.behaviorsByHandler[handlerName] = {}
         end
-        self.behaviorsByHandler[handlerName][behaviorId] = true
+        self.behaviorsByHandler[handlerName][behaviorId] = behavior
     end
 
     -- Notify `addBehavior`
@@ -437,11 +437,11 @@ function Common.receivers:setProperties(time, actorId, behaviorId, ...)
     end
 end
 
-function Common:forEachBehaviorWithHandler(handlerName, func)
+function Common:callHandlers(handlerName, ...)
     local behaviors = self.behaviorsByHandler[handlerName]
     if behaviors then
-        for behaviorId in pairs(behaviors) do
-            func(self.behaviors[behaviorId])
+        for behaviorId, behavior in pairs(behaviors) do
+            behavior:callHandler(handlerName, ...)
         end
     end
 end
@@ -450,7 +450,5 @@ end
 -- Update
 
 function Common:update(dt)
-    self:forEachBehaviorWithHandler('perform', function(behavior)
-        behavior:callHandler('perform', dt)
-    end)
+    self:callHandlers('perform', dt)
 end

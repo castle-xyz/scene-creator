@@ -66,9 +66,7 @@ end
 function Client:draw()
     do -- Behaviors
         local order = {}
-        self:forEachBehaviorWithHandler('draw', function(behavior)
-            behavior:callHandler('draw', order)
-        end)
+        self:callHandlers('draw', order)
         table.sort(order, function(o1, o2)
             return o1.depth < o2.depth
         end)

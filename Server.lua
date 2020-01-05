@@ -48,7 +48,7 @@ function Server:syncClient(clientId)
             send('addBehavior', self.clientId, behaviorId, behavior.behaviorSpec)
         end
 
-        behavior:setProperties({
+        behavior:sendSetProperties({
             to = clientId,
             selfSend = false,
             channel = MAIN_RELIABLE_CHANNEL,
@@ -68,7 +68,7 @@ function Server:syncClient(clientId)
             send('addComponent', self.clientId, actorId, behaviorId)
 
             local behavior = self.behaviors[behaviorId]
-            behavior:setProperties({
+            behavior:sendSetProperties({
                 to = clientId,
                 selfSend = false,
                 channel = MAIN_RELIABLE_CHANNEL,
