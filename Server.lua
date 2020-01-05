@@ -60,14 +60,11 @@ function Server:syncClient(clientId)
         behavior:callHandler('preSyncClient', clientId)
     end
 
-    -- Actors
-    for actorId in pairs(self.actors) do
+    -- Actors, components
+    for actorId, actor in pairs(self.actors) do
         send('addActor', actorId)
-    end
 
-    -- Components
-    for actorId, behaviorComponent in pairs(self.actorBehaviorComponent) do
-        for behaviorId, component in pairs(behaviorComponent) do
+        for behaviorId, component in pairs(actor.components) do
             send('addComponent', actorId, behaviorId)
 
             local behavior = self.behaviors[behaviorId]

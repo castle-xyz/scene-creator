@@ -22,12 +22,6 @@ function Behavior:callHandler(handlerName, ...)
     end
 end
 
-function Behavior:forEachComponent(func)
-    for actorId, component in pairs(self.game.behaviorActorComponent[self.behaviorId]) do
-        func(component)
-    end
-end
-
 function Behavior:setProperties(opts, ...)
     local actorId, sendOpts
     if type(opts) == 'table' then
@@ -110,8 +104,7 @@ function BodyBehavior.handlers:perform(dt)
 end
 
 function BodyBehavior:getBody(actorId)
-    local component = self.game.behaviorActorComponent[self.behaviorId][actorId]
-    return self._physics:objectForId(component.properties.bodyId)
+    return self._physics:objectForId(self.components[actorId].properties.bodyId)
 end
 
 
@@ -140,14 +133,14 @@ function ImageBehavior.handlers:removeComponent(component)
 end
 
 function ImageBehavior.handlers:draw(order)
-    self:forEachComponent(function(component)
+    for actorId, component in pairs(self.components) do
         table.insert(order, {
             depth = component.properties.depth,
             draw = function()
                 component._imageHolder = resource_loader.loadImage(component.properties.url, component.properties.filter)
                 local image = component._imageHolder.image
 
-                local body = self.dependencies.Body:getBody(component.actorId)
+                local body = self.dependencies.Body:getBody(actorId)
 
                 love.graphics.draw(
                     image,
@@ -157,7 +150,7 @@ function ImageBehavior.handlers:draw(order)
                     16, 16)
             end,
         })
-    end)
+    end
 end
 
 
@@ -212,8 +205,8 @@ function Common:start()
     self.actors = {} -- `actorId` -> actor
     self.behaviors = {} -- `behaviorId` -> behavior
     self.nameBehavior = {} -- `behaviorName` -> behavior
-    self.actorBehaviorComponent = {} -- `actorId` -> `behaviorId` -> component
-    self.behaviorActorComponent = {} -- `behaviorId` -> `actorId` -> component
+    --self.actorBehaviorComponent = {} -- `actorId` -> `behaviorId` -> component
+    --self.behaviorActorComponent = {} -- `behaviorId` -> `actorId` -> component
     self.handlerBehaviors = {} -- `handlerName` -> `behaviorId` -> `true`
 
     for behaviorId, behaviorSpec in pairs(CORE_BEHAVIORS) do
@@ -240,18 +233,19 @@ end
 function Common.receivers:addActor(time, actorId)
     assert(not self.actors[actorId], 'addActor: this `actorId` is already used')
 
-    self.actors[actorId] = {}
+    local actor = {}
+    actor.actorId = {}
+    actor.components = {}
 
-    self.actorBehaviorComponent[actorId] = {}
+    self.actors[actorId] = actor
 end
 
 function Common.receivers:removeActor(time, actorId)
-    assert(self.actors[actorId], 'removeActor: no such actor')
+    local actor = assert(self.actors[actorId], 'removeActor: no such actor')
 
-    for behaviorId in pairs(self.actorBehaviorComponent[actorId]) do
-        self.behaviorActorComponent[behaviorId][actorId] = nil
+    for behaviorId in pairs(actor.components) do
+        self.behaviors[behaviorId].components[actorId] = nil
     end
-    self.actorBehaviorComponent[actorId] = nil
 
     self.actors[actorId] = nil
 end
@@ -267,6 +261,7 @@ function Common.receivers:addBehavior(time, behaviorId, behaviorSpec)
     behavior.name = behaviorSpec.name
     behavior.game = self
     behavior.globals = {}
+    behavior.components = {}
 
     -- Copy property names
     behavior.propertyIds = {}
@@ -303,7 +298,6 @@ function Common.receivers:addBehavior(time, behaviorId, behaviorSpec)
     -- Set in maps
     self.behaviors[behaviorId] = behavior
     self.nameBehavior[behavior.name] = behavior
-    self.behaviorActorComponent[behaviorId] = {}
     for handlerName in pairs(behavior.handlers) do
         if not self.handlerBehaviors[handlerName] then
             self.handlerBehaviors[handlerName] = {}
@@ -322,47 +316,42 @@ function Common.receivers:removeBehavior(time, behaviorId)
     behavior:callHandler('removeBehavior')
 
     -- Unset in maps
+    for actorId in pairs(behavior.components) do
+        self.actors[actorId].components[behaviorId] = nil
+    end
     for handlerName in pairs(behavior.handlers) do
         self.handlerBehaviors[handlerName][behaviorId] = nil
         if not next(self.handlerBehaviors[handlerName]) then
             self.handlerBehaviors[handlerName] = nil
         end
     end
-    for actorId in pairs(self.behaviorActorComponent[behaviorId]) do
-        self.actorBehaviorComponent[actorId][behaviorId] = nil
-    end
-    self.behaviorActorComponent[behaviorId] = nil
     self.nameBehavior[behavior.name] = nil
     self.behaviors[behaviorId] = nil
 end
 
 function Common.receivers:addComponent(time, actorId, behaviorId)
-    assert(self.actors[actorId], 'addComponent: no such actor')
+    local actor = assert(self.actors[actorId], 'addComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'addComponent: no such behavior')
 
-    -- Basics
     local component = {}
     component.actorId = actorId
+    component.behaviorId = behaviorId
     component.properties = {}
 
-    -- Set in maps
-    self.actorBehaviorComponent[actorId][behaviorId] = component
-    self.behaviorActorComponent[behaviorId][actorId] = component
+    actor.components[behaviorId] = component
+    behavior.components[actorId] = component
 
-    -- Notify `addComponent`
     behavior:callHandler('addComponent', component)
 end
 
 function Common.receivers:removeComponent(time, actorId, behaviorId)
-    assert(self.actors[actorId], 'removeComponent: no such actor')
+    local actor = assert(self.actors[actorId], 'removeComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'removeComponent: no such behavior')
 
-    -- Notify `removeComponent`
-    behavior:callHandler('removeComponent', self.actorBehaviorComponent[actorId][behaviorId])
+    behavior:callHandler('removeComponent', actor.components[behaviorId])
 
-    -- Unset in maps
-    self.actorBehaviorComponent[actorId][behaviorId] = nil
-    self.behaviorActorComponent[behaviorId][actorId] = nil
+    actor.components[behaviorId] = nil
+    behavior.components[actorId] = nil
 end
 
 function Common.receivers:setProperties(time, actorId, behaviorId, ...)
@@ -370,8 +359,8 @@ function Common.receivers:setProperties(time, actorId, behaviorId, ...)
 
     local component
     if actorId then
-        assert(self.actors[actorId], 'setProperties: no such actor')
-        component = self.actorBehaviorComponent[actorId][behaviorId]
+        local actor = assert(self.actors[actorId], 'setProperties: no such actor')
+        component = actor.components[behaviorId]
     end
 
     for i = 1, select('#', ...), 2 do
