@@ -100,7 +100,7 @@ function Client:mousepressed(x, y, button)
                 if fixture:testPoint(x, y) then
                     local actorId = self.behaviorsByName.Body:getActorForBody(fixture:getBody())
                     if actorId then
-                        self:send('removeActor', actorId)
+                        self:send('removeActor', self.clientId, actorId)
                         return false
                     end
                 end

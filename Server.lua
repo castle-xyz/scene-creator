@@ -45,7 +45,7 @@ function Server:syncClient(clientId)
     -- Behaviors
     for behaviorId, behavior in pairs(self.behaviors) do
         if not CORE_BEHAVIORS[behaviorId] then
-            send('addBehavior', behaviorId, behavior.behaviorSpec)
+            send('addBehavior', self.clientId, behaviorId, behavior.behaviorSpec)
         end
 
         behavior:setProperties({
@@ -62,10 +62,10 @@ function Server:syncClient(clientId)
 
     -- Actors, components
     for actorId, actor in pairs(self.actors) do
-        send('addActor', actorId)
+        send('addActor', self.clientId, actorId)
 
         for behaviorId, component in pairs(actor.components) do
-            send('addComponent', actorId, behaviorId)
+            send('addComponent', self.clientId, actorId, behaviorId)
 
             local behavior = self.behaviors[behaviorId]
             behavior:setProperties({
@@ -87,9 +87,9 @@ function Server:connect(clientId)
     self:syncClient(clientId)
 
     local actorId = self:generateId()
-    self:send('addActor', actorId)
-    self:send('addComponent', actorId, self.behaviorsByName.Body.behaviorId)
-    self:send('addComponent', actorId, self.behaviorsByName.Image.behaviorId)
+    self:send('addActor', self.clientId, actorId)
+    self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Body.behaviorId)
+    self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Image.behaviorId)
 end
 
 function Server:reconnect(clientId)

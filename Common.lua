@@ -58,7 +58,7 @@ local BodyBehavior = {
     handlers = {},
 }
 
-function BodyBehavior.handlers:addBehavior()
+function BodyBehavior.handlers:addBehavior(opts)
     self._physics = Physics.new({
         game = self.game,
         updateRate = 120,
@@ -70,7 +70,7 @@ function BodyBehavior.handlers:addBehavior()
     end
 end
 
-function BodyBehavior.handlers:removeBehavior()
+function BodyBehavior.handlers:removeBehavior(opts)
     self:getWorld():destroy()
 end
 
@@ -81,8 +81,8 @@ function BodyBehavior.handlers:preSyncClient(clientId)
     })
 end
 
-function BodyBehavior.handlers:addComponent(component)
-    if self.game.server then
+function BodyBehavior.handlers:addComponent(component, opts)
+    if opts.isOrigin then
         local bodyId = self._physics:newBody(self.globals.worldId, math.random(800), math.random(450), 'dynamic')
         self._physics:setGravityScale(bodyId, 0)
 
@@ -95,9 +95,10 @@ function BodyBehavior.handlers:addComponent(component)
     end
 end
 
-function BodyBehavior.handlers:removeComponent(component)
-    -- Only destroy locally, immediately
-    self.game.receivers.physics_destroyObject(self.game, 0, component.properties.bodyId)
+function BodyBehavior.handlers:removeComponent(component, opts)
+    if opts.isOrigin then
+        self._physics:destroyObject(component.properties.bodyId)
+    end
 end
 
 function BodyBehavior.handlers:perform(dt)
@@ -162,13 +163,13 @@ local ImageBehavior = {
     handlers = {},
 }
 
-function ImageBehavior.handlers:addComponent(component)
+function ImageBehavior.handlers:addComponent(component, opts)
     component.properties.url = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
     component.properties.depth = 0
     component.properties.filter = 'nearest'
 end
 
-function ImageBehavior.handlers:removeComponent(component)
+function ImageBehavior.handlers:removeComponent(component, opts)
 end
 
 function ImageBehavior.handlers:draw(order)
@@ -248,13 +249,13 @@ function Common:start()
     self.behaviorsByHandler = {} -- `handlerName` -> `behaviorId` -> `true`
 
     for behaviorId, behaviorSpec in pairs(CORE_BEHAVIORS) do
-        self.receivers.addBehavior(self, 0, behaviorId, behaviorSpec)
+        self.receivers.addBehavior(self, 0, self.clientId, behaviorId, behaviorSpec)
     end
 end
 
 function Common:stop()
     for behaviorId, behavior in pairs(self.behaviors) do
-        self.receivers.removeBehavior(self, 0, behaviorId)
+        self.receivers.removeBehavior(self, 0, self.clientId, behaviorId)
     end
 end
 
@@ -268,7 +269,7 @@ end
 
 -- Actors / behaviors
 
-function Common.receivers:addActor(time, actorId)
+function Common.receivers:addActor(time, clientId, actorId)
     assert(not self.actors[actorId], 'addActor: this `actorId` is already used')
 
     local actor = {}
@@ -278,19 +279,21 @@ function Common.receivers:addActor(time, actorId)
     self.actors[actorId] = actor
 end
 
-function Common.receivers:removeActor(time, actorId)
+function Common.receivers:removeActor(time, clientId, actorId)
     local actor = assert(self.actors[actorId], 'removeActor: no such actor')
 
     for behaviorId, component in pairs(actor.components) do
         local behavior = self.behaviors[behaviorId]
-        behavior:callHandler('removeComponent', component)
+        behavior:callHandler('removeComponent', component, {
+            isOrigin = self.clientId == clientId,
+        })
         behavior.components[actorId] = nil
     end
 
     self.actors[actorId] = nil
 end
 
-function Common.receivers:addBehavior(time, behaviorId, behaviorSpec)
+function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     assert(not self.behaviors[behaviorId], 'addBehavior: this `behaviorId` is already used')
     assert(behaviorSpec, 'addBehavior: need a `behaviorSpec`')
 
@@ -346,14 +349,18 @@ function Common.receivers:addBehavior(time, behaviorId, behaviorSpec)
     end
 
     -- Notify `addBehavior`
-    behavior:callHandler('addBehavior')
+    behavior:callHandler('addBehavior', {
+        isOrigin = self.clientId == clientId,
+    })
 end
 
-function Common.receivers:removeBehavior(time, behaviorId)
+function Common.receivers:removeBehavior(time, clientId, behaviorId)
     local behavior = assert(self.behaviors[behaviorId], 'removeBehavior: no such behavior')
 
     -- Notify `removeBehavior`
-    behavior:callHandler('removeBehavior')
+    behavior:callHandler('removeBehavior', {
+        isOrigin = self.clientId == clientId,
+    })
 
     -- Unset in maps
     for actorId in pairs(behavior.components) do
@@ -369,7 +376,7 @@ function Common.receivers:removeBehavior(time, behaviorId)
     self.behaviors[behaviorId] = nil
 end
 
-function Common.receivers:addComponent(time, actorId, behaviorId)
+function Common.receivers:addComponent(time, clientId, actorId, behaviorId)
     local actor = assert(self.actors[actorId], 'addComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'addComponent: no such behavior')
 
@@ -381,14 +388,18 @@ function Common.receivers:addComponent(time, actorId, behaviorId)
     actor.components[behaviorId] = component
     behavior.components[actorId] = component
 
-    behavior:callHandler('addComponent', component)
+    behavior:callHandler('addComponent', component, {
+        isOrigin = self.clientId == clientId,
+    })
 end
 
-function Common.receivers:removeComponent(time, actorId, behaviorId)
+function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
     local actor = assert(self.actors[actorId], 'removeComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'removeComponent: no such behavior')
 
-    behavior:callHandler('removeComponent', actor.components[behaviorId])
+    behavior:callHandler('removeComponent', actor.components[behaviorId], {
+        isOrigin = self.clientId == clientId,
+    })
 
     actor.components[behaviorId] = nil
     behavior.components[actorId] = nil
