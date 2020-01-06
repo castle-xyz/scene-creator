@@ -83,13 +83,18 @@ end
 
 function BodyBehavior.handlers:addComponent(component, opts, x, y)
     if opts.isOrigin then
+        x, y = x or 0, y or 0
+
+        -- Body
         local bodyId = self._physics:newBody(self.globals.worldId, x, y, 'dynamic')
         self._physics:setGravityScale(bodyId, 0)
 
+        -- Shape
         local shapeId = self._physics:newRectangleShape(32, 32)
         local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
         self._physics:destroyObject(shapeId)
 
+        -- ID association
         self._physics:setUserData(bodyId, component.actorId)
         self:sendSetProperties(component.actorId, 'bodyId', bodyId)
     end
