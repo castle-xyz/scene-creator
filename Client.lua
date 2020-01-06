@@ -108,7 +108,14 @@ function Client:mousepressed(x, y, button)
         if not removedSomething then
             local actorId = self:generateId()
             self:send('addActor', self.clientId, actorId)
-            self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Body.behaviorId, x, y)
+            self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Body.behaviorId, {
+                x = x,
+                y = y,
+                fixture = {
+                    shapeType = 'circle',
+                    radius = 50,
+                },
+            })
             self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Image.behaviorId)
         end
     end

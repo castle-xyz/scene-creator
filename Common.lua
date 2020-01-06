@@ -81,20 +81,80 @@ function BodyBehavior.handlers:preSyncClient(clientId)
     })
 end
 
-function BodyBehavior.handlers:addComponent(component, opts, x, y)
+function BodyBehavior.handlers:addComponent(component, bp, opts)
     if opts.isOrigin then
-        x, y = x or 0, y or 0
+        local bodyId = self._physics:newBody(self.globals.worldId,
+            bp.x or 0, bp.y or 0,
+            bp.bodyType or 'static')
+        if bp.massData then
+            self._physics:setMassData(bodyId, unpack(bp.massData))
+        end
+        if bp.fixedRotation ~= nil then
+            self._physics:setFixedRotation(bodyId, bp.fixedRotation)
+        end
+        if bp.angle ~= nil then
+            self._physics:setAngle(bodyId, bp.angle)
+        end
+        if bp.linearVelocity ~= nil then
+            self._physics:setLinearVelocity(bodyId, unpack(bp.linearVelocity))
+        end
+        if bp.angularVelocity ~= nil then
+            self._physics:setAngularVelocity(bodyId, unpack(bp.angularVelocity))
+        end
+        if bp.linearDamping ~= nil then
+            self._physics:setLinearDamping(bodyId, bp.linearDamping)
+        end
+        if bp.angularDamping ~= nil then
+            self._physics:setAngularDamping(bodyId, bp.angularDamping)
+        end
+        if bp.bullet ~= nil then
+            self._physics:setBullet(bodyId, bp.bullet)
+        end
+        if bp.gravityScale ~= nil then
+            self._physics:setGravityScale(bodyId, bp.gravityScale)
+        end
 
-        -- Body
-        local bodyId = self._physics:newBody(self.globals.worldId, x, y, 'dynamic')
-        self._physics:setGravityScale(bodyId, 0)
+        local fixtureBps = bp.fixture and { bp.fixture } or bp.fixtures
+        if fixtureBps then
+            for _, fixtureBp in ipairs(fixtureBps) do
+                local shapeId
+                local shapeType = fixtureBp.shapeType
 
-        -- Shape
-        local shapeId = self._physics:newRectangleShape(32, 32)
-        local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
-        self._physics:destroyObject(shapeId)
+                print(shapeType)
+                if shapeType == 'circle' then
+                    print(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0)
+                    shapeId = self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0)
+                elseif shapeType == 'polygon' then
+                    shapeId = self._physics:newPolygonShape(unpack(assert(fixtureBp.points)))
+                elseif shapeType == 'edge' then
+                    shapeId = self._physics:newEdgeShape(unpack(assert(fixtureBp.points)))
+                    self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
+                    self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
+                elseif shapeType == 'chain' then
+                    shapeId = self._physics:newChainShape(unpack(assert(fixtureBp.points)))
+                    self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
+                    self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
+                end
 
-        -- ID association
+                local fixtureId = self._physics:newFixture(bodyId, shapeId, fixtureBp.density or 1)
+                if fixtureBp.friction ~= nil then
+                    self._physics:setFriction(fixtureId, fixtureBp.friction)
+                end
+                if fixtureBp.restitution ~= nil then
+                    self._physics:setRestitution(fixtureId, fixtureBp.restitution)
+                end
+                if fixtureBp.sensor ~= nil then
+                    self._physics:setSensor(fixtureId, fixtureBp.sensor)
+                end
+
+                self._physics:destroyObject(shapeId)
+            end
+        else -- Default shape
+            local shapeId = self._physics:newRectangleShape(32, 32)
+            local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
+            self._physics:destroyObject(shapeId)
+        end
+
         self._physics:setUserData(bodyId, component.actorId)
         self:sendSetProperties(component.actorId, 'bodyId', bodyId)
     end
@@ -103,6 +163,52 @@ end
 function BodyBehavior.handlers:removeComponent(component, opts)
     if opts.isOrigin then
         self._physics:destroyObject(component.properties.bodyId)
+    end
+end
+
+function BodyBehavior.handlers:blueprintComponent(component, bp)
+    local body = self:getBody()
+    bp.x = body:getX()
+    bp.y = body:getY()
+    bp.bodyType = body:getType()
+    bp.massData = { body:getMassData() }
+    bp.fixedRotation = body:isFixedRotation()
+    bp.angle = body:getAngle()
+    bp.linearVelocity = { body:getLinearVelocity() }
+    bp.angularVelocity = body:getAngularVelocity()
+    bp.linearDamping = body:getLinearDamping()
+    bp.angularDamping = body:getAngularDamping()
+    bp.bullet = body:isBullet()
+    bp.gravityScale = body:getGravityScale()
+
+    bp.fixtures = {}
+    for _, fixture in ipairs(body:getFixtures()) do
+        local fixtureBp = {}
+
+        local shape = fixture:getShape()
+        local shapeType = shape:getType()
+        fixtureBp.shapeType = shapeType
+        if shapeType == 'circle' then
+            fixtureBp.x, fixtureBp.y = shape:getPoint()
+            fixtureBp.radius = shape:getRadius()
+        elseif shapeType == 'polygon' then
+            fixtureBp.points = { shape:getPoints() }
+        elseif shapeType == 'edge' then
+            fixtureBp.points = { shape:getPoints() }
+            fixtureBp.previousVertex = { shape:getPreviousVertex() }
+            fixtureBp.nextVertex = { shape:getNextVertex() }
+        elseif shapeType == 'chain' then
+            fixtureBp.points = { shape:getPoints() }
+            fixtureBp.previousVertex = { shape:getPreviousVertex() }
+            fixtureBp.nextVertex = { shape:getNextVertex() }
+        end
+
+        fixtureBp.density = fixture:getDensity()
+        fixtureBp.friction = fixture:getFriction()
+        fixtureBp.restitution = fixture:getRestitution()
+        fixtureBp.sensor = fixture:isSensor()
+
+        table.insert(bp.fixtures, fixtureBp)
     end
 end
 
@@ -168,7 +274,7 @@ local ImageBehavior = {
     handlers = {},
 }
 
-function ImageBehavior.handlers:addComponent(component, opts)
+function ImageBehavior.handlers:addComponent(component, blueprint, opts)
     component.properties.url = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
     component.properties.depth = 0
     component.properties.filter = 'nearest'
@@ -381,7 +487,7 @@ function Common.receivers:removeBehavior(time, clientId, behaviorId)
     self.behaviors[behaviorId] = nil
 end
 
-function Common.receivers:addComponent(time, clientId, actorId, behaviorId, ...)
+function Common.receivers:addComponent(time, clientId, actorId, behaviorId, blueprint)
     local actor = assert(self.actors[actorId], 'addComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'addComponent: no such behavior')
 
@@ -393,9 +499,9 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, ...)
     actor.components[behaviorId] = component
     behavior.components[actorId] = component
 
-    behavior:callHandler('addComponent', component, {
+    behavior:callHandler('addComponent', component, blueprint or {}, {
         isOrigin = self.clientId == clientId,
-    }, ...)
+    })
 end
 
 function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
