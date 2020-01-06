@@ -120,9 +120,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
                 local shapeId
                 local shapeType = fixtureBp.shapeType
 
-                print(shapeType)
                 if shapeType == 'circle' then
-                    print(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0)
                     shapeId = self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0)
                 elseif shapeType == 'polygon' then
                     shapeId = self._physics:newPolygonShape(unpack(assert(fixtureBp.points)))
