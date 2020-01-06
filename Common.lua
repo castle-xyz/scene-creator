@@ -81,9 +81,9 @@ function BodyBehavior.handlers:preSyncClient(clientId)
     })
 end
 
-function BodyBehavior.handlers:addComponent(component, opts)
+function BodyBehavior.handlers:addComponent(component, opts, x, y)
     if opts.isOrigin then
-        local bodyId = self._physics:newBody(self.globals.worldId, math.random(800), math.random(450), 'dynamic')
+        local bodyId = self._physics:newBody(self.globals.worldId, x, y, 'dynamic')
         self._physics:setGravityScale(bodyId, 0)
 
         local shapeId = self._physics:newRectangleShape(32, 32)
@@ -376,7 +376,7 @@ function Common.receivers:removeBehavior(time, clientId, behaviorId)
     self.behaviors[behaviorId] = nil
 end
 
-function Common.receivers:addComponent(time, clientId, actorId, behaviorId)
+function Common.receivers:addComponent(time, clientId, actorId, behaviorId, ...)
     local actor = assert(self.actors[actorId], 'addComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'addComponent: no such behavior')
 
@@ -390,7 +390,7 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId)
 
     behavior:callHandler('addComponent', component, {
         isOrigin = self.clientId == clientId,
-    })
+    }, ...)
 end
 
 function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)

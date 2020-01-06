@@ -12,9 +12,6 @@ require 'Common'
 function Client:start()
     Common.start(self)
 
-    -- Client-local initialization below
-
-
     self.photoImages = {}
 end
 
@@ -92,6 +89,8 @@ end
 
 function Client:mousepressed(x, y, button)
     if button == 1 then
+        local removedSomething = false
+
         self.behaviorsByName.Body:getWorld():queryBoundingBox(
             x - 1, y - 1, x + 1, y + 1,
             function(fixture)
@@ -99,11 +98,19 @@ function Client:mousepressed(x, y, button)
                     local actorId = self.behaviorsByName.Body:getActorForBody(fixture:getBody())
                     if actorId then
                         self:send('removeActor', self.clientId, actorId)
+                        removedSomething = true
                         return false
                     end
                 end
                 return true
             end)
+
+        if not removedSomething then
+            local actorId = self:generateId()
+            self:send('addActor', self.clientId, actorId)
+            self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Body.behaviorId, x, y)
+            self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Image.behaviorId)
+        end
     end
 end
 
