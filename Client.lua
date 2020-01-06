@@ -112,11 +112,10 @@ function Client:mousepressed(x, y, button)
                 x = x,
                 y = y,
                 fixture = {
-                    shapeType = 'circle',
-                    radius = 50,
+                    shapeType = 'polygon',
+                    points = { -32, -32, -32, 32, 32, 32, 32, -32 },
                 },
             })
-            self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Image.behaviorId)
         end
     end
 end

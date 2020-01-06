@@ -71,7 +71,10 @@ function BodyBehavior.handlers:addBehavior(opts)
 end
 
 function BodyBehavior.handlers:removeBehavior(opts)
-    self:getWorld():destroy()
+    local world = self:getWorld()
+    if world then
+        world:destroy()
+    end
 end
 
 function BodyBehavior.handlers:preSyncClient(clientId)
