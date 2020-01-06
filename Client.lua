@@ -48,7 +48,6 @@ end
 -- Update
 
 function Client:update(dt)
-    -- Not connected?
     if not self.connected then
         return
     end
@@ -61,6 +60,16 @@ end
 -- Draw
 
 function Client:draw()
+    if not self.connected then
+        local peer = self.client.getENetPeer()
+        if peer then
+            love.graphics.print('connection state: ' .. peer:state(), 22, 2)
+        else
+            love.graphics.print('initializing...', 22, 2)
+        end
+        return
+    end
+
     do -- Behaviors
         local order = {}
         self:callHandlers('draw', order)
@@ -88,6 +97,10 @@ end
 -- Mouse
 
 function Client:mousepressed(x, y, button)
+    if not self.connected then
+        return
+    end
+
     if button == 1 then
         local removedSomething = false
 
