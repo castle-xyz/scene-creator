@@ -1,7 +1,8 @@
 local Physics = require 'multi.physics'
 
 
-local resource_loader = require 'resource_loader'
+resource_loader = require 'resource_loader'
+util = require 'util'
 
 
 love.physics.setMeter(64)
@@ -215,12 +216,15 @@ end
 
 function BodyBehavior.handlers:prePerform(dt)
     self._physics:updateWorld(self.globals.worldId, dt)
-    for actorId, component in pairs(self.components) do
-        local bodyId, body = self:getBody(component)
-        local x, y = body:getPosition()
-        x = math.max(0, math.min(x, 800))
-        y = math.max(0, math.min(y, 450))
-        body:setPosition(x, y)
+
+    if self.game.server then -- Remove out-of-bound bodies
+        for actorId, component in pairs(self.components) do
+            local bodyId, body = self:getBody(component)
+            local x, y = body:getPosition()
+            if y > 1600 or y < -800 or x < -400 or x > 800 + 400 then
+                self.game:send('removeActor', self.clientId, actorId)
+            end
+        end
     end
 end
 
@@ -388,6 +392,15 @@ CORE_BEHAVIORS = {
 -- Define
 
 function Common:define()
+    local reliableToAll = {
+        to = 'all',
+        reliable = true,
+        channel = MAIN_RELIABLE_CHANNEL,
+        selfSend = true,
+        forward = true,
+        rate = 20, -- In case a `reliable = false` override is used
+    }
+
     -- Users
     self:defineMessageKind('me', {
         reliable = true,
@@ -397,14 +410,6 @@ function Common:define()
     })
 
     -- Actors / behaviors
-    local reliableToAll = {
-        to = 'all',
-        reliable = true,
-        channel = MAIN_RELIABLE_CHANNEL,
-        selfSend = true,
-        forward = true,
-        rate = 20,
-    }
     self:defineMessageKind('addActor', reliableToAll)
     self:defineMessageKind('removeActor', reliableToAll)
     self:defineMessageKind('addBehavior', reliableToAll)
@@ -412,6 +417,9 @@ function Common:define()
     self:defineMessageKind('addComponent', reliableToAll)
     self:defineMessageKind('removeComponent', reliableToAll)
     self:defineMessageKind('setProperties', reliableToAll)
+
+    -- Library
+    self:defineMessageKind('addLibraryEntry', reliableToAll)
 end
 
 
@@ -433,6 +441,11 @@ function Common:start()
     for behaviorId, behaviorSpec in pairs(CORE_BEHAVIORS) do
         self.receivers.addBehavior(self, 0, self.clientId, behaviorId, behaviorSpec)
     end
+
+
+    -- Library
+
+    self.library = {} -- `entryId` -> entry
 end
 
 function Common:stop()
@@ -668,6 +681,13 @@ function Common:callHandlers(handlerName, ...)
             behavior:callHandler(handlerName, ...)
         end
     end
+end
+
+
+-- Library
+
+function Common.receivers:addLibraryEntry(time, entryId, entry)
+    self.library[entryId] = entry
 end
 
 

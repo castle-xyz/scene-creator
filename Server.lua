@@ -4,16 +4,59 @@ Common, Server, Client = Game.Common, Game.Server, Game.Client
 require 'Common'
 
 
--- Utilities
+-- Core library
 
-local function unpackProperties(t)
-    local rets, nArgs = {}, 0
-    for k, v in pairs(t) do
-        rets[nArgs + 1], rets[nArgs + 2] = k, v
-        nArgs = nArgs + 2
-    end
-    return unpack(rets, 1, nArgs)
-end
+local CORE_LIBRARY = {
+    {
+        entryType = 'actorBlueprint',
+        title = 'dog',
+        description = 'A canine friend that falls and rolls around!',
+        actorBlueprint = {
+            Image = {
+                url = 'https://art.pixilart.com/5d29768f5c3f448.png',
+                width = 300,
+                height = 300,
+            },
+            Body = {
+                fixture = {
+                    shapeType = 'polygon',
+                    points = {
+                        -80, -100,
+                        -80, 60,
+                        60, 60,
+                        60, -100,
+                    },
+                },
+                bodyType = 'dynamic',
+                gravityScale = 100,
+            },
+        },
+    },
+    {
+        entryType = 'actorBlueprint',
+        title = 'ice platform',
+        description = 'Something to stand on...',
+        actorBlueprint = {
+            Image = {
+                url = 'http://www.photonstorm.com/wp-content/uploads/2015/01/ice-platform.png',
+                width = 384,
+                height = 96,
+            },
+            Body = {
+                fixture = {
+                    shapeType = 'polygon',
+                    points = {
+                        -192, -48,
+                        -192, 48,
+                        192, 48,
+                        192, -48,
+                    },
+                },
+                bodyType = 'static',
+            },
+        },
+    },
+}
 
 
 -- Start / stop
@@ -27,6 +70,16 @@ end
 
 function Server:start()
     Common.start(self)
+
+
+    -- Library
+
+    for _, entrySpec in pairs(CORE_LIBRARY) do
+        local entryId = self:generateId()
+        local entry = util.deepCopyTable(entrySpec)
+        entry.entryId = entryId
+        self.library[entryId] = entry
+    end
 end
 
 function Server:syncClient(clientId)
@@ -46,6 +99,11 @@ function Server:syncClient(clientId)
         send('me', clientId, me)
     end
 
+    -- Library
+    for entryId, entry in pairs(self.library) do
+        send('addLibraryEntry', entryId, entry)
+    end
+
     -- Behaviors
     for behaviorId, behavior in pairs(self.behaviors) do
         if not CORE_BEHAVIORS[behaviorId] then
@@ -56,7 +114,7 @@ function Server:syncClient(clientId)
             to = clientId,
             selfSend = false,
             channel = MAIN_RELIABLE_CHANNEL,
-        }, unpackProperties(behavior.globals))
+        }, util.unpackPairs(behavior.globals))
     end
 
     -- Notify `preSyncClient`
@@ -77,7 +135,7 @@ function Server:syncClient(clientId)
                 selfSend = false,
                 channel = MAIN_RELIABLE_CHANNEL,
                 actorId = actorId,
-            }, unpackProperties(component.properties))
+            }, util.unpackPairs(component.properties))
         end
     end
 

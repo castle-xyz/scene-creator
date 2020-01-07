@@ -13,6 +13,11 @@ function Client:start()
     Common.start(self)
 
     self.photoImages = {}
+
+
+    -- Tools
+
+    self.addingEntryId = nil
 end
 
 
@@ -110,12 +115,23 @@ function Client:mousepressed(x, y, button)
         return
     end
 
-    if button == 1 or button == 2 then
+    if self.addingEntryId then -- Add
+        local entry = self.library[self.addingEntryId]
+        self.addingEntryId = nil
+        if entry then
+            if entry.entryType == 'actorBlueprint' then
+                local actorBp = util.deepCopyTable(entry.actorBlueprint)
+
+                if actorBp.Body then
+                    actorBp.Body.x, actorBp.Body.y = x, y
+                end
+
+                self:sendAddActor(actorBp)
+            end
+        end
+    else -- Remove
         local worldId, world = self.behaviorsByName.Body:getWorld()
-
         if world then
-            local removedSomething = false
-
             world:queryBoundingBox(
                 x - 1, y - 1, x + 1, y + 1,
                 function(fixture)
@@ -123,36 +139,11 @@ function Client:mousepressed(x, y, button)
                         local actorId = self.behaviorsByName.Body:getActorForBody(fixture:getBody())
                         if actorId then
                             self:send('removeActor', self.clientId, actorId)
-                            removedSomething = true
                             return false
                         end
                     end
                     return true
                 end)
-
-            if not removedSomething then
-                self:sendAddActor({
-                    Body = {
-                        x = x,
-                        y = y,
-                        fixture = {
-                            shapeType = 'polygon',
-                            points = {
-                                -math.random(20, 60), -math.random(20, 60),
-                                -math.random(20, 60), math.random(20, 60),
-                                math.random(20, 60), math.random(20, 60),
-                                math.random(20, 60), -math.random(20, 60),
-                            },
-                        },
-                        bodyType = button == 2 and 'kinematic' or 'dynamic',
-                        gravityScale = 200,
-                    },
-                    Image = {
-                        url = 'https://art.pixilart.com/5d29768f5c3f448.png',
-                    },
-                    Mover = button == 2 and {} or nil,
-                })
-            end
         end
     end
 end
@@ -173,10 +164,7 @@ function Client:uiupdate()
     }, function()
         ui.button('hello')
 
-        ui.box('spacer', {
-            flex = 1,
-        }, function()
-        end)
+        ui.box('spacer', { flex = 1 }, function() end)
 
         ui.button('world')
     end)
@@ -192,14 +180,57 @@ function Client:uiupdate()
                     margin = 4,
                     flex = 1,
                 }, function()
-                    for i = 1, 10 do
-                        ui.markdown('row ' .. i)
-                        if ui.button('alpha ' .. i) then
-                            print('alpha ' .. i .. ' pressed!')
-                        end
+                    local order = {}
+                    for entryId, entry in pairs(self.library) do
+                        table.insert(order, entry)
+                    end
+                    table.sort(order, function(entry1, entry2)
+                        return entry1.title:upper() < entry2.title:upper()
+                    end)
+
+                    for _, entry in ipairs(order) do
+                        ui.box(entry.entryId, {
+                            borderWidth = 1,
+                            borderColor = '#ddd',
+                            borderRadius = 4,
+                            padding = 4,
+                            margin = 4,
+                            marginBottom = 8,
+                            flexDirection = 'row',
+                        }, function()
+                            local imageUrl
+
+                            if entry.entryType == 'actorBlueprint' then
+                                local actorBp = entry.actorBlueprint
+                                if actorBp.Image and actorBp.Image.url then
+                                    imageUrl = actorBp.Image.url
+                                end
+                            end
+
+                            if imageUrl then
+                                ui.image(imageUrl)
+
+                                ui.box('spacer', { width = 16 }, function() end)
+                            end
+
+                            ui.box('text-buttons', { flex = 1 }, function()
+                                ui.markdown('## ' .. entry.title .. '\n' .. entry.description)
+
+                                if self.addingEntryId ~= entry.entryId then
+                                    if ui.button('add') then
+                                        self.addingEntryId = entry.entryId
+                                    end
+                                else
+                                    if ui.button('adding...', { selected = true }) then
+                                        self.addingEntryId = nil
+                                    end
+                                end
+                            end)
+                        end)
                     end
                 end)
             end)
+
             ui.tab('properties', function()
             end)
         end)
