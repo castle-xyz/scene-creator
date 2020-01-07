@@ -1,6 +1,9 @@
 local Physics = require 'multi.physics'
 
 
+CHECKERBOARD_IMAGE_URL = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
+
+
 resource_loader = require 'resource_loader'
 util = require 'util'
 
@@ -67,7 +70,7 @@ function BodyBehavior.handlers:addBehavior(opts)
     })
 
     if self.game.server then
-        self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, 1, true))
+        self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, 64 * 9.8, true))
     end
 end
 
@@ -307,7 +310,7 @@ local ImageBehavior = {
 }
 
 function ImageBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.url = bp.url or 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
+    component.properties.url = bp.url or CHECKERBOARD_IMAGE_URL
     component.properties.width = bp.width or 128
     component.properties.height = bp.height or 128
     component.properties.depth = bp.depth or 0

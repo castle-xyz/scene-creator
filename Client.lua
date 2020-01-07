@@ -74,12 +74,11 @@ function Client:draw()
     end
 
     if not self.connected then -- Not connected?
+        love.graphics.setFont(debugFont)
+        love.graphics.setColor(0, 0, 0)
         local peer = self.client.getENetPeer()
-        if peer then
-            love.graphics.print('connection state: ' .. peer:state(), 22, 2)
-        else
-            love.graphics.print('initializing...', 22, 2)
-        end
+        local text = peer and ('connection state: ' .. peer:state()) or 'trying to connect...'
+        love.graphics.print(text, 16, windowHeight - debugFont:getHeight() - 16)
         return
     end
 
@@ -171,7 +170,7 @@ function Client:uiupdate()
 
     ui.pane('default', { customLayout = true }, function()
         ui.tabs('tabs', {
-            containerStyle = { flex = 1, margin = 0, backgroundColor = 'white' },
+            containerStyle = { flex = 1, margin = 0 },
             contentStyle = { flex = 1 },
         }, function()
             ui.tab('library', function()
@@ -191,12 +190,13 @@ function Client:uiupdate()
                     for _, entry in ipairs(order) do
                         ui.box(entry.entryId, {
                             borderWidth = 1,
-                            borderColor = '#ddd',
+                            borderColor = '#292929',
                             borderRadius = 4,
                             padding = 4,
                             margin = 4,
                             marginBottom = 8,
                             flexDirection = 'row',
+                            alignItems = 'center',
                         }, function()
                             local imageUrl
 
@@ -208,9 +208,23 @@ function Client:uiupdate()
                             end
 
                             if imageUrl then
-                                ui.image(imageUrl)
+                                ui.box('image-container', {
+                                    width = '28%',
+                                    aspectRatio = 1,
+                                    margin = 4,
+                                    marginLeft = 8,
+                                    backgroundColor = 'white',
+                                }, function()
+                                    ui.image(CHECKERBOARD_IMAGE_URL, { flex = 1, margin = 0 })
 
-                                ui.box('spacer', { width = 16 }, function() end)
+                                    ui.image(imageUrl, {
+                                        position = 'absolute',
+                                        left = 0, top = 0, bottom = 0, right = 0,
+                                        margin = 0,
+                                    })
+                                end)
+
+                                ui.box('spacer', { width = 8 }, function() end)
                             end
 
                             ui.box('text-buttons', { flex = 1 }, function()

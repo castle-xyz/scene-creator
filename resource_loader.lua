@@ -7,7 +7,7 @@ local resource_loader = {}
 local defaultImage
 
 if love.graphics then
-    defaultImage = love.graphics.newImage('https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png')
+    defaultImage = love.graphics.newImage(CHECKERBOARD_IMAGE_URL)
     defaultImage:setFilter('nearest', 'nearest')
 end
 

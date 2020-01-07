@@ -28,7 +28,7 @@ local CORE_LIBRARY = {
                     },
                 },
                 bodyType = 'dynamic',
-                gravityScale = 100,
+                gravityScale = 1,
             },
         },
     },
