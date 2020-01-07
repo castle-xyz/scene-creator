@@ -225,8 +225,17 @@ function BodyBehavior.handlers:draw(order)
             depth = 100,
             draw = function()
                 love.graphics.push('all')
-                love.graphics.setColor(0, 1, 0)
                 for _, body in ipairs(world:getBodies()) do
+                    local bodyType = body:getType()
+                    if bodyType == 'static' then
+                        love.graphics.setColor(0.2, 0.2, 0.2)
+                    elseif body:isAwake() then
+                        love.graphics.setColor(0, 0.8, 0)
+                    elseif bodyType == 'dynamic' then
+                        love.graphics.setColor(0.8, 0, 0)
+                    elseif bodyType == 'kinematic' then
+                        love.graphics.setColor(0, 0, 0.8)
+                    end
                     for _, fixture in ipairs(body:getFixtures()) do
                         local shape = fixture:getShape()
                         local ty = shape:getType()

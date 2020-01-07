@@ -110,7 +110,7 @@ function Client:mousepressed(x, y, button)
         return
     end
 
-    if button == 1 then
+    if button == 1 or button == 2 then
         local removedSomething = false
 
         self.behaviorsByName.Body:getWorld():queryBoundingBox(
@@ -135,8 +135,10 @@ function Client:mousepressed(x, y, button)
                 y = y,
                 fixture = {
                     shapeType = 'polygon',
-                    points = { -32, -32, -32, 32, 32, 32, 32, -32 },
+                    points = { -math.random(20, 60), -math.random(20, 60), -math.random(20, 60), math.random(20, 60), math.random(20, 60), math.random(20, 60), math.random(20, 60), -math.random(20, 60) },
                 },
+                bodyType = button == 1 and 'dynamic' or 'kinematic',
+                gravityScale = 200,
             })
         end
     end
@@ -148,19 +150,45 @@ end
 local ui = castle.ui
 
 function Client:uiupdate()
-    if false then -- UI for disconnection testing
-        if self.connected then
-            ui.markdown("You are connected! Click 'kick' to disconnect yourself.")
-            if ui.button('kick') then
-                self:kick()
-            end
-        elseif not self.connected and self.clientId then
-            ui.markdown("You are disconnected. Click 'retry' to try reconnecting.")
-            if ui.button('retry') then
-                self:retry()
-            end
-        end
-        ui.markdown("Auto-retry automatically retries connecting if a disconnection is noticed.")
-        self.autoRetry = ui.toggle('auto-retry disabled', 'auto-retry enabled', self.autoRetry)
+    if not castle.system.isMobile() then
+        return
     end
+
+    ui.pane('toolbar', {
+        customLayout = true,
+        flexDirection = 'row',
+    }, function()
+        ui.button('hello')
+
+        ui.box('spacer', {
+            flex = 1,
+        }, function()
+        end)
+
+        ui.button('world')
+    end)
+
+    ui.pane('default', { customLayout = true }, function()
+        ui.tabs('tabs', {
+            containerStyle = { flex = 1, margin = 0, backgroundColor = 'white' },
+            contentStyle = { flex = 1 },
+        }, function()
+            ui.tab('library', function()
+                ui.scrollBox('scrollBox1', {
+                    padding = 2,
+                    margin = 4,
+                    flex = 1,
+                }, function()
+                    for i = 1, 10 do
+                        ui.markdown('row ' .. i)
+                        if ui.button('alpha ' .. i) then
+                            print('alpha ' .. i .. ' pressed!')
+                        end
+                    end
+                end)
+            end)
+            ui.tab('properties', function()
+            end)
+        end)
+    end)
 end
