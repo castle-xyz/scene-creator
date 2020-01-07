@@ -501,6 +501,12 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, blue
     local actor = assert(self.actors[actorId], 'addComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'addComponent: no such behavior')
 
+    for _, dependency in pairs(behavior.dependencies) do
+        if not dependency.components[actorId] then
+            error("'" .. behavior.name .. "' depends on '" .. dependency.name .. "'")
+        end
+    end
+
     local component = {}
     component.actorId = actorId
     component.behaviorId = behaviorId
