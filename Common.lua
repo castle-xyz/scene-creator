@@ -213,7 +213,7 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     end
 end
 
-function BodyBehavior.handlers:perform(dt)
+function BodyBehavior.handlers:prePerform(dt)
     self._physics:updateWorld(self.globals.worldId, dt)
     for actorId, component in pairs(self.components) do
         local bodyId, body = self:getBody(component)
@@ -222,6 +222,9 @@ function BodyBehavior.handlers:perform(dt)
         y = math.max(0, math.min(y, 450))
         body:setPosition(x, y)
     end
+end
+
+function BodyBehavior.handlers:postPerform(dt)
     self._physics:sendSyncs(self.globals.worldId)
 end
 
@@ -362,11 +365,11 @@ function MoverBehavior.handlers:perform(dt)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         local x = body:getX()
         if x <= 0 then
-            body:setX(0)
+            body:setX(-x)
             body:setLinearVelocity(200, 0)
         end
         if x >= 800 then
-            body:setX(800)
+            body:setX(800 - (x - 800))
             body:setLinearVelocity(-200, 0)
         end
     end
@@ -671,5 +674,7 @@ end
 -- Update
 
 function Common:update(dt)
+    self:callHandlers('prePerform', dt)
     self:callHandlers('perform', dt)
+    self:callHandlers('postPerform', dt)
 end
