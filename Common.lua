@@ -215,6 +215,13 @@ end
 
 function BodyBehavior.handlers:perform(dt)
     self._physics:updateWorld(self.globals.worldId, dt)
+    for actorId, component in pairs(self.components) do
+        local bodyId, body = self:getBody(component)
+        local x, y = body:getPosition()
+        x = math.max(0, math.min(x, 800))
+        y = math.max(0, math.min(y, 450))
+        body:setPosition(x, y)
+    end
     self._physics:sendSyncs(self.globals.worldId)
 end
 
@@ -264,8 +271,9 @@ function BodyBehavior:getWorld()
     return self.globals.worldId, self._physics:objectForId(self.globals.worldId)
 end
 
-function BodyBehavior:getBody(actorId)
-    local bodyId = self.components[actorId].properties.bodyId
+function BodyBehavior:getBody(componentOrActorId)
+    local component = type(componentOrActorId) == 'table' and componentOrActorId or self.components[componentOrActorId]
+    local bodyId = component.properties.bodyId
     return bodyId, self._physics:objectForId(bodyId)
 end
 
@@ -280,6 +288,8 @@ local ImageBehavior = {
     name = 'Image',
     propertyNames = {
         'url',
+        'width',
+        'height',
         'depth',
         'filter',
     },
@@ -289,10 +299,12 @@ local ImageBehavior = {
     handlers = {},
 }
 
-function ImageBehavior.handlers:addComponent(component, blueprint, opts)
-    component.properties.url = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
-    component.properties.depth = 0
-    component.properties.filter = 'nearest'
+function ImageBehavior.handlers:addComponent(component, bp, opts)
+    component.properties.url = bp.url or 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
+    component.properties.width = bp.width or 128
+    component.properties.height = bp.height or 128
+    component.properties.depth = bp.depth or 0
+    component.properties.filter = bp.filter or 'nearest'
 end
 
 function ImageBehavior.handlers:removeComponent(component, opts)
@@ -305,7 +317,7 @@ function ImageBehavior.handlers:draw(order)
             draw = function()
                 component._imageHolder = resource_loader.loadImage(component.properties.url, component.properties.filter)
                 local image = component._imageHolder.image
-                local width, height = image:getDimensions()
+                local imageWidth, imageHeight = image:getDimensions()
 
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
 
@@ -313,8 +325,8 @@ function ImageBehavior.handlers:draw(order)
                     image,
                     body:getX(), body:getY(),
                     body:getAngle(),
-                    32 / width, 32 / height,
-                    0.5 * width, 0.5 * height)
+                    component.properties.width / imageWidth, component.properties.height / imageHeight,
+                    0.5 * imageWidth, 0.5 * imageHeight)
             end,
         })
     end
@@ -333,7 +345,7 @@ local MoverBehavior = {
     handlers = {},
 }
 
-function MoverBehavior.handlers:addComponent(component, blueprint, opts)
+function MoverBehavior.handlers:addComponent(component, bp, opts)
     if opts.isOrigin then
         local physics = self.dependencies.Body:getPhysics()
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
@@ -349,11 +361,11 @@ function MoverBehavior.handlers:perform(dt)
     for actorId, component in pairs(self.components) do
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         local x = body:getX()
-        if x < 0 then
+        if x <= 0 then
             body:setX(0)
             body:setLinearVelocity(200, 0)
         end
-        if x > 800 then
+        if x >= 800 then
             body:setX(800)
             body:setLinearVelocity(-200, 0)
         end
@@ -435,6 +447,38 @@ end
 
 
 -- Actors / behaviors
+
+function Common:sendAddActor(bp)
+    local actorId = self:generateId()
+
+    self:send('addActor', self.clientId, actorId)
+
+    local visited = {}
+    local function visit(behaviorName, componentBp)
+        if visited[behaviorName] then
+            return
+        end
+        visited[behaviorName] = true
+
+        componentBp = componentBp or bp[behaviorName]
+
+        local behavior = self.behaviorsByName[behaviorName]
+        if not behavior then
+            error("addActor: no behavior named '" .. behaviorName .. "'")
+        end
+
+        for dependencyName in pairs(behavior.dependencies) do
+            visit(dependencyName)
+        end
+
+        self:send('addComponent', self.clientId, actorId, behavior.behaviorId, componentBp)
+    end
+    for behaviorName, componentBp in pairs(bp) do
+        visit(behaviorName, componentBp)
+    end
+
+    return actorId
+end
 
 function Common.receivers:addActor(time, clientId, actorId)
     assert(not self.actors[actorId], 'addActor: this `actorId` is already used')
@@ -543,13 +587,17 @@ function Common.receivers:removeBehavior(time, clientId, behaviorId)
     self.behaviors[behaviorId] = nil
 end
 
-function Common.receivers:addComponent(time, clientId, actorId, behaviorId, blueprint)
+function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
     local actor = assert(self.actors[actorId], 'addComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'addComponent: no such behavior')
 
+    if actor.components[behaviorId] then
+        error('addComponent: actor already has a component for this behavior')
+    end
+
     for _, dependency in pairs(behavior.dependencies) do
         if not dependency.components[actorId] then
-            error("'" .. behavior.name .. "' depends on '" .. dependency.name .. "'")
+            error("addComponent: '" .. behavior.name .. "' depends on '" .. dependency.name .. "'")
         end
     end
 
@@ -561,7 +609,7 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, blue
     actor.components[behaviorId] = component
     behavior.components[actorId] = component
 
-    behavior:callHandler('addComponent', component, blueprint or {}, {
+    behavior:callHandler('addComponent', component, bp or {}, {
         isOrigin = self.clientId == clientId,
     })
 end

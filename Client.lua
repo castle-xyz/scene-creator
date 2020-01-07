@@ -131,22 +131,27 @@ function Client:mousepressed(x, y, button)
                 end)
 
             if not removedSomething then
-                local actorId = self:generateId()
-                self:send('addActor', self.clientId, actorId)
-                self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Body.behaviorId, {
-                    x = x,
-                    y = y,
-                    fixture = {
-                        shapeType = 'polygon',
-                        points = { -math.random(20, 60), -math.random(20, 60), -math.random(20, 60), math.random(20, 60), math.random(20, 60), math.random(20, 60), math.random(20, 60), -math.random(20, 60) },
+                self:sendAddActor({
+                    Body = {
+                        x = x,
+                        y = y,
+                        fixture = {
+                            shapeType = 'polygon',
+                            points = {
+                                -math.random(20, 60), -math.random(20, 60),
+                                -math.random(20, 60), math.random(20, 60),
+                                math.random(20, 60), math.random(20, 60),
+                                math.random(20, 60), -math.random(20, 60),
+                            },
+                        },
+                        bodyType = button == 2 and 'kinematic' or 'dynamic',
+                        gravityScale = 200,
                     },
-                    bodyType = button == 1 and 'dynamic' or 'kinematic',
-                    gravityScale = 200,
+                    Image = {
+                        url = 'https://art.pixilart.com/5d29768f5c3f448.png',
+                    },
+                    Mover = button == 2 and {} or nil,
                 })
-                self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Image.behaviorId)
-                if button == 2 then
-                    self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Mover.behaviorId)
-                end
             end
         end
     end
