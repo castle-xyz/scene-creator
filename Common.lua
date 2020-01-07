@@ -423,6 +423,9 @@ function Common:define()
 
     -- Library
     self:defineMessageKind('addLibraryEntry', reliableToAll)
+
+    -- Performance
+    self:defineMessageKind('setPerforming', reliableToAll)
 end
 
 
@@ -449,6 +452,11 @@ function Common:start()
     -- Library
 
     self.library = {} -- `entryId` -> entry
+
+
+    -- Performance
+
+    self.performing = false
 end
 
 function Common:stop()
@@ -694,10 +702,23 @@ function Common.receivers:addLibraryEntry(time, entryId, entry)
 end
 
 
+-- Performance
+
+function Common:updatePerformance(dt)
+    if self.performing then
+        self:callHandlers('prePerform', dt)
+        self:callHandlers('perform', dt)
+        self:callHandlers('postPerform', dt)
+    end
+end
+
+function Common.receivers:setPerforming(time, performing)
+    self.performing = performing
+end
+
+
 -- Update
 
 function Common:update(dt)
-    self:callHandlers('prePerform', dt)
-    self:callHandlers('perform', dt)
-    self:callHandlers('postPerform', dt)
+    self:updatePerformance(dt)
 end

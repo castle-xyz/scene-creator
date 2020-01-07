@@ -160,8 +160,18 @@ function Client:uiupdate()
     ui.pane('toolbar', {
         customLayout = true,
         flexDirection = 'row',
+        padding = 2,
     }, function()
-        ui.button('hello')
+        ui.button('toggle performing', {
+            icon = 'play',
+            iconFamily = 'FontAwesome',
+            hideLabel = true,
+            selected = self.performing,
+
+            onClick = function()
+                self:send('setPerforming', not self.performing)
+            end,
+        })
 
         ui.box('spacer', { flex = 1 }, function() end)
 

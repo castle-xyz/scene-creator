@@ -94,17 +94,23 @@ function Server:syncClient(clientId)
         }, ...)
     end
 
+
     -- Users
+
     for clientId, me in pairs(self.mes) do
         send('me', clientId, me)
     end
 
+
     -- Library
+
     for entryId, entry in pairs(self.library) do
         send('addLibraryEntry', entryId, entry)
     end
 
-    -- Behaviors
+
+    -- Actors / behaviors
+
     for behaviorId, behavior in pairs(self.behaviors) do
         if not CORE_BEHAVIORS[behaviorId] then
             send('addBehavior', self.clientId, behaviorId, behavior.behaviorSpec)
@@ -117,12 +123,10 @@ function Server:syncClient(clientId)
         }, util.unpackPairs(behavior.globals))
     end
 
-    -- Notify `preSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
         behavior:callHandler('preSyncClient', clientId)
     end
 
-    -- Actors, components
     for actorId, actor in pairs(self.actors) do
         send('addActor', self.clientId, actorId)
 
@@ -139,10 +143,14 @@ function Server:syncClient(clientId)
         end
     end
 
-    -- Notify `postSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
         behavior:callHandler('postSyncClient', clientId)
     end
+
+
+    -- Performance
+
+    send('setPerforming', self.performing)
 end
 
 function Server:connect(clientId)
