@@ -111,35 +111,43 @@ function Client:mousepressed(x, y, button)
     end
 
     if button == 1 or button == 2 then
-        local removedSomething = false
+        local worldId, world = self.behaviorsByName.Body:getWorld()
 
-        self.behaviorsByName.Body:getWorld():queryBoundingBox(
-            x - 1, y - 1, x + 1, y + 1,
-            function(fixture)
-                if fixture:testPoint(x, y) then
-                    local actorId = self.behaviorsByName.Body:getActorForBody(fixture:getBody())
-                    if actorId then
-                        self:send('removeActor', self.clientId, actorId)
-                        removedSomething = true
-                        return false
+        if world then
+            local removedSomething = false
+
+            world:queryBoundingBox(
+                x - 1, y - 1, x + 1, y + 1,
+                function(fixture)
+                    if fixture:testPoint(x, y) then
+                        local actorId = self.behaviorsByName.Body:getActorForBody(fixture:getBody())
+                        if actorId then
+                            self:send('removeActor', self.clientId, actorId)
+                            removedSomething = true
+                            return false
+                        end
                     end
-                end
-                return true
-            end)
+                    return true
+                end)
 
-        if not removedSomething then
-            local actorId = self:generateId()
-            self:send('addActor', self.clientId, actorId)
-            self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Body.behaviorId, {
-                x = x,
-                y = y,
-                fixture = {
-                    shapeType = 'polygon',
-                    points = { -math.random(20, 60), -math.random(20, 60), -math.random(20, 60), math.random(20, 60), math.random(20, 60), math.random(20, 60), math.random(20, 60), -math.random(20, 60) },
-                },
-                bodyType = button == 1 and 'dynamic' or 'kinematic',
-                gravityScale = 200,
-            })
+            if not removedSomething then
+                local actorId = self:generateId()
+                self:send('addActor', self.clientId, actorId)
+                self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Body.behaviorId, {
+                    x = x,
+                    y = y,
+                    fixture = {
+                        shapeType = 'polygon',
+                        points = { -math.random(20, 60), -math.random(20, 60), -math.random(20, 60), math.random(20, 60), math.random(20, 60), math.random(20, 60), math.random(20, 60), -math.random(20, 60) },
+                    },
+                    bodyType = button == 1 and 'dynamic' or 'kinematic',
+                    gravityScale = 200,
+                })
+                self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Image.behaviorId)
+                if button == 2 then
+                    self:send('addComponent', self.clientId, actorId, self.behaviorsByName.Mover.behaviorId)
+                end
+            end
         end
     end
 end

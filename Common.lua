@@ -71,7 +71,7 @@ function BodyBehavior.handlers:addBehavior(opts)
 end
 
 function BodyBehavior.handlers:removeBehavior(opts)
-    local world = self:getWorld()
+    local worldId, world = self:getWorld()
     if world then
         world:destroy()
     end
@@ -219,7 +219,7 @@ function BodyBehavior.handlers:perform(dt)
 end
 
 function BodyBehavior.handlers:draw(order)
-    local world = self:getWorld()
+    local worldId, world = self:getWorld()
     if world then
         table.insert(order, {
             depth = 100,
@@ -256,12 +256,17 @@ function BodyBehavior.handlers:draw(order)
     end
 end
 
+function BodyBehavior:getPhysics()
+    return self._physics
+end
+
 function BodyBehavior:getWorld()
-    return self._physics:objectForId(self.globals.worldId)
+    return self.globals.worldId, self._physics:objectForId(self.globals.worldId)
 end
 
 function BodyBehavior:getBody(actorId)
-    return self._physics:objectForId(self.components[actorId].properties.bodyId)
+    local bodyId = self.components[actorId].properties.bodyId
+    return bodyId, self._physics:objectForId(bodyId)
 end
 
 function BodyBehavior:getActorForBody(body)
@@ -302,7 +307,7 @@ function ImageBehavior.handlers:draw(order)
                 local image = component._imageHolder.image
                 local width, height = image:getDimensions()
 
-                local body = self.dependencies.Body:getBody(actorId)
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
 
                 love.graphics.draw(
                     image,
@@ -316,11 +321,52 @@ function ImageBehavior.handlers:draw(order)
 end
 
 
+-- Mover behavior
+
+local MoverBehavior = {
+    name = 'Mover',
+    propertyNames = {
+    },
+    dependencies = {
+        'Body',
+    },
+    handlers = {},
+}
+
+function MoverBehavior.handlers:addComponent(component, blueprint, opts)
+    if opts.isOrigin then
+        local physics = self.dependencies.Body:getPhysics()
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        assert(body:getType() == 'kinematic', "`Mover` needs a 'kinematic' `Body`")
+        physics:setLinearVelocity(bodyId, 200, 0)
+    end
+end
+
+function MoverBehavior.handlers:removeComponent(component, opts)
+end
+
+function MoverBehavior.handlers:perform(dt)
+    for actorId, component in pairs(self.components) do
+        local bodyId, body = self.dependencies.Body:getBody(actorId)
+        local x = body:getX()
+        if x < 0 then
+            body:setX(0)
+            body:setLinearVelocity(200, 0)
+        end
+        if x > 800 then
+            body:setX(800)
+            body:setLinearVelocity(-200, 0)
+        end
+    end
+end
+
+
 -- Core behavior list
 
 CORE_BEHAVIORS = {
     BodyBehavior,
     ImageBehavior,
+    MoverBehavior,
 }
 
 
