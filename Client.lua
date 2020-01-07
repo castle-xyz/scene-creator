@@ -59,8 +59,16 @@ end
 
 -- Draw
 
+local debugFont = love.graphics.newFont(14)
+
 function Client:draw()
-    if not self.connected then
+    local windowWidth, windowHeight = love.graphics.getDimensions()
+
+    do -- Background color
+        love.graphics.clear(1, 0.98, 0.98)
+    end
+
+    if not self.connected then -- Not connected?
         local peer = self.client.getENetPeer()
         if peer then
             love.graphics.print('connection state: ' .. peer:state(), 22, 2)
@@ -88,8 +96,9 @@ function Client:draw()
             networkText = networkText .. '    mem: ' .. math.floor(collectgarbage('count')) .. 'kb'
         end
 
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.print('fps: ' .. love.timer.getFPS() .. networkText, 22, 2)
+        love.graphics.setFont(debugFont)
+        love.graphics.setColor(0, 0, 0)
+        love.graphics.print('fps: ' .. love.timer.getFPS() .. networkText, 16, windowHeight - debugFont:getHeight() - 16)
     end
 end
 
