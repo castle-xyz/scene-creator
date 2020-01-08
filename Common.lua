@@ -244,8 +244,11 @@ function BodyBehavior.handlers:prePerform(dt)
     end
 end
 
-function BodyBehavior.handlers:postPerform(dt)
-    self._physics:sendSyncs(self.globals.worldId)
+function BodyBehavior.handlers:postUpdate(dt)
+    -- Do this in `postUpdate` so it's after tool updates
+    if self.game.performing then
+        self._physics:sendSyncs(self.globals.worldId)
+    end
 end
 
 function BodyBehavior:getPhysics()
@@ -413,6 +416,66 @@ local GrabBehavior = {
         iconFamily = 'Feather',
     },
 }
+
+function GrabBehavior.handlers:update(dt)
+    local physics = self.dependencies.Body:getPhysics()
+    local touches, numTouches = self:getTouches()
+
+    local numPresses, numReleases = 0, 0
+    for touchId, touch in pairs(touches) do
+        if touch.pressed then
+            numPresses = numPresses + 1
+        elseif touch.released then
+            numReleases = numReleases + 1
+        end
+    end
+
+    if numTouches > 0 and numPresses == numTouches then
+        -- First press? Set ourselves as owner.
+        for actorId, component in pairs(self.components) do
+            if self.game.clientId == component.clientId then
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                physics:setOwner(bodyId, self.game.clientId, true)
+            end
+        end
+    end
+
+    if numTouches == 1 then
+        local touchId, touch = next(touches)
+        for actorId, component in pairs(self.components) do
+            if self.game.clientId == component.clientId then
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
+
+                local x, y = body:getPosition()
+                physics:setPosition({
+                    reliable = touch.released,
+                }, bodyId, x + touch.dx, y + touch.dy)
+
+                physics:setLinearVelocity({
+                    reliable = touch.released,
+                }, bodyId, 0, 0)
+                physics:setAngularVelocity({
+                    reliable = touch.released,
+                }, bodyId, 0)
+
+                if body:getType() ~= 'static' then
+                    physics:setAwake(bodyId, true)
+                end
+            end
+        end
+    elseif numTouches == 2 then
+    end
+
+    if numTouches > 0 and numReleases == numTouches then
+        -- Last release? Unset ourselves as owner.
+        for actorId, component in pairs(self.components) do
+            if self.game.clientId == component.clientId then
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                physics:setOwner(bodyId, nil, true)
+            end
+        end
+    end
+end
 
 
 -- Core behavior list
@@ -675,6 +738,9 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
     component.actorId = actorId
     component.behaviorId = behaviorId
     component.properties = {}
+    if behavior.tool then
+        component.clientId = clientId
+    end
 
     actor.components[behaviorId] = component
     behavior.components[actorId] = component
@@ -756,7 +822,10 @@ function Common:updatePerformance(dt)
 end
 
 function Common.receivers:setPerforming(time, performing)
-    self.performing = performing
+    if self.performing ~= performing then
+        self.performing = performing
+        self:callHandlers('setPerforming', performing)
+    end
 end
 
 
@@ -764,4 +833,8 @@ end
 
 function Common:update(dt)
     self:updatePerformance(dt)
+
+    self:callHandlers('preUpdate', dt)
+    self:callHandlers('update', dt)
+    self:callHandlers('postUpdate', dt)
 end
