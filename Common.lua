@@ -49,6 +49,19 @@ function Behavior:sendSetProperties(opts, ...)
     self.game:send(sendOpts, actorId, self.behaviorId, propertyNamesToIds(...))
 end
 
+function Behavior:has(actorId)
+    return not not self.components[actorId]
+end
+
+function Behavior:getTouches()
+    if self.game.server then
+        return {}, 0
+    end
+    if self.game.client then
+        return self.game.touches, self.game.numTouches, self.game.maxNumTouches
+    end
+end
+
 
 -- Body behavior
 
@@ -235,44 +248,6 @@ function BodyBehavior.handlers:postPerform(dt)
     self._physics:sendSyncs(self.globals.worldId)
 end
 
-function BodyBehavior.handlers:draw(order)
-    local worldId, world = self:getWorld()
-    if world then
-        table.insert(order, {
-            depth = 100,
-            draw = function()
-                love.graphics.push('all')
-                for _, body in ipairs(world:getBodies()) do
-                    local bodyType = body:getType()
-                    if bodyType == 'static' then
-                        love.graphics.setColor(0.2, 0.2, 0.2)
-                    elseif body:isAwake() then
-                        love.graphics.setColor(0, 0.8, 0)
-                    elseif bodyType == 'dynamic' then
-                        love.graphics.setColor(0.8, 0, 0)
-                    elseif bodyType == 'kinematic' then
-                        love.graphics.setColor(0, 0, 0.8)
-                    end
-                    for _, fixture in ipairs(body:getFixtures()) do
-                        local shape = fixture:getShape()
-                        local ty = shape:getType()
-                        if ty == 'circle' then
-                            love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
-                        elseif ty == 'polygon' then
-                            love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                        elseif ty == 'edge' then
-                            love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                        elseif ty == 'chain' then
-                            love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                        end
-                    end
-                end
-                love.graphics.pop()
-            end,
-        })
-    end
-end
-
 function BodyBehavior:getPhysics()
     return self._physics
 end
@@ -283,12 +258,52 @@ end
 
 function BodyBehavior:getBody(componentOrActorId)
     local component = type(componentOrActorId) == 'table' and componentOrActorId or self.components[componentOrActorId]
-    local bodyId = component.properties.bodyId
-    return bodyId, self._physics:objectForId(bodyId)
+    if component then
+        local bodyId = component.properties.bodyId
+        return bodyId, self._physics:objectForId(bodyId)
+    end
 end
 
 function BodyBehavior:getActorForBody(body)
     return body:getUserData()
+end
+
+function BodyBehavior:getActorsAtPoint(x, y)
+    local hits = {}
+    local worldId, world = self:getWorld()
+    if world then
+        world:queryBoundingBox(
+            x - 1, y - 1, x + 1, y + 1,
+            function(fixture)
+                if fixture:testPoint(x, y) then
+                    local actorId = self:getActorForBody(fixture:getBody())
+                    if actorId then
+                        hits[actorId] = true
+                    end
+                end
+                return true
+            end)
+    end
+    return hits
+end
+
+function BodyBehavior:drawBodyOutline(componentOrActorId)
+    local bodyId, body = self:getBody(componentOrActorId)
+    if body then
+        for _, fixture in ipairs(body:getFixtures()) do
+            local shape = fixture:getShape()
+            local ty = shape:getType()
+            if ty == 'circle' then
+                love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
+            elseif ty == 'polygon' then
+                love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+            elseif ty == 'edge' then
+                love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+            elseif ty == 'chain' then
+                love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+            end
+        end
+    end
 end
 
 

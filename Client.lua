@@ -18,6 +18,10 @@ function Client:start()
     -- Tools
 
     self.addingEntryId = nil
+    self.selectedActorIds = {} -- `actorId` -> `true` for all selected actors
+    self.touches = {} -- `touchId` -> `{ x, y, dx, dy }`
+    self.numTouches = 0 -- Number of currently active touches
+    self.maxNumTouches = 0 -- Max number of touches in the current gesture
 end
 
 
@@ -59,6 +63,47 @@ function Client:update(dt)
 
     -- Common update
     Common.update(self, dt)
+
+    -- Selection
+    if self.numTouches == 1 and self.maxNumTouches == 1 then
+        local touchId, touch = next(self.touches)
+        if touch.released and touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 then
+            local hits = self.behaviorsByName.Body:getActorsAtPoint(touch.x, touch.y)
+            local pick
+            if next(hits) then -- Pick the next unselected hit in some sorted order
+                local ordered = {}
+                for actorId in pairs(hits) do
+                    table.insert(ordered, actorId)
+                end
+                table.sort(ordered)
+                for i = #ordered, 1, -1 do
+                    local nextI = i == 1 and #ordered or i - 1
+                    if self.selectedActorIds[ordered[i]] then
+                        pick = ordered[nextI]
+                    end
+                end
+                pick = pick or ordered[#ordered]
+            end
+            self.selectedActorIds = {}
+            if pick then
+                self.selectedActorIds[pick] = true
+            end
+        end
+    end
+
+    -- Clear touch state
+    for touchId, touch in pairs(self.touches) do
+        if touch.released then
+            self.touches[touchId] = nil
+            self.numTouches = self.numTouches - 1
+            if self.numTouches == 0 then
+                self.maxNumTouches = 0
+            end
+        else
+            touch.pressed = false
+            touch.dx, touch.dy = 0, 0
+        end
+    end
 end
 
 
@@ -93,6 +138,15 @@ function Client:draw()
         end
     end
 
+    do -- Selections
+        love.graphics.setColor(0, 1, 0)
+        for actorId in pairs(self.selectedActorIds) do
+            if self.behaviorsByName.Body:has(actorId) then
+                self.behaviorsByName.Body:drawBodyOutline(actorId)
+            end
+        end
+    end
+
     do -- Debug overlay
         local networkText = ''
         if self.connected then
@@ -107,14 +161,14 @@ function Client:draw()
 end
 
 
--- Mouse
+-- Touch
 
-function Client:mousepressed(x, y, button)
+function Client:touchpressed(touchId, x, y, dx, dy)
     if not self.connected then
         return
     end
 
-    if self.addingEntryId then -- Add
+    if self.addingEntryId then -- Adding? Just add and skip the touch.
         local entry = self.library[self.addingEntryId]
         self.addingEntryId = nil
         if entry then
@@ -128,22 +182,34 @@ function Client:mousepressed(x, y, button)
                 self:sendAddActor(actorBp)
             end
         end
-    else -- Remove
-        local worldId, world = self.behaviorsByName.Body:getWorld()
-        if world then
-            world:queryBoundingBox(
-                x - 1, y - 1, x + 1, y + 1,
-                function(fixture)
-                    if fixture:testPoint(x, y) then
-                        local actorId = self.behaviorsByName.Body:getActorForBody(fixture:getBody())
-                        if actorId then
-                            self:send('removeActor', self.clientId, actorId)
-                            return false
-                        end
-                    end
-                    return true
-                end)
-        end
+        return
+    end
+
+    local touch = {}
+
+    touch.initialX, touch.initialY = x, y
+    touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
+    touch.pressed = true
+    touch.released = false
+
+    self.touches[touchId] = touch
+
+    self.numTouches = self.numTouches + 1
+    self.maxNumTouches = math.max(self.maxNumTouches, self.numTouches)
+end
+
+function Client:touchreleased(touchId, x, y, dx, dy)
+    local touch = self.touches[touchId]
+    if touch then
+        touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
+        touch.released = true
+    end
+end
+
+function Client:touchmoved(touchId, x, y, dx, dy)
+    local touch = self.touches[touchId]
+    if touch then
+        touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
     end
 end
 
@@ -167,7 +233,6 @@ function Client:uiupdate()
             iconFamily = 'FontAwesome',
             hideLabel = true,
             selected = self.performing,
-
             onClick = function()
                 self:send('setPerforming', not self.performing)
             end,
