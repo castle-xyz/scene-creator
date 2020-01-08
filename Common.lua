@@ -398,12 +398,30 @@ function MoverBehavior.handlers:perform(dt)
 end
 
 
+-- Grab behavior
+
+local GrabBehavior = {
+    name = 'Grab',
+    propertyNames = {
+    },
+    dependencies = {
+        'Body',
+    },
+    handlers = {},
+    tool = {
+        icon = 'move',
+        iconFamily = 'Feather',
+    },
+}
+
+
 -- Core behavior list
 
 CORE_BEHAVIORS = {
     BodyBehavior,
     ImageBehavior,
     MoverBehavior,
+    GrabBehavior,
 }
 
 
@@ -458,6 +476,7 @@ function Common:start()
     self.behaviors = {} -- `behaviorId` -> behavior
     self.behaviorsByName = {} -- `behaviorName` -> behavior
     self.behaviorsByHandler = {} -- `handlerName` -> `behaviorId` -> behavior
+    self.tools = {} -- `behaviorId` -> behavior, for tool behaviors
 
     for behaviorId, behaviorSpec in pairs(CORE_BEHAVIORS) do
         self.receivers.addBehavior(self, 0, self.clientId, behaviorId, behaviorSpec)
@@ -591,6 +610,11 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
             "dependency '" .. dependencyName .. "' not resolved")
     end
 
+    -- Copy tool spec
+    if behaviorSpec.tool then
+        behavior.tool = util.deepCopyTable(behaviorSpec.tool)
+    end
+
     -- Set in maps
     self.behaviors[behaviorId] = behavior
     self.behaviorsByName[behavior.name] = behavior
@@ -599,6 +623,9 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
             self.behaviorsByHandler[handlerName] = {}
         end
         self.behaviorsByHandler[handlerName][behaviorId] = behavior
+    end
+    if behavior.tool then
+        self.tools[behaviorId] = behavior
     end
 
     -- Notify `addBehavior`
@@ -616,6 +643,7 @@ function Common.receivers:removeBehavior(time, clientId, behaviorId)
     })
 
     -- Unset in maps
+    self.tools[behaviorId] = nil
     for actorId in pairs(behavior.components) do
         self.actors[actorId].components[behaviorId] = nil
     end

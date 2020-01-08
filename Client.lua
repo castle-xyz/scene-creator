@@ -240,7 +240,49 @@ function Client:uiupdate()
 
         ui.box('spacer', { flex = 1 }, function() end)
 
-        ui.button('world')
+        local commonBehaviorIds
+        for actorId in pairs(self.selectedActorIds) do
+            local actor = self.actors[actorId]
+            if commonBehaviorIds then
+                for behaviorId in pairs(commonBehaviorIds) do
+                    if not actor.components[behaviorId] then
+                        commonBehaviorIds[behaviorId] = nil
+                    end
+                end
+            else
+                commonBehaviorIds = {}
+                for behaviorId in pairs(actor.components) do
+                    commonBehaviorIds[behaviorId] = true
+                end
+            end
+        end
+        if commonBehaviorIds then
+            local order = {}
+            for _, tool in pairs(self.tools) do
+                table.insert(order, tool)
+            end
+            table.sort(order, function(tool1, tool2)
+                return tool1.behaviorId < tool2.behaviorId
+            end)
+            for _, tool in ipairs(order) do
+                local applicable = true
+                for dependencyName, dependency in pairs(tool.dependencies) do
+                    if not commonBehaviorIds[dependency.behaviorId] then
+                        applicable = false
+                        break
+                    end
+                end
+                if applicable then
+                    ui.button(tool.name, {
+                        icon = tool.tool.icon,
+                        iconFamily = tool.tool.iconFamily,
+                        hideLabel = true,
+                        onClick = function()
+                        end,
+                    })
+                end
+            end
+        end
     end)
 
     ui.pane('default', { customLayout = true }, function()
