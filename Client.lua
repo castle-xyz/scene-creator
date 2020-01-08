@@ -18,7 +18,12 @@ function Client:start()
     -- Tools
 
     self.addingEntryId = nil
+
     self.selectedActorIds = {} -- `actorId` -> `true` for all selected actors
+
+    self.activeToolBehaviorId = nil -- `behaviorId` of active tool
+    self.applicableTools = {} -- `behaviorId` -> behavior, for tools applicable to selection
+
     self.touches = {} -- `touchId` -> `{ x, y, dx, dy }`
     self.numTouches = 0 -- Number of currently active touches
     self.maxNumTouches = 0 -- Max number of touches in the current gesture
@@ -54,6 +59,117 @@ function Client.receivers:me(time, clientId, me)
 end
 
 
+-- Selections / tools
+
+function Client:clearRemovedSelections()
+    for actorId in pairs(self.selectedActorIds) do
+        if not self.actors[actorId] then
+            self:deselectActor(actorId)
+        end
+    end
+    if not self.tools[self.activeToolBehaviorId] then
+        self.activeToolBehaviorId = nil
+    end
+end
+
+function Client:updateApplicableTools()
+    -- Find tools whose dependencies are satisfied by all selected actors
+    self.applicableTools = {}
+    local commonBehaviorIds
+    for actorId in pairs(self.selectedActorIds) do
+        local actor = self.actors[actorId]
+        if commonBehaviorIds then
+            for behaviorId in pairs(commonBehaviorIds) do
+                if not actor.components[behaviorId] then
+                    commonBehaviorIds[behaviorId] = nil
+                end
+            end
+        else
+            commonBehaviorIds = {}
+            for behaviorId in pairs(actor.components) do
+                commonBehaviorIds[behaviorId] = true
+            end
+        end
+    end
+    if commonBehaviorIds then
+        for behaviorId, tool in pairs(self.tools) do
+            local applicable = true
+            for dependencyName, dependency in pairs(tool.dependencies) do
+                if not commonBehaviorIds[dependency.behaviorId] then
+                    applicable = false
+                    break
+                end
+            end
+            if applicable then
+                self.applicableTools[behaviorId] = tool
+            end
+        end
+    end
+
+    -- Deactivate active tool if it doesn't apply any more
+    if not self.applicableTools[self.activeToolBehaviorId] then
+        self:setActiveTool(nil)
+    end
+end
+
+function Client:syncSelections()
+    if self.activeToolBehaviorId then
+        -- Remove components whose actors aren't selected any more
+        local activeTool = self.tools[self.activeToolBehaviorId]
+        for actorId, component in pairs(activeTool.components) do
+            if self.clientId == component.clientId and not self.selectedActorIds[actorId] then
+                self:send('removeComponent', self.clientId, actorId, activeTool.behaviorId)
+            end
+        end
+
+        -- Add components for new selections
+        for actorId in pairs(self.selectedActorIds) do
+            if not activeTool:has(actorId) then
+                self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
+            end
+        end
+    end
+end
+
+function Client:selectActor(actorId)
+    self.selectedActorIds[actorId] = true
+end
+
+function Client:deselectActor(actorId)
+    self.selectedActorIds[actorId] = nil
+end
+
+function Client:deselectAllActors()
+    for actorId in pairs(self.selectedActorIds) do
+        self:deselectActor(actorId)
+    end
+end
+
+function Client:setActiveTool(toolBehaviorId)
+    if self.activeToolBehaviorId then
+        -- Clear our components from old tool -- we could use `self.selectedActorIds` but
+        -- we actually go through the tool's components to make sure
+        local activeTool = self.tools[self.activeToolBehaviorId]
+        for actorId, component in pairs(activeTool.components) do
+            if self.clientId == component.clientId then
+                self:send('removeComponent', self.clientId, actorId, activeTool.behaviorId)
+            end
+        end
+    end
+
+    -- Activate new tool and add components to it if it applies
+    if toolBehaviorId and self.applicableTools[toolBehaviorId] then
+        self.activeToolBehaviorId = toolBehaviorId
+        local activeTool = self.tools[self.activeToolBehaviorId]
+        for actorId in pairs(self.selectedActorIds) do
+            if not activeTool:has(actorId) then
+                self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
+            end
+        end
+    end
+end
+
+
 -- Update
 
 function Client:update(dt)
@@ -61,10 +177,15 @@ function Client:update(dt)
         return
     end
 
+    -- Update tools and selections
+    self:clearRemovedSelections()
+    self:updateApplicableTools()
+    self:syncSelections()
+
     -- Common update
     Common.update(self, dt)
 
-    -- Selection
+    -- Tap-to-select
     if self.numTouches == 1 and self.maxNumTouches == 1 then
         local touchId, touch = next(self.touches)
         if touch.released and touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 then
@@ -84,13 +205,13 @@ function Client:update(dt)
                 end
                 pick = pick or ordered[#ordered]
             end
-            self.selectedActorIds = {}
+            self:deselectAllActors()
             if pick then
-                self.selectedActorIds[pick] = true
+                self:selectActor(pick)
             end
         end
     end
-
+    
     -- Clear touch state
     for touchId, touch in pairs(self.touches) do
         if touch.released then
@@ -140,8 +261,17 @@ function Client:draw()
 
     do -- Selections
         love.graphics.setColor(0, 1, 0)
+        local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
         for actorId in pairs(self.selectedActorIds) do
             if self.behaviorsByName.Body:has(actorId) then
+                if activeTool then
+                    local component = activeTool.components[actorId]
+                    if component and self.clientId ~= component.clientId then
+                        love.graphics.setColor(1, 0, 0)
+                    else
+                        love.graphics.setColor(0, 1, 0)
+                    end
+                end
                 self.behaviorsByName.Body:drawBodyOutline(actorId)
             end
         end
@@ -240,48 +370,41 @@ function Client:uiupdate()
 
         ui.box('spacer', { flex = 1 }, function() end)
 
-        local commonBehaviorIds
-        for actorId in pairs(self.selectedActorIds) do
-            local actor = self.actors[actorId]
-            if commonBehaviorIds then
-                for behaviorId in pairs(commonBehaviorIds) do
-                    if not actor.components[behaviorId] then
-                        commonBehaviorIds[behaviorId] = nil
-                    end
-                end
-            else
-                commonBehaviorIds = {}
-                for behaviorId in pairs(actor.components) do
-                    commonBehaviorIds[behaviorId] = true
-                end
-            end
-        end
-        if commonBehaviorIds then
+        -- Tools
+        if next(self.selectedActorIds) then
             local order = {}
-            for _, tool in pairs(self.tools) do
+            for _, tool in pairs(self.applicableTools) do
                 table.insert(order, tool)
             end
             table.sort(order, function(tool1, tool2)
                 return tool1.behaviorId < tool2.behaviorId
             end)
             for _, tool in ipairs(order) do
-                local applicable = true
-                for dependencyName, dependency in pairs(tool.dependencies) do
-                    if not commonBehaviorIds[dependency.behaviorId] then
-                        applicable = false
-                        break
-                    end
-                end
-                if applicable then
-                    ui.button(tool.name, {
-                        icon = tool.tool.icon,
-                        iconFamily = tool.tool.iconFamily,
-                        hideLabel = true,
-                        onClick = function()
-                        end,
-                    })
-                end
+                ui.button(tool.name, {
+                    icon = tool.tool.icon,
+                    iconFamily = tool.tool.iconFamily,
+                    hideLabel = true,
+                    selected = self.activeToolBehaviorId == tool.behaviorId,
+                    onClick = function()
+                        self:setActiveTool(tool.behaviorId)
+                    end,
+                })
             end
+        end
+
+        -- Delete
+        if next(self.selectedActorIds) then
+            ui.button('remove actor', {
+                icon = 'trash-alt',
+                iconFamily = 'FontAwesome5',
+                hideLabel = true,
+                onClick = function()
+                    for actorId in pairs(self.selectedActorIds) do
+                        self:deselectActor(actorId)
+                        self:send('removeActor', self.clientId, actorId)
+                    end
+                end,
+            })
         end
     end)
 
