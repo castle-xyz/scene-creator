@@ -440,7 +440,7 @@ local GrabBehavior = {
 }
 
 function GrabBehavior.handlers:addComponent(component, bp, opts)
-    if self.game.server then
+    if self.game.server or opts.isOrigin then
         local physics = self.dependencies.Body:getPhysics()
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         physics:setOwner(bodyId, component.clientId, true)
