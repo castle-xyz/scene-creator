@@ -519,8 +519,8 @@ function GrabBehavior.handlers:update(dt)
                 else
                     -- When not performing we need to actually send the sync messages. We also
                     -- send a reliable message on touch release to make sure the final state is
-                    -- reflected. We don't need to wake anything up because the Body behavior does
-                    -- that when performance is enabled again.
+                    -- reflected. We don't need to wake anything up because the `Body` behavior
+                    -- does that when performance is enabled again.
                     local sendOpts = {
                         reliable = touchData.allTouchesReleased,
                         channel = touchData.allTouchesReleased and physics.reliableChannel or nil,
