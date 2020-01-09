@@ -111,6 +111,7 @@ function Client:syncToolsWithSelections()
     if not self.applicableTools[self.activeToolBehaviorId] then
         self:setActiveTool(nil)
     end
+
     if self.activeToolBehaviorId then
         -- Remove components whose actors aren't selected any more
         local activeTool = self.tools[self.activeToolBehaviorId]
