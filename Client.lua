@@ -73,7 +73,7 @@ function Client:clearRemovedSelections()
     end
 end
 
-function Client:updateApplicableTools()
+function Client:syncToolsWithSelections()
     -- Find tools whose dependencies are satisfied by all selected actors
     self.applicableTools = {}
     local commonBehaviorIds
@@ -111,9 +111,6 @@ function Client:updateApplicableTools()
     if not self.applicableTools[self.activeToolBehaviorId] then
         self:setActiveTool(nil)
     end
-end
-
-function Client:syncSelections()
     if self.activeToolBehaviorId then
         -- Remove components whose actors aren't selected any more
         local activeTool = self.tools[self.activeToolBehaviorId]
@@ -203,7 +200,7 @@ function Client:update(dt)
 
     self:clearRemovedSelections()
 
-    -- Tap-to-select (do this before syncing selections)
+    -- Tap-to-select (do this before syncing tools with selections)
     if self.numTouches == 1 and self.maxNumTouches == 1 then
         local touchId, touch = next(self.touches)
         if touch.released and touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 then
@@ -211,9 +208,8 @@ function Client:update(dt)
         end
     end
 
-    -- Sync selections
-    self:updateApplicableTools()
-    self:syncSelections()
+    -- Sync tools with selections
+    self:syncToolsWithSelections()
 
     -- Common update
     Common.update(self, dt)
@@ -316,10 +312,19 @@ function Client:touchpressed(touchId, x, y, dx, dy)
                     actorBp.Body.x, actorBp.Body.y = x, y
                 end
 
-                self:sendAddActor(actorBp)
+                local actorId = self:sendAddActor(actorBp)
+
+                if actorBp.Body then
+                    self:setActiveTool(nil)
+                end
+                self:deselectAllActors()
+                self:selectActor(actorId)
+                self:syncToolsWithSelections()
+                if actorBp.Body then
+                    self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
+                end
             end
         end
-        return
     end
 
     local touch = {}
