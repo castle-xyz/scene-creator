@@ -24,7 +24,7 @@ function Client:start()
     self.activeToolBehaviorId = nil -- `behaviorId` of active tool
     self.applicableTools = {} -- `behaviorId` -> behavior, for tools applicable to selection
 
-    self.touches = {} -- `touchId` -> `{ x, y, dx, dy }`
+    self.touches = {} -- `touchId` -> touch
     self.numTouches = 0 -- Number of currently active touches
     self.maxNumTouches = 0 -- Max number of touches in the current gesture
     self.allTouchesReleased = false -- Whether we are at the end of a gesture
