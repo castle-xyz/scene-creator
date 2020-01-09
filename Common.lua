@@ -53,12 +53,22 @@ function Behavior:has(actorId)
     return not not self.components[actorId]
 end
 
-function Behavior:getTouches()
+function Behavior:getTouchData()
     if self.game.server then
-        return {}, 0
+        return {
+            touches = {},
+            numTouches = 0,
+            maxNumTouches = 0,
+            allTouchesReleased = false,
+        }
     end
     if self.game.client then
-        return self.game.touches, self.game.numTouches, self.game.maxNumTouches
+        return {
+            touches = self.game.touches,
+            numTouches = self.game.numTouches,
+            maxNumTouches = self.game.maxNumTouches,
+            allTouchesReleased = self.game.allTouchesReleased,
+        }
     end
 end
 
@@ -251,6 +261,18 @@ function BodyBehavior.handlers:postUpdate(dt)
     end
 end
 
+function BodyBehavior.handlers:setPerforming(performing)
+    -- Wake up all dynamic bodies when performance starts, because they may have moved
+    if performing then 
+        for actorId, component in pairs(self.components) do
+            local bodyId, body = self:getBody(component)
+            if body:getType() ~= 'static' then
+                body:setAwake(true)
+            end
+        end
+    end
+end
+
 function BodyBehavior:getPhysics()
     return self._physics
 end
@@ -417,63 +439,74 @@ local GrabBehavior = {
     },
 }
 
+function GrabBehavior.handlers:addComponent(component, bp, opts)
+    if self.game.server then
+        local physics = self.dependencies.Body:getPhysics()
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        physics:setOwner(bodyId, component.clientId, true)
+    end
+end
+
+function GrabBehavior.handlers:removeComponent(component)
+    if self.game.server then
+        local physics = self.dependencies.Body:getPhysics()
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        if bodyId then
+            physics:setOwner(bodyId, nil, false)
+        end
+    end
+end
+
 function GrabBehavior.handlers:update(dt)
     local physics = self.dependencies.Body:getPhysics()
-    local touches, numTouches = self:getTouches()
+    local touchData = self:getTouchData()
 
-    local numPresses, numReleases = 0, 0
-    for touchId, touch in pairs(touches) do
-        if touch.pressed then
-            numPresses = numPresses + 1
-        elseif touch.released then
-            numReleases = numReleases + 1
-        end
-    end
-
-    if numTouches > 0 and numPresses == numTouches then
-        -- First press? Set ourselves as owner.
-        for actorId, component in pairs(self.components) do
-            if self.game.clientId == component.clientId then
-                local bodyId, body = self.dependencies.Body:getBody(actorId)
-                physics:setOwner(bodyId, self.game.clientId, true)
-            end
-        end
-    end
-
-    if numTouches == 1 then
-        local touchId, touch = next(touches)
+    if touchData.numTouches == 1 then
+        local touchId, touch = next(touchData.touches)
         for actorId, component in pairs(self.components) do
             if self.game.clientId == component.clientId then
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
 
                 local x, y = body:getPosition()
-                physics:setPosition({
-                    reliable = touch.released,
-                }, bodyId, x + touch.dx, y + touch.dy)
+                local newX, newY = x + touch.dx, y + touch.dy
 
-                physics:setLinearVelocity({
-                    reliable = touch.released,
-                }, bodyId, 0, 0)
-                physics:setAngularVelocity({
-                    reliable = touch.released,
-                }, bodyId, 0)
+                if self.game.performing and not touch.released then
+                    -- Wake up this and all colliding bodies
+                    if body:getType() ~= 'static' and not body:isAwake() then
+                        physics:setAwake(physics:idForObject(body), true)
+                    end
+                    for _, contact in ipairs(body:getContacts()) do
+                        local fixture1, fixture2 = contact:getFixtures()
+                        local otherBody = fixture1:getBody()
+                        if otherBody == body then
+                            otherBody = fixture2:getBody()
+                        end
+                        if otherBody:getType() ~= 'static' and not otherBody:isAwake() then
+                            physics:setAwake(physics:idForObject(otherBody), true)
+                        end
+                    end
 
-                if body:getType() ~= 'static' then
-                    physics:setAwake(bodyId, true)
+                    -- When performing, we just need to manipulate the body and it'll be synced
+                    -- because we own it
+                    body:setPosition(newX, newY)
+                    if body:getType() == 'dynamic' then
+                        body:setLinearVelocity(0, 0)
+                        body:setAngularVelocity(0)
+                    end
+                else
+                    -- When not performing we need to actually send the sync messages. We also
+                    -- send a reliable message on touch release to make sure the final state is
+                    -- reflected. We don't need to wake anything up because the Body behavior does
+                    -- that when performance is enabled again.
+                    local sendOpts = {
+                        reliable = touch.released,
+                        channel = touch.released and physics.reliableChannel or nil,
+                    }
+                    physics:setPosition(sendOpts, bodyId, newX, newY)
                 end
             end
         end
-    elseif numTouches == 2 then
-    end
-
-    if numTouches > 0 and numReleases == numTouches then
-        -- Last release? Unset ourselves as owner.
-        for actorId, component in pairs(self.components) do
-            if self.game.clientId == component.clientId then
-                local bodyId, body = self.dependencies.Body:getBody(actorId)
-                physics:setOwner(bodyId, nil, true)
-            end
-        end
+    elseif touchData.numTouches == 2 then
     end
 end
 

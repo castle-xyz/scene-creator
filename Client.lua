@@ -27,6 +27,7 @@ function Client:start()
     self.touches = {} -- `touchId` -> `{ x, y, dx, dy }`
     self.numTouches = 0 -- Number of currently active touches
     self.maxNumTouches = 0 -- Max number of touches in the current gesture
+    self.allTouchesReleased = false -- Whether we are at the end of a gesture
 end
 
 
@@ -169,6 +170,29 @@ function Client:setActiveTool(toolBehaviorId)
     end
 end
 
+function Client:selectActorAtPoint(x, y, hits)
+    local hits = hits or self.behaviorsByName.Body:getActorsAtPoint(x, y)
+    local pick
+    if next(hits) then -- Pick the next unselected hit in some sorted order
+        local ordered = {}
+        for actorId in pairs(hits) do
+            table.insert(ordered, actorId)
+        end
+        table.sort(ordered)
+        for i = #ordered, 1, -1 do
+            local nextI = i == 1 and #ordered or i - 1
+            if self.selectedActorIds[ordered[i]] then
+                pick = ordered[nextI]
+            end
+        end
+        pick = pick or ordered[#ordered]
+    end
+    self:deselectAllActors()
+    if pick then
+        self:selectActor(pick)
+    end
+end
+
 
 -- Update
 
@@ -177,41 +201,23 @@ function Client:update(dt)
         return
     end
 
-    -- Update tools and selections
     self:clearRemovedSelections()
+
+    -- Tap-to-select (do this before syncing selections)
+    if self.numTouches == 1 and self.maxNumTouches == 1 then
+        local touchId, touch = next(self.touches)
+        if touch.released and touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 then
+            self:selectActorAtPoint(touch.x, touch.y)
+        end
+    end
+
+    -- Sync selections
     self:updateApplicableTools()
     self:syncSelections()
 
     -- Common update
     Common.update(self, dt)
 
-    -- Tap-to-select
-    if self.numTouches == 1 and self.maxNumTouches == 1 then
-        local touchId, touch = next(self.touches)
-        if touch.released and touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 then
-            local hits = self.behaviorsByName.Body:getActorsAtPoint(touch.x, touch.y)
-            local pick
-            if next(hits) then -- Pick the next unselected hit in some sorted order
-                local ordered = {}
-                for actorId in pairs(hits) do
-                    table.insert(ordered, actorId)
-                end
-                table.sort(ordered)
-                for i = #ordered, 1, -1 do
-                    local nextI = i == 1 and #ordered or i - 1
-                    if self.selectedActorIds[ordered[i]] then
-                        pick = ordered[nextI]
-                    end
-                end
-                pick = pick or ordered[#ordered]
-            end
-            self:deselectAllActors()
-            if pick then
-                self:selectActor(pick)
-            end
-        end
-    end
-    
     -- Clear touch state
     for touchId, touch in pairs(self.touches) do
         if touch.released then
@@ -225,6 +231,7 @@ function Client:update(dt)
             touch.dx, touch.dy = 0, 0
         end
     end
+    self.allTouchesReleased = false
 end
 
 
@@ -333,6 +340,14 @@ function Client:touchreleased(touchId, x, y, dx, dy)
     if touch then
         touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
         touch.released = true
+
+        -- Check if end of gesture
+        self.allTouchesReleased = true
+        for touchId, touch in pairs(self.touches) do
+            if not touch.released then
+                self.allTouchesReleased = false
+            end
+        end
     end
 end
 

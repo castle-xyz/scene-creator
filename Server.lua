@@ -162,6 +162,14 @@ function Server:reconnect(clientId)
 end
 
 function Server:disconnect(clientId)
+    -- Clear tool components for this client
+    for behaviorId, tool in pairs(self.tools) do
+        for actorId, component in pairs(tool.components) do
+            if component.clientId == clientId then
+                self:send('removeComponent', self.clientId, actorId, behaviorId)
+            end
+        end
+    end
 end
 
 
