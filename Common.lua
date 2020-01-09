@@ -461,16 +461,39 @@ function GrabBehavior.handlers:update(dt)
     local physics = self.dependencies.Body:getPhysics()
     local touchData = self:getTouchData()
 
-    if touchData.numTouches == 1 then
-        local touchId, touch = next(touchData.touches)
+    if touchData.numTouches == 1 or touchData.numTouches == 2 then
+        local dx, dy = 0, 0
+
+        if touchData.numTouches == 1 then -- Pure-move
+            local touchId, touch = next(touchData.touches)
+            dx, dy = touch.dx, touch.dy
+            if touch.pressed then
+                -- Check if the press was outside all selected actors. If so, select the actor there
+                -- and abort this frame -- we will be grabbing that actor from the next frame onward.
+                local someHit = false
+                local hits = self.dependencies.Body:getActorsAtPoint(touch.initialX, touch.initialY)
+                for actorId in pairs(hits) do
+                    local component = self.components[actorId]
+                    if component and self.game.clientId == component.clientId then
+                        someHit = true
+                        break
+                    end
+                end
+                if not someHit then
+                    self.game:selectActorAtPoint(touch.initialX, touch.initialY, hits)
+                    return
+                end
+            end
+        end
+
         for actorId, component in pairs(self.components) do
             if self.game.clientId == component.clientId then
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
 
                 local x, y = body:getPosition()
-                local newX, newY = x + touch.dx, y + touch.dy
+                local newX, newY = x + dx, y + dy
 
-                if self.game.performing and not touch.released then
+                if self.game.performing and not touchData.allTouchesReleased then
                     -- Wake up this and all colliding bodies
                     if body:getType() ~= 'static' and not body:isAwake() then
                         physics:setAwake(physics:idForObject(body), true)
@@ -499,14 +522,13 @@ function GrabBehavior.handlers:update(dt)
                     -- reflected. We don't need to wake anything up because the Body behavior does
                     -- that when performance is enabled again.
                     local sendOpts = {
-                        reliable = touch.released,
-                        channel = touch.released and physics.reliableChannel or nil,
+                        reliable = touchData.allTouchesReleased,
+                        channel = touchData.allTouchesReleased and physics.reliableChannel or nil,
                     }
                     physics:setPosition(sendOpts, bodyId, newX, newY)
                 end
             end
         end
-    elseif touchData.numTouches == 2 then
     end
 end
 
