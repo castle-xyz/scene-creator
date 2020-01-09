@@ -462,11 +462,14 @@ function GrabBehavior.handlers:update(dt)
     local touchData = self:getTouchData()
 
     if touchData.numTouches == 1 or touchData.numTouches == 2 then
-        local dx, dy = 0, 0
+        local moveX, moveY = 0, 0
+        local centerX, centerY
+        local rotation
+        local cosRotation, sinRotation
 
         if touchData.numTouches == 1 then -- Pure-move
             local touchId, touch = next(touchData.touches)
-            dx, dy = touch.dx, touch.dy
+            moveX, moveY = touch.dx, touch.dy
             if touch.pressed then
                 -- Check if the press was outside all selected actors. If so, select the actor there
                 -- and abort this frame -- we will be grabbing that actor from the next frame onward.
@@ -484,6 +487,22 @@ function GrabBehavior.handlers:update(dt)
                     return
                 end
             end
+        elseif touchData.numTouches == 2 then -- Move and rotate
+            local touchId1, touch1 = next(touchData.touches)
+            local touchId2, touch2 = next(touchData.touches, touchId1)
+
+            local touch1PrevX, touch1PrevY = touch1.x - touch1.dx, touch1.y - touch1.dy
+            local touch2PrevX, touch2PrevY = touch2.x - touch2.dx, touch2.y - touch2.dy
+
+            centerX, centerY = 0.5 * (touch1.x + touch2.x), 0.5 * (touch1.y + touch2.y)
+            local centerPrevX, centerPrevY = 0.5 * (touch1PrevX + touch2PrevX), 0.5 * (touch1PrevY + touch2PrevY)
+
+            moveX, moveY = centerX - centerPrevX, centerY - centerPrevY
+
+            local angle = math.atan2(touch2.y - touch1.y, touch2.x - touch1.x)
+            local prevAngle = math.atan2(touch2PrevY - touch1PrevY, touch2PrevX - touch1PrevX)
+            rotation = angle - prevAngle
+            cosRotation, sinRotation = math.cos(rotation), math.sin(rotation)
         end
 
         for actorId, component in pairs(self.components) do
@@ -491,7 +510,18 @@ function GrabBehavior.handlers:update(dt)
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
 
                 local x, y = body:getPosition()
-                local newX, newY = x + dx, y + dy
+                local angle = body:getAngle()
+                local newX, newY, newAngle
+                if rotation then
+                    local lX, lY = x - centerX, y - centerY
+                    lX = cosRotation * lX - sinRotation * lY
+                    lY = sinRotation * lX + cosRotation * lY
+                    newX, newY = centerX + moveX + lX, centerY + moveY + lY
+                    newAngle = angle + rotation
+                else
+                    newX, newY = x + moveX, y + moveY
+                    newAngle = angle
+                end
 
                 if self.game.performing and not touchData.allTouchesReleased then
                     -- Wake up this and all colliding bodies
@@ -512,6 +542,7 @@ function GrabBehavior.handlers:update(dt)
                     -- When performing, we just need to manipulate the body and it'll be synced
                     -- because we own it
                     body:setPosition(newX, newY)
+                    body:setAngle(newAngle)
                     if body:getType() == 'dynamic' then
                         body:setLinearVelocity(0, 0)
                         body:setAngularVelocity(0)
@@ -526,6 +557,7 @@ function GrabBehavior.handlers:update(dt)
                         channel = touchData.allTouchesReleased and physics.reliableChannel or nil,
                     }
                     physics:setPosition(sendOpts, bodyId, newX, newY)
+                    physics:setAngle(sendOpts, bodyId, newAngle)
                 end
             end
         end
