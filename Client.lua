@@ -309,12 +309,14 @@ function Client:touchpressed(touchId, x, y, dx, dy)
             if entry.entryType == 'actorBlueprint' then
                 local actorBp = util.deepCopyTable(entry.actorBlueprint)
 
-                if actorBp.Body then
+                -- If it has a `Body`, initialize position to touch location
+                if actorBp.Body then 
                     actorBp.Body.x, actorBp.Body.y = x, y
                 end
 
                 local actorId = self:sendAddActor(actorBp)
 
+                -- Select the actor, switching to the `Grab` tool if it has a `Body`
                 if actorBp.Body then
                     self:setActiveTool(nil)
                 end
