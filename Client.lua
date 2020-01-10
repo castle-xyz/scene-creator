@@ -22,6 +22,7 @@ function Client:start()
     self.selectedActorIds = {} -- `actorId` -> `true` for all selected actors
 
     self.activeToolBehaviorId = nil -- `behaviorId` of active tool
+    self.lastActiveToolBehaviorId = nil -- the last non-`nil` value of `self.activeToolBehaviorId`
     self.applicableTools = {} -- `behaviorId` -> behavior, for tools applicable to selection
 
     self.touches = {} -- `touchId` -> touch
@@ -73,9 +74,10 @@ function Client:clearRemovedSelections()
     end
 end
 
-function Client:syncToolsWithSelections()
-    -- Find tools whose dependencies are satisfied by all selected actors
+function Client:refreshTools()
     self.applicableTools = {}
+
+    -- Find common behaviors across all actors -- used by dependency check below
     local commonBehaviorIds
     for actorId in pairs(self.selectedActorIds) do
         local actor = self.actors[actorId]
@@ -92,26 +94,48 @@ function Client:syncToolsWithSelections()
             end
         end
     end
-    if commonBehaviorIds then
-        for behaviorId, tool in pairs(self.tools) do
-            local applicable = true
+    commonBehaviorIds = commonBehaviorIds or {}
+
+    for behaviorId, tool in pairs(self.tools) do
+        local applicable = true
+
+        -- Check if it needs performance to be off or on
+        if applicable then
+            if self.performing and tool.tool.needsPerformingOff then
+                applicable = false
+            end
+            if not self.performing and tool.tool.needsPerformingOn then
+                applicable = false
+            end
+        end
+
+        -- Check that dependencies are satisfied
+        if applicable then
             for dependencyName, dependency in pairs(tool.dependencies) do
                 if not commonBehaviorIds[dependency.behaviorId] then
                     applicable = false
                     break
                 end
             end
-            if applicable then
-                self.applicableTools[behaviorId] = tool
-            end
+        end
+
+        if applicable then
+            self.applicableTools[behaviorId] = tool
         end
     end
 
-    -- Deactivate active tool if it doesn't apply any more
-    if not self.applicableTools[self.activeToolBehaviorId] then
-        self:setActiveTool(nil)
+    if self.activeToolBehaviorId then
+        -- Deactivate active tool if it doesn't apply any more
+        if not self.applicableTools[self.activeToolBehaviorId] then
+            self:setActiveTool(nil)
+        end
+    else -- No tool currently active, but see if the last active tool can be re-activated
+        if self.applicableTools[self.lastActiveToolBehaviorId] then
+            self:setActiveTool(self.lastActiveToolBehaviorId)
+        end
     end
 
+    -- Add or remove components for active tool based on selections
     if self.activeToolBehaviorId then
         -- Remove components whose actors aren't selected any more
         local activeTool = self.tools[self.activeToolBehaviorId]
@@ -156,9 +180,13 @@ function Client:setActiveTool(toolBehaviorId)
         end
     end
 
+    self.activeToolBehaviorId = toolBehaviorId
+    if self.activeToolBehaviorId then
+        self.lastActiveToolBehaviorId = self.activeToolBehaviorId
+    end
+
     -- Activate new tool and add components to it if it applies
-    if toolBehaviorId and self.applicableTools[toolBehaviorId] then
-        self.activeToolBehaviorId = toolBehaviorId
+    if self.activeToolBehaviorId and self.applicableTools[self.activeToolBehaviorId] then
         local activeTool = self.tools[self.activeToolBehaviorId]
         for actorId in pairs(self.selectedActorIds) do
             if not activeTool:has(actorId) then
@@ -201,7 +229,7 @@ function Client:update(dt)
 
     self:clearRemovedSelections()
 
-    -- Tap-to-select (do this before syncing tools with selections)
+    -- Tap-to-select (do this before refreshing tools since it affects selections)
     if self.numTouches == 1 and self.maxNumTouches == 1 then
         local touchId, touch = next(self.touches)
         if touch.released and touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 then
@@ -209,8 +237,7 @@ function Client:update(dt)
         end
     end
 
-    -- Sync tools with selections
-    self:syncToolsWithSelections()
+    self:refreshTools()
 
     -- Common update
     Common.update(self, dt)
@@ -316,14 +343,14 @@ function Client:touchpressed(touchId, x, y, dx, dy)
 
                 local actorId = self:sendAddActor(actorBp)
 
-                -- Select the actor, switching to the `Grab` tool if it has a `Body`
-                if actorBp.Body then
+                -- Select the actor. If we're not performing and it has a `Body`, switch to the `Grab` tool.
+                if not self.performing and actorBp.Body then
                     self:setActiveTool(nil)
                 end
                 self:deselectAllActors()
                 self:selectActor(actorId)
-                self:syncToolsWithSelections()
-                if actorBp.Body then
+                self:refreshTools()
+                if not self.performing and actorBp.Body then
                     self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
                 end
             end

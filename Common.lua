@@ -262,7 +262,7 @@ function BodyBehavior.handlers:postUpdate(dt)
 end
 
 function BodyBehavior.handlers:setPerforming(performing)
-    -- Wake up all dynamic bodies when performance starts, because they may have moved
+    -- Wake up all dynamic bodies when performance starts, because things may have moved
     if performing then 
         for actorId, component in pairs(self.components) do
             local bodyId, body = self:getBody(component)
@@ -436,26 +436,10 @@ local GrabBehavior = {
     tool = {
         icon = 'move',
         iconFamily = 'Feather',
+
+        needsPerformingOff = true,
     },
 }
-
-function GrabBehavior.handlers:addComponent(component, bp, opts)
-    if self.game.server or opts.isOrigin then
-        local physics = self.dependencies.Body:getPhysics()
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        physics:setOwner(bodyId, component.clientId, true)
-    end
-end
-
-function GrabBehavior.handlers:removeComponent(component)
-    if self.game.server then
-        local physics = self.dependencies.Body:getPhysics()
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        if bodyId then
-            physics:setOwner(bodyId, nil, false)
-        end
-    end
-end
 
 function GrabBehavior.handlers:update(dt)
     local physics = self.dependencies.Body:getPhysics()
@@ -523,42 +507,15 @@ function GrabBehavior.handlers:update(dt)
                     newAngle = angle
                 end
 
-                if self.game.performing and not touchData.allTouchesReleased then
-                    -- Wake up this and all colliding bodies
-                    if body:getType() ~= 'static' and not body:isAwake() then
-                        physics:setAwake(physics:idForObject(body), true)
-                    end
-                    for _, contact in ipairs(body:getContacts()) do
-                        local fixture1, fixture2 = contact:getFixtures()
-                        local otherBody = fixture1:getBody()
-                        if otherBody == body then
-                            otherBody = fixture2:getBody()
-                        end
-                        if otherBody:getType() ~= 'static' and not otherBody:isAwake() then
-                            physics:setAwake(physics:idForObject(otherBody), true)
-                        end
-                    end
-
-                    -- When performing, we just need to manipulate the body and it'll be synced
-                    -- because we own it
-                    body:setPosition(newX, newY)
-                    body:setAngle(newAngle)
-                    if body:getType() == 'dynamic' then
-                        body:setLinearVelocity(0, 0)
-                        body:setAngularVelocity(0)
-                    end
-                else
-                    -- When not performing we need to actually send the sync messages. We also
-                    -- send a reliable message on touch release to make sure the final state is
-                    -- reflected. We don't need to wake anything up because the `Body` behavior
-                    -- does that when performance is enabled again.
-                    local sendOpts = {
-                        reliable = touchData.allTouchesReleased,
-                        channel = touchData.allTouchesReleased and physics.reliableChannel or nil,
-                    }
-                    physics:setPosition(sendOpts, bodyId, newX, newY)
-                    physics:setAngle(sendOpts, bodyId, newAngle)
-                end
+                -- When not performing we need to actually send the sync messages. We also
+                -- send a reliable message on touch release to make sure the final state is
+                -- reflected.
+                local sendOpts = {
+                    reliable = touchData.allTouchesReleased,
+                    channel = touchData.allTouchesReleased and physics.reliableChannel or nil,
+                }
+                physics:setPosition(sendOpts, bodyId, newX, newY)
+                physics:setAngle(sendOpts, bodyId, newAngle)
             end
         end
     end
