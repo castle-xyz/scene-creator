@@ -368,6 +368,7 @@ end
 function ImageBehavior.handlers:draw(order)
     for actorId, component in pairs(self.components) do
         table.insert(order, {
+            id = actorId,
             depth = component.properties.depth,
             draw = function()
                 component._imageHolder = resource_loader.loadImage(component.properties.url, component.properties.filter)

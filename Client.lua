@@ -300,7 +300,13 @@ function Client:draw()
         local order = {}
         self:callHandlers('draw', order)
         table.sort(order, function(o1, o2)
-            return o1.depth < o2.depth
+            if o1.depth < o2.depth then
+                return true
+            end
+            if o1.depth > o2.depth then
+                return false
+            end
+            return o1.id < o2.id
         end)
         for _, o in ipairs(order) do
             o.draw()
