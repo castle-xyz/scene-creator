@@ -229,9 +229,26 @@ function Client:update(dt)
 
     self:clearRemovedSelections()
 
-    -- Tap-to-select (do this before refreshing tools since it affects selections)
+    -- Touch-to-select (do this before refreshing tools since it affects selections)
     if self.numTouches == 1 and self.maxNumTouches == 1 then
         local touchId, touch = next(self.touches)
+
+        -- Press? Check at point and select if nothing already selected there.
+        if touch.pressed then
+            local someSelectedHit = false
+            local hits = self.behaviorsByName.Body:getActorsAtPoint(touch.x, touch.y)
+            for actorId in pairs(hits) do
+                if self.selectedActorIds[actorId] then
+                    someSelectedHit = true
+                    break
+                end
+            end
+            if not someSelectedHit then
+                self:selectActorAtPoint(touch.x, touch.y, hits)
+            end
+        end
+
+        -- Press and release without moving? Select!
         if touch.released and touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 then
             self:selectActorAtPoint(touch.x, touch.y)
         end

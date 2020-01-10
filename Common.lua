@@ -20,6 +20,11 @@ SECONDARY_RELIABLE_CHANNEL = 99
 local Behavior = {}
 
 function Behavior:callHandler(handlerName, ...)
+    if self.tool then -- Tool? Skip if server or if not currently active on client.
+        if self.game.server or (self.game.client and self.game.activeToolBehaviorId ~= self.behaviorId) then
+            return
+        end
+    end
     local handler = self.handlers[handlerName]
     if handler then
         return handler(self, ...)
@@ -454,23 +459,6 @@ function GrabBehavior.handlers:update(dt)
         if touchData.numTouches == 1 then -- Pure-move
             local touchId, touch = next(touchData.touches)
             moveX, moveY = touch.dx, touch.dy
-            if touch.pressed then
-                -- Check if the press was outside all selected actors. If so, select the actor there
-                -- and abort this frame -- we will be grabbing that actor from the next frame onward.
-                local someHit = false
-                local hits = self.dependencies.Body:getActorsAtPoint(touch.initialX, touch.initialY)
-                for actorId in pairs(hits) do
-                    local component = self.components[actorId]
-                    if component and self.game.clientId == component.clientId then
-                        someHit = true
-                        break
-                    end
-                end
-                if not someHit then
-                    self.game:selectActorAtPoint(touch.initialX, touch.initialY, hits)
-                    return
-                end
-            end
         elseif touchData.numTouches == 2 then -- Move and rotate
             local touchId1, touch1 = next(touchData.touches)
             local touchId2, touch2 = next(touchData.touches, touchId1)
