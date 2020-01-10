@@ -1,4 +1,5 @@
 local Physics = require 'multi.physics'
+local ui = castle.ui
 
 
 CHECKERBOARD_IMAGE_URL = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
@@ -278,6 +279,9 @@ function BodyBehavior.handlers:setPerforming(performing)
     end
 end
 
+function BodyBehavior.handlers:uiComponent(component, opts)
+end
+
 function BodyBehavior:getPhysics()
     return self._physics
 end
@@ -371,7 +375,9 @@ function ImageBehavior.handlers:draw(order)
             id = actorId,
             depth = component.properties.depth,
             draw = function()
-                component._imageHolder = resource_loader.loadImage(component.properties.url, component.properties.filter)
+                component._imageHolder = resource_loader.loadImage(
+                    component.properties.localUrl or component.properties.url,
+                    component.properties.filter)
                 local image = component._imageHolder.image
                 local imageWidth, imageHeight = image:getDimensions()
 
@@ -386,6 +392,53 @@ function ImageBehavior.handlers:draw(order)
             end,
         })
     end
+end
+
+function ImageBehavior.handlers:uiComponent(component, opts)
+    ui.filePicker(component.properties.localUrl and 'image (uploading...)' or 'image',
+        component.properties.localUrl or component.properties.url, {
+        id = 'image',
+        type = 'image',
+        onChange = function(newUrl)
+            if not newUrl then
+                self:sendSetProperties(component.actorId, 'url', CHECKERBOARD_IMAGE_URL)
+            elseif newUrl:match('^file://') then
+                component.properties.localUrl = newUrl
+            else
+                component.properties.localUrl = nil
+                self:sendSetProperties(component.actorId, 'url', newUrl)
+            end
+        end,
+    })
+
+    util.uiRow('size', function()
+        ui.numberInput('width', component.properties.width, {
+            onChange = function(newWidth)
+                if newWidth >= 0 then
+                    self:sendSetProperties(component.actorId, 'width', newWidth)
+                end
+            end,
+        })
+    end, function()
+        ui.numberInput('height', component.properties.height, {
+            onChange = function(newHeight)
+                if newHeight >= 0 then
+                    self:sendSetProperties(component.actorId, 'height', newHeight)
+                end
+            end,
+        })
+    end)
+
+    ui.dropdown('scaling style',
+        component.properties.filter == 'nearest' and 'pixelated' or 'smooth', { 'pixelated', 'smooth' }, {
+        onChange = function(newScalingStyle)
+            if newScalingStyle == 'pixelated' then
+                self:sendSetProperties(component.actorId, 'filter', 'nearest')
+            elseif newScalingStyle == 'smooth' then
+                self:sendSetProperties(component.actorId, 'filter', 'linear')
+            end
+        end,
+    })
 end
 
 

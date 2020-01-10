@@ -26,4 +26,20 @@ function util.deepCopyTable(t)
 end
 
 
+local ui = castle.ui
+
+function util.uiRow(id, ...)
+    local nArgs = select('#', ...)
+    local args = { ... }
+    ui.box(id, { flexDirection = 'row', alignItems = 'center' }, function()
+        for i = 1, nArgs do
+            ui.box(tostring(i), { flex = 1 }, args[i])
+            if i < nArgs then
+                ui.box('space', { width = 16 }, function() end)
+            end
+        end
+    end)
+end
+
+
 return util

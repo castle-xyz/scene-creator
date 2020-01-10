@@ -201,18 +201,18 @@ function Client:selectActorAtPoint(x, y, hits)
     local hits = hits or self.behaviorsByName.Body:getActorsAtPoint(x, y)
     local pick
     if next(hits) then -- Pick the next unselected hit in some sorted order
-        local ordered = {}
+        local order = {}
         for actorId in pairs(hits) do
-            table.insert(ordered, actorId)
+            table.insert(order, actorId)
         end
-        table.sort(ordered)
-        for i = #ordered, 1, -1 do
-            local nextI = i == 1 and #ordered or i - 1
-            if self.selectedActorIds[ordered[i]] then
-                pick = ordered[nextI]
+        table.sort(order)
+        for i = #order, 1, -1 do
+            local nextI = i == 1 and #order or i - 1
+            if self.selectedActorIds[order[i]] then
+                pick = order[nextI]
             end
         end
-        pick = pick or ordered[#ordered]
+        pick = pick or order[#order]
     end
     self:deselectAllActors()
     if pick then
@@ -491,7 +491,7 @@ function Client:uiupdate()
             ui.tab('library', function()
                 ui.scrollBox('scrollBox1', {
                     padding = 2,
-                    margin = 4,
+                    margin = 2,
                     flex = 1,
                 }, function()
                     local order = {}
@@ -561,6 +561,34 @@ function Client:uiupdate()
             end)
 
             ui.tab('properties', function()
+                ui.scrollBox('scrollBox1', {
+                    padding = 2,
+                    margin = 2,
+                    flex = 1,
+                }, function()
+                    local actorId = next(self.selectedActorIds)
+                    if actorId then
+                        local actor = self.actors[actorId]
+                        local order = {}
+                        for behaviorId, component in pairs(actor.components) do
+                            local behavior = self.behaviors[behaviorId]
+                            if not behavior.tool and behavior.handlers.uiComponent then
+                                table.insert(order, component)
+                            end
+                        end
+                        table.sort(order, function (component1, component2)
+                            return component1.behaviorId < component2.behaviorId
+                        end)
+                        for _, component in ipairs(order) do
+                            local behavior = self.behaviors[component.behaviorId]
+                            ui.section(behavior.name:lower(), {
+                                id = actorId .. '-' .. component.behaviorId
+                            }, function()
+                                behavior:callHandler('uiComponent', component, {})
+                            end)
+                        end
+                    end
+                end)
             end)
         end)
     end)
