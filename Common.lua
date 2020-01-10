@@ -509,6 +509,10 @@ function GrabBehavior.handlers:update(dt)
                     channel = touchData.allTouchesReleased and physics.reliableChannel or nil,
                 }
                 physics:setPosition(sendOpts, bodyId, newX, newY)
+                if body:getType() == 'dynamic' then
+                    physics:setLinearVelocity(sendOpts, bodyId, 0, 0)
+                    physics:setAngularVelocity(sendOpts, bodyId, 0)
+                end
                 physics:setAngle(sendOpts, bodyId, newAngle)
             end
         end
