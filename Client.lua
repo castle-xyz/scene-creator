@@ -355,7 +355,7 @@ function Client:touchpressed(touchId, x, y, dx, dy)
         return
     end
 
-    if self.addingEntryId then -- Adding? Just add and skip the touch.
+    if self.addingEntryId then -- Adding?
         local entry = self.library[self.addingEntryId]
         self.addingEntryId = nil
         if entry then
