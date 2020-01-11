@@ -349,6 +349,13 @@ function BodyBehavior.handlers:uiComponent(component, opts)
             end
 
             if bodyType == 'dynamic' then
+                ui.numberInput('mass', body:getMass(), {
+                    min = 0,
+                    onChange = function(newMass)
+                        self._physics:setMass(bodyId, newMass)
+                    end,
+                })
+
                 ui.numberInput('gravity scale', body:getGravityScale(), {
                     onChange = function(newGravityScale)
                         self._physics:setGravityScale(bodyId, newGravityScale)
