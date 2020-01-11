@@ -439,6 +439,14 @@ end
 function ImageBehavior.handlers:removeComponent(component, opts)
 end
 
+function ImageBehavior.handlers:blueprintComponent(component, bp)
+    bp.url = component.properties.url
+    bp.width = component.properties.width
+    bp.height = component.properties.height
+    bp.depth = component.properties.depth
+    bp.filter = component.properties.filter
+end
+
 function ImageBehavior.handlers:draw(order)
     for actorId, component in pairs(self.components) do
         table.insert(order, {
