@@ -318,6 +318,7 @@ function Client:draw()
 
     do -- Selections
         love.graphics.setColor(0, 1, 0)
+        love.graphics.setLineWidth(1.5 * love.graphics.getDPIScale())
         local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
         for actorId in pairs(self.selectedActorIds) do
             if self.behaviorsByName.Body:has(actorId) then
