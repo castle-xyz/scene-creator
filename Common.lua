@@ -530,8 +530,8 @@ function GrabBehavior.handlers:update(dt)
         end
 
         if not (moveX == 0 and moveY == 0 and (rotation == nil or rotation == 0)) then
+            -- If an actual motion is happening and performance is on, turn it off
             if self.game.performing then
-                print(moveX, moveY, rotation)
                 self.game:send('setPerforming', false)
             end
         end
@@ -540,8 +540,19 @@ function GrabBehavior.handlers:update(dt)
             if self.game.clientId == component.clientId then
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
 
-                local x, y = body:getPosition()
-                local angle = body:getAngle()
+                local x, y
+                local angle
+
+                -- We use these `.save` values to override stale incoming updates to the body
+                -- from other hosts that had not yet received the `setPerforming` message
+                if component.save then
+                    x, y = component.save.x, component.save.y
+                    angle = component.save.angle
+                else
+                    x, y = body:getPosition()
+                    angle = body:getAngle()
+                end
+
                 local newX, newY, newAngle
                 if rotation then
                     local lX, lY = x - centerX, y - centerY
@@ -567,6 +578,15 @@ function GrabBehavior.handlers:update(dt)
                     physics:setAngularVelocity(sendOpts, bodyId, 0)
                 end
                 physics:setAngle(sendOpts, bodyId, newAngle)
+
+                -- Write back to `.save`, or clear it out if the gesture ended
+                if touchData.allTouchesReleased then
+                    component.save = nil
+                else
+                    component.save = {}
+                    component.save.x, component.save.y = newX, newY
+                    component.save.angle = newAngle
+                end
             end
         end
     end
