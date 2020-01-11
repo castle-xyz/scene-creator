@@ -280,6 +280,76 @@ function BodyBehavior.handlers:setPerforming(performing)
 end
 
 function BodyBehavior.handlers:uiComponent(component, opts)
+    local bodyId, body = self:getBody(component)
+
+    ui.tabs('body properties', function()
+        ui.tab('basic', function()
+            util.uiRow('position', function()
+                ui.numberInput('x', body:getX(), {
+                    onChange = function(newX)
+                        self._physics:setX(bodyId, newX)
+                    end,
+                })
+            end, function()
+                ui.numberInput('y', body:getY(), {
+                    onChange = function(newY)
+                        self._physics:setY(bodyId, newY)
+                    end,
+                })
+            end)
+            ui.numberInput('angle (degrees)', body:getAngle() * 180 / math.pi, {
+                onChange = function(newAngle)
+                    self._physics:setAngle(bodyId, newAngle * math.pi / 180)
+                end,
+            })
+        end)
+
+        ui.tab('shape', function()
+        end)
+
+        ui.tab('motion', function()
+            local bodyType = body:getType()
+
+            ui.dropdown('type', bodyType, { 'static', 'dynamic', 'kinematic' }, {
+                onChange = function(newType)
+                    if newType and newType ~= body:getType() then
+                        bodyType = newType
+                        self._physics:setType(bodyId, newType)
+                    end
+                end,
+            })
+
+            if bodyType == 'dynamic' or bodyType == 'kinematic' then
+                local vx, vy = body:getLinearVelocity()
+                util.uiRow('linear velocity', function()
+                    ui.numberInput('velocity x', vx, {
+                        onChange = function(newVX)
+                            self._physics:setLinearVelocity(bodyId, newVX, vy)
+                        end,
+                    })
+                end, function()
+                    ui.numberInput('velocity y', vy, {
+                        onChange = function(newVY)
+                            self._physics:setLinearVelocity(bodyId, vx, newVY)
+                        end,
+                    })
+                end)
+                ui.numberInput('rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
+                    onChange = function(newAV)
+                        self._physics:setAngularVelocity(bodyId, newAV * math.pi / 180)
+                    end,
+                })
+            end
+
+            if bodyType == 'dynamic' then
+                ui.numberInput('gravity scale', body:getGravityScale(), {
+                    onChange = function(newGravityScale)
+                        self._physics:setGravityScale(bodyId, newGravityScale)
+                    end,
+                })
+            end
+        end)
+    end)
 end
 
 function BodyBehavior:getPhysics()
