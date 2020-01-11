@@ -268,7 +268,7 @@ function BodyBehavior.handlers:postUpdate(dt)
 end
 
 function BodyBehavior.handlers:setPerforming(performing)
-    -- Wake up all dynamic bodies when performance starts, because things may have moved
+    -- Wake up all non-static bodies when performance starts, because things may have moved
     if performing then 
         for actorId, component in pairs(self.components) do
             local bodyId, body = self:getBody(component)
