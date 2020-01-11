@@ -498,18 +498,16 @@ function ImageBehavior.handlers:uiComponent(component, opts)
 
     util.uiRow('size', function()
         ui.numberInput('width', component.properties.width, {
+            min = 0,
             onChange = function(newWidth)
-                if newWidth >= 0 then
-                    self:sendSetProperties(component.actorId, 'width', newWidth)
-                end
+                self:sendSetProperties(component.actorId, 'width', newWidth)
             end,
         })
     end, function()
         ui.numberInput('height', component.properties.height, {
+            min = 0,
             onChange = function(newHeight)
-                if newHeight >= 0 then
-                    self:sendSetProperties(component.actorId, 'height', newHeight)
-                end
+                self:sendSetProperties(component.actorId, 'height', newHeight)
             end,
         })
     end)
