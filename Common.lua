@@ -268,14 +268,21 @@ function BodyBehavior.handlers:postUpdate(dt)
 end
 
 function BodyBehavior.handlers:setPerforming(performing)
-    -- Wake up all non-static bodies when performance starts, because things may have moved
     if performing then 
+        -- Wake up all non-static bodies when performance starts, because things may have moved
         for actorId, component in pairs(self.components) do
             local bodyId, body = self:getBody(component)
             if body:getType() ~= 'static' then
                 body:setAwake(true)
             end
         end
+    else
+        -- Send a final reliable sync when performance stops, because we'll stop sending
+        -- continuous syncs
+        self._physics:sendSyncs({
+            reliable = true,
+            channel = MAIN_RELIABLE_CHANNEL,
+        }, self.globals.worldId)
     end
 end
 
@@ -506,6 +513,12 @@ function ImageBehavior.handlers:uiComponent(component, opts)
             end,
         })
     end)
+
+    ui.numberInput('depth', component.properties.depth, {
+        onChange = function(newDepth)
+            self:sendSetProperties(component.actorId, 'depth', newDepth)
+        end,
+    })
 
     ui.dropdown('scaling style',
         component.properties.filter == 'nearest' and 'pixelated' or 'smooth', { 'pixelated', 'smooth' }, {
