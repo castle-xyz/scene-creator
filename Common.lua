@@ -512,46 +512,6 @@ function ImageBehavior.handlers:uiComponent(component, opts)
 end
 
 
--- Mover behavior
-
-local MoverBehavior = {
-    name = 'Mover',
-    propertyNames = {
-    },
-    dependencies = {
-        'Body',
-    },
-    handlers = {},
-}
-
-function MoverBehavior.handlers:addComponent(component, bp, opts)
-    if opts.isOrigin then
-        local physics = self.dependencies.Body:getPhysics()
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        assert(body:getType() == 'kinematic', "`Mover` needs a 'kinematic' `Body`")
-        physics:setLinearVelocity(bodyId, 200, 0)
-    end
-end
-
-function MoverBehavior.handlers:removeComponent(component, opts)
-end
-
-function MoverBehavior.handlers:perform(dt)
-    for actorId, component in pairs(self.components) do
-        local bodyId, body = self.dependencies.Body:getBody(actorId)
-        local x = body:getX()
-        if x <= 0 then
-            body:setX(-x)
-            body:setLinearVelocity(200, 0)
-        end
-        if x >= 800 then
-            body:setX(800 - (x - 800))
-            body:setLinearVelocity(-200, 0)
-        end
-    end
-end
-
-
 -- Grab behavior
 
 local GrabBehavior = {
@@ -668,7 +628,6 @@ end
 CORE_BEHAVIORS = {
     BodyBehavior,
     ImageBehavior,
-    MoverBehavior,
     GrabBehavior,
 }
 
