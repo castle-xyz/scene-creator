@@ -30,6 +30,8 @@ function Client:start()
     self.numTouches = 0 -- Number of currently active touches
     self.maxNumTouches = 0 -- Max number of touches in the current gesture
     self.allTouchesReleased = false -- Whether we are at the end of a gesture
+
+    self.componentSectionOpens = {} -- `behaviorId` -> whether properties section for that behavior is open
 end
 
 
@@ -581,8 +583,9 @@ function Client:uiupdate()
                         end)
                         for _, component in ipairs(order) do
                             local behavior = self.behaviors[component.behaviorId]
-                            ui.section(behavior.name:lower(), {
-                                id = actorId .. '-' .. component.behaviorId
+                            self.componentSectionOpens[component.behaviorId] = ui.section(behavior.name:lower(), {
+                                id = actorId .. '-' .. component.behaviorId,
+                                open = self.componentSectionOpens[component.behaviorId] ~= false,
                             }, function()
                                 behavior:callHandler('uiComponent', component, {})
                             end)
