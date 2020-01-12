@@ -157,7 +157,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
                 local shapeType = fixtureBp.shapeType
 
                 if shapeType == 'circle' then
-                    shapeId = self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0)
+                    shapeId = self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 64)
                 elseif shapeType == 'polygon' then
                     shapeId = self._physics:newPolygonShape(unpack(assert(fixtureBp.points)))
                 elseif shapeType == 'edge' then
@@ -184,7 +184,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
                 self._physics:destroyObject(shapeId)
             end
         else -- Default shape
-            local shapeId = self._physics:newRectangleShape(32, 32)
+            local shapeId = self._physics:newRectangleShape(128, 128)
             local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
             self._physics:destroyObject(shapeId)
         end
@@ -312,6 +312,84 @@ function BodyBehavior.handlers:uiComponent(component, opts)
         end)
 
         ui.tab('shape', function()
+            local fixtures = body:getFixtures()
+            local fixture = fixtures[1]
+            if fixture then
+                local fixtureId = self._physics:idForObject(fixture)
+
+                local function recreateFixture(newShapeId)
+                    local oldFixtureId = fixtureId
+                    fixtureId = self._physics:newFixture(bodyId, newShapeId, fixture:getDensity())
+                    self._physics:setFriction(fixtureId, fixture:getFriction())
+                    self._physics:setRestitution(fixtureId, fixture:getRestitution())
+                    self._physics:setSensor(fixtureId, fixture:isSensor())
+                    self._physics:destroyObject(newShapeId)
+                    self._physics:destroyObject(oldFixtureId)
+                end
+
+                local shape = fixture:getShape()
+                local shapeType = shape:getType()
+
+                local displayShapeType = shapeType
+                local rectangleWidth, rectangleHeight
+                if shapeType == 'polygon' then
+                    local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()
+                    if p4y ~= nil and p5x == nil then
+                        if p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y then
+                            displayShapeType = 'rectangle'
+                            rectangleWidth = 2 * math.abs(p1x)
+                            rectangleHeight = 2 * math.abs(p1y)
+                        end
+                        if p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x then
+                            displayShapeType = 'rectangle'
+                            rectangleWidth = 2 * math.abs(p1x)
+                            rectangleHeight = 2 * math.abs(p1y)
+                        end
+                    end
+                end
+
+                ui.dropdown('type', displayShapeType, { 'circle', 'rectangle', 'polygon', 'chain' }, {
+                    onChange = function(newDisplayShapeType)
+                        if newDisplayShapeType == displayShapeType then
+                            return
+                        end
+
+                        if newDisplayShapeType == 'circle' then
+                            recreateFixture(self._physics:newCircleShape(0, 0, 64))
+                        elseif newDisplayShapeType == 'rectangle' then
+                            recreateFixture(self._physics:newRectangleShape(128, 128))
+                        end
+                    end
+                })
+
+                if displayShapeType == 'circle' then
+                    local x, y = shape:getPoint()
+                    local radius = shape:getRadius()
+
+                    ui.numberInput('radius', radius, {
+                        min = 0,
+                        onChange = function(newRadius)
+                            recreateFixture(self._physics:newCircleShape(x, y, newRadius))
+                        end,
+                    })
+                elseif displayShapeType == 'rectangle' then
+                    util.uiRow('rectangle-size', function()
+                        ui.numberInput('width', rectangleWidth, {
+                            min = 0,
+                            onChange = function(newRectangleWidth)
+                                recreateFixture(self._physics:newRectangleShape(newRectangleWidth, rectangleHeight))
+                            end,
+                        })
+                    end, function()
+                        ui.numberInput('height', rectangleHeight, {
+                            min = 0,
+                            onChange = function(newRectangleHeight)
+                                recreateFixture(self._physics:newRectangleShape(rectangleWidth, newRectangleHeight))
+                            end,
+                        })
+                    end)
+                end
+            end
         end)
 
         ui.tab('motion', function()
