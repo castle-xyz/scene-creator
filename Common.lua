@@ -317,14 +317,29 @@ function BodyBehavior.handlers:uiComponent(component, opts)
         ui.tab('motion', function()
             local bodyType = body:getType()
 
-            ui.dropdown('type', bodyType, { 'static', 'dynamic', 'kinematic' }, {
-                onChange = function(newType)
-                    if newType and newType ~= body:getType() then
-                        bodyType = newType
-                        self._physics:setType(bodyId, newType)
-                    end
-                end,
-            })
+            local function typeDropdown()
+                ui.dropdown('type', bodyType, { 'static', 'dynamic', 'kinematic' }, {
+                    onChange = function(newType)
+                        if newType and newType ~= body:getType() then
+                            bodyType = newType
+                            self._physics:setType(bodyId, newType)
+                        end
+                    end,
+                })
+            end
+
+            if bodyType == 'dynamic' then
+                util.uiRow('type-and-mass', typeDropdown, function()
+                    ui.numberInput('mass', body:getMass(), {
+                        min = 0,
+                        onChange = function(newMass)
+                            self._physics:setMass(bodyId, newMass)
+                        end,
+                    })
+                end)
+            else
+                typeDropdown()
+            end
 
             if bodyType == 'dynamic' or bodyType == 'kinematic' then
                 local vx, vy = body:getLinearVelocity()
@@ -341,26 +356,58 @@ function BodyBehavior.handlers:uiComponent(component, opts)
                         end,
                     })
                 end)
-                ui.numberInput('rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
-                    onChange = function(newAV)
-                        self._physics:setAngularVelocity(bodyId, newAV * math.pi / 180)
-                    end,
-                })
+
+                local function rotationSpeedInput()
+                    ui.numberInput('rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
+                        onChange = function(newAV)
+                            self._physics:setAngularVelocity(bodyId, newAV * math.pi / 180)
+                        end,
+                    })
+                end
+
+                if bodyType == 'dynamic' then
+                    local isFixedRotation = body:isFixedRotation()
+
+                    local function fixedRotationToggle()
+                        ui.toggle('fixed rotation off', 'fixed rotation on', isFixedRotation, {
+                            onToggle = function(newFixedRotation)
+                                self._physics:setFixedRotation(bodyId, newFixedRotation)
+                            end,
+                        })
+                    end
+
+                    if isFixedRotation then
+                        fixedRotationToggle()
+                    else
+                        util.uiRow('rotation-speed-and-fixed-rotation', rotationSpeedInput, fixedRotationToggle)
+                    end
+                else
+                    rotationSpeedInput()
+                end
             end
 
             if bodyType == 'dynamic' then
-                ui.numberInput('mass', body:getMass(), {
-                    min = 0,
-                    onChange = function(newMass)
-                        self._physics:setMass(bodyId, newMass)
-                    end,
-                })
-
                 ui.numberInput('gravity scale', body:getGravityScale(), {
                     onChange = function(newGravityScale)
                         self._physics:setGravityScale(bodyId, newGravityScale)
                     end,
                 })
+
+                util.uiRow('damping', function()
+                    ui.numberInput('linear damping', body:getLinearDamping(), {
+                        step = 0.05,
+                        onChange = function(newLinearDamping)
+                            self._physics:setLinearDamping(bodyId, newLinearDamping)
+                        end,
+                    })
+                end, function()
+                    ui.numberInput('angular damping', body:getAngularDamping(), {
+                        step = 0.05,
+                        onChange = function(newAngularDamping)
+                            self._physics:setAngularDamping(bodyId, newAngularDamping)
+                        end,
+                    })
+                end)
             end
         end)
     end)

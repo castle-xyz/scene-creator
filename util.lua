@@ -31,7 +31,7 @@ local ui = castle.ui
 function util.uiRow(id, ...)
     local nArgs = select('#', ...)
     local args = { ... }
-    ui.box(id, { flexDirection = 'row', alignItems = 'center' }, function()
+    ui.box(id, { flexDirection = 'row', alignItems = 'flex-start' }, function()
         for i = 1, nArgs do
             ui.box(tostring(i), { flex = 1 }, args[i])
             if i < nArgs then
