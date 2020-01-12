@@ -14,17 +14,22 @@ local CORE_LIBRARY = {
         actorBlueprint = {
             Image = {
                 url = 'https://art.pixilart.com/5d29768f5c3f448.png',
-                width = 300,
-                height = 300,
+                width = 110,
+                height = 128,
+                cropEnabled = true,
+                cropX = 256,
+                cropY = 150,
+                cropWidth = 600,
+                cropHeight = 700,
             },
             Body = {
                 fixture = {
                     shapeType = 'polygon',
                     points = {
-                        -80, -100,
-                        -80, 60,
-                        60, 60,
-                        60, -100,
+                        -55, -64,
+                        -55, 64,
+                        55, 64,
+                        55, -64,
                     },
                 },
                 bodyType = 'dynamic',

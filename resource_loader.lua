@@ -27,6 +27,7 @@ function resource_loader.loadImage(url, filter)
             network.async(function()
                 holder.image = love.graphics.newImage(url)
                 holder.image:setFilter(filter, filter)
+                holder.loaded = true
             end)
         end
     end
