@@ -472,6 +472,31 @@ function Client:uiupdate()
             end
         end
 
+        -- Duplicate
+        if next(self.selectedActorIds) then
+            ui.button('duplicate actor', {
+                icon = 'copy',
+                iconFamily = 'FontAwesome5',
+                hideLabel = true,
+                onClick = function()
+                    local duplicateActorIds = {}
+
+                    for actorId in pairs(self.selectedActorIds) do
+                        local bp = self:blueprintActor(actorId)
+                        if bp.Body then
+                            bp.Body.x, bp.Body.y = bp.Body.x + 64, bp.Body.y + 64
+                        end
+                        duplicateActorIds[self:sendAddActor(bp)] = true
+                    end
+
+                    self:deselectAllActors()
+                    for actorId in pairs(duplicateActorIds) do
+                        self:selectActor(actorId)
+                    end
+                end,
+            })
+        end
+
         -- Delete
         if next(self.selectedActorIds) then
             ui.button('remove actor', {
