@@ -18,7 +18,9 @@ function Client:start()
 
     -- Tools
 
-    self.addingEntryId = nil
+    self.addFromLibraryEntryId = nil
+    self.addToLibraryTitle = ''
+    self.addToLibraryDescription = ''
 
     self.selectedActorIds = {} -- `actorId` -> `true` for all selected actors
 
@@ -356,9 +358,9 @@ function Client:touchpressed(touchId, x, y, dx, dy)
         return
     end
 
-    if self.addingEntryId then -- Adding?
-        local entry = self.library[self.addingEntryId]
-        self.addingEntryId = nil
+    if self.addFromLibraryEntryId then -- Adding?
+        local entry = self.library[self.addFromLibraryEntryId]
+        self.addFromLibraryEntryId = nil
         if entry then
             if entry.entryType == 'actorBlueprint' then
                 local actorBp = util.deepCopyTable(entry.actorBlueprint)
@@ -497,6 +499,35 @@ function Client:uiupdate()
                     margin = 2,
                     flex = 1,
                 }, function()
+                    local actorId = next(self.selectedActorIds)
+                    if actorId then
+                        ui.button('add to library', {
+                            popoverAllowed = true,
+                            popover = function()
+                                self.addToLibraryTitle = ui.textInput('title', self.addToLibraryTitle)
+
+                                self.addToLibraryDescription = ui.textInput('description', self.addToLibraryDescription)
+
+                                if ui.button('save') then
+                                    local entryId = util.uuid()
+
+                                    local actorBlueprint = self:blueprintActor(actorId)
+
+                                    print(serpent.block(actorBlueprint))
+
+                                    self:send('addLibraryEntry', entryId, {
+                                        entryType = 'actorBlueprint',
+                                        title = self.addToLibraryTitle,
+                                        description = self.addToLibraryDescription,
+                                        actorBlueprint = actorBlueprint,
+                                    })
+                                    self.addToLibraryTitle = ''
+                                    self.addToLibraryDescription = ''
+                                end
+                            end,
+                        })
+                    end
+
                     local order = {}
                     for entryId, entry in pairs(self.library) do
                         table.insert(order, entry)
@@ -548,13 +579,13 @@ function Client:uiupdate()
                             ui.box('text-buttons', { flex = 1 }, function()
                                 ui.markdown('## ' .. entry.title .. '\n' .. entry.description)
 
-                                if self.addingEntryId ~= entry.entryId then
+                                if self.addFromLibraryEntryId ~= entry.entryId then
                                     if ui.button('add') then
-                                        self.addingEntryId = entry.entryId
+                                        self.addFromLibraryEntryId = entry.entryId
                                     end
                                 else
                                     if ui.button('adding...', { selected = true }) then
-                                        self.addingEntryId = nil
+                                        self.addFromLibraryEntryId = nil
                                     end
                                 end
                             end)
@@ -572,6 +603,7 @@ function Client:uiupdate()
                     local actorId = next(self.selectedActorIds)
                     if actorId then
                         local actor = self.actors[actorId]
+
                         local order = {}
                         for behaviorId, component in pairs(actor.components) do
                             local behavior = self.behaviors[behaviorId]

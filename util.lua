@@ -1,6 +1,10 @@
 local util = {}
 
 
+local uuidLib = require 'https://raw.githubusercontent.com/Tieske/uuid/75f84281f4c45838f59fc2c6f893fa20e32389b6/src/uuid.lua'
+uuidLib.seed()
+
+
 function util.unpackPairs(t)
     local rets, nArgs = {}, 0
     for k, v in pairs(t) do
@@ -23,6 +27,11 @@ function util.deepCopyTable(t)
     else
         error('deepCopyTable: bad type')
     end
+end
+
+
+function util.uuid()
+    return uuidLib()
 end
 
 

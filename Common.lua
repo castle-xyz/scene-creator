@@ -5,6 +5,9 @@ local ui = castle.ui
 CHECKERBOARD_IMAGE_URL = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
 
 
+serpent = require 'https://raw.githubusercontent.com/pkulchenko/serpent/879580fb21933f63eb23ece7d60ba2349a8d2848/src/serpent.lua'
+
+
 resource_loader = require 'resource_loader'
 util = require 'util'
 
@@ -135,7 +138,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
             self._physics:setLinearVelocity(bodyId, unpack(bp.linearVelocity))
         end
         if bp.angularVelocity ~= nil then
-            self._physics:setAngularVelocity(bodyId, unpack(bp.angularVelocity))
+            self._physics:setAngularVelocity(bodyId, bp.angularVelocity)
         end
         if bp.linearDamping ~= nil then
             self._physics:setLinearDamping(bodyId, bp.linearDamping)
@@ -201,7 +204,7 @@ function BodyBehavior.handlers:removeComponent(component, opts)
 end
 
 function BodyBehavior.handlers:blueprintComponent(component, bp)
-    local body = self:getBody()
+    local bodyId, body = self:getBody(component)
     bp.x = body:getX()
     bp.y = body:getY()
     bp.bodyType = body:getType()
@@ -975,7 +978,7 @@ function Common:sendAddActor(bp)
 
         local behavior = self.behaviorsByName[behaviorName]
         if not behavior then
-            error("addActor: no behavior named '" .. behaviorName .. "'")
+            error("addActor: no behavior '" .. behaviorName .. "'")
         end
 
         for dependencyName in pairs(behavior.dependencies) do
@@ -1190,11 +1193,28 @@ function Common:callHandlers(handlerName, ...)
     end
 end
 
+function Common:blueprintActor(actorId)
+    local bp = {}
+
+    local actor = assert(self.actors[actorId], 'blueprintActor: no such actor')
+
+    for behaviorId, component in pairs(actor.components) do
+        local behavior = self.behaviors[component.behaviorId]
+        local behaviorBp = {}
+        behavior:callHandler('blueprintComponent', component, behaviorBp)
+        bp[behavior.name] = behaviorBp
+    end
+
+    return bp
+end
+
 
 -- Library
 
 function Common.receivers:addLibraryEntry(time, entryId, entry)
-    self.library[entryId] = entry
+    local entryCopy = util.deepCopyTable(entry)
+    entryCopy.entryId = entryId
+    self.library[entryId] = entryCopy
 end
 
 
