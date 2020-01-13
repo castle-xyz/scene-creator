@@ -577,6 +577,7 @@ local ImageBehavior = {
 }
 
 function ImageBehavior.handlers:addComponent(component, bp, opts)
+    -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.url = bp.url or CHECKERBOARD_IMAGE_URL
     component.properties.width = bp.width or 128
     component.properties.height = bp.height or 128
@@ -717,7 +718,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
     util.uiRow('crop', function()
         ui.toggle('crop off', 'crop on', component.properties.cropEnabled, {
             onToggle = function(newCropEnabled)
-                component.properties.cropEnabled = newCropEnabled
+                self:sendSetProperties(component.actorId, 'cropEnabled', newCropEnabled)
             end,
         })
     end, function()
