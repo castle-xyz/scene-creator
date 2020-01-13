@@ -805,12 +805,12 @@ function GrabBehavior.handlers:update(dt)
             cosRotation, sinRotation = math.cos(rotation), math.sin(rotation)
         end
 
-        if not (moveX == 0 and moveY == 0 and (rotation == nil or rotation == 0)) then
-            -- If an actual motion is happening and performance is on, turn it off
-            if self.game.performing then
-                self.game:send('setPerforming', false)
-            end
-        end
+        --if not (moveX == 0 and moveY == 0 and (rotation == nil or rotation == 0)) then
+        --    -- If an actual motion is happening and performance is on, turn it off
+        --    if self.game.performing then
+        --        self.game:send('setPerforming', false)
+        --    end
+        --end
 
         for actorId, component in pairs(self.components) do
             if self.game.clientId == component.clientId then
