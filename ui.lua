@@ -13,6 +13,7 @@ function Client:uiupdate()
         return
     end
 
+    -- Toolbar
     ui.pane('toolbar', {
         customLayout = true,
         flexDirection = 'row',
@@ -93,15 +94,18 @@ function Client:uiupdate()
         end
     end)
 
+    -- Panel
     ui.pane('default', { customLayout = true }, function()
         ui.tabs('tabs', {
             containerStyle = { flex = 1, margin = 0 },
             contentStyle = { flex = 1 },
         }, function()
+            -- Library tab
             ui.tab('library', function()
                 self:uiLibrary()
             end)
 
+            -- Properties tab
             ui.tab('properties', function()
                 ui.scrollBox('scrollBox1', {
                     padding = 2,
