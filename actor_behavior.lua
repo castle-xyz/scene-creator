@@ -37,7 +37,7 @@ function BaseBehavior:sendSetProperties(opts, ...)
         end
     end
 
-    self.game:send(sendOpts, actorId, self.behaviorId, propertyNamesToIds(...))
+    self.game:send(sendOpts, self.game.clientId, actorId, self.behaviorId, propertyNamesToIds(...))
 end
 
 function BaseBehavior:has(actorId)
@@ -322,7 +322,7 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
     behavior.components[actorId] = nil
 end
 
-function Common.receivers:setProperties(time, actorId, behaviorId, ...)
+function Common.receivers:setProperties(time, clientId, actorId, behaviorId, ...)
     local behavior = assert(self.behaviors[behaviorId], 'setProperties: no such behavior')
 
     local component
@@ -340,13 +340,17 @@ function Common.receivers:setProperties(time, actorId, behaviorId, ...)
         local setter = behavior.setters[name]
         if actorId then
             if setter then
-                setter(behavior, component, value)
+                setter(behavior, component, value, {
+                    isOrigin = self.clientId == clientId,
+                })
             else
                 component.properties[name] = value
             end
         else
             if setter then
-                setter(behavior, value)
+                setter(behavior, value, {
+                    isOrigin = self.clientId == clientId,
+                })
             else
                 behavior.globals[name] = value
             end
