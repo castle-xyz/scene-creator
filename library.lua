@@ -78,7 +78,7 @@ end
 function Client:startLibrary()
     Common.startLibrary(self)
 
-    self.addFromLibraryEntryId = nil -- `entryId` of entry we are adding from, if adding
+    self.addFromLibraryEntryId = nil -- `entryId` of entry we are adding from, if adding, `nil` otherwise
     self.addToLibraryTitle = ''
     self.addToLibraryDescription = ''
 end
