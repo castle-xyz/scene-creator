@@ -111,7 +111,7 @@ end
 
 -- Connect / disconnect
 
-function Common:syncClientActorBehavior(clientId, send)
+function Server:syncClientActorBehavior(clientId, send)
     for behaviorId, behavior in pairs(self.behaviors) do
         if not behavior.isCore then
             send('addBehavior', self.clientId, behaviorId, behavior.behaviorSpec)

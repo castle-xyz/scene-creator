@@ -89,7 +89,7 @@ end
 
 -- Sync new client
 
-function Common:syncClientLibrary(clientId, send)
+function Server:syncClientLibrary(clientId, send)
     for entryId, entry in pairs(self.library) do
         send('addLibraryEntry', entryId, entry)
     end
