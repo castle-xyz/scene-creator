@@ -112,6 +112,7 @@ end
 -- Connect / disconnect
 
 function Server:syncClientActorBehavior(clientId, send)
+    -- Send behaviors and their global properties
     for behaviorId, behavior in pairs(self.behaviors) do
         if not behavior.isCore then
             send('addBehavior', self.clientId, behaviorId, behavior.behaviorSpec)
@@ -124,10 +125,12 @@ function Server:syncClientActorBehavior(clientId, send)
         }, util.unpackPairs(behavior.globals))
     end
 
+    -- Notify `preSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
         behavior:callHandler('preSyncClient', clientId)
     end
 
+    -- Send actors and components
     for actorId, actor in pairs(self.actors) do
         send('addActor', self.clientId, actorId)
 
@@ -144,6 +147,7 @@ function Server:syncClientActorBehavior(clientId, send)
         end
     end
 
+    -- Notify `postSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
         behavior:callHandler('postSyncClient', clientId)
     end
@@ -366,6 +370,8 @@ function Common:sendAddActor(bp)
 
     self:send('addActor', self.clientId, actorId)
 
+    -- Add components in depth-first order through dependency graph
+
     local visited = {}
     local function visit(behaviorName, componentBp)
         if visited[behaviorName] then
@@ -398,6 +404,7 @@ function Common:blueprintActor(actorId)
 
     local actor = assert(self.actors[actorId], 'blueprintActor: no such actor')
 
+    -- Blueprint each component that isn't a tool
     for behaviorId, component in pairs(actor.components) do
         if not component.tool then
             local behavior = self.behaviors[component.behaviorId]

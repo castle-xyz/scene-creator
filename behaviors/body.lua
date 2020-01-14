@@ -17,7 +17,10 @@ local BodyBehavior = {
 registerCoreBehavior(1, BodyBehavior)
 
 
+-- Behavior management
+
 function BodyBehavior.handlers:addBehavior(opts)
+    -- Create a local `Physics` at every host
     self._physics = Physics.new({
         game = self.game,
         updateRate = 120,
@@ -25,11 +28,13 @@ function BodyBehavior.handlers:addBehavior(opts)
     })
 
     if self.game.server then
+        -- If server, create a new world
         self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, 64 * 9.8, true))
     end
 end
 
 function BodyBehavior.handlers:removeBehavior(opts)
+    -- Destroy the local copy of the world
     local worldId, world = self:getWorld()
     if world then
         world:destroy()
@@ -37,6 +42,7 @@ function BodyBehavior.handlers:removeBehavior(opts)
 end
 
 function BodyBehavior.handlers:preSyncClient(clientId)
+    -- Sync the world to the new client
     self._physics:syncNewClient({
         clientId = clientId,
         channel = MAIN_RELIABLE_CHANNEL,
@@ -44,8 +50,13 @@ function BodyBehavior.handlers:preSyncClient(clientId)
 end
 
 
+-- Component management
+
 function BodyBehavior.handlers:addComponent(component, bp, opts)
     if opts.isOrigin then
+        -- At the origin, create the physics body and fixtures and shapes. Other hosts will receive
+        -- them through sync
+
         local bodyId = self._physics:newBody(self.globals.worldId,
             bp.x or 0, bp.y or 0,
             bp.bodyType or 'static')
@@ -116,6 +127,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
             self._physics:destroyObject(shapeId)
         end
 
+        -- Associate the component with the underlying body
         self._physics:setUserData(bodyId, component.actorId)
         self:sendSetProperties(component.actorId, 'bodyId', bodyId)
     end
@@ -123,6 +135,9 @@ end
 
 function BodyBehavior.handlers:removeComponent(component, opts)
     if opts.isOrigin then
+        -- At the origin, destroy the body. Associated fixtures and shapes will automatically be
+        -- destroyed. Other hosts will receive the destructions through sync.
+
         self._physics:destroyObject(component.properties.bodyId)
     end
 end
@@ -174,6 +189,8 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
 end
 
 
+-- Perform / update
+
 function BodyBehavior.handlers:prePerform(dt)
     self._physics:updateWorld(self.globals.worldId, dt)
 
@@ -195,7 +212,6 @@ function BodyBehavior.handlers:postUpdate(dt)
     end
 end
 
-
 function BodyBehavior.handlers:setPerforming(performing)
     if performing then 
         -- Wake up all non-static bodies when performance starts, because things may have moved
@@ -215,6 +231,8 @@ function BodyBehavior.handlers:setPerforming(performing)
     end
 end
 
+
+-- UI
 
 function BodyBehavior.handlers:uiComponent(component, opts)
     local bodyId, body = self:getBody(component)
@@ -422,6 +440,8 @@ function BodyBehavior.handlers:uiComponent(component, opts)
 end
 
 
+-- Getters
+
 function BodyBehavior:getPhysics()
     return self._physics
 end
@@ -461,6 +481,8 @@ function BodyBehavior:getActorsAtPoint(x, y)
     return hits
 end
 
+
+-- Draw
 
 function BodyBehavior:drawBodyOutline(componentOrActorId)
     local bodyId, body = self:getBody(componentOrActorId)

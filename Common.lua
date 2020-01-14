@@ -37,6 +37,7 @@ function Common:define()
         rate = 20, -- In case a `reliable = false` override is used
     }
 
+
     self:defineMessageKind('me', {
         reliable = true,
         channel = config.secondaryReliableChannel,
@@ -44,9 +45,10 @@ function Common:define()
         forward = true,
     })
 
-    self:defineActorBehaviorMessageKinds(config)
 
+    self:defineActorBehaviorMessageKinds(config)
     self:defineLibraryMessageKinds(config)
+
 
     self:defineMessageKind('setPerforming', config.reliableToAllSendOpts)
 end

@@ -22,6 +22,8 @@ local ImageBehavior = {
 registerCoreBehavior(2, ImageBehavior)
 
 
+-- Component management
+
 function ImageBehavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.url = bp.url or CHECKERBOARD_IMAGE_URL
@@ -58,6 +60,8 @@ function ImageBehavior.handlers:blueprintComponent(component, bp)
     bp.cropHeight = component.properties.cropHeight
 end
 
+
+-- Draw
 
 local theTransform = love.math.newTransform()
 local theQuad = love.graphics and love.graphics.newQuad(0, 0, 32, 32, 32, 32)
@@ -104,6 +108,8 @@ function ImageBehavior.handlers:draw(order)
     end
 end
 
+
+-- UI
 
 function ImageBehavior.handlers:uiComponent(component, opts)
     ui.filePicker(component.properties.localUrl and 'image (uploading...)' or 'image',

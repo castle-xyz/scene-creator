@@ -15,6 +15,8 @@ local GrabTool = {
 registerCoreBehavior(3, GrabTool)
 
 
+-- Update
+
 function GrabTool.handlers:update(dt)
     local physics = self.dependencies.Body:getPhysics()
     local touchData = self:getTouchData()
