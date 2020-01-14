@@ -66,6 +66,8 @@ function Client:update(dt)
         return
     end
 
+    self:preUpdateLibrary()
+
     self:preUpdateSelect()
 
     Common.update(self, dt)

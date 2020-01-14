@@ -78,7 +78,7 @@ end
 function Client:startLibrary()
     Common.startLibrary(self)
 
-    self.addFromLibraryEntryId = nil
+    self.addFromLibraryEntryId = nil -- `entryId` of entry we are adding from, if adding
     self.addToLibraryTitle = ''
     self.addToLibraryDescription = ''
 end
@@ -109,6 +109,44 @@ function Common.receivers:addLibraryEntry(time, entryId, entry)
     local entryCopy = util.deepCopyTable(entry)
     entryCopy.entryId = entryId
     self.library[entryId] = entryCopy
+end
+
+
+-- Update
+
+function Client:preUpdateLibrary()
+    if self.addFromLibraryEntryId then -- Adding something?
+        -- Check for a single touch
+        if self.numTouches == 1 and self.maxNumTouches == 1 then
+            local touchId, touch = next(self.touches)
+
+            local entry = self.library[self.addFromLibraryEntryId]
+            self.addFromLibraryEntryId = nil
+            if entry then
+                if entry.entryType == 'actorBlueprint' then
+                    local actorBp = util.deepCopyTable(entry.actorBlueprint)
+
+                    -- If it has a `Body`, initialize position to touch location
+                    if actorBp.Body then 
+                        actorBp.Body.x, actorBp.Body.y = touch.x, touch.y
+                    end
+
+                    local actorId = self:sendAddActor(actorBp)
+
+                    -- Select the actor. If we're not performing and it has a `Body`, switch to the `Grab` tool.
+                    if not self.performing and actorBp.Body then
+                        self:setActiveTool(nil)
+                    end
+                    self:deselectAllActors()
+                    self:selectActor(actorId)
+                    self:refreshTools()
+                    if not self.performing and actorBp.Body then
+                        self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
+                    end
+                end
+            end
+        end
+    end
 end
 
 
