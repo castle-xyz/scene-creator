@@ -425,8 +425,6 @@ end
 
 -- UI
 
-local ui = castle.ui
-
 function Client:uiupdate()
     if not castle.system.isMobile() then
         ui.markdown('# Hello!\nThis prototype is meant for mobile. :O')

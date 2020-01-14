@@ -16,7 +16,7 @@ end
 
 function util.deepCopyTable(t)
     local typ = type(t)
-    if typ == 'nil' or typ == 'boolean' or typ == 'number' or typ == 'string' then
+    if typ == 'nil' or typ == 'boolean' or typ == 'number' or typ == 'string' or typ == 'function' then
         return t
     elseif typ == 'table' then
         local u = {}
