@@ -1,7 +1,7 @@
 -- Start / stop
 
 function Client:startUi()
-    self.componentSectionOpens = {} -- `behaviorId` -> whether properties section for that behavior is open
+    self.openBehaviorId = nil -- `behaviorId` of behavior whose components' properties section is open
 end
 
 
@@ -128,12 +128,17 @@ function Client:uiupdate()
                         end)
                         for _, component in ipairs(order) do
                             local behavior = self.behaviors[component.behaviorId]
-                            self.componentSectionOpens[component.behaviorId] = ui.section(behavior.name:lower(), {
+                            local newOpen = ui.section(behavior.name:lower(), {
                                 id = actorId .. '-' .. component.behaviorId,
-                                open = self.componentSectionOpens[component.behaviorId] ~= false,
+                                open = self.openBehaviorId == component.behaviorId,
                             }, function()
                                 behavior:callHandler('uiComponent', component, {})
                             end)
+                            if newOpen then
+                                self.openBehaviorId = component.behaviorId
+                            elseif self.openBehaviorId == component.behaviorId then
+                                self.openBehaviorId = nil
+                            end
                         end
                     end
                 end)
