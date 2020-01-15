@@ -151,7 +151,7 @@ function Client:preUpdateLibrary()
                         actorBp.Body.x, actorBp.Body.y = touch.x, touch.y
                     end
 
-                    local actorId = self:sendAddActor(actorBp)
+                    local actorId = self:sendAddActor(actorBp, entry.entryId)
 
                     -- Select the actor. If we're not performing and it has a `Body`, switch to the `Grab` tool.
                     if not self.performing and actorBp.Body then

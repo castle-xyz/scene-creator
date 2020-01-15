@@ -144,7 +144,7 @@ function Server:syncClientActorBehavior(clientId, send)
 
     -- Send actors and components
     for actorId, actor in pairs(self.actors) do
-        send('addActor', self.clientId, actorId)
+        send('addActor', self.clientId, actorId, actor.parentEntryId)
 
         for behaviorId, component in pairs(actor.components) do
             send('addComponent', self.clientId, actorId, behaviorId)
@@ -179,11 +179,12 @@ end
 
 -- Message receivers
 
-function Common.receivers:addActor(time, clientId, actorId)
+function Common.receivers:addActor(time, clientId, actorId, parentEntryId)
     assert(not self.actors[actorId], 'addActor: this `actorId` is already used')
 
     local actor = {}
     actor.actorId = actorId
+    actor.parentEntryId = parentEntryId
     actor.components = {}
 
     self.actors[actorId] = actor
@@ -388,10 +389,10 @@ end
 
 -- Methods
 
-function Common:sendAddActor(bp)
+function Common:sendAddActor(bp, parentEntryId)
     local actorId = self:generateId()
 
-    self:send('addActor', self.clientId, actorId)
+    self:send('addActor', self.clientId, actorId, parentEntryId)
 
     -- Add components in depth-first order through dependency graph
 

@@ -12,6 +12,19 @@ end
 -- Methods
 
 function Client:refreshTools()
+    -- Clear removed actors
+    for actorId in pairs(self.selectedActorIds) do
+        if not self.actors[actorId] then
+            self:deselectActor(actorId)
+        end
+    end
+
+    -- Clear active tool if removed
+    if not self.tools[self.activeToolBehaviorId] then
+        self.activeToolBehaviorId = nil
+    end
+
+    -- Refresh applicable tool set
     self.applicableTools = {}
 
     -- Find common behaviors across all actors -- used by dependency check below
@@ -164,18 +177,6 @@ end
 -- Update
 
 function Client:preUpdateSelect()
-    -- Clear removed actors
-    for actorId in pairs(self.selectedActorIds) do
-        if not self.actors[actorId] then
-            self:deselectActor(actorId)
-        end
-    end
-
-    -- Clear active tool if removed
-    if not self.tools[self.activeToolBehaviorId] then
-        self.activeToolBehaviorId = nil
-    end
-
     -- Touch-to-select (do this before refreshing tools since it affects selections)
     if self.numTouches == 1 and self.maxNumTouches == 1 then
         local touchId, touch = next(self.touches)

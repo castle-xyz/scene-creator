@@ -57,7 +57,8 @@ function Client:uiToolbar()
                     if bp.Body then
                         bp.Body.x, bp.Body.y = bp.Body.x + 64, bp.Body.y + 64
                     end
-                    duplicateActorIds[self:sendAddActor(bp)] = true
+                    local actor = self.actors[actorId]
+                    duplicateActorIds[self:sendAddActor(bp, actor.parentEntryId)] = true
                 end
 
                 -- Select new actors
@@ -163,6 +164,9 @@ function Client:uiupdate()
         ui.markdown('# Hello!\nThis prototype is meant for mobile. :O')
         return
     end
+
+    -- Refresh tools first to make sure selections / applicable tool set / etc. are valid
+    self:refreshTools() 
 
     -- Toolbar
     ui.pane('toolbar', {
