@@ -8,8 +8,6 @@ local CORE_LIBRARY = {
         actorBlueprint = {
             Image = {
                 url = 'https://art.pixilart.com/5d29768f5c3f448.png',
-                width = 110,
-                height = 128,
                 cropEnabled = true,
                 cropX = 256,
                 cropY = 150,
@@ -38,8 +36,6 @@ local CORE_LIBRARY = {
         actorBlueprint = {
             Image = {
                 url = 'http://www.photonstorm.com/wp-content/uploads/2015/01/ice-platform.png',
-                width = 384,
-                height = 96,
             },
             Body = {
                 fixture = {

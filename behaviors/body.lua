@@ -458,6 +458,43 @@ function BodyBehavior:getBody(componentOrActorId)
     end
 end
 
+function BodyBehavior:getSize(actorId)
+    local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
+    local bodyId, body = self:getBody(component)
+    local fixture = body:getFixtures()[1]
+    if fixture then
+        -- Cache the size so we don't recompute it every time. This is made easier by the fact that
+        -- fixtures are immutable -- we can use them as a cache key.
+        local sizeCache = component._sizeCache
+        if not sizeCache then
+            sizeCache = setmetatable({}, { __mode = 'k' })
+            component._sizeCache = sizeCache
+        end
+        local cached = sizeCache[fixture]
+        if not cached then
+            cached = {}
+            sizeCache[fixture] = cached
+
+            local shape = fixture:getShape()
+            local shapeType = shape:getType()
+
+            if shapeType == 'circle' then
+                local radius = shape:getRadius()
+                cached.width, cached.height = 2 * radius, 2 * radius
+            elseif shapeType == 'polygon' or shapeType == 'edge' or shapeType == 'chain' then
+                local points = { shape:getPoints() }
+                local minX, minY, maxX, maxY = points[1], points[2], points[1], points[2]
+                for i = 3, #points - 1, 2 do
+                    minX, minY = math.min(minX, points[i]), math.min(minY, points[i + 1])
+                    maxX, maxY = math.max(maxX, points[i]), math.max(maxY, points[i + 1])
+                end
+                cached.width, cached.height = maxX - minX, maxY - minY
+            end
+        end
+        return cached.width, cached.height
+    end
+end
+
 function BodyBehavior:getActorForBody(body)
     return body:getUserData()
 end

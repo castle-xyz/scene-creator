@@ -2,8 +2,6 @@ local ImageBehavior = {
     name = 'Image',
     propertyNames = {
         'url',
-        'width',
-        'height',
         'depth',
         'filter',
         'fitMode',
@@ -27,8 +25,6 @@ registerCoreBehavior(2, ImageBehavior)
 function ImageBehavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.url = bp.url or CHECKERBOARD_IMAGE_URL
-    component.properties.width = bp.width or 128
-    component.properties.height = bp.height or 128
     component.properties.depth = bp.depth or 0
     component.properties.filter = bp.filter or 'nearest'
     component.properties.fitMode = bp.fitMode or 'contain'
@@ -48,8 +44,6 @@ end
 
 function ImageBehavior.handlers:blueprintComponent(component, bp)
     bp.url = component.properties.url
-    bp.width = component.properties.width
-    bp.height = component.properties.height
     bp.depth = component.properties.depth
     bp.filter = component.properties.filter
     bp.fitMode = component.properties.fitMode
@@ -72,12 +66,14 @@ function ImageBehavior.handlers:draw(order)
             id = actorId,
             depth = component.properties.depth,
             draw = function()
+                -- Load image drawable
                 component._imageHolder = resource_loader.loadImage(
                     component.properties.localUrl or component.properties.url,
                     component.properties.filter)
                 local image = component._imageHolder.image
                 local imageWidth, imageHeight = image:getDimensions()
 
+                -- Compute quad from crop
                 local quad
                 if component._imageHolder.loaded and component.properties.cropEnabled then
                     theQuad:setViewport(component.properties.cropX, component.properties.cropY,
@@ -88,19 +84,24 @@ function ImageBehavior.handlers:draw(order)
                     theQuad:setViewport(0, 0, imageWidth, imageHeight, imageWidth, imageHeight)
                 end
 
-                local scaleX, scaleY = component.properties.width / imageWidth, component.properties.height / imageHeight
+                -- Compute scale from body size
+                local bodyWidth, bodyHeight = self.dependencies.Body:getSize(actorId)
+                local scaleX, scaleY = bodyWidth / imageWidth, bodyHeight / imageHeight
                 if component._imageHolder.loaded and component.properties.fitMode == 'contain' then
                     scaleX = math.min(scaleX, scaleY)
                     scaleY = scaleX
                 end
 
+                -- Get position and angle from body
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
+                local x, y = body:getPosition()
+                local angle = body:getAngle()
 
                 love.graphics.draw(
                     image,
                     theQuad,
-                    body:getX(), body:getY(),
-                    body:getAngle(),
+                    x, y,
+                    angle,
                     scaleX, scaleY,
                     0.5 * imageWidth, 0.5 * imageHeight)
             end,
@@ -127,22 +128,6 @@ function ImageBehavior.handlers:uiComponent(component, opts)
             end
         end,
     })
-
-    util.uiRow('size', function()
-        ui.numberInput('width', component.properties.width, {
-            min = 0,
-            onChange = function(newWidth)
-                self:sendSetProperties(component.actorId, 'width', newWidth)
-            end,
-        })
-    end, function()
-        ui.numberInput('height', component.properties.height, {
-            min = 0,
-            onChange = function(newHeight)
-                self:sendSetProperties(component.actorId, 'height', newHeight)
-            end,
-        })
-    end)
 
     util.uiRow('fit-mode-and-scaling-style', function()
         ui.dropdown('fit mode', component.properties.fitMode, { 'contain', 'stretch' }, {
