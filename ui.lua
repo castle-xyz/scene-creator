@@ -1,7 +1,7 @@
 -- Start / stop
 
 function Client:startUi()
-    self.openBehaviorId = nil -- `behaviorId` of behavior whose components' properties section is open
+    self.componentSectionOpens = setmetatable({}, { __mode = 'k' }) -- `actor` -> `behaviorId` of open component section
 end
 
 
@@ -51,6 +51,7 @@ function Client:uiToolbar()
             onClick = function()
                 local duplicateActorIds = {}
 
+                -- Use blueprints to duplicate. Nudge position a little bit.
                 for actorId in pairs(self.selectedActorIds) do
                     local bp = self:blueprintActor(actorId)
                     if bp.Body then
@@ -59,6 +60,7 @@ function Client:uiToolbar()
                     duplicateActorIds[self:sendAddActor(bp)] = true
                 end
 
+                -- Select new actors
                 self:deselectAllActors()
                 for actorId in pairs(duplicateActorIds) do
                     self:selectActor(actorId)
@@ -108,17 +110,20 @@ function Client:uiProperties()
             -- Sections for each component
             for _, component in ipairs(order) do
                 local behavior = self.behaviors[component.behaviorId]
-                local sectionLabel = (behavior.displayName or behavior.name):lower()
-                local newOpen = ui.section(sectionLabel, {
+
+                local title = (behavior.displayName or behavior.name):lower()
+                local newOpen = ui.section(title, {
                     id = actorId .. '-' .. component.behaviorId,
-                    open = self.openBehaviorId == component.behaviorId,
+                    open = self.componentSectionOpens[actor] == component.behaviorId,
                 }, function()
                     behavior:callHandler('uiComponent', component, {})
                 end)
+
+                -- Track open section
                 if newOpen then
-                    self.openBehaviorId = component.behaviorId
-                elseif self.openBehaviorId == component.behaviorId then
-                    self.openBehaviorId = nil
+                    self.componentSectionOpens[actor] = component.behaviorId
+                elseif self.componentSectionOpens[actor] == component.behaviorId then
+                    self.componentSectionOpens[actor] = 'none' -- Sentinel to mark none as open
                 end
             end
         end
