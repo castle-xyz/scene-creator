@@ -239,6 +239,7 @@ function BodyBehavior.handlers:uiComponent(component, opts)
 
     ui.tabs('body properties', function()
         ui.tab('basic', function()
+            -- Position and angle inputs
             util.uiRow('position', function()
                 ui.numberInput('x', body:getX(), {
                     onChange = function(newX)
@@ -257,82 +258,36 @@ function BodyBehavior.handlers:uiComponent(component, opts)
                     self._physics:setAngle(bodyId, newAngle * math.pi / 180)
                 end,
             })
-        end)
 
-        ui.tab('shape', function()
-            local fixtures = body:getFixtures()
-            local fixture = fixtures[1]
+            local fixture = body:getFixtures()[1]
             if fixture then
-                local fixtureId = self._physics:idForObject(fixture)
-
-                local function recreateFixture(newShapeId)
-                    local oldFixtureId = fixtureId
-                    fixtureId = self._physics:newFixture(bodyId, newShapeId, fixture:getDensity())
-                    self._physics:setFriction(fixtureId, fixture:getFriction())
-                    self._physics:setRestitution(fixtureId, fixture:getRestitution())
-                    self._physics:setSensor(fixtureId, fixture:isSensor())
-                    self._physics:destroyObject(newShapeId)
-                    self._physics:destroyObject(oldFixtureId)
-                end
-
                 local shape = fixture:getShape()
                 local shapeType = shape:getType()
 
-                local displayShapeType = shapeType
+                -- Width and height inputs if rectangle shaped
                 local rectangleWidth, rectangleHeight
                 if shapeType == 'polygon' then
                     local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()
                     if p4y ~= nil and p5x == nil then
-                        if p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y then
-                            displayShapeType = 'rectangle'
-                            rectangleWidth = 2 * math.abs(p1x)
-                            rectangleHeight = 2 * math.abs(p1y)
-                        end
-                        if p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x then
-                            displayShapeType = 'rectangle'
-                            rectangleWidth = 2 * math.abs(p1x)
-                            rectangleHeight = 2 * math.abs(p1y)
+                        if (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
+                            (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x) then
+                            rectangleWidth, rectangleHeight = 2 * math.abs(p1x), 2 * math.abs(p1y)
                         end
                     end
                 end
-
-                ui.dropdown('type', displayShapeType, { 'circle', 'rectangle', 'polygon', 'chain' }, {
-                    onChange = function(newDisplayShapeType)
-                        if newDisplayShapeType == displayShapeType then
-                            return
-                        end
-
-                        if newDisplayShapeType == 'circle' then
-                            recreateFixture(self._physics:newCircleShape(0, 0, 64))
-                        elseif newDisplayShapeType == 'rectangle' then
-                            recreateFixture(self._physics:newRectangleShape(128, 128))
-                        end
-                    end
-                })
-
-                if displayShapeType == 'circle' then
-                    local x, y = shape:getPoint()
-                    local radius = shape:getRadius()
-
-                    ui.numberInput('radius', radius, {
-                        min = 0,
-                        onChange = function(newRadius)
-                            recreateFixture(self._physics:newCircleShape(x, y, newRadius))
-                        end,
-                    })
-                elseif displayShapeType == 'rectangle' then
+                if rectangleWidth and rectangleHeight then
                     util.uiRow('rectangle-size', function()
                         ui.numberInput('width', rectangleWidth, {
                             min = 0,
                             onChange = function(newRectangleWidth)
-                                recreateFixture(self._physics:newRectangleShape(newRectangleWidth, rectangleHeight))
+                                self:replaceShape(component, self._physics:newRectangleShape(newRectangleWidth, rectangleHeight))
                             end,
                         })
                     end, function()
                         ui.numberInput('height', rectangleHeight, {
                             min = 0,
                             onChange = function(newRectangleHeight)
-                                recreateFixture(self._physics:newRectangleShape(rectangleWidth, newRectangleHeight))
+                                self:replaceShape(component, self._physics:newRectangleShape(rectangleWidth, newRectangleHeight))
                             end,
                         })
                     end)
@@ -437,6 +392,28 @@ function BodyBehavior.handlers:uiComponent(component, opts)
             end
         end)
     end)
+end
+
+
+-- Methods
+
+function BodyBehavior:replaceShape(componentOrActorId, newShapeId)
+    local bodyId, body = self:getBody(componentOrActorId)
+    local fixture = body:getFixtures()[1]
+    if fixture then
+        local fixtureId = self._physics:idForObject(fixture)
+
+        local newFixtureId = self._physics:newFixture(bodyId, newShapeId, fixture:getDensity())
+        self._physics:destroyObject(newShapeId)
+
+        self._physics:setFriction(newFixtureId, fixture:getFriction())
+        self._physics:setRestitution(newFixtureId, fixture:getRestitution())
+        self._physics:setSensor(newFixtureId, fixture:isSensor())
+
+        self._physics:destroyObject(fixtureId)
+
+        return newFixtureId
+    end
 end
 
 
