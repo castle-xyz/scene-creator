@@ -2,7 +2,7 @@ local RotatingMotionBehavior = {
     name = 'RotatingMotion',
     displayName = 'rotating motion',
     propertyNames = {
-        'rotationSpeed',
+        'rotationsPerSecond',
     },
     dependencies = {
         'Body',
@@ -23,11 +23,11 @@ end
 -- Component management
 
 function RotatingMotionBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.rotationSpeed = bp.rotationSpeed or 80
+    component.properties.rotationsPerSecond = bp.rotationsPerSecond or 1
 end
 
 function RotatingMotionBehavior.handlers:blueprintComponent(component, bp)
-    bp.rotationSpeed = component.properties.rotationSpeed
+    bp.rotationsPerSecond = component.properties.rotationsPerSecond
 end
 
 
@@ -36,8 +36,9 @@ end
 function RotatingMotionBehavior.handlers:perform(dt)
     for actorId, component in pairs(self.components) do
         local bodyId, body = self.dependencies.Body:getBody(actorId)
-        body:setAngularVelocity(component.properties.rotationSpeed) -- Only set locally -- server syncs everyone
-        component.properties.rotationSpeed = body:getAngularVelocity() -- Account for floating point precision differences
+
+        -- Physics bodies are automatically synced by the server, so just set locally
+        body:setAngularVelocity(2 * math.pi * component.properties.rotationsPerSecond)
     end
 end
 
@@ -45,9 +46,9 @@ end
 -- UI
 
 function RotatingMotionBehavior.handlers:uiComponent(component, opts)
-    ui.numberInput('rotation speed (degrees per second)', component.properties.rotationSpeed * 180 / math.pi, {
-        onChange = function(newRotationSpeed)
-            self:sendSetProperties(component.actorId, 'rotationSpeed', newRotationSpeed * math.pi / 180)
+    ui.numberInput('rotations per second', component.properties.rotationsPerSecond, {
+        onChange = function(newRotationsPerSecond)
+            self:sendSetProperties(component.actorId, 'rotationsPerSecond', newRotationsPerSecond)
         end,
     })
 end

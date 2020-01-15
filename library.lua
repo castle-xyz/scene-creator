@@ -71,7 +71,7 @@ local CORE_LIBRARY = {
                 },
             },
             RotatingMotion = {
-                rotationSpeed = 120 * math.pi / 180,
+                rotationsPerSecond = 0.5,
             },
         },
     },
