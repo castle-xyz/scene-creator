@@ -179,7 +179,7 @@ function Common.receivers:addActor(time, clientId, actorId)
     assert(not self.actors[actorId], 'addActor: this `actorId` is already used')
 
     local actor = {}
-    actor.actorId = {}
+    actor.actorId = actorId
     actor.components = {}
 
     self.actors[actorId] = actor
