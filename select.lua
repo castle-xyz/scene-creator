@@ -106,6 +106,10 @@ function Client:deselectAllActors()
 end
 
 function Client:setActiveTool(toolBehaviorId)
+    if self.activeToolBehaviorId == toolBehaviorId then
+        return -- Already active, skip
+    end
+
     if self.activeToolBehaviorId then
         -- Clear our components from old tool -- we could use `self.selectedActorIds` but
         -- we actually go through the tool's components to make sure
