@@ -111,8 +111,8 @@ function Client:uiProperties()
             for _, component in ipairs(order) do
                 local behavior = self.behaviors[component.behaviorId]
 
-                local title = (behavior.displayName or behavior.name):lower()
-                local newOpen = ui.section(title, {
+                local uiName = behavior:getUiName()
+                local newOpen = ui.section(uiName, {
                     id = actorId .. '-' .. component.behaviorId,
                     open = self.componentSectionOpens[actor] == component.behaviorId,
                 }, function()
@@ -126,6 +126,34 @@ function Client:uiProperties()
                     self.componentSectionOpens[actor] = 'none' -- Sentinel to mark none as open
                 end
             end
+
+            -- Add component
+            ui.box('spacer', { height = 16 }, function() end)
+            local order = {}
+            for behaviorId, behavior in pairs(self.behaviors) do
+                if not actor.components[behaviorId] and not behavior.tool then
+                    table.insert(order, behavior)
+                end
+            end
+            table.sort(order, function (behavior1, behavior2)
+                return behavior1.behaviorId < behavior2.behaviorId
+            end)
+            local uiNameOrder = {}
+            local behaviorsByUiName = {}
+            for _, behavior in ipairs(order) do
+                local uiName = behavior:getUiName()
+                table.insert(uiNameOrder, uiName)
+                behaviorsByUiName[uiName] = behavior
+            end
+            ui.dropdown('add component', 'add component...', uiNameOrder, {
+                hideLabel = true,
+                onChange = function(addUiName)
+                    local behavior = behaviorsByUiName[addUiName]
+                    if behavior then
+                        self:send('addComponent', self.clientId, actorId, behavior.behaviorId, {})
+                    end
+                end,
+            })
         end
     end)
 end

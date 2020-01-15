@@ -5,6 +5,10 @@
 
 local BaseBehavior = {}
 
+function BaseBehavior:getUiName()
+    return (self.displayName or self.name):lower()
+end
+
 function BaseBehavior:callHandler(handlerName, ...)
     local handler = self.handlers[handlerName]
     if handler then
