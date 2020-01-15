@@ -425,7 +425,7 @@ function Common:blueprintActor(actorId)
 
     -- Blueprint each component that isn't a tool
     for behaviorId, component in pairs(actor.components) do
-        if not component.tool then
+        if not self.tools[behaviorId] then
             local behavior = self.behaviors[component.behaviorId]
             local behaviorBp = {}
             behavior:callHandler('blueprintComponent', component, behaviorBp)
