@@ -1,5 +1,5 @@
 -- 'multi' boilerplate
---LOCAL_SERVER = true -- Enable to force a local server and never use a remote one
+LOCAL_SERVER = true -- Enable to force a local server and never use a remote one
 function GET_SERVER_MODULE_NAME()
     return 'Server'
 end
@@ -42,6 +42,15 @@ function Client:reconnect()
     Common.stop(self)
     Common.start(self)
 end
+
+
+-- Debug receive
+
+--function Client:debugReceive(kind, time, ...)
+--    if kind ~= '_ping' and kind ~= '_pong' then
+--        print(kind, ...)
+--    end
+--end
 
 
 -- Users
