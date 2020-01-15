@@ -116,6 +116,7 @@ function Client:uiupdate()
                     if actorId then
                         local actor = self.actors[actorId]
 
+                        -- Sort by `behaviorId`
                         local order = {}
                         for behaviorId, component in pairs(actor.components) do
                             local behavior = self.behaviors[behaviorId]
@@ -126,9 +127,12 @@ function Client:uiupdate()
                         table.sort(order, function (component1, component2)
                             return component1.behaviorId < component2.behaviorId
                         end)
+
+                        -- Sections for each component
                         for _, component in ipairs(order) do
                             local behavior = self.behaviors[component.behaviorId]
-                            local newOpen = ui.section(behavior.name:lower(), {
+                            local sectionLabel = (behavior.displayName or behavior.name):lower()
+                            local newOpen = ui.section(sectionLabel, {
                                 id = actorId .. '-' .. component.behaviorId,
                                 open = self.openBehaviorId == component.behaviorId,
                             }, function()

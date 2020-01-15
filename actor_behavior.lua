@@ -6,13 +6,13 @@
 local BaseBehavior = {}
 
 function BaseBehavior:callHandler(handlerName, ...)
-    if self.tool then -- Tool? Skip if server or if not currently active on client.
-        if self.game.server or (self.game.client and self.game.activeToolBehaviorId ~= self.behaviorId) then
-            return
-        end
-    end
     local handler = self.handlers[handlerName]
     if handler then
+        if self.tool then -- Tool? Skip if server or if not currently active on client.
+            if self.game.server or (self.game.client and self.game.activeToolBehaviorId ~= self.behaviorId) then
+                return
+            end
+        end
         return handler(self, ...)
     end
 end
@@ -61,6 +61,14 @@ function BaseBehavior:getTouchData()
             allTouchesReleased = self.game.allTouchesReleased,
         }
     end
+end
+
+function BaseBehavior:getOtherBehavior(otherBehaviorId)
+    return self.game.behaviors[otherBehaviorId]
+end
+
+function BaseBehavior:getActor(actorId)
+    return self.game.actors[actorId]
 end
 
 
@@ -201,6 +209,7 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     behavior.behaviorSpec = behaviorSpec
     behavior.isCore = behaviorSpec.isCore
     behavior.name = behaviorSpec.name
+    behavior.displayName = behaviorSpec.displayName
     behavior.game = self
     behavior.globals = {}
     behavior.components = {}
@@ -309,6 +318,10 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
     actor.components[behaviorId] = component
     behavior.components[actorId] = component
 
+    for _, dependency in pairs(behavior.dependencies) do
+        dependency:callHandler('addDependentComponent', component)
+    end
+
     behavior:callHandler('addComponent', component, bp or {}, {
         isOrigin = self.clientId == clientId,
     })
@@ -318,9 +331,15 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
     local actor = assert(self.actors[actorId], 'removeComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'removeComponent: no such behavior')
 
-    behavior:callHandler('removeComponent', actor.components[behaviorId], {
+    local component = actor.components[behaviorId]
+
+    behavior:callHandler('removeComponent', component, {
         isOrigin = self.clientId == clientId,
     })
+
+    for _, dependency in pairs(behavior.dependencies) do
+        dependency:callHandler('removeDependentComponent', component)
+    end
 
     actor.components[behaviorId] = nil
     behavior.components[actorId] = nil

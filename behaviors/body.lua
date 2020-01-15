@@ -188,6 +188,71 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     end
 end
 
+function BodyBehavior.handlers:addDependentComponent(addedComponent)
+    -- Promote body type based on what dependents request. The order is: static, kinematic, dynamic.
+    -- Bodies are static by default. A request for a higher type always wins.
+
+    local addedBehavior = self:getOtherBehavior(addedComponent.behaviorId)
+    local addedBodyType = addedBehavior:callHandler('bodyTypeComponent', addedComponent)
+    if addedBodyType then
+        local actor = self:getActor(addedComponent.actorId)
+
+        local finalBodyType = addedBodyType
+        if finalBodyType ~= 'dynamic' then -- Dynamic always wins
+            for otherBehaviorId, otherComponent in pairs(actor.components) do
+                if otherBehaviorId ~= addedComponent.behaviorId then
+                    local otherBehavior = self:getOtherBehavior(otherBehaviorId)
+                    local otherBodyType = otherBehavior:callHandler('bodyTypeComponent', otherComponent)
+                    if otherBodyType then
+                        if otherBodyType == 'dynamic' then -- Dynamic always wins
+                            finalBodyType = 'dynamic'
+                            return
+                        elseif otherBodyType == 'kinematic' then -- Promote to kinematic from static
+                            finalBodyType = 'kinematic'
+                        end
+                    end
+                end
+            end
+        end
+
+        local bodyId, body = self:getBody(addedComponent.actorId)
+        if body:getType() ~= finalBodyType then
+            self._physics:setType(bodyId, finalBodyType)
+        end
+    end
+end
+
+function BodyBehavior.handlers:removeDependentComponent(removedComponent)
+    -- Demote body type based on removal of dependents.
+
+    local removedBehavior = self:getOtherBehavior(removedComponent.behaviorId)
+    local removedBodyType = removedBehavior:callHandler('bodyTypeComponent', removedComponent)
+    if removedBodyType then
+        local actor = self:getActor(removedComponent.actorId)
+
+        local finalBodyType = 'static'
+        for otherBehaviorId, otherComponent in pairs(actor.components) do
+            if otherBehaviorId ~= removedComponent.behaviorId then
+                local otherBehavior = self:getOtherBehavior(otherBehaviorId)
+                local otherBodyType = otherBehavior:callHandler('bodyTypeComponent', otherComponent)
+                if otherBodyType then
+                    if otherBodyType == 'dynamic' then -- Dynamic always wins
+                        finalBodyType = 'dynamic'
+                        return
+                    elseif otherBodyType == 'kinematic' then -- Promote to kinematic from static
+                        finalBodyType = 'kinematic'
+                    end
+                end
+            end
+        end
+
+        local bodyId, body = self:getBody(addedComponent.actorId)
+        if body:getType() ~= finalBodyType then
+            self._physics:setType(bodyId, finalBodyType)
+        end
+    end
+end
+
 
 -- Perform / update
 
