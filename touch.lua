@@ -39,6 +39,7 @@ function Client:touchpressed(touchId, x, y, dx, dy)
 
     touch.initialX, touch.initialY = x, y
     touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
+    touch.pressTime = love.timer.getTime()
     touch.pressed = true
     touch.released = false
 

@@ -188,11 +188,14 @@ function Client:preUpdateSelect()
             end
             if not someSelectedHit then
                 self:selectActorAtPoint(touch.x, touch.y, hits)
+                touch.usedForSelection = true -- Mark as having been used for a selection
             end
         end
 
-        -- Press and release without moving? Select!
-        if touch.released and touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 then
+        -- Quick press and release without moving? And touch wasn't already used for a selection? Select!
+        if (not touch.usedForSelection and touch.released and
+                touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 and
+                love.timer.getTime() - touch.pressTime < 0.2) then
             self:selectActorAtPoint(touch.x, touch.y)
         end
     end

@@ -163,6 +163,9 @@ function Client:preUpdateLibrary()
                     if not self.performing and actorBp.Body then
                         self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
                     end
+
+                    -- Mark the touch as used for selection so we don't change selections again
+                    touch.usedForSelection = true
                 end
             end
         end
