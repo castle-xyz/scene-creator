@@ -130,30 +130,32 @@ function Client:uiProperties()
 
             -- Add component
             ui.box('spacer', { height = 16 }, function() end)
-            local order = {}
-            for behaviorId, behavior in pairs(self.behaviors) do
-                if not actor.components[behaviorId] and not behavior.tool then
-                    table.insert(order, behavior)
+            ui.button('add behavior', {
+                flex = 1,
+                icon = 'plus',
+                iconFamily = 'FontAwesome5',
+                popoverAllowed = true,
+                popoverStyle = { width = 300, height = 300 },
+                popover = function(closePopover)
+                    self:uiLibrary({
+                        filterType = 'behavior',
+                        filterBehavior = function(behavior)
+                            return not actor.components[behavior.behaviorId] and not behavior.tool
+                        end,
+                        emptyText = 'No other behaviors to add!',
+                        buttons = function(entry)
+                            ui.button('add to actor', {
+                                flex = 1,
+                                icon = 'plus',
+                                iconFamily = 'FontAwesome5',
+                                onClick = function()
+                                    self:send('addComponent', self.clientId, actorId, entry.behaviorId, {})
+                                    closePopover()
+                                end,
+                            })
+                        end,
+                    })
                 end
-            end
-            table.sort(order, function (behavior1, behavior2)
-                return behavior1.behaviorId < behavior2.behaviorId
-            end)
-            local uiNameOrder = {}
-            local behaviorsByUiName = {}
-            for _, behavior in ipairs(order) do
-                local uiName = behavior:getUiName()
-                table.insert(uiNameOrder, uiName)
-                behaviorsByUiName[uiName] = behavior
-            end
-            ui.dropdown('add component', 'add component...', uiNameOrder, {
-                hideLabel = true,
-                onChange = function(addUiName)
-                    local behavior = behaviorsByUiName[addUiName]
-                    if behavior then
-                        self:send('addComponent', self.clientId, actorId, behavior.behaviorId, {})
-                    end
-                end,
             })
 
             --local actorId = next(self.selectedActorIds)

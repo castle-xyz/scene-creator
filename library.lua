@@ -135,6 +135,8 @@ function Client:uiLibrary(opts)
         flex = 1,
     }, function()
         local order = {}
+
+        -- Add regular library entries
         for entryId, entry in pairs(self.library) do
             local skip = false
             if opts.filter then
@@ -150,9 +152,34 @@ function Client:uiLibrary(opts)
                 table.insert(order, entry)
             end
         end
+
+        -- Add behaviors unless filtered out
+        if not opts.filterType or opts.filterType == 'behavior' then
+            for behaviorId, behavior in pairs(self.behaviors) do
+                if not opts.filterBehavior or opts.filterBehavior(behavior) then
+                    table.insert(order, {
+                        entryId = tostring(behaviorId),
+                        entryType = 'behavior',
+                        title = behavior:getUiName(),
+                        description = behavior.description,
+                        behaviorId = behaviorId,
+                    })
+                end
+            end
+        end
+
         table.sort(order, function(entry1, entry2)
             return entry1.title:upper() < entry2.title:upper()
         end)
+
+        if #order == 0 then
+            ui.box('empty-text', {
+                paddingLeft = 4,
+                margin = 4,
+            }, function()
+                ui.markdown(opts.emptyText or 'No entries!')
+            end)
+        end
 
         for _, entry in ipairs(order) do
             -- Entry box
@@ -199,7 +226,7 @@ function Client:uiLibrary(opts)
 
                 ui.box('text-buttons', { flex = 1 }, function()
                     -- Title, description
-                    ui.markdown('## ' .. entry.title .. '\n' .. entry.description)
+                    ui.markdown('## ' .. entry.title .. '\n' .. (entry.description or ''))
 
                     -- Buttons
                     if opts.buttons then
