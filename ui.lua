@@ -140,7 +140,8 @@ function Client:uiProperties()
                     self:uiLibrary({
                         filterType = 'behavior',
                         filterBehavior = function(behavior)
-                            return not actor.components[behavior.behaviorId] and not behavior.tool
+                            -- Skip behaviors we already have, skip tools
+                            return not (actor.components[behavior.behaviorId] or behavior.tool)
                         end,
                         emptyText = 'No other behaviors to add!',
                         buttons = function(entry)
@@ -149,8 +150,11 @@ function Client:uiProperties()
                                 icon = 'plus',
                                 iconFamily = 'FontAwesome5',
                                 onClick = function()
-                                    self:send('addComponent', self.clientId, actorId, entry.behaviorId, {})
                                     closePopover()
+
+                                    -- Add the component and open its section
+                                    self:send('addComponent', self.clientId, actorId, entry.behaviorId, {})
+                                    self.componentSectionOpens[actor] = entry.behaviorId
                                 end,
                             })
                         end,
