@@ -8,9 +8,9 @@ local RotatingMotionBehavior = {
         'Body',
     },
     handlers = {},
-    description = [[
-Rotates the actor's body continuously.
-]],
+    description = table.concat {
+        "Rotates the actor's body continuously.",
+    },
 }
 
 registerCoreBehavior(4, RotatingMotionBehavior)

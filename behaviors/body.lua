@@ -12,10 +12,13 @@ local BodyBehavior = {
         'fixtureId',
     },
     handlers = {},
-    description = [[
-Gives the actor a position and an angle in the scene. All actors have this behavior. Gives the actor
-a rectangular shape by default, but other behaviors can be used to change the shape.
-]],
+    description = table.concat {
+        'Gives the actor a position in the scene along with an angle and a shape. All actors have ',
+        'this behavior.',
+        '\n',
+        'The actor gets a rectangular shape by default, but other behaviors can be used to change ',
+        'the shape.',
+    }
 }
 
 registerCoreBehavior(1, BodyBehavior)

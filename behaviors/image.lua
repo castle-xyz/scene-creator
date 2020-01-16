@@ -15,10 +15,10 @@ local ImageBehavior = {
         'Body',
     },
     handlers = {},
-    description = [[
-Uses an image to represent the actor in the scene. The source image can be cropped to only use a
-part of it.
-]],
+    description = table.concat {
+        'Uses an image to represent the actor in the scene. The source image can be cropped to only ',
+        'use a part of it',
+    },
 }
 
 registerCoreBehavior(2, ImageBehavior)
