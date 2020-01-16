@@ -11,6 +11,7 @@ serpent = require 'https://raw.githubusercontent.com/pkulchenko/serpent/879580fb
 
 resource_loader = require 'resource_loader'
 util = require 'util'
+helps = require 'helps'
 
 require 'actor_behavior'
 

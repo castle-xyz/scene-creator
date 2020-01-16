@@ -10,9 +10,6 @@ local GrabTool = {
         icon = 'move',
         iconFamily = 'Feather',
     },
-    description = table.concat {
-        'Allows moving and rotating actors using touch.',
-    },
 }
 
 registerCoreBehavior(3, GrabTool)
