@@ -250,7 +250,7 @@ function BodyBehavior.handlers:removeDependentComponent(removedComponent)
             end
         end
 
-        local bodyId, body = self:getBody(addedComponent.actorId)
+        local bodyId, body = self:getBody(removedComponent.actorId)
         if body:getType() ~= finalBodyType then
             self._physics:setType(bodyId, finalBodyType)
         end
