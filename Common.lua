@@ -26,14 +26,16 @@ require 'library'
 -- Message kind definition
 
 function Common:define()
-    local config = {}
+    self.channels = {}
 
-    config.mainReliableChannel = 0
-    config.secondaryReliableChannel = 99
-    config.reliableToAllSendOpts = {
+    self.channels.mainReliable = 0
+    self.channels.secondaryReliable = 99
+
+    self.sendOpts = {}
+    self.sendOpts.reliableToAll = {
         to = 'all',
         reliable = true,
-        channel = config.mainReliableChannel,
+        channel = self.channels.mainReliable,
         selfSend = true,
         forward = true,
         rate = 20, -- In case a `reliable = false` override is used
@@ -42,17 +44,17 @@ function Common:define()
 
     self:defineMessageKind('me', {
         reliable = true,
-        channel = config.secondaryReliableChannel,
+        channel = self.channels.secondaryReliable,
         selfSend = true,
         forward = true,
     })
 
 
-    self:defineActorBehaviorMessageKinds(config)
-    self:defineLibraryMessageKinds(config)
+    self:defineActorBehaviorMessageKinds()
+    self:defineLibraryMessageKinds()
 
 
-    self:defineMessageKind('setPerforming', config.reliableToAllSendOpts)
+    self:defineMessageKind('setPerforming', self.sendOpts.reliableToAll)
 end
 
 

@@ -99,8 +99,8 @@ end
 
 -- Message kind definitions
 
-function Common:defineLibraryMessageKinds(config)
-    self:defineMessageKind('addLibraryEntry', config.reliableToAllSendOpts)
+function Common:defineLibraryMessageKinds()
+    self:defineMessageKind('addLibraryEntry', self.sendOpts.reliableToAll)
 end
 
 

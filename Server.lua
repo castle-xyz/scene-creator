@@ -14,7 +14,7 @@ function Server:syncClient(clientId)
             kind = kind,
             to = clientId,
             selfSend = false,
-            channel = MAIN_RELIABLE_CHANNEL,
+            channel = self.channels.mainReliable,
         }, ...)
     end
 

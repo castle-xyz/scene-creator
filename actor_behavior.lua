@@ -110,14 +110,14 @@ end
 
 -- Message kind definitions
 
-function Common:defineActorBehaviorMessageKinds(config)
-    self:defineMessageKind('addActor', config.reliableToAllSendOpts)
-    self:defineMessageKind('removeActor', config.reliableToAllSendOpts)
-    self:defineMessageKind('addBehavior', config.reliableToAllSendOpts)
-    self:defineMessageKind('removeBehavior', config.reliableToAllSendOpts)
-    self:defineMessageKind('addComponent', config.reliableToAllSendOpts)
-    self:defineMessageKind('removeComponent', config.reliableToAllSendOpts)
-    self:defineMessageKind('setProperties', config.reliableToAllSendOpts)
+function Common:defineActorBehaviorMessageKinds()
+    self:defineMessageKind('addActor', self.sendOpts.reliableToAll)
+    self:defineMessageKind('removeActor', self.sendOpts.reliableToAll)
+    self:defineMessageKind('addBehavior', self.sendOpts.reliableToAll)
+    self:defineMessageKind('removeBehavior', self.sendOpts.reliableToAll)
+    self:defineMessageKind('addComponent', self.sendOpts.reliableToAll)
+    self:defineMessageKind('removeComponent', self.sendOpts.reliableToAll)
+    self:defineMessageKind('setProperties', self.sendOpts.reliableToAll)
 end
 
 
