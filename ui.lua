@@ -121,8 +121,8 @@ function Client:uiProperties()
                             ui.button('remove', {
                                 margin = 0,
                                 marginLeft = 6,
-                                icon = 'trash-alt',
-                                iconFamily = 'FontAwesome5',
+                                icon = 'close',
+                                iconFamily = 'FontAwesome',
                                 hideLabel = true,
                                 onClick = function()
                                     castle.system.alert({
