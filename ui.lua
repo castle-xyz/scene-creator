@@ -117,6 +117,18 @@ function Client:uiProperties()
                     id = actorId .. '-' .. component.behaviorId,
                     open = self.componentSectionOpens[actor] == component.behaviorId,
                     header = function()
+                        ui.button('description', {
+                            margin = 0,
+                            marginLeft = 6,
+                            icon = 'question',
+                            iconFamily = 'FontAwesome5',
+                            hideLabel = true,
+                            popoverAllowed = true,
+                            popoverStyle = { width = 300 },
+                            popover = function()
+                                ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
+                            end,
+                        })
                         if behavior.name ~= 'Body' then
                             ui.button('remove', {
                                 margin = 0,
