@@ -116,6 +116,28 @@ function Client:uiProperties()
                 local newOpen = ui.section(uiName, {
                     id = actorId .. '-' .. component.behaviorId,
                     open = self.componentSectionOpens[actor] == component.behaviorId,
+                    header = function()
+                        if behavior.name ~= 'Body' then
+                            ui.button('remove', {
+                                margin = 0,
+                                marginLeft = 6,
+                                icon = 'trash-alt',
+                                iconFamily = 'FontAwesome5',
+                                hideLabel = true,
+                                onClick = function()
+                                    castle.system.alert({
+                                        title = 'Remove behavior?',
+                                        message = "Remove '" .. uiName .. "' from this actor?",
+                                        okLabel = 'Yes',
+                                        onOk = function()
+                                            self:send('removeComponent', self.clientId, actorId, component.behaviorId)
+                                        end,
+                                        cancelLabel = 'No',
+                                    })
+                                end,
+                            })
+                        end
+                    end,
                 }, function()
                     behavior:callHandler('uiComponent', component, {})
                 end)
