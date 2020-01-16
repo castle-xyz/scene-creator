@@ -14,7 +14,7 @@ local BodyBehavior = {
     handlers = {},
 }
 
-registerCoreBehavior(1, BodyBehavior)
+registerCoreBehavior(BodyBehavior)
 
 
 -- Behavior management

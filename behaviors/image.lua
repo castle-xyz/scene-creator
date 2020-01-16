@@ -17,7 +17,7 @@ local ImageBehavior = {
     handlers = {},
 }
 
-registerCoreBehavior(2, ImageBehavior)
+registerCoreBehavior(ImageBehavior)
 
 
 -- Component management

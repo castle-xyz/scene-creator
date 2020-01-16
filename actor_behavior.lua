@@ -80,10 +80,12 @@ end
 
 local CORE_BEHAVIORS = {}
 
-function registerCoreBehavior(behaviorId, behaviorSpec)
-    assert(not CORE_BEHAVIORS[behaviorId], "core `behaviorId` '" .. behaviorId .. "' is already used")
+local nextCoreBehaviorId = 1
+
+function registerCoreBehavior(behaviorSpec)
     behaviorSpec.isCore = true
-    CORE_BEHAVIORS[behaviorId] = behaviorSpec
+    CORE_BEHAVIORS[nextCoreBehaviorId] = behaviorSpec
+    nextCoreBehaviorId = nextCoreBehaviorId + 1
 end
 
 

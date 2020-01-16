@@ -12,7 +12,7 @@ local GrabTool = {
     },
 }
 
-registerCoreBehavior(3, GrabTool)
+registerCoreBehavior(GrabTool)
 
 
 -- Update

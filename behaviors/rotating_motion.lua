@@ -10,7 +10,7 @@ local RotatingMotionBehavior = {
     handlers = {},
 }
 
-registerCoreBehavior(4, RotatingMotionBehavior)
+registerCoreBehavior(RotatingMotionBehavior)
 
 
 -- Body type
