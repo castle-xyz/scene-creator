@@ -8,6 +8,9 @@ local RotatingMotionBehavior = {
         'Body',
     },
     handlers = {},
+    description = [[
+Rotates the actor's body continuously.
+]],
 }
 
 registerCoreBehavior(4, RotatingMotionBehavior)

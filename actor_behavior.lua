@@ -215,6 +215,7 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     behavior.isCore = behaviorSpec.isCore
     behavior.name = behaviorSpec.name
     behavior.displayName = behaviorSpec.displayName
+    behavior.description = behaviorSpec.description
     behavior.game = self
     behavior.globals = {}
     behavior.components = {}
