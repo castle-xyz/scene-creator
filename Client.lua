@@ -120,18 +120,28 @@ function Client:draw()
         end
     end
 
-    do -- Selections
-        love.graphics.setColor(0, 1, 0)
-        love.graphics.setLineWidth(1.5 * love.graphics.getDPIScale())
+    do -- Outlines
+        -- All bodies (if not performing)
+        love.graphics.setLineWidth(1.25 * love.graphics.getDPIScale())
+        love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
+        if not self.performing then
+            for actorId, component in pairs(self.behaviorsByName.Body.components) do
+                self.behaviorsByName.Body:drawBodyOutline(component)
+            end
+        end
+
+        -- Selections
+        love.graphics.setLineWidth(2 * love.graphics.getDPIScale())
+        love.graphics.setColor(0, 1, 0, 0.8)
         local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
         for actorId in pairs(self.selectedActorIds) do
             if self.behaviorsByName.Body:has(actorId) then
                 if activeTool then
                     local component = activeTool.components[actorId]
                     if component and self.clientId ~= component.clientId then
-                        love.graphics.setColor(1, 0, 0)
+                        love.graphics.setColor(1, 0, 0, 0.8)
                     else
-                        love.graphics.setColor(0, 1, 0)
+                        love.graphics.setColor(0, 1, 0, 0.8)
                     end
                 end
                 self.behaviorsByName.Body:drawBodyOutline(actorId)
