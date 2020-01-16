@@ -86,7 +86,8 @@ end
 
 function Server:startLibrary()
     Common.startLibrary(self)
-    
+
+    -- On server, populate the library with core entries
     for _, entrySpec in pairs(CORE_LIBRARY) do
         local entryId = self:generateId()
         local entry = util.deepCopyTable(entrySpec)
@@ -124,6 +125,8 @@ end
 -- UI
 
 function Client:uiLibrary(opts)
+    -- Reusable library UI component
+
     opts = opts or {}
 
     ui.scrollBox('scrollBox1', {
