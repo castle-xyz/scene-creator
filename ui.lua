@@ -155,6 +155,35 @@ function Client:uiProperties()
                     end
                 end,
             })
+
+            --local actorId = next(self.selectedActorIds)
+            --if actorId then
+            --    ui.button('add to library', {
+            --        popoverAllowed = true,
+            --        popover = function()
+            --            self.addToLibraryTitle = ui.textInput('title', self.addToLibraryTitle)
+            --
+            --            self.addToLibraryDescription = ui.textInput('description', self.addToLibraryDescription)
+            --
+            --            if ui.button('save') then
+            --                local entryId = util.uuid()
+            --
+            --                local actorBlueprint = self:blueprintActor(actorId)
+            --
+            --                print(serpent.block(actorBlueprint))
+            --
+            --                self:send('addLibraryEntry', entryId, {
+            --                    entryType = 'actorBlueprint',
+            --                    title = self.addToLibraryTitle,
+            --                    description = self.addToLibraryDescription,
+            --                    actorBlueprint = actorBlueprint,
+            --                })
+            --                self.addToLibraryTitle = ''
+            --                self.addToLibraryDescription = ''
+            --            end
+            --        end,
+            --    })
+            --end
         end
     end)
 end
@@ -183,9 +212,41 @@ function Client:uiupdate()
             containerStyle = { flex = 1, margin = 0 },
             contentStyle = { flex = 1 },
         }, function()
-            -- Library tab
-            ui.tab('library', function()
-                self:uiLibrary()
+            -- Blueprints tab
+            ui.tab('blueprints', function()
+                self:uiLibrary({
+                    filterType = 'actorBlueprint',
+                    buttons = function(entry)
+                        ui.button('add to scene', {
+                            flex = 1,
+                            icon = 'plus',
+                            iconFamily = 'FontAwesome5',
+                            onClick = function()
+                                -- Stop performing
+                                self:send('setPerforming', false)
+
+                                -- Add the actor, initializing some values in the blueprint
+                                local actorBp = util.deepCopyTable(entry.actorBlueprint)
+                                if actorBp.Body then -- Has a `Body`? Position at center of window.
+                                    local windowWidth, windowHeight = love.graphics.getDimensions()
+                                    actorBp.Body.x, actorBp.Body.y = 0.5 * windowWidth, 0.5 * windowHeight
+                                end
+                                local actorId = self:sendAddActor(actorBp, entry.entryId)
+
+                                -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
+                                if actorBp.Body then
+                                    self:setActiveTool(nil)
+                                end
+                                self:deselectAllActors()
+                                self:selectActor(actorId)
+                                self:refreshTools()
+                                if actorBp.Body then
+                                    self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
+                                end
+                            end
+                        })
+                    end,
+                })
             end)
 
             -- Properties tab

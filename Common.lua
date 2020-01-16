@@ -67,7 +67,6 @@ function Common:start()
 end
 
 function Common:stop()
-    self:stopLibrary()
     self:stopActorBehavior()
 end
 

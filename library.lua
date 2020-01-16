@@ -95,17 +95,6 @@ function Server:startLibrary()
     end
 end
 
-function Client:startLibrary()
-    Common.startLibrary(self)
-
-    self.addFromLibraryEntryId = nil -- `entryId` of entry we are adding from, if adding, `nil` otherwise
-    self.addToLibraryTitle = ''
-    self.addToLibraryDescription = ''
-end
-
-function Common:stopLibrary()
-end
-
 
 -- Message kind definitions
 
@@ -132,93 +121,38 @@ function Common.receivers:addLibraryEntry(time, entryId, entry)
 end
 
 
--- Update
-
-function Client:preUpdateLibrary()
-    if self.addFromLibraryEntryId then -- Adding something?
-        -- Check for a single touch
-        if self.numTouches == 1 and self.maxNumTouches == 1 then
-            local touchId, touch = next(self.touches)
-
-            local entry = self.library[self.addFromLibraryEntryId]
-            self.addFromLibraryEntryId = nil
-            if entry then
-                if entry.entryType == 'actorBlueprint' then
-                    local actorBp = util.deepCopyTable(entry.actorBlueprint)
-
-                    -- If it has a `Body`, initialize position to touch location
-                    if actorBp.Body then 
-                        actorBp.Body.x, actorBp.Body.y = touch.x, touch.y
-                    end
-
-                    local actorId = self:sendAddActor(actorBp, entry.entryId)
-
-                    -- Select the actor. If we're not performing and it has a `Body`, switch to the `Grab` tool.
-                    if not self.performing and actorBp.Body then
-                        self:setActiveTool(nil)
-                    end
-                    self:deselectAllActors()
-                    self:selectActor(actorId)
-                    self:refreshTools()
-                    if not self.performing and actorBp.Body then
-                        self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
-                    end
-
-                    -- Mark the touch as used for selection so we don't change selections again
-                    touch.usedForSelection = true
-                end
-            end
-        end
-    end
-end
-
-
 -- UI
 
-function Client:uiLibrary()
+function Client:uiLibrary(opts)
+    opts = opts or {}
+
     ui.scrollBox('scrollBox1', {
         padding = 2,
         margin = 2,
         flex = 1,
     }, function()
-        local actorId = next(self.selectedActorIds)
-        if actorId then
-            ui.button('add to library', {
-                popoverAllowed = true,
-                popover = function()
-                    self.addToLibraryTitle = ui.textInput('title', self.addToLibraryTitle)
-
-                    self.addToLibraryDescription = ui.textInput('description', self.addToLibraryDescription)
-
-                    if ui.button('save') then
-                        local entryId = util.uuid()
-
-                        local actorBlueprint = self:blueprintActor(actorId)
-
-                        print(serpent.block(actorBlueprint))
-
-                        self:send('addLibraryEntry', entryId, {
-                            entryType = 'actorBlueprint',
-                            title = self.addToLibraryTitle,
-                            description = self.addToLibraryDescription,
-                            actorBlueprint = actorBlueprint,
-                        })
-                        self.addToLibraryTitle = ''
-                        self.addToLibraryDescription = ''
-                    end
-                end,
-            })
-        end
-
         local order = {}
         for entryId, entry in pairs(self.library) do
-            table.insert(order, entry)
+            local skip = false
+            if opts.filter then
+                if not opts.filter(entry) then
+                    skip = true
+                end
+            elseif opts.filterType then
+                if entry.entryType ~= opts.filterType then
+                    skip = true
+                end
+            end
+            if not skip then
+                table.insert(order, entry)
+            end
         end
         table.sort(order, function(entry1, entry2)
             return entry1.title:upper() < entry2.title:upper()
         end)
 
         for _, entry in ipairs(order) do
+            -- Entry box
             ui.box(entry.entryId, {
                 borderWidth = 1,
                 borderColor = '#292929',
@@ -231,6 +165,7 @@ function Client:uiLibrary()
             }, function()
                 local imageUrl
 
+                -- Figure out image based on type
                 if entry.entryType == 'actorBlueprint' then
                     local actorBp = entry.actorBlueprint
                     if actorBp.Image and actorBp.Image.url then
@@ -238,6 +173,7 @@ function Client:uiLibrary()
                     end
                 end
 
+                -- Show image if applies
                 if imageUrl then
                     ui.box('image-container', {
                         width = '28%',
@@ -259,16 +195,14 @@ function Client:uiLibrary()
                 end
 
                 ui.box('text-buttons', { flex = 1 }, function()
+                    -- Title, description
                     ui.markdown('## ' .. entry.title .. '\n' .. entry.description)
 
-                    if self.addFromLibraryEntryId ~= entry.entryId then
-                        if ui.button('add') then
-                            self.addFromLibraryEntryId = entry.entryId
-                        end
-                    else
-                        if ui.button('adding...', { selected = true }) then
-                            self.addFromLibraryEntryId = nil
-                        end
+                    -- Buttons
+                    if opts.buttons then
+                        ui.box('buttons', { flexDirection = 'row' }, function()
+                            opts.buttons(entry)
+                        end)
                     end
                 end)
             end)
