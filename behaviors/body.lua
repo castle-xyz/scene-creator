@@ -333,14 +333,14 @@ function BodyBehavior.handlers:uiComponent(component, opts)
                     ui.numberInput('width', rectangleWidth, {
                         min = 0,
                         onChange = function(newRectangleWidth)
-                            self:setRectangleShape(newRectangleWidth, rectangleHeight)
+                            self:setRectangleShape(component, newRectangleWidth, rectangleHeight)
                         end,
                     })
                 end, function()
                     ui.numberInput('height', rectangleHeight, {
                         min = 0,
                         onChange = function(newRectangleHeight)
-                            self:setRectangleShape(rectangleWidth, newRectangleHeight)
+                            self:setRectangleShape(component, rectangleWidth, newRectangleHeight)
                         end,
                     })
                 end)
