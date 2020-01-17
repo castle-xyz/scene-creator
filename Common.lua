@@ -21,6 +21,7 @@ require 'behaviors.body'
 require 'behaviors.image'
 require 'tools.grab'
 require 'behaviors.rotating_motion'
+require 'behaviors.free_motion'
 
 require 'library'
 

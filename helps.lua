@@ -25,7 +25,17 @@ A tool that allows moving and rotating actors using touch.
 
         RotatingMotion = {
             description = [[
-**Rotates** the actor's body continuously.
+**Rotates** the actor continuously.
+            ]],
+        },
+
+        FreeMotion = {
+            description = [[
+Allows the actor to **move freely**, responding to **collisions** with other actors.
+
+The actor can be given a **mass**. If an actor has a high mass it pushes other actors more and is pushed by other actors less.
+
+The actor can also have **gravity**, which makes it fall downward (or upward if its gravity is negative).
             ]],
         },
     },

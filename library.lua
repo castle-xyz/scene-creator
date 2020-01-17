@@ -24,9 +24,8 @@ local CORE_LIBRARY = {
                         55, -64,
                     },
                 },
-                bodyType = 'dynamic',
-                gravityScale = 1,
             },
+            FreeMotion = {},
         },
     },
     {

@@ -304,146 +304,45 @@ end
 function BodyBehavior.handlers:uiComponent(component, opts)
     local bodyId, body = self:getBody(component)
 
-    ui.tabs('body properties', function()
-        ui.tab('basic', function()
-            -- Position and angle
-            util.uiRow('position', function()
-                ui.numberInput('x', body:getX(), {
-                    onChange = function(newX)
-                        self._physics:setX(bodyId, newX)
-                    end,
-                })
-            end, function()
-                ui.numberInput('y', body:getY(), {
-                    onChange = function(newY)
-                        self._physics:setY(bodyId, newY)
-                    end,
-                })
-            end)
-            ui.numberInput('angle (degrees)', body:getAngle() * 180 / math.pi, {
-                onChange = function(newAngle)
-                    self._physics:setAngle(bodyId, newAngle * math.pi / 180)
+    -- Position and angle
+    util.uiRow('position', function()
+        ui.numberInput('x', body:getX(), {
+            onChange = function(newX)
+                self._physics:setX(bodyId, newX)
+            end,
+        })
+    end, function()
+        ui.numberInput('y', body:getY(), {
+            onChange = function(newY)
+                self._physics:setY(bodyId, newY)
+            end,
+        })
+    end)
+    ui.numberInput('angle (degrees)', body:getAngle() * 180 / math.pi, {
+        onChange = function(newAngle)
+            self._physics:setAngle(bodyId, newAngle * math.pi / 180)
+        end,
+    })
+
+    -- Rectangle size if rectangle-shaped
+    local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
+    if rectangleWidth and rectangleHeight then
+        util.uiRow('rectangle-size', function()
+            ui.numberInput('width', rectangleWidth, {
+                min = 0,
+                onChange = function(newRectangleWidth)
+                    self:setRectangleShape(component, newRectangleWidth, rectangleHeight)
                 end,
             })
-
-            -- Rectangle size if rectangle-shaped
-            local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
-            if rectangleWidth and rectangleHeight then
-                util.uiRow('rectangle-size', function()
-                    ui.numberInput('width', rectangleWidth, {
-                        min = 0,
-                        onChange = function(newRectangleWidth)
-                            self:setRectangleShape(component, newRectangleWidth, rectangleHeight)
-                        end,
-                    })
-                end, function()
-                    ui.numberInput('height', rectangleHeight, {
-                        min = 0,
-                        onChange = function(newRectangleHeight)
-                            self:setRectangleShape(component, rectangleWidth, newRectangleHeight)
-                        end,
-                    })
-                end)
-            end
+        end, function()
+            ui.numberInput('height', rectangleHeight, {
+                min = 0,
+                onChange = function(newRectangleHeight)
+                    self:setRectangleShape(component, rectangleWidth, newRectangleHeight)
+                end,
+            })
         end)
-
-        ui.tab('motion', function()
-            local bodyType = body:getType()
-
-            local function typeDropdown()
-                ui.dropdown('type', bodyType, { 'static', 'dynamic', 'kinematic' }, {
-                    onChange = function(newType)
-                        if newType and newType ~= body:getType() then
-                            bodyType = newType
-                            self._physics:setType(bodyId, newType)
-                        end
-                    end,
-                })
-            end
-
-            if bodyType == 'dynamic' then
-                util.uiRow('type-and-mass', typeDropdown, function()
-                    ui.numberInput('mass', body:getMass(), {
-                        min = 0,
-                        onChange = function(newMass)
-                            self._physics:setMass(bodyId, newMass)
-                        end,
-                    })
-                end)
-            else
-                typeDropdown()
-            end
-
-            if bodyType == 'dynamic' or bodyType == 'kinematic' then
-                local vx, vy = body:getLinearVelocity()
-                util.uiRow('linear velocity', function()
-                    ui.numberInput('velocity x', vx, {
-                        onChange = function(newVX)
-                            self._physics:setLinearVelocity(bodyId, newVX, vy)
-                        end,
-                    })
-                end, function()
-                    ui.numberInput('velocity y', vy, {
-                        onChange = function(newVY)
-                            self._physics:setLinearVelocity(bodyId, vx, newVY)
-                        end,
-                    })
-                end)
-
-                local function rotationSpeedInput()
-                    ui.numberInput('rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
-                        onChange = function(newAV)
-                            self._physics:setAngularVelocity(bodyId, newAV * math.pi / 180)
-                        end,
-                    })
-                end
-
-                if bodyType == 'dynamic' then
-                    local isFixedRotation = body:isFixedRotation()
-
-                    local function fixedRotationToggle()
-                        ui.toggle('fixed rotation off', 'fixed rotation on', isFixedRotation, {
-                            onToggle = function(newFixedRotation)
-                                self._physics:setFixedRotation(bodyId, newFixedRotation)
-                            end,
-                        })
-                    end
-
-                    if isFixedRotation then
-                        fixedRotationToggle()
-                    else
-                        util.uiRow('rotation-speed-and-fixed-rotation', rotationSpeedInput, fixedRotationToggle)
-                    end
-                else
-                    rotationSpeedInput()
-                end
-            end
-
-            if bodyType == 'dynamic' then
-                ui.numberInput('gravity scale', body:getGravityScale(), {
-                    onChange = function(newGravityScale)
-                        self._physics:setGravityScale(bodyId, newGravityScale)
-                    end,
-                })
-
-                util.uiRow('damping', function()
-                    ui.numberInput('linear damping', body:getLinearDamping(), {
-                        step = 0.05,
-                        onChange = function(newLinearDamping)
-                            self._physics:setLinearDamping(bodyId, newLinearDamping)
-                        end,
-                    })
-                end, function()
-                    ui.numberInput('angular damping', body:getAngularDamping(), {
-                        step = 0.05,
-                        onChange = function(newAngularDamping)
-                            self._physics:setAngularDamping(bodyId, newAngularDamping)
-                        end,
-                    })
-                end)
-            end
-        end)
-    end)
+    end
 end
 
 
