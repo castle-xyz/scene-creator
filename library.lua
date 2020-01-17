@@ -51,30 +51,6 @@ local CORE_LIBRARY = {
             },
         },
     },
-    {
-        entryType = 'actorBlueprint',
-        title = 'rotating ice platform',
-        description = "Like 'ice platform', but rotating!",
-        actorBlueprint = {
-            Image = {
-                url = 'http://www.photonstorm.com/wp-content/uploads/2015/01/ice-platform.png',
-            },
-            Body = {
-                fixture = {
-                    shapeType = 'polygon',
-                    points = {
-                        -192, -48,
-                        -192, 48,
-                        192, 48,
-                        192, -48,
-                    },
-                },
-            },
-            RotatingMotion = {
-                rotationsPerSecond = 0.5,
-            },
-        },
-    },
 }
 
 
