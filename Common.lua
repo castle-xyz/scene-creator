@@ -98,13 +98,3 @@ function Common.receivers:setPerforming(time, performing)
     end
 end
 
-
--- Update
-
-function Common:update(dt)
-    self:updatePerformance(dt)
-
-    self:callHandlers('preUpdate', dt)
-    self:callHandlers('update', dt)
-    self:callHandlers('postUpdate', dt)
-end

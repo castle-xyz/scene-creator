@@ -40,3 +40,16 @@ end
 function Server:disconnect(clientId)
     self:disconnectActorBehavior(clientId)
 end
+
+
+-- Update
+
+function Server:update(dt)
+    -- Server doesn't have tools so this is simple...
+
+    self:updatePerformance(dt)
+
+    self:callHandlers('preUpdate', dt)
+    self:callHandlers('update', dt)
+    self:callHandlers('postUpdate', dt)
+end

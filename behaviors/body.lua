@@ -24,7 +24,7 @@ function BodyBehavior.handlers:addBehavior(opts)
     self._physics = Physics.new({
         game = self.game,
         updateRate = 120,
-        reliableChannel = MAIN_RELIABLE_CHANNEL,
+        reliableChannel = self.game.channels.mainReliable,
     })
 
     if self.game.server then
@@ -45,7 +45,7 @@ function BodyBehavior.handlers:preSyncClient(clientId)
     -- Sync the world to the new client
     self._physics:syncNewClient({
         clientId = clientId,
-        channel = MAIN_RELIABLE_CHANNEL,
+        channel = self.game.channels.mainReliable,
     })
 end
 
@@ -257,6 +257,8 @@ end
 -- Perform / update
 
 function BodyBehavior.handlers:prePerform(dt)
+    -- Update the world at the very start of the performance to allow other behaviors to make
+    -- changes after
     self._physics:updateWorld(self.globals.worldId, dt)
 
     if self.game.server then -- Remove out-of-bound bodies
@@ -271,7 +273,7 @@ function BodyBehavior.handlers:prePerform(dt)
 end
 
 function BodyBehavior.handlers:postUpdate(dt)
-    -- Do this in `postUpdate` so it's after tool updates
+    -- Send syncs at the end of the frame, after tool updates
     if self.game.performing then
         self._physics:sendSyncs(self.globals.worldId)
     end
@@ -291,7 +293,7 @@ function BodyBehavior.handlers:setPerforming(performing)
         -- continuous syncs
         self._physics:sendSyncs({
             reliable = true,
-            channel = MAIN_RELIABLE_CHANNEL,
+            channel = self.game.channels.mainReliable,
         }, self.globals.worldId)
     end
 end
@@ -304,7 +306,7 @@ function BodyBehavior.handlers:uiComponent(component, opts)
 
     ui.tabs('body properties', function()
         ui.tab('basic', function()
-            -- Position and angle inputs
+            -- Position and angle
             util.uiRow('position', function()
                 ui.numberInput('x', body:getX(), {
                     onChange = function(newX)
@@ -324,39 +326,24 @@ function BodyBehavior.handlers:uiComponent(component, opts)
                 end,
             })
 
-            local fixture = body:getFixtures()[1]
-            if fixture then
-                local shape = fixture:getShape()
-                local shapeType = shape:getType()
-
-                -- Width and height inputs if rectangle shaped
-                local rectangleWidth, rectangleHeight
-                if shapeType == 'polygon' then
-                    local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()
-                    if p4y ~= nil and p5x == nil then
-                        if (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
-                            (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x) then
-                            rectangleWidth, rectangleHeight = 2 * math.abs(p1x), 2 * math.abs(p1y)
-                        end
-                    end
-                end
-                if rectangleWidth and rectangleHeight then
-                    util.uiRow('rectangle-size', function()
-                        ui.numberInput('width', rectangleWidth, {
-                            min = 0,
-                            onChange = function(newRectangleWidth)
-                                self:replaceShape(component, self._physics:newRectangleShape(newRectangleWidth, rectangleHeight))
-                            end,
-                        })
-                    end, function()
-                        ui.numberInput('height', rectangleHeight, {
-                            min = 0,
-                            onChange = function(newRectangleHeight)
-                                self:replaceShape(component, self._physics:newRectangleShape(rectangleWidth, newRectangleHeight))
-                            end,
-                        })
-                    end)
-                end
+            -- Rectangle size if rectangle-shaped
+            local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
+            if rectangleWidth and rectangleHeight then
+                util.uiRow('rectangle-size', function()
+                    ui.numberInput('width', rectangleWidth, {
+                        min = 0,
+                        onChange = function(newRectangleWidth)
+                            self:setRectangleShape(newRectangleWidth, rectangleHeight)
+                        end,
+                    })
+                end, function()
+                    ui.numberInput('height', rectangleHeight, {
+                        min = 0,
+                        onChange = function(newRectangleHeight)
+                            self:setRectangleShape(rectangleWidth, newRectangleHeight)
+                        end,
+                    })
+                end)
             end
         end)
 
@@ -460,9 +447,9 @@ function BodyBehavior.handlers:uiComponent(component, opts)
 end
 
 
--- Methods
+-- Setters
 
-function BodyBehavior:replaceShape(componentOrActorId, newShapeId)
+function BodyBehavior:setShape(componentOrActorId, newShapeId)
     local bodyId, body = self:getBody(componentOrActorId)
     local fixture = body:getFixtures()[1]
     if fixture then
@@ -479,6 +466,11 @@ function BodyBehavior:replaceShape(componentOrActorId, newShapeId)
 
         return newFixtureId
     end
+end
+
+function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
+    newWidth, newHeight = math.max(64, math.min(newWidth, 4096)), math.max(64, math.min(newHeight, 4096))
+    self:setShape(componentOrActorId, self._physics:newRectangleShape(newWidth, newHeight))
 end
 
 
@@ -500,18 +492,17 @@ function BodyBehavior:getBody(componentOrActorId)
     end
 end
 
+local sizeCache = setmetatable({}, { __mode = 'k' })
+
 function BodyBehavior:getSize(actorId)
+    -- Get bounding box size, whatever the shape of the body
+
     local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
     local bodyId, body = self:getBody(component)
     local fixture = body:getFixtures()[1]
     if fixture then
         -- Cache the size so we don't recompute it every time. This is made easier by the fact that
         -- fixtures are immutable -- we can use them as a cache key.
-        local sizeCache = component._sizeCache
-        if not sizeCache then
-            sizeCache = setmetatable({}, { __mode = 'k' })
-            component._sizeCache = sizeCache
-        end
         local cached = sizeCache[fixture]
         if not cached then
             cached = {}
@@ -534,6 +525,26 @@ function BodyBehavior:getSize(actorId)
             end
         end
         return cached.width, cached.height
+    end
+end
+
+function BodyBehavior:getRectangleSize(componentOrActorId)
+    -- Return width and height of rectangle shape if rectangle-shaped, else `nil`
+
+    local bodyId, body = self:getBody(componentOrActorId)
+    local fixture = body:getFixtures()[1]
+    if fixture then
+        local shape = fixture:getShape()
+        local shapeType = shape:getType()
+        if shapeType == 'polygon' then
+            local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()
+            if p4y ~= nil and p5x == nil then
+                if (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
+                    (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x) then
+                    return 2 * math.abs(p1x), 2 * math.abs(p1y)
+                end
+            end
+        end
     end
 end
 

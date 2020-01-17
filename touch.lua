@@ -8,9 +8,9 @@ function Client:startTouch()
 end
 
 
--- Update
+-- Methods
 
-function Client:postUpdateTouch()
+function Client:flushTouches()
     -- Clear touch state
     for touchId, touch in pairs(self.touches) do
         if touch.released then

@@ -75,11 +75,17 @@ function Client:update(dt)
         return
     end
 
-    self:preUpdateSelect()
+    self:updatePerformance(dt)
+    self:applySelections() -- Performance may have added or removed actors or components, so apply changes
 
-    Common.update(self, dt)
+    self:callHandlers('preUpdate', dt)
 
-    self:postUpdateTouch()
+    self:touchToSelect() -- Do this after `preUpdate` to allow tools to steal touches first
+
+    self:callHandlers('update', dt)
+    self:callHandlers('postUpdate', dt)
+
+    self:flushTouches() -- Clear touch state at end of frame
 end
 
 
@@ -120,8 +126,10 @@ function Client:draw()
         end
     end
 
-    do -- Outlines
-        -- All bodies (if not performing)
+    do -- Overlays
+        local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+
+        -- All body outlines (if not performing)
         love.graphics.setLineWidth(1.25 * love.graphics.getDPIScale())
         love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
         if not self.performing then
@@ -130,10 +138,9 @@ function Client:draw()
             end
         end
 
-        -- Selections
+        -- Selection outlines
         love.graphics.setLineWidth(2 * love.graphics.getDPIScale())
         love.graphics.setColor(0, 1, 0, 0.8)
-        local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
         for actorId in pairs(self.selectedActorIds) do
             if self.behaviorsByName.Body:has(actorId) then
                 if activeTool then
@@ -146,6 +153,12 @@ function Client:draw()
                 end
                 self.behaviorsByName.Body:drawBodyOutline(actorId)
             end
+        end
+
+        -- Tool
+        if activeTool then
+            love.graphics.setColor(0, 1, 0, 0.8)
+            activeTool:callHandler('drawOverlay')
         end
     end
 

@@ -11,15 +11,15 @@ end
 
 -- Methods
 
-function Client:refreshTools()
-    -- Clear removed actors
+function Client:applySelections()
+    -- Clear stale selections of removed actors
     for actorId in pairs(self.selectedActorIds) do
         if not self.actors[actorId] then
             self:deselectActor(actorId)
         end
     end
 
-    -- Clear active tool if removed
+    -- Clear stale active tool if removed
     if not self.tools[self.activeToolBehaviorId] then
         self.activeToolBehaviorId = nil
     end
@@ -173,16 +173,13 @@ function Client:selectActorAtPoint(x, y, hits)
     end
 end
 
-
--- Update
-
-function Client:preUpdateSelect()
-    -- Touch-to-select (do this before refreshing tools since it affects selections)
+function Client:touchToSelect()
+    -- Touch-to-select. We skip if `touch.used` since the touch is already being used for some gesture.
     if self.numTouches == 1 and self.maxNumTouches == 1 then
         local touchId, touch = next(self.touches)
 
         -- Press? Check at point and select if nothing already selected there.
-        if touch.pressed then
+        if not touch.used and touch.pressed then
             local someSelectedHit = false
             local hits = self.behaviorsByName.Body:getActorsAtPoint(touch.x, touch.y)
             for actorId in pairs(hits) do
@@ -193,17 +190,18 @@ function Client:preUpdateSelect()
             end
             if not someSelectedHit then
                 self:selectActorAtPoint(touch.x, touch.y, hits)
-                touch.usedForSelection = true -- Mark as having been used for a selection
+                touch.used = true
+                self:applySelections()
             end
         end
 
-        -- Quick press and release without moving? And touch wasn't already used for a selection? Select!
-        if (not touch.usedForSelection and touch.released and
+        -- Quick press and release without moving? Select!
+        if (not touch.used and touch.released and
                 touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 and
                 love.timer.getTime() - touch.pressTime < 0.2) then
             self:selectActorAtPoint(touch.x, touch.y)
+            touch.used = true
+            self:applySelections()
         end
     end
-
-    self:refreshTools()
 end

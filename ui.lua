@@ -234,8 +234,8 @@ function Client:uiupdate()
         return
     end
 
-    -- Refresh tools first to make sure selections / applicable tool set / etc. are valid
-    self:refreshTools() 
+    -- Refresh tools first to make sure selections and applicable tool set are valid
+    self:applySelections() 
 
     -- Toolbar
     ui.pane('toolbar', {
@@ -279,7 +279,7 @@ function Client:uiupdate()
                                 end
                                 self:deselectAllActors()
                                 self:selectActor(actorId)
-                                self:refreshTools()
+                                self:applySelections()
                                 if actorBp.Body then
                                     self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
                                 end

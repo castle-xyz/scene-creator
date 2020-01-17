@@ -135,7 +135,7 @@ function Server:syncClientActorBehavior(clientId, send)
         behavior:sendSetProperties({
             to = clientId,
             selfSend = false,
-            channel = MAIN_RELIABLE_CHANNEL,
+            channel = self.channels.mainReliable,
         }, util.unpackPairs(behavior.globals))
     end
 
@@ -155,7 +155,7 @@ function Server:syncClientActorBehavior(clientId, send)
             behavior:sendSetProperties({
                 to = clientId,
                 selfSend = false,
-                channel = MAIN_RELIABLE_CHANNEL,
+                channel = self.channels.mainReliable,
                 actorId = actorId,
             }, util.unpackPairs(component.properties))
         end
