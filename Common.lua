@@ -1,6 +1,8 @@
 ui = castle.ui
 
 
+UNIT = 100
+
 CHECKERBOARD_IMAGE_URL = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
 
 

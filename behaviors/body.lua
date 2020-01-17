@@ -1,7 +1,7 @@
 local Physics = require 'multi.physics'
 
 
-love.physics.setMeter(64)
+love.physics.setMeter(UNIT)
 
 
 local BodyBehavior = {
@@ -29,7 +29,7 @@ function BodyBehavior.handlers:addBehavior(opts)
 
     if self.game.server then
         -- If server, create a new world
-        self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, 64 * 9.8, true))
+        self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, UNIT * 9.8, true))
     end
 end
 
@@ -95,7 +95,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
                 local shapeType = fixtureBp.shapeType
 
                 if shapeType == 'circle' then
-                    shapeId = self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 64)
+                    shapeId = self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0.5 * UNIT)
                 elseif shapeType == 'polygon' then
                     shapeId = self._physics:newPolygonShape(unpack(assert(fixtureBp.points)))
                 elseif shapeType == 'edge' then
@@ -122,7 +122,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
                 self._physics:destroyObject(shapeId)
             end
         else -- Default shape
-            local shapeId = self._physics:newRectangleShape(128, 128)
+            local shapeId = self._physics:newRectangleShape(UNIT, UNIT)
             local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
             self._physics:destroyObject(shapeId)
         end
@@ -469,7 +469,7 @@ function BodyBehavior:setShape(componentOrActorId, newShapeId)
 end
 
 function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
-    newWidth, newHeight = math.max(64, math.min(newWidth, 4096)), math.max(64, math.min(newHeight, 4096))
+    newWidth, newHeight = math.max(UNIT, math.min(newWidth, 40 * UNIT)), math.max(UNIT, math.min(newHeight, 40 * UNIT))
     self:setShape(componentOrActorId, self._physics:newRectangleShape(newWidth, newHeight))
 end
 

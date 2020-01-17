@@ -15,8 +15,8 @@ local GrabTool = {
 registerCoreBehavior(GrabTool)
 
 
-local HANDLE_TOUCH_RADIUS = 14
-local HANDLE_DRAW_RADIUS = 8
+local HANDLE_TOUCH_RADIUS = 18
+local HANDLE_DRAW_RADIUS = 10
 
 
 -- Methods
@@ -71,7 +71,7 @@ function GrabTool:getHandles()
             end
             do -- Rotate
                 local centerX, centerY = body:getWorldPoint(0, 0)
-                local x, y = body:getWorldPoint(0, -0.5 * singleRectangleHeight - 6 * HANDLE_DRAW_RADIUS)
+                local x, y = body:getWorldPoint(0, -0.5 * singleRectangleHeight - 8 * HANDLE_DRAW_RADIUS)
                 local endX, endY = body:getWorldPoint(0, -0.5 * singleRectangleHeight) 
                 table.insert(handles, {
                     x = x,
@@ -192,7 +192,7 @@ function GrabTool.handlers:update(dt)
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
 
                 if handle.rectangleWidth and handle.rectangleHeight then -- Rectangle resize?
-                    local desiredWidth, desiredHeight = math.max(64, 2 * math.abs(lx)), math.max(64, 2 * math.abs(ly))
+                    local desiredWidth, desiredHeight = math.max(UNIT, 2 * math.abs(lx)), math.max(UNIT, 2 * math.abs(ly))
                     if handle.handleType == 'rectangleCornerResize' then
                         local s = math.max(desiredWidth / handle.rectangleWidth, desiredHeight / handle.rectangleHeight)
                         self.dependencies.Body:setRectangleShape(actorId, s * handle.rectangleWidth, s * handle.rectangleHeight)
