@@ -4,7 +4,6 @@ local ImageBehavior = {
         'url',
         'depth',
         'filter',
-        'fitMode',
         'cropEnabled',
         'cropX',
         'cropY',
@@ -27,7 +26,6 @@ function ImageBehavior.handlers:addComponent(component, bp, opts)
     component.properties.url = bp.url or CHECKERBOARD_IMAGE_URL
     component.properties.depth = bp.depth or 0
     component.properties.filter = bp.filter or 'nearest'
-    component.properties.fitMode = bp.fitMode or 'contain'
     if bp.cropEnabled ~= nil then
         component.properties.cropEnabled = bp.cropEnabled
     else
@@ -46,7 +44,6 @@ function ImageBehavior.handlers:blueprintComponent(component, bp)
     bp.url = component.properties.url
     bp.depth = component.properties.depth
     bp.filter = component.properties.filter
-    bp.fitMode = component.properties.fitMode
     bp.cropEnabled = component.properties.cropEnabled
     bp.cropX = component.properties.cropX
     bp.cropY = component.properties.cropY
@@ -87,10 +84,6 @@ function ImageBehavior.handlers:draw(order)
                 -- Compute scale from body size
                 local bodyWidth, bodyHeight = self.dependencies.Body:getSize(actorId)
                 local scaleX, scaleY = bodyWidth / imageWidth, bodyHeight / imageHeight
-                if component._imageHolder.loaded and component.properties.fitMode == 'contain' then
-                    scaleX = math.min(scaleX, scaleY)
-                    scaleY = scaleX
-                end
 
                 -- Get position and angle from body
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
@@ -129,10 +122,10 @@ function ImageBehavior.handlers:uiComponent(component, opts)
         end,
     })
 
-    util.uiRow('fit-mode-and-scaling-style', function()
-        ui.dropdown('fit mode', component.properties.fitMode, { 'contain', 'stretch' }, {
-            onChange = function(newFitMode)
-                self:sendSetProperties(component.actorId, 'fitMode', newFitMode)
+    util.uiRow('depth-and-scaling-style', function()
+        ui.numberInput('depth', component.properties.depth, {
+            onChange = function(newDepth)
+                self:sendSetProperties(component.actorId, 'depth', newDepth)
             end,
         })
     end, function()
@@ -147,12 +140,6 @@ function ImageBehavior.handlers:uiComponent(component, opts)
             end,
         })
     end)
-
-    ui.numberInput('depth', component.properties.depth, {
-        onChange = function(newDepth)
-            self:sendSetProperties(component.actorId, 'depth', newDepth)
-        end,
-    })
 
     util.uiRow('crop', function()
         ui.toggle('crop off', 'crop on', component.properties.cropEnabled, {
