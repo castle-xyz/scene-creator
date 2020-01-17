@@ -69,6 +69,20 @@ function GrabTool:getHandles()
                     end
                 end
             end
+            do -- Rotate
+                local centerX, centerY = body:getWorldPoint(0, 0)
+                local x, y = body:getWorldPoint(0, -0.5 * singleRectangleHeight - 6 * HANDLE_DRAW_RADIUS)
+                local endX, endY = body:getWorldPoint(0, -0.5 * singleRectangleHeight) 
+                table.insert(handles, {
+                    x = x,
+                    y = y,
+                    handleType = 'rotate',
+                    pivotX = centerX,
+                    pivotY = centerY,
+                    endX = endX,
+                    endY = endY,
+                })
+            end
         end
     end
 
@@ -179,7 +193,7 @@ function GrabTool.handlers:update(dt)
                 if handle.rectangleWidth and handle.rectangleHeight then -- Rectangle resize?
                     local desiredWidth, desiredHeight = math.max(64, 2 * math.abs(lx)), math.max(64, 2 * math.abs(ly))
                     if handle.handleType == 'rectangleCornerResize' then
-                        local s = math.min(desiredWidth / handle.rectangleWidth, desiredHeight / handle.rectangleHeight)
+                        local s = math.max(desiredWidth / handle.rectangleWidth, desiredHeight / handle.rectangleHeight)
                         self.dependencies.Body:setRectangleShape(actorId, s * handle.rectangleWidth, s * handle.rectangleHeight)
                     elseif handle.handleType == 'rectangleWidthResize' then
                         self.dependencies.Body:setRectangleShape(actorId, desiredWidth, handle.rectangleHeight)
@@ -187,6 +201,13 @@ function GrabTool.handlers:update(dt)
                         self.dependencies.Body:setRectangleShape(actorId, handle.rectangleWidth, desiredHeight)
                     end
                 end
+            end
+
+            if handle.handleType == 'rotate' then
+                local angle = math.atan2(touch.y - handle.pivotY, touch.x - handle.pivotX)
+                local prevAngle = math.atan2(touch.y - touch.dy - handle.pivotY, touch.x - touch.dx - handle.pivotX)
+                rotation = angle - prevAngle
+                self:moveRotate(0, 0, rotation, handle.pivotX, handle.pivotY)
             end
 
             return -- We processed a handle, skip other gestures
@@ -236,6 +257,9 @@ end
 function GrabTool.handlers:drawOverlay(dt)
     for _, handle in ipairs(self:getHandles()) do
         love.graphics.circle('fill', handle.x, handle.y, HANDLE_DRAW_RADIUS)
+        if handle.endX and handle.endY then
+            love.graphics.line(handle.x, handle.y, handle.endX, handle.endY)
+        end
     end
 end
 
