@@ -15,8 +15,8 @@ local GrabTool = {
 registerCoreBehavior(GrabTool)
 
 
-local HANDLE_TOUCH_RADIUS = 24
-local HANDLE_DRAW_RADIUS = 12
+local HANDLE_TOUCH_RADIUS = 14
+local HANDLE_DRAW_RADIUS = 8
 
 
 -- Methods
@@ -159,13 +159,14 @@ end
 
 function GrabTool.handlers:preUpdate(dt)
     -- Check for handle touches and steal them
+    local handleTouchRadius = love.graphics.getDPIScale() * HANDLE_TOUCH_RADIUS
     local touchData = self:getTouchData()
     if touchData.numTouches == 1 then
         local touchId, touch = next(touchData.touches)
         if touch.pressed then
             for _, handle in ipairs(self:getHandles()) do
                 local distX, distY = handle.x - touch.x, handle.y - touch.y
-                if distX * distX + distY * distY <= HANDLE_TOUCH_RADIUS * HANDLE_TOUCH_RADIUS then
+                if distX * distX + distY * distY <= handleTouchRadius * handleTouchRadius then
                     touch.grabHandle = handle
                     touch.used = true
                     break
@@ -255,8 +256,9 @@ end
 -- Draw
 
 function GrabTool.handlers:drawOverlay(dt)
+    local handleDrawRadius = love.graphics.getDPIScale() * HANDLE_DRAW_RADIUS
     for _, handle in ipairs(self:getHandles()) do
-        love.graphics.circle('fill', handle.x, handle.y, HANDLE_DRAW_RADIUS)
+        love.graphics.circle('fill', handle.x, handle.y, handleDrawRadius)
         if handle.endX and handle.endY then
             love.graphics.line(handle.x, handle.y, handle.endX, handle.endY)
         end
