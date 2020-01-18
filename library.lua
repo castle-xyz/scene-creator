@@ -200,8 +200,9 @@ function Client:uiLibrary(opts)
                 end
 
                 ui.box('text-buttons', { flex = 1 }, function()
-                    -- Title, description
-                    ui.markdown('## ' .. entry.title .. '\n' .. (entry.description or ''))
+                    -- Title, short description
+                    local shortDescription = (entry.description and entry.description:match('^[\n ]*[^\n]*')) or ''
+                    ui.markdown('## ' .. entry.title .. '\n' .. shortDescription)
 
                     -- Buttons
                     if opts.buttons then
