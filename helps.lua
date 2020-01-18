@@ -33,7 +33,7 @@ A tool that allows moving and rotating actors using touch.
 
         FreeMotion = {
             description = [[
-Makes the actor **move freely**, responding to **collisions** with other actors and (optionally) fall with **gravity**.
+Makes the actor **move freely**, respond to **collisions** with other actors and (optionally) fall with **gravity**.
 
 If an actor has a high **mass** it pushes other actors more and is pushed by other actors less.
             ]],
