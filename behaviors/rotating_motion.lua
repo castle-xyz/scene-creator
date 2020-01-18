@@ -26,6 +26,13 @@ function RotatingMotionBehavior.handlers:addComponent(component, bp, opts)
     component.properties.rotationsPerSecond = bp.rotationsPerSecond or 1
 end
 
+function RotatingMotionBehavior.handlers:removeComponent(component, opts)
+    if not opts.removeActor then
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        body:setAngularVelocity(0)
+    end
+end
+
 function RotatingMotionBehavior.handlers:blueprintComponent(component, bp)
     bp.rotationsPerSecond = component.properties.rotationsPerSecond
 end

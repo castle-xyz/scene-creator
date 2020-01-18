@@ -19,6 +19,17 @@ function FreeMotionBehavior.handlers:bodyTypeComponent(component)
 end
 
 
+-- Component management
+
+function FreeMotionBehavior.handlers:removeComponent(component, opts)
+    if not opts.removeActor then
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        body:setLinearVelocity(0, 0)
+        body:setAngularVelocity(0)
+    end
+end
+
+
 -- UI
 
 function FreeMotionBehavior.handlers:uiComponent(component, opts)
