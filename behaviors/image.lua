@@ -37,9 +37,6 @@ function ImageBehavior.handlers:addComponent(component, bp, opts)
     component.properties.cropHeight = bp.cropHeight or 32
 end
 
-function ImageBehavior.handlers:removeComponent(component, opts)
-end
-
 function ImageBehavior.handlers:blueprintComponent(component, bp)
     bp.url = component.properties.url
     bp.depth = component.properties.depth
