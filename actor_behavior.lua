@@ -195,10 +195,29 @@ end
 function Common.receivers:removeActor(time, clientId, actorId)
     local actor = assert(self.actors[actorId], 'removeActor: no such actor')
 
-    for behaviorId, component in pairs(actor.components) do
-        local behavior = self.behaviors[behaviorId]
-        behavior:callHandler('removeComponent', component, {
+    -- Need to visit dependents before dependencies -- collect pre-order traversal along dependency
+    -- links, then use its reverse
+    local order = {}
+    local visited = {}
+    local function visit(behaviorId, behavior)
+        if visited[behaviorId] then
+            return
+        end
+        visited[behaviorId] = true
+        behavior = behavior or self.behaviors[behaviorId]
+        for _, dependency in pairs(behavior.dependencies) do
+            visit(dependency.behaviorId, dependency)
+        end
+        table.insert(order, behavior)
+    end
+    for behaviorId in pairs(actor.components) do
+        visit(behaviorId)
+    end
+    for i = #order, 1, -1 do
+        local behavior = order[i]
+        behavior:callHandler('removeComponent', behavior.components[actorId], {
             isOrigin = self.clientId == clientId,
+            removeActor = true,
         })
         behavior.components[actorId] = nil
     end
@@ -343,6 +362,7 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
 
     behavior:callHandler('removeComponent', component, {
         isOrigin = self.clientId == clientId,
+        removeActor = false,
     })
 
     for _, dependency in pairs(behavior.dependencies) do
