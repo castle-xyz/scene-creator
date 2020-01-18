@@ -2,6 +2,7 @@ local ImageBehavior = {
     name = 'Image',
     propertyNames = {
         'url',
+        'color',
         'depth',
         'filter',
         'cropEnabled',
@@ -24,6 +25,7 @@ registerCoreBehavior(ImageBehavior)
 function ImageBehavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.url = bp.url or CHECKERBOARD_IMAGE_URL
+    component.properties.color = bp.color or { 1, 1, 1, 1 }
     component.properties.depth = bp.depth or 0
     component.properties.filter = bp.filter or 'nearest'
     if bp.cropEnabled ~= nil then
@@ -39,6 +41,7 @@ end
 
 function ImageBehavior.handlers:blueprintComponent(component, bp)
     bp.url = component.properties.url
+    bp.color = util.deepCopyTable(component.properties.color)
     bp.depth = component.properties.depth
     bp.filter = component.properties.filter
     bp.cropEnabled = component.properties.cropEnabled
@@ -60,14 +63,14 @@ function ImageBehavior.handlers:draw(order)
             id = actorId,
             depth = component.properties.depth,
             draw = function()
-                -- Load image drawable
+                -- Image drawable
                 component._imageHolder = resource_loader.loadImage(
                     component.properties.localUrl or component.properties.url,
                     component.properties.filter)
                 local image = component._imageHolder.image
                 local imageWidth, imageHeight = image:getDimensions()
 
-                -- Compute quad from crop
+                -- Quad from crop
                 local quad
                 if component._imageHolder.loaded and component.properties.cropEnabled then
                     theQuad:setViewport(component.properties.cropX, component.properties.cropY,
@@ -78,15 +81,19 @@ function ImageBehavior.handlers:draw(order)
                     theQuad:setViewport(0, 0, imageWidth, imageHeight, imageWidth, imageHeight)
                 end
 
-                -- Compute scale from body size
+                -- Scale from body size
                 local bodyWidth, bodyHeight = self.dependencies.Body:getSize(actorId)
                 local scaleX, scaleY = bodyWidth / imageWidth, bodyHeight / imageHeight
 
-                -- Get position and angle from body
+                -- Position and angle from body
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
                 local x, y = body:getPosition()
                 local angle = body:getAngle()
 
+                -- Color
+                love.graphics.setColor(component.properties.color)
+
+                -- Draw!
                 love.graphics.draw(
                     image,
                     theQuad,
@@ -118,6 +125,27 @@ function ImageBehavior.handlers:uiComponent(component, opts)
             end
         end,
     })
+
+    ui.box('color-and-opacity', { flexDirection = 'row', alignItems = 'flex-start' }, function()
+        ui.box('color', { flex = 1 }, function()
+            local color = component.properties.color
+            ui.colorPicker('color', color[1], color[2], color[3], 1, {
+                enableAlpha = false,
+                onChange = function(newColor)
+                    self:sendSetProperties(component.actorId, 'color', { newColor.r, newColor.g, newColor.b, color[4] })
+                end,
+            })
+        end)
+        ui.box('color', { flex = 3 }, function()
+            ui.slider('opacity', component.properties.color[4], 0, 1, {
+                step = 0.01,
+                onChange = function(newOpacity)
+                    local color = component.properties.color
+                    self:sendSetProperties(component.actorId, 'color', { color[1], color[2], color[3], newOpacity })
+                end,
+            })
+        end)
+    end)
 
     util.uiRow('depth-and-scaling-style', function()
         ui.numberInput('depth', component.properties.depth, {
