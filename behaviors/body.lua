@@ -117,6 +117,8 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
                 end
                 if fixtureBp.sensor ~= nil then
                     self._physics:setSensor(fixtureId, fixtureBp.sensor)
+                else
+                    self._physics:setSensor(fixtureId, true) -- Sensor by default
                 end
 
                 self._physics:destroyObject(shapeId)

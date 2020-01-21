@@ -20,8 +20,9 @@ require 'actor_behavior'
 require 'behaviors.body'
 require 'behaviors.image'
 require 'tools.grab'
-require 'behaviors.rotating_motion'
+require 'behaviors.solid'
 require 'behaviors.free_motion'
+require 'behaviors.rotating_motion'
 
 require 'library'
 

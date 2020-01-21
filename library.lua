@@ -25,6 +25,7 @@ local CORE_LIBRARY = {
                     },
                 },
             },
+            Solid = {},
             FreeMotion = {},
         },
     },
@@ -48,6 +49,7 @@ local CORE_LIBRARY = {
                 },
                 bodyType = 'static',
             },
+            Solid = {},
         },
     },
 }
