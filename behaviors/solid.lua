@@ -12,6 +12,19 @@ local SolidBehavior = {
 registerCoreBehavior(SolidBehavior)
 
 
+-- Utilities
+
+local function wakeBodyAndColliders(body)
+    body:setAwake(true)
+    for _, contact in ipairs(body:getContacts()) do
+        local f1, f2 = contact:getFixtures()
+        local b1, b2 = f1:getBody(), f2:getBody()
+        local otherBody = body == b1 and b2 or b1
+        otherBody:setAwake(true)
+    end
+end
+
+
 -- Component management
 
 function SolidBehavior.handlers:addComponent(component, bp, opts)
@@ -19,6 +32,7 @@ function SolidBehavior.handlers:addComponent(component, bp, opts)
     local fixture = body:getFixtures()[1]
     if fixture then
         fixture:setSensor(false)
+        wakeBodyAndColliders(body)
     end
 end
 
@@ -28,6 +42,7 @@ function SolidBehavior.handlers:removeComponent(component, opts)
         local fixture = body:getFixtures()[1]
         if fixture then
             fixture:setSensor(true)
+            wakeBodyAndColliders(body)
         end
     end
 end

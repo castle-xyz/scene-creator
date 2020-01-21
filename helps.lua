@@ -41,7 +41,7 @@ A higher **density** makes the actor feel heavier: it will be pushed by other ac
 
         Solid = {
             description = [[
-Makes the actor have a **solid surface** with **bounciness** and **friction**. Motion behaviors may then use these properties--eg. the "free motion" behavior will prevent solid actors from passing through other solid actors.
+Makes the actor have a **solid surface** with **bounciness** and **friction**. This can affect motion behaviors--eg. the "free motion" behavior will prevent solid actors from passing through other solid actors.
 
 A higher **bounciness** makes actors bounce away more when a collision occurs.
 
