@@ -329,7 +329,7 @@ function BodyBehavior.handlers:uiComponent(component, opts)
     -- Rectangle size if rectangle-shaped
     local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
     if rectangleWidth and rectangleHeight then
-        util.uiRow('rectangle-size', function()
+        util.uiRow('rectangle size', function()
             ui.numberInput('width', rectangleWidth, {
                 min = 0,
                 onChange = function(newRectangleWidth)

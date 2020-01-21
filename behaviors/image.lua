@@ -126,7 +126,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
         end,
     })
 
-    ui.box('color-and-opacity', { flexDirection = 'row', alignItems = 'flex-start' }, function()
+    ui.box('color and opacity', { flexDirection = 'row', alignItems = 'flex-start' }, function()
         ui.box('color', { flex = 1 }, function()
             local color = component.properties.color
             ui.colorPicker('color', color[1], color[2], color[3], 1, {
@@ -147,7 +147,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
         end)
     end)
 
-    util.uiRow('depth-and-scaling-style', function()
+    util.uiRow('depth and scaling style', function()
         ui.numberInput('depth', component.properties.depth, {
             onChange = function(newDepth)
                 self:sendSetProperties(component.actorId, 'depth', newDepth)
@@ -180,7 +180,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
         end
     end)
     if component.properties.cropEnabled then
-        util.uiRow('crop-position', function()
+        util.uiRow('crop position', function()
             ui.numberInput('crop x', component.properties.cropX, {
                 onChange = function(newCropX)
                     self:sendSetProperties(component.actorId, 'cropX', newCropX)
@@ -193,7 +193,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
                 end,
             })
         end)
-        util.uiRow('crop-size', function()
+        util.uiRow('crop size', function()
             ui.numberInput('crop width', component.properties.cropWidth, {
                 onChange = function(newCropWidth)
                     self:sendSetProperties(component.actorId, 'cropWidth', newCropWidth)

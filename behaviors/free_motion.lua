@@ -84,7 +84,7 @@ function FreeMotionBehavior.handlers:uiComponent(component, opts)
     if isFixedRotation then
         fixedRotationToggle()
     else
-        util.uiRow('rotation-speed-and-fixed-rotation', function()
+        util.uiRow('rotation speed and fixed rotation', function()
             ui.numberInput('rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
                 onChange = function(newAV)
                     physics:setAngularVelocity(bodyId, newAV * math.pi / 180)

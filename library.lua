@@ -150,7 +150,7 @@ function Client:uiLibrary(opts)
         end)
 
         if #order == 0 then
-            ui.box('empty-text', {
+            ui.box('empty text', {
                 paddingLeft = 4,
                 margin = 4,
             }, function()
@@ -182,7 +182,7 @@ function Client:uiLibrary(opts)
 
                 -- Show image if applies
                 if imageUrl then
-                    ui.box('image-container', {
+                    ui.box('image container', {
                         width = '28%',
                         aspectRatio = 1,
                         margin = 4,
@@ -201,7 +201,7 @@ function Client:uiLibrary(opts)
                     ui.box('spacer', { width = 8 }, function() end)
                 end
 
-                ui.box('text-buttons', { flex = 1 }, function()
+                ui.box('text buttons', { flex = 1 }, function()
                     -- Title, short description
                     local shortDescription = (entry.description and entry.description:match('^[\n ]*[^\n]*')) or ''
                     ui.markdown('## ' .. entry.title .. '\n' .. shortDescription)
