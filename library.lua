@@ -145,10 +145,12 @@ function Client:uiLibrary(opts)
             end
         end
 
+        -- Sort
         table.sort(order, function(entry1, entry2)
             return entry1.title:upper() < entry2.title:upper()
         end)
 
+        -- Empty?
         if #order == 0 then
             ui.box('empty text', {
                 paddingLeft = 4,
