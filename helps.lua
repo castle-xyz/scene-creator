@@ -34,6 +34,8 @@ A tool that allows moving and rotating actors using touch.
         FreeMotion = {
             description = [[
 Makes the actor **move freely** and (optionally) fall due to **gravity**. If the actor has the "solid" behavior it will be prevented from passing through other solid actors.
+
+A higher **density** makes the actor feel heavier: it will be pushed by other actors less and push away other actors more.
             ]],
         },
 
@@ -41,7 +43,7 @@ Makes the actor **move freely** and (optionally) fall due to **gravity**. If the
             description = [[
 Makes the actor have a **solid surface** with **bounciness** and **friction**. Motion behaviors may then use these properties--eg. the "free motion" behavior will prevent solid actors from passing through other solid actors.
 
-A higher **bounciness** makes actors bounce away more when a collision occurs. When two actors collide, the higher bounciness value between the two is used to decide how bouncy the collision is. This way you can make a bouncy ball without having to make the floor bouncy too.
+A higher **bounciness** makes actors bounce away more when a collision occurs.
 
 A higher **friction** makes it harder for actors to slide against each other.
             ]],

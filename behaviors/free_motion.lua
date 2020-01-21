@@ -35,6 +35,26 @@ end
 function FreeMotionBehavior.handlers:uiComponent(component, opts)
     local physics = self.dependencies.Body:getPhysics()
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+    local fixture = body:getFixtures()[1]
+    local fixtureId = fixture and physics:idForObject(fixture)
+
+    -- Density and gravity
+    util.uiRow('density and gravity', function()
+        if fixture then
+            ui.numberInput('density', fixture:getDensity(), {
+                onChange = function(newDensity)
+                    physics:setDensity(fixtureId, newDensity)
+                    physics:resetMassData(bodyId)
+                end,
+            })
+        end
+    end, function()
+        ui.numberInput('gravity', body:getGravityScale(), {
+            onChange = function(newGravityScale)
+                physics:setGravityScale(bodyId, newGravityScale)
+            end,
+        })
+    end)
 
     -- Linear velocity
     local vx, vy = body:getLinearVelocity()
@@ -72,13 +92,6 @@ function FreeMotionBehavior.handlers:uiComponent(component, opts)
             })
         end, fixedRotationToggle)
     end
-
-    -- Gravity
-    ui.numberInput('gravity', body:getGravityScale(), {
-        onChange = function(newGravityScale)
-            physics:setGravityScale(bodyId, newGravityScale)
-        end,
-    })
 
     -- Damping
     util.uiRow('damping', function()
