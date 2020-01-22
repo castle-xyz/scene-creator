@@ -514,6 +514,7 @@ function Common:forEachActorByDrawOrder(func)
         local actor = self.actorsByDrawOrder[i]
         if actor then
             if i ~= nextNewDrawOrder then -- Sift down if needed
+                self.actorsByDrawOrder[i] = nil
                 self.actorsByDrawOrder[nextNewDrawOrder] = actor
                 actor.drawOrder = nextNewDrawOrder
             end
