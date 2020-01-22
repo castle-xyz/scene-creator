@@ -12,152 +12,159 @@ end
 -- UI
 
 function Client:uiToolbar()
-    ui.button('toggle performing', {
-        icon = 'play',
-        iconFamily = 'FontAwesome',
-        hideLabel = true,
-        selected = self.performing,
-        onClick = function()
-            self:send('setPerforming', not self.performing)
-        end,
-    })
+    ui.box('left', { flexDirection = 'row' }, function()
+        -- Performance
+        ui.button('toggle performing', {
+            icon = 'play',
+            iconFamily = 'FontAwesome',
+            hideLabel = true,
+            selected = self.performing,
+            onClick = function()
+                self:send('setPerforming', not self.performing)
+            end,
+        })
+    end)
 
     ui.box('spacer', { flex = 1 }, function() end)
 
-    -- Tools
-    if next(self.selectedActorIds) then
-        local order = {}
-        for _, tool in pairs(self.applicableTools) do
-            table.insert(order, tool)
+    ui.box('middle', { flexDirection = 'row' }, function()
+        -- Tools
+        if next(self.selectedActorIds) then
+            local order = {}
+            for _, tool in pairs(self.applicableTools) do
+                table.insert(order, tool)
+            end
+            table.sort(order, function(tool1, tool2)
+                return tool1.behaviorId < tool2.behaviorId
+            end)
+            for _, tool in ipairs(order) do
+                ui.button(tool.name, {
+                    icon = tool.tool.icon,
+                    iconFamily = tool.tool.iconFamily,
+                    hideLabel = true,
+                    selected = self.activeToolBehaviorId == tool.behaviorId,
+                    onClick = function()
+                        self:setActiveTool(tool.behaviorId)
+                    end,
+                })
+            end
         end
-        table.sort(order, function(tool1, tool2)
-            return tool1.behaviorId < tool2.behaviorId
-        end)
-        for _, tool in ipairs(order) do
-            ui.button(tool.name, {
-                icon = tool.tool.icon,
-                iconFamily = tool.tool.iconFamily,
+    end)
+
+    ui.box('spacer', { flex = 1 }, function() end)
+
+    ui.box('right', { flexDirection = 'row' }, function()
+        -- Move up / down
+        if next(self.selectedActorIds) then
+            -- TODO(nikki): Support multiple selections
+
+            ui.button('ordering', {
+                icon = 'layers',
+                iconFamily = 'Entypo',
                 hideLabel = true,
-                selected = self.activeToolBehaviorId == tool.behaviorId,
-                onClick = function()
-                    self:setActiveTool(tool.behaviorId)
+                popoverAllowed = true,
+                popoverStyle = { width = 200 },
+                popover = function()
+                    ui.button('move forward', {
+                        icon = 'arrow-bold-up',
+                        iconFamily = 'Entypo',
+                        onClick = function()
+                            local actor = self.actors[next(self.selectedActorIds)]
+                            if actor.drawOrder < table.maxn(self.actorsByDrawOrder) then
+                                local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
+                                local fixture = body:getFixtures()[1]
+                                if fixture then
+                                    local newDrawOrder
+                                    local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
+                                        fixture:getBoundingBox())
+                                    for hit in pairs(hits) do -- Find greatest draw order below us
+                                        local otherActor = self.actors[hit]
+                                        if (otherActor.drawOrder > actor.drawOrder and
+                                                (not newDrawOrder or otherActor.drawOrder < newDrawOrder)) then
+                                            newDrawOrder = otherActor.drawOrder
+                                        end
+                                    end
+                                    if newDrawOrder then
+                                        self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
+                                    end
+                                end
+                            end
+                        end,
+                    })
+                    ui.button('move backward', {
+                        icon = 'arrow-bold-down',
+                        iconFamily = 'Entypo',
+                        onClick = function()
+                            local actor = self.actors[next(self.selectedActorIds)]
+                            if actor.drawOrder > 1 then
+                                local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
+                                local fixture = body:getFixtures()[1]
+                                if fixture then
+                                    local newDrawOrder
+                                    local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
+                                        fixture:getBoundingBox())
+                                    for hit in pairs(hits) do -- Find greatest draw order below us
+                                        local otherActor = self.actors[hit]
+                                        if (otherActor.drawOrder < actor.drawOrder and
+                                                (not newDrawOrder or otherActor.drawOrder > newDrawOrder)) then
+                                            newDrawOrder = otherActor.drawOrder
+                                        end
+                                    end
+                                    if newDrawOrder then
+                                        self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
+                                    end
+                                end
+                            end
+                        end,
+                    })
                 end,
             })
         end
-    end
 
-    ui.box('spacer', { flex = 1 }, function() end)
 
-    -- Move up / down
-    if next(self.selectedActorIds) then
-        -- TODO(nikki): Support multiple selections
+        -- Duplicate
+        if next(self.selectedActorIds) then
+            ui.button('duplicate actor', {
+                icon = 'copy',
+                iconFamily = 'FontAwesome5',
+                hideLabel = true,
+                onClick = function()
+                    local duplicateActorIds = {}
 
-        ui.button('ordering', {
-            icon = 'layers',
-            iconFamily = 'Entypo',
-            hideLabel = true,
-            popoverAllowed = true,
-            popoverStyle = { width = 200 },
-            popover = function()
-                ui.button('move forward', {
-                    icon = 'arrow-bold-up',
-                    iconFamily = 'Entypo',
-                    onClick = function()
-                        local actor = self.actors[next(self.selectedActorIds)]
-                        if actor.drawOrder < table.maxn(self.actorsByDrawOrder) then
-                            local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
-                            local fixture = body:getFixtures()[1]
-                            if fixture then
-                                local newDrawOrder
-                                local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
-                                    fixture:getBoundingBox())
-                                for hit in pairs(hits) do -- Find greatest draw order below us
-                                    local otherActor = self.actors[hit]
-                                    if (otherActor.drawOrder > actor.drawOrder and
-                                            (not newDrawOrder or otherActor.drawOrder < newDrawOrder)) then
-                                        newDrawOrder = otherActor.drawOrder
-                                    end
-                                end
-                                if newDrawOrder then
-                                    self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
-                                end
-                            end
+                    -- Use blueprints to duplicate. Nudge position a little bit.
+                    for actorId in pairs(self.selectedActorIds) do
+                        local bp = self:blueprintActor(actorId)
+                        if bp.Body then
+                            bp.Body.x, bp.Body.y = bp.Body.x + 64, bp.Body.y + 64
                         end
-                    end,
-                })
-                ui.button('move backward', {
-                    icon = 'arrow-bold-down',
-                    iconFamily = 'Entypo',
-                    onClick = function()
-                        local actor = self.actors[next(self.selectedActorIds)]
-                        if actor.drawOrder > 1 then
-                            local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
-                            local fixture = body:getFixtures()[1]
-                            if fixture then
-                                local newDrawOrder
-                                local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
-                                    fixture:getBoundingBox())
-                                for hit in pairs(hits) do -- Find greatest draw order below us
-                                    local otherActor = self.actors[hit]
-                                    if (otherActor.drawOrder < actor.drawOrder and
-                                            (not newDrawOrder or otherActor.drawOrder > newDrawOrder)) then
-                                        newDrawOrder = otherActor.drawOrder
-                                    end
-                                end
-                                if newDrawOrder then
-                                    self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
-                                end
-                            end
-                        end
-                    end,
-                })
-            end,
-        })
-    end
-
-
-    -- Duplicate
-    if next(self.selectedActorIds) then
-        ui.button('duplicate actor', {
-            icon = 'copy',
-            iconFamily = 'FontAwesome5',
-            hideLabel = true,
-            onClick = function()
-                local duplicateActorIds = {}
-
-                -- Use blueprints to duplicate. Nudge position a little bit.
-                for actorId in pairs(self.selectedActorIds) do
-                    local bp = self:blueprintActor(actorId)
-                    if bp.Body then
-                        bp.Body.x, bp.Body.y = bp.Body.x + 64, bp.Body.y + 64
+                        local actor = self.actors[actorId]
+                        duplicateActorIds[self:sendAddActor(bp, actor.parentEntryId)] = true
                     end
-                    local actor = self.actors[actorId]
-                    duplicateActorIds[self:sendAddActor(bp, actor.parentEntryId)] = true
-                end
 
-                -- Select new actors
-                self:deselectAllActors()
-                for actorId in pairs(duplicateActorIds) do
-                    self:selectActor(actorId)
-                end
-            end,
-        })
-    end
+                    -- Select new actors
+                    self:deselectAllActors()
+                    for actorId in pairs(duplicateActorIds) do
+                        self:selectActor(actorId)
+                    end
+                end,
+            })
+        end
 
-    -- Delete
-    if next(self.selectedActorIds) then
-        ui.button('remove actor', {
-            icon = 'trash-alt',
-            iconFamily = 'FontAwesome5',
-            hideLabel = true,
-            onClick = function()
-                for actorId in pairs(self.selectedActorIds) do
-                    self:deselectActor(actorId)
-                    self:send('removeActor', self.clientId, actorId)
-                end
-            end,
-        })
-    end
+        -- Delete
+        if next(self.selectedActorIds) then
+            ui.button('remove actor', {
+                icon = 'trash-alt',
+                iconFamily = 'FontAwesome5',
+                hideLabel = true,
+                onClick = function()
+                    for actorId in pairs(self.selectedActorIds) do
+                        self:deselectActor(actorId)
+                        self:send('removeActor', self.clientId, actorId)
+                    end
+                end,
+            })
+        end
+    end)
 end
 
 function Client:uiProperties()
