@@ -136,10 +136,6 @@ function GrabTool:moveRotate(moveX, moveY, rotation, pivotX, pivotY)
                 channel = touchData.allTouchesReleased and physics.reliableChannel or nil,
             }
             physics:setPosition(sendOpts, bodyId, newX, newY)
-            if body:getType() == 'dynamic' then
-                physics:setLinearVelocity(sendOpts, bodyId, 0, 0)
-                physics:setAngularVelocity(sendOpts, bodyId, 0)
-            end
             physics:setAngle(sendOpts, bodyId, newAngle)
 
             -- Write back to `.save`, or clear it out if the gesture ended
