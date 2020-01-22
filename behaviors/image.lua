@@ -57,53 +57,44 @@ end
 local theTransform = love.math.newTransform()
 local theQuad = love.graphics and love.graphics.newQuad(0, 0, 32, 32, 32, 32)
 
-function ImageBehavior.handlers:draw(order)
-    for actorId, component in pairs(self.components) do
-        table.insert(order, {
-            id = actorId,
-            depth = component.properties.depth,
-            draw = function()
-                -- Image drawable
-                component._imageHolder = resource_loader.loadImage(
-                    component.properties.localUrl or component.properties.url,
-                    component.properties.filter)
-                local image = component._imageHolder.image
-                local imageWidth, imageHeight = image:getDimensions()
+function ImageBehavior.handlers:drawComponent(component)
+    -- Image drawable
+    component._imageHolder = resource_loader.loadImage(
+        component.properties.localUrl or component.properties.url,
+        component.properties.filter)
+    local image = component._imageHolder.image
+    local imageWidth, imageHeight = image:getDimensions()
 
-                -- Quad from crop
-                local quad
-                if component._imageHolder.loaded and component.properties.cropEnabled then
-                    theQuad:setViewport(component.properties.cropX, component.properties.cropY,
-                        component.properties.cropWidth, component.properties.cropHeight,
-                        imageWidth, imageHeight)
-                    imageWidth, imageHeight = component.properties.cropWidth, component.properties.cropHeight
-                else
-                    theQuad:setViewport(0, 0, imageWidth, imageHeight, imageWidth, imageHeight)
-                end
-
-                -- Scale from body size
-                local bodyWidth, bodyHeight = self.dependencies.Body:getSize(actorId)
-                local scaleX, scaleY = bodyWidth / imageWidth, bodyHeight / imageHeight
-
-                -- Position and angle from body
-                local bodyId, body = self.dependencies.Body:getBody(actorId)
-                local x, y = body:getPosition()
-                local angle = body:getAngle()
-
-                -- Color
-                love.graphics.setColor(component.properties.color)
-
-                -- Draw!
-                love.graphics.draw(
-                    image,
-                    theQuad,
-                    x, y,
-                    angle,
-                    scaleX, scaleY,
-                    0.5 * imageWidth, 0.5 * imageHeight)
-            end,
-        })
+    -- Quad from crop
+    if component._imageHolder.loaded and component.properties.cropEnabled then
+        theQuad:setViewport(component.properties.cropX, component.properties.cropY,
+            component.properties.cropWidth, component.properties.cropHeight,
+            imageWidth, imageHeight)
+        imageWidth, imageHeight = component.properties.cropWidth, component.properties.cropHeight
+    else
+        theQuad:setViewport(0, 0, imageWidth, imageHeight, imageWidth, imageHeight)
     end
+
+    -- Scale from body size
+    local bodyWidth, bodyHeight = self.dependencies.Body:getSize(component.actorId)
+    local scaleX, scaleY = bodyWidth / imageWidth, bodyHeight / imageHeight
+
+    -- Position and angle from body
+    local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+    local x, y = body:getPosition()
+    local angle = body:getAngle()
+
+    -- Color
+    love.graphics.setColor(component.properties.color)
+
+    -- Draw!
+    love.graphics.draw(
+        image,
+        theQuad,
+        x, y,
+        angle,
+        scaleX, scaleY,
+        0.5 * imageWidth, 0.5 * imageHeight)
 end
 
 

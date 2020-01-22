@@ -110,20 +110,15 @@ function Client:draw()
     end
 
     do -- Behaviors
-        local order = {}
-        self:callHandlers('draw', order)
-        table.sort(order, function(o1, o2)
-            if o1.depth < o2.depth then
-                return true
+        local drawBehaviors = self.behaviorsByHandler['drawComponent'] or {}
+        self:forEachActorByDrawOrder(function(actor)
+            for behaviorId, behavior in pairs(drawBehaviors) do
+                local component = actor.components[behaviorId]
+                if component then
+                    behavior:callHandler('drawComponent', component)
+                end
             end
-            if o1.depth > o2.depth then
-                return false
-            end
-            return o1.id < o2.id
         end)
-        for _, o in ipairs(order) do
-            o.draw()
-        end
     end
 
     do -- Overlays

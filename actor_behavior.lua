@@ -93,6 +93,7 @@ end
 
 function Common:startActorBehavior()
     self.actors = {} -- `actorId` -> actor
+    self.actorsByDrawOrder = {} -- { `actor1`, `actor2`, ... }
     self.behaviors = {} -- `behaviorId` -> behavior
     self.behaviorsByName = {} -- `behaviorName` -> behavior
     self.behaviorsByHandler = {} -- `handlerName` -> `behaviorId` -> behavior
@@ -115,6 +116,8 @@ end
 function Common:defineActorBehaviorMessageKinds()
     self:defineMessageKind('addActor', self.sendOpts.reliableToAll)
     self:defineMessageKind('removeActor', self.sendOpts.reliableToAll)
+    self:defineMessageKind('setActorDrawOrder', self.sendOpts.reliableToAll)
+    self:defineMessageKind('setActorParentId', self.sendOpts.reliableToAll)
     self:defineMessageKind('addBehavior', self.sendOpts.reliableToAll)
     self:defineMessageKind('removeBehavior', self.sendOpts.reliableToAll)
     self:defineMessageKind('addComponent', self.sendOpts.reliableToAll)
@@ -145,21 +148,21 @@ function Server:syncClientActorBehavior(clientId, send)
     end
 
     -- Send actors and components
-    for actorId, actor in pairs(self.actors) do
-        send('addActor', self.clientId, actorId, actor.parentEntryId)
+    self:forEachActorByDrawOrder(function(actor)
+        send('addActor', self.clientId, actor.actorId, actor.parentEntryId)
 
         for behaviorId, component in pairs(actor.components) do
-            send('addComponent', self.clientId, actorId, behaviorId)
+            send('addComponent', self.clientId, actor.actorId, behaviorId)
 
             local behavior = self.behaviors[behaviorId]
             behavior:sendSetProperties({
                 to = clientId,
                 selfSend = false,
                 channel = self.channels.mainReliable,
-                actorId = actorId,
+                actorId = actor.actorId,
             }, util.unpackPairs(component.properties))
         end
-    end
+    end)
 
     -- Notify `postSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
@@ -190,6 +193,10 @@ function Common.receivers:addActor(time, clientId, actorId, parentEntryId)
     actor.components = {}
 
     self.actors[actorId] = actor
+
+    -- Insert at end of draw order
+    actor.drawOrder = #self.actorsByDrawOrder + 1
+    self.actorsByDrawOrder[actor.drawOrder] = actor
 end
 
 function Common.receivers:removeActor(time, clientId, actorId)
@@ -223,6 +230,28 @@ function Common.receivers:removeActor(time, clientId, actorId)
     end
 
     self.actors[actorId] = nil
+
+    self.actorsByDrawOrder[actor.drawOrder] = nil -- Holes will be cleaned up in the next `:forEachActorByDrawOrder`
+end
+
+function Common.receivers:setActorDrawOrder(time, actorId, newDrawOrder)
+    local actor = assert(self.actors[actorId], 'setActorDrawOrder: no such actor')
+
+    if actor.drawOrder == newDrawOrder then
+        return
+    end
+    local step = newDrawOrder > actor.drawOrder and 1 or -1
+
+    local actorsByDrawOrder = self.actorsByDrawOrder
+    for i = actor.drawOrder, newDrawOrder - step, step do
+        local nextActor = actorsByDrawOrder[i + step]
+        actorsByDrawOrder[i] = nextActor
+        if nextActor then
+            nextActor.drawOrder = i
+        end
+    end
+    actorsByDrawOrder[newDrawOrder] = actor
+    actor.drawOrder = newDrawOrder
 end
 
 function Common.receivers:setActorParentEntryId(time, actorId, newParentEntryId)
@@ -474,6 +503,25 @@ function Common:callHandlers(handlerName, ...)
     if behaviors then
         for behaviorId, behavior in pairs(behaviors) do
             behavior:callHandler(handlerName, ...)
+        end
+    end
+end
+
+function Common:forEachActorByDrawOrder(func)
+    -- Visit all, sifting down if we found holes
+    local nextNewDrawOrder = 1 -- The next 'dense' draw order
+    for i = 1, table.maxn(self.actorsByDrawOrder) do
+        local actor = self.actorsByDrawOrder[i]
+        if actor then
+            if i ~= nextNewDrawOrder then -- Sift down if needed
+                self.actorsByDrawOrder[nextNewDrawOrder] = actor
+                actor.drawOrder = nextNewDrawOrder
+            end
+            nextNewDrawOrder = nextNewDrawOrder + 1
+
+            if func then
+                func(actor)
+            end
         end
     end
 end

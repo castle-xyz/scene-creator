@@ -52,4 +52,6 @@ function Server:update(dt)
     self:callHandlers('preUpdate', dt)
     self:callHandlers('update', dt)
     self:callHandlers('postUpdate', dt)
+
+    self:forEachActorByDrawOrder() -- Keeps draw order dense
 end

@@ -453,6 +453,23 @@ function BodyBehavior:getActorForBody(body)
     return body:getUserData()
 end
 
+function BodyBehavior:getActorsAtBoundingBox(minX, minY, maxX, maxY)
+    local hits = {}
+    local worldId, world = self:getWorld()
+    if world then
+        world:queryBoundingBox(
+            minX, minY, maxX, maxY,
+            function(fixture)
+                local actorId = self:getActorForBody(fixture:getBody())
+                if actorId then
+                    hits[actorId] = true
+                end
+                return true
+            end)
+    end
+    return hits
+end
+
 function BodyBehavior:getActorsAtPoint(x, y)
     local hits = {}
     local worldId, world = self:getWorld()

@@ -46,6 +46,76 @@ function Client:uiToolbar()
         end
     end
 
+    ui.box('spacer', { flex = 1 }, function() end)
+
+    -- Move up / down
+    if next(self.selectedActorIds) then
+        -- TODO(nikki): Support multiple selections
+
+        ui.button('ordering', {
+            icon = 'layers',
+            iconFamily = 'Entypo',
+            hideLabel = true,
+            popoverAllowed = true,
+            popoverStyle = { width = 200 },
+            popover = function()
+                ui.button('move forward', {
+                    icon = 'arrow-bold-up',
+                    iconFamily = 'Entypo',
+                    onClick = function()
+                        local actor = self.actors[next(self.selectedActorIds)]
+                        if actor.drawOrder < table.maxn(self.actorsByDrawOrder) then
+                            local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
+                            local fixture = body:getFixtures()[1]
+                            if fixture then
+                                local newDrawOrder
+                                local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
+                                    fixture:getBoundingBox())
+                                for hit in pairs(hits) do -- Find greatest draw order below us
+                                    local otherActor = self.actors[hit]
+                                    if (otherActor.drawOrder > actor.drawOrder and
+                                            (not newDrawOrder or otherActor.drawOrder < newDrawOrder)) then
+                                        newDrawOrder = otherActor.drawOrder
+                                    end
+                                end
+                                if newDrawOrder then
+                                    self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
+                                end
+                            end
+                        end
+                    end,
+                })
+                ui.button('move backward', {
+                    icon = 'arrow-bold-down',
+                    iconFamily = 'Entypo',
+                    onClick = function()
+                        local actor = self.actors[next(self.selectedActorIds)]
+                        if actor.drawOrder > 1 then
+                            local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
+                            local fixture = body:getFixtures()[1]
+                            if fixture then
+                                local newDrawOrder
+                                local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
+                                    fixture:getBoundingBox())
+                                for hit in pairs(hits) do -- Find greatest draw order below us
+                                    local otherActor = self.actors[hit]
+                                    if (otherActor.drawOrder < actor.drawOrder and
+                                            (not newDrawOrder or otherActor.drawOrder > newDrawOrder)) then
+                                        newDrawOrder = otherActor.drawOrder
+                                    end
+                                end
+                                if newDrawOrder then
+                                    self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
+                                end
+                            end
+                        end
+                    end,
+                })
+            end,
+        })
+    end
+
+
     -- Duplicate
     if next(self.selectedActorIds) then
         ui.button('duplicate actor', {
