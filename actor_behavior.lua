@@ -225,6 +225,11 @@ function Common.receivers:removeActor(time, clientId, actorId)
     self.actors[actorId] = nil
 end
 
+function Common.receivers:setActorParentEntryId(time, actorId, newParentEntryId)
+    local actor = assert(self.actors[actorId], 'setActorParentId: no such actor')
+    actor.parentEntryId = newParentEntryId
+end
+
 function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     assert(not self.behaviors[behaviorId], 'addBehavior: this `behaviorId` is already used')
     assert(behaviorSpec, 'addBehavior: need a `behaviorSpec`')

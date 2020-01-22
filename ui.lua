@@ -1,7 +1,11 @@
 -- Start / stop
 
 function Client:startUi()
+    self.updateCounts = setmetatable({}, { __mode = 'k' }) -- `actor` -> count to force UI updates
+
     self.componentSectionOpens = setmetatable({}, { __mode = 'k' }) -- `actor` -> `behaviorId` of open component section
+
+    self.saveBlueprintDatas = setmetatable({}, { __mode = 'k' }) -- `actor` -> data for "save blueprint" popover
 end
 
 
@@ -96,134 +100,165 @@ function Client:uiProperties()
         if actorId then
             local actor = self.actors[actorId]
 
-            -- Sort by `behaviorId`
-            local order = {}
-            for behaviorId, component in pairs(actor.components) do
-                local behavior = self.behaviors[behaviorId]
-                if not behavior.tool and behavior.handlers.uiComponent then
-                    table.insert(order, component)
+            local updateCount = self.updateCounts[actor] or 1
+
+            ui.box('properties-' .. actor.actorId .. '-' .. updateCount, function()
+                -- Sort by `behaviorId`
+                local order = {}
+                for behaviorId, component in pairs(actor.components) do
+                    local behavior = self.behaviors[behaviorId]
+                    if not behavior.tool and behavior.handlers.uiComponent then
+                        table.insert(order, component)
+                    end
                 end
-            end
-            table.sort(order, function (component1, component2)
-                return component1.behaviorId < component2.behaviorId
-            end)
-
-            -- Sections for each component
-            for _, component in ipairs(order) do
-                local behavior = self.behaviors[component.behaviorId]
-
-                local uiName = behavior:getUiName()
-                local newOpen = ui.section(uiName, {
-                    id = actorId .. '-' .. component.behaviorId,
-                    open = self.componentSectionOpens[actor] == component.behaviorId,
-                    header = function()
-                        ui.button('description', {
-                            margin = 0,
-                            marginLeft = 6,
-                            icon = 'question',
-                            iconFamily = 'FontAwesome5',
-                            hideLabel = true,
-                            popoverAllowed = true,
-                            popoverStyle = { width = 300 },
-                            popover = function()
-                                ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
-                            end,
-                        })
-                        if behavior.name ~= 'Body' then
-                            ui.button('remove', {
-                                margin = 0,
-                                marginLeft = 6,
-                                icon = 'close',
-                                iconFamily = 'FontAwesome',
-                                hideLabel = true,
-                                onClick = function()
-                                    castle.system.alert({
-                                        title = 'Remove behavior?',
-                                        message = "Remove '" .. uiName .. "' from this actor?",
-                                        okLabel = 'Yes',
-                                        onOk = function()
-                                            self:send('removeComponent', self.clientId, actorId, component.behaviorId)
-                                        end,
-                                        cancelLabel = 'No',
-                                    })
-                                end,
-                            })
-                        end
-                    end,
-                }, function()
-                    behavior:callHandler('uiComponent', component, {})
+                table.sort(order, function (component1, component2)
+                    return component1.behaviorId < component2.behaviorId
                 end)
 
-                -- Track open section
-                if newOpen then
-                    self.componentSectionOpens[actor] = component.behaviorId
-                elseif self.componentSectionOpens[actor] == component.behaviorId then
-                    self.componentSectionOpens[actor] = 'none' -- Sentinel to mark none as open
-                end
-            end
+                -- Sections for each component
+                for _, component in ipairs(order) do
+                    local behavior = self.behaviors[component.behaviorId]
 
-            -- Add component
-            ui.box('spacer', { height = 16 }, function() end)
-            ui.button('add behavior', {
-                flex = 1,
-                icon = 'plus',
-                iconFamily = 'FontAwesome5',
-                popoverAllowed = true,
-                popoverStyle = { width = 300, height = 300 },
-                popover = function(closePopover)
-                    self:uiLibrary({
-                        filterType = 'behavior',
-                        filterBehavior = function(behavior)
-                            -- Skip behaviors we already have, skip tools
-                            return not (actor.components[behavior.behaviorId] or behavior.tool)
-                        end,
-                        emptyText = 'No other behaviors to add!',
-                        buttons = function(entry)
-                            ui.button('add to actor', {
-                                flex = 1,
-                                icon = 'plus',
+                    local uiName = behavior:getUiName()
+                    local newOpen = ui.section(uiName, {
+                        id = actorId .. '-' .. component.behaviorId,
+                        open = self.componentSectionOpens[actor] == component.behaviorId,
+                        header = function()
+                            ui.button('description', {
+                                margin = 0,
+                                marginLeft = 6,
+                                icon = 'question',
                                 iconFamily = 'FontAwesome5',
-                                onClick = function()
-                                    closePopover()
-
-                                    -- Add the component and open its section
-                                    self:send('addComponent', self.clientId, actorId, entry.behaviorId, {})
-                                    self.componentSectionOpens[actor] = entry.behaviorId
+                                hideLabel = true,
+                                popoverAllowed = true,
+                                popoverStyle = { width = 300 },
+                                popover = function()
+                                    ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
                                 end,
                             })
+                            if behavior.name ~= 'Body' then
+                                ui.button('remove', {
+                                    margin = 0,
+                                    marginLeft = 6,
+                                    icon = 'close',
+                                    iconFamily = 'FontAwesome',
+                                    hideLabel = true,
+                                    onClick = function()
+                                        castle.system.alert({
+                                            title = 'Remove behavior?',
+                                            message = "Remove '" .. uiName .. "' from this actor?",
+                                            okLabel = 'Yes',
+                                            onOk = function()
+                                                self:send('removeComponent', self.clientId, actorId, component.behaviorId)
+                                                self.updateCounts[actorId] = updateCount + 1
+                                            end,
+                                            cancelLabel = 'No',
+                                        })
+                                    end,
+                                })
+                            end
                         end,
-                    })
-                end
-            })
+                    }, function()
+                        behavior:callHandler('uiComponent', component, {})
+                    end)
 
-            --local actorId = next(self.selectedActorIds)
-            --if actorId then
-            --    ui.button('add to library', {
-            --        popoverAllowed = true,
-            --        popover = function()
-            --            self.addToLibraryTitle = ui.textInput('title', self.addToLibraryTitle)
-            --
-            --            self.addToLibraryDescription = ui.textInput('description', self.addToLibraryDescription)
-            --
-            --            if ui.button('save') then
-            --                local entryId = util.uuid()
-            --
-            --                local actorBlueprint = self:blueprintActor(actorId)
-            --
-            --                print(serpent.block(actorBlueprint))
-            --
-            --                self:send('addLibraryEntry', entryId, {
-            --                    entryType = 'actorBlueprint',
-            --                    title = self.addToLibraryTitle,
-            --                    description = self.addToLibraryDescription,
-            --                    actorBlueprint = actorBlueprint,
-            --                })
-            --                self.addToLibraryTitle = ''
-            --                self.addToLibraryDescription = ''
-            --            end
-            --        end,
-            --    })
-            --end
+                    -- Track open section
+                    if newOpen then
+                        self.componentSectionOpens[actor] = component.behaviorId
+                    elseif self.componentSectionOpens[actor] == component.behaviorId then
+                        self.componentSectionOpens[actor] = 'none' -- Sentinel to mark none as open
+                    end
+                end
+
+                -- Add component
+                ui.box('spacer', { height = 16 }, function() end)
+                ui.button('add behavior', {
+                    flex = 1,
+                    icon = 'plus',
+                    iconFamily = 'FontAwesome5',
+                    popoverAllowed = true,
+                    popoverStyle = { width = 300, height = 300 },
+                    popover = function(closePopover)
+                        self:uiLibrary({
+                            filterType = 'behavior',
+                            filterBehavior = function(behavior)
+                                -- Skip behaviors we already have, skip tools
+                                return not (actor.components[behavior.behaviorId] or behavior.tool)
+                            end,
+                            emptyText = 'No other behaviors to add!',
+                            buttons = function(entry)
+                                ui.button('add to actor', {
+                                    flex = 1,
+                                    icon = 'plus',
+                                    iconFamily = 'FontAwesome5',
+                                    onClick = function()
+                                        self.updateCounts[actorId] = updateCount + 1
+
+                                        closePopover()
+
+                                        -- Add the component and open its section
+                                        self:send('addComponent', self.clientId, actorId, entry.behaviorId, {})
+                                        self.componentSectionOpens[actor] = entry.behaviorId
+                                    end,
+                                })
+                            end,
+                        })
+                    end
+                })
+
+                -- Save blueprint
+                ui.button('save blueprint', {
+                    flex = 1,
+                    icon = 'save',
+                    iconFamily = 'FontAwesome5',
+                    popoverAllowed = true,
+                    popoverStyle = { width = 300, height = 300 },
+                    popover = function(closePopover)
+                        ui.scrollBox('save blueprint', { flex = 1 }, function()
+                            local saveBlueprintData = self.saveBlueprintDatas[actor]
+                            if not saveBlueprintData then
+                                local oldEntry = self.library[actor.parentEntryId]
+                                saveBlueprintData = {
+                                    title = oldEntry and oldEntry.title or '',
+                                    description = oldEntry and oldEntry.description or '',
+                                }
+                                self.saveBlueprintDatas[actor] = saveBlueprintData
+                            end
+
+                            saveBlueprintData.title = ui.textInput('title', saveBlueprintData.title)
+
+                            saveBlueprintData.description = ui.textArea('description', saveBlueprintData.description)
+
+                            ui.button('save', {
+                                icon = 'save',
+                                iconFamily = 'FontAwesome5',
+                                onClick = function()
+                                    if saveBlueprintData.title == '' then
+                                        castle.system.alert('Title required', 'Please enter a title for the new blueprint.')
+                                        return
+                                    end
+
+                                    if saveBlueprintData.description == '' then
+                                        castle.system.alert('Title description', 'Please enter a description for the new blueprint.')
+                                        return
+                                    end
+
+                                    closePopover()
+
+                                    local newEntryId = util.uuid()
+                                    self:send('addLibraryEntry', newEntryId, {
+                                        entryType = 'actorBlueprint',
+                                        title = saveBlueprintData.title,
+                                        description = saveBlueprintData.description,
+                                        actorBlueprint = self:blueprintActor(actor.actorId),
+                                    })
+                                    self:send('setActorParentEntryId', actor.actorId, newEntryId)
+                                end,
+                            })
+                        end)
+                    end
+                })
+            end)
         end
     end)
 end
