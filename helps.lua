@@ -48,6 +48,12 @@ A higher **bounciness** makes actors bounce away more when a collision occurs.
 A higher **friction** makes it harder for actors to slide against each other.
             ]],
         },
+
+        CircleShape = {
+            description = [[
+Gives the actor a **circular** collision shape instead of the default rectangular one.
+            ]],
+        }
     },
 }
 

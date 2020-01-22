@@ -2,6 +2,8 @@ ui = castle.ui
 
 
 UNIT = 100
+MAX_BODY_SIZE = 40 * UNIT
+MIN_BODY_SIZE = UNIT
 
 CHECKERBOARD_IMAGE_URL = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
 
@@ -21,6 +23,7 @@ require 'behaviors.body'
 require 'behaviors.image'
 require 'tools.grab'
 require 'behaviors.solid'
+require 'behaviors.circle_shape'
 require 'behaviors.free_motion'
 require 'behaviors.rotating_motion'
 

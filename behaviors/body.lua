@@ -331,14 +331,16 @@ function BodyBehavior.handlers:uiComponent(component, opts)
     if rectangleWidth and rectangleHeight then
         util.uiRow('rectangle size', function()
             ui.numberInput('width', rectangleWidth, {
-                min = 0,
+                min = MIN_BODY_SIZE,
+                max = MAX_BODY_SIZE,
                 onChange = function(newRectangleWidth)
                     self:setRectangleShape(component, newRectangleWidth, rectangleHeight)
                 end,
             })
         end, function()
             ui.numberInput('height', rectangleHeight, {
-                min = 0,
+                min = MIN_BODY_SIZE,
+                max = MAX_BODY_SIZE,
                 onChange = function(newRectangleHeight)
                     self:setRectangleShape(component, rectangleWidth, newRectangleHeight)
                 end,
@@ -370,8 +372,14 @@ function BodyBehavior:setShape(componentOrActorId, newShapeId)
 end
 
 function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
-    newWidth, newHeight = math.max(UNIT, math.min(newWidth, 40 * UNIT)), math.max(UNIT, math.min(newHeight, 40 * UNIT))
+    newWidth = math.max(MIN_BODY_SIZE, math.min(newWidth, MAX_BODY_SIZE))
+    newHeight = math.max(MIN_BODY_SIZE, math.min(newHeight, MAX_BODY_SIZE))
     self:setShape(componentOrActorId, self._physics:newRectangleShape(newWidth, newHeight))
+end
+
+function BodyBehavior:resetShape(actorId)
+    local width, height = self:getSize(actorId)
+    self:setRectangleShape(actorId, width or UNIT, height or UNIT)
 end
 
 
@@ -445,6 +453,17 @@ function BodyBehavior:getRectangleSize(componentOrActorId)
                     return 2 * math.abs(p1x), 2 * math.abs(p1y)
                 end
             end
+        end
+    end
+end
+
+function BodyBehavior:getShapeType(actorId)
+    local bodyId, body = self:getBody(actorId)
+    local fixture = body:getFixtures()[1]
+    if fixture then
+        local shape = fixture:getShape()
+        if shape then
+            return shape:getType()
         end
     end
 end
