@@ -22,68 +22,84 @@ local HANDLE_DRAW_RADIUS = 10
 -- Methods
 
 function GrabTool:getHandles()
+    if self.game.performing then
+        return {}
+    end
+
     local handles = {}
 
-    if not self.game.performing then
-        -- Single, rectangle-shaped selection?
-        local singleRectangleActorId
-        local singleRectangleWidth, singleRectangleHeight
-        for actorId, component in pairs(self.components) do
-            if self.game.clientId == component.clientId then
-                if singleRectangleActorId then -- Multiple?
-                    singleRectangleActorId = nil
-                    singleRectangleWidth, singleRectangleHeight = nil
-                    break
-                end
-                singleRectangleWidth, singleRectangleHeight = self.dependencies.Body:getRectangleSize(actorId)
-                if singleRectangleWidth and singleRectangleHeight then -- Found a candidate
-                    singleRectangleActorId = actorId
-                else -- Found non-rectangle
-                    break
-                end
+    -- Single selection?
+    local singleActorId
+    for actorId, component in pairs(self.components) do
+        if self.game.clientId == component.clientId then
+            if singleActorId then
+                singleActorId = nil
+                break
+            end
+            singleActorId = actorId
+        end
+    end
+    if singleActorId then
+        -- Figure out shape type and dimensions
+        local shapeType
+        local width, height = self.dependencies.Body:getRectangleSize(singleActorId)
+        if width and height then
+            shapeType = 'rectangle'
+        else
+            width, height = self.dependencies.Body:getSize(singleActorId)
+            local bodyId, body = self.dependencies.Body:getBody(singleActorId)
+            local fixture = body:getFixtures()[1]
+            if fixture then
+                local shape = fixture:getShape()
+                shapeType = shape:getType()
             end
         end
-        if singleRectangleActorId then
-            local bodyId, body = self.dependencies.Body:getBody(singleRectangleActorId)
-            for i = -1, 1, 1 do
-                for j = -1, 1, 1 do
-                    local x, y = body:getWorldPoint(i * 0.5 * singleRectangleWidth, j * 0.5 * singleRectangleHeight)
-                    if i ~= 0 and j ~= 0 then -- Corner
-                        table.insert(handles, {
-                            x = x,
-                            y = y,
-                            actorId = singleRectangleActorId,
-                            rectangleWidth = singleRectangleWidth,
-                            rectangleHeight = singleRectangleHeight,
-                            handleType = 'rectangleCornerResize',
-                        })
-                    elseif i ~= 0 or j ~= 0 then -- Edge
-                        table.insert(handles, {
-                            x = x,
-                            y = y,
-                            actorId = singleRectangleActorId,
-                            rectangleWidth = singleRectangleWidth,
-                            rectangleHeight = singleRectangleHeight,
-                            handleType = i ~= 0 and 'rectangleWidthResize' or 'rectangleHeightResize',
-                        })
-                    end
-                end
-            end
-            do -- Rotate
-                local centerX, centerY = body:getWorldPoint(0, 0)
-                local x, y = body:getWorldPoint(0, -0.5 * singleRectangleHeight - 8 * HANDLE_DRAW_RADIUS)
-                local endX, endY = body:getWorldPoint(0, -0.5 * singleRectangleHeight) 
-                table.insert(handles, {
+        if not shapeType then
+            return {}
+        end
+
+        -- Resizing
+        local bodyId, body = self.dependencies.Body:getBody(singleActorId)
+        for i = -1, 1, 1 do
+            for j = -1, 1, 1 do
+                local x, y = body:getWorldPoint(i * 0.5 * width, j * 0.5 * height)
+                local handle = {
                     x = x,
                     y = y,
-                    handleType = 'rotate',
-                    pivotX = centerX,
-                    pivotY = centerY,
-                    endX = endX,
-                    endY = endY,
-                })
+                    singleActorId = singleActorId,
+                    width = width,
+                    height = height,
+                    shapeType = shapeType,
+                }
+                if shapeType == 'rectangle' and i ~= 0 and j ~= 0 then -- Corner
+                    handle.handleType = 'corner'
+                    table.insert(handles, handle)
+                elseif i ~= 0 and j == 0 then -- Width edge
+                    handle.handleType = 'width'
+                    table.insert(handles, handle)
+                elseif i == 0 and j ~= 0 then -- Height edge
+                    handle.handleType = 'height'
+                    table.insert(handles, handle)
+                end
             end
         end
+
+        -- Rotation
+        local centerX, centerY = body:getWorldPoint(0, 0)
+        local x, y = body:getWorldPoint(0, -0.5 * height - 8 * HANDLE_DRAW_RADIUS)
+        local endX, endY = body:getWorldPoint(0, -0.5 * height) 
+        table.insert(handles, {
+            x = x,
+            y = y,
+            handleType = 'rotate',
+            pivotX = centerX,
+            pivotY = centerY,
+            endX = endX,
+            endY = endY,
+        })
+        return handles
+    else -- Multiple selections
+        -- TODO(nikki): Multiple selections
     end
 
     return handles
@@ -181,22 +197,27 @@ function GrabTool.handlers:update(dt)
         if touch.grabHandle then
             local handle = touch.grabHandle
 
-            if handle.actorId then -- Single actor?
-                local actorId = handle.actorId
+            if handle.singleActorId then -- Single actor?
+                local actorId = handle.singleActorId
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
 
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
 
-                if handle.rectangleWidth and handle.rectangleHeight then -- Rectangle resize?
-                    local desiredWidth, desiredHeight = math.max(UNIT, 2 * math.abs(lx)), math.max(UNIT, 2 * math.abs(ly))
-                    if handle.handleType == 'rectangleCornerResize' then
-                        local s = math.max(desiredWidth / handle.rectangleWidth, desiredHeight / handle.rectangleHeight)
-                        self.dependencies.Body:setRectangleShape(actorId, s * handle.rectangleWidth, s * handle.rectangleHeight)
-                    elseif handle.handleType == 'rectangleWidthResize' then
-                        self.dependencies.Body:setRectangleShape(actorId, desiredWidth, handle.rectangleHeight)
-                    elseif handle.handleType == 'rectangleHeightResize' then
-                        self.dependencies.Body:setRectangleShape(actorId, handle.rectangleWidth, desiredHeight)
+                if handle.shapeType == 'rectangle' then
+                    local desiredWidth = math.max(MIN_BODY_SIZE, math.min(2 * math.abs(lx), MAX_BODY_SIZE))
+                    local desiredHeight = math.max(MIN_BODY_SIZE, math.min(2 * math.abs(ly), MAX_BODY_SIZE))
+                    if handle.handleType == 'corner' then
+                        local s = math.max(desiredWidth / handle.width, desiredHeight / handle.height)
+                        self.dependencies.Body:setRectangleShape(actorId, s * handle.width, s * handle.height)
+                    elseif handle.handleType == 'width' then
+                        self.dependencies.Body:setRectangleShape(actorId, desiredWidth, handle.height)
+                    elseif handle.handleType == 'height' then
+                        self.dependencies.Body:setRectangleShape(actorId, handle.width, desiredHeight)
                     end
+                elseif handle.shapeType == 'circle' then
+                    local desiredRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(math.sqrt(lx * lx + ly * ly), 0.5 * MAX_BODY_SIZE))
+                    local physics = self.dependencies.Body:getPhysics()
+                    self.dependencies.Body:setShape(actorId, physics:newCircleShape(desiredRadius))
                 end
             end
 
