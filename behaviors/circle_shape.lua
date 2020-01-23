@@ -18,13 +18,15 @@ function CircleShapeBehavior.handlers:addComponent(component, bp, opts)
     if opts.isOrigin then
         if self.dependencies.Body:getShapeType(component.actorId) ~= 'circle' then
             local physics = self.dependencies.Body:getPhysics()
-            self.dependencies.Body:setShape(component.actorId, physics:newCircleShape(0.5 * UNIT))
+            local width, height = self.dependencies.Body:getSize(component.actorId)
+            local newRadius = 0.5 * (width and height and math.max(width, height) or UNIT)
+            self.dependencies.Body:setShape(component.actorId, physics:newCircleShape(newRadius))
         end
     end
 end
 
 function CircleShapeBehavior.handlers:removeComponent(component, opts)
-    if not opts.removeActor then
+    if opts.isOrigin and not opts.removeActor then
         self.dependencies.Body:resetShape(component.actorId)
     end
 end
