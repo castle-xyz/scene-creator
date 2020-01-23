@@ -3,7 +3,6 @@ local ImageBehavior = {
     propertyNames = {
         'url',
         'color',
-        'depth',
         'filter',
         'cropEnabled',
         'cropX',
@@ -26,7 +25,6 @@ function ImageBehavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.url = bp.url or CHECKERBOARD_IMAGE_URL
     component.properties.color = bp.color or { 1, 1, 1, 1 }
-    component.properties.depth = bp.depth or 0
     component.properties.filter = bp.filter or 'nearest'
     if bp.cropEnabled ~= nil then
         component.properties.cropEnabled = bp.cropEnabled
@@ -42,7 +40,6 @@ end
 function ImageBehavior.handlers:blueprintComponent(component, bp)
     bp.url = component.properties.url
     bp.color = util.deepCopyTable(component.properties.color)
-    bp.depth = component.properties.depth
     bp.filter = component.properties.filter
     bp.cropEnabled = component.properties.cropEnabled
     bp.cropX = component.properties.cropX
@@ -138,24 +135,16 @@ function ImageBehavior.handlers:uiComponent(component, opts)
         end)
     end)
 
-    util.uiRow('depth and scaling style', function()
-        ui.numberInput('depth', component.properties.depth, {
-            onChange = function(newDepth)
-                self:sendSetProperties(component.actorId, 'depth', newDepth)
-            end,
-        })
-    end, function()
-        ui.dropdown('scaling style',
-            component.properties.filter == 'nearest' and 'pixelated' or 'smooth', { 'pixelated', 'smooth' }, {
-            onChange = function(newScalingStyle)
-                if newScalingStyle == 'pixelated' then
-                    self:sendSetProperties(component.actorId, 'filter', 'nearest')
-                elseif newScalingStyle == 'smooth' then
-                    self:sendSetProperties(component.actorId, 'filter', 'linear')
-                end
-            end,
-        })
-    end)
+    ui.dropdown('scaling style',
+        component.properties.filter == 'nearest' and 'pixelated' or 'smooth', { 'pixelated', 'smooth' }, {
+        onChange = function(newScalingStyle)
+            if newScalingStyle == 'pixelated' then
+                self:sendSetProperties(component.actorId, 'filter', 'nearest')
+            elseif newScalingStyle == 'smooth' then
+                self:sendSetProperties(component.actorId, 'filter', 'linear')
+            end
+        end,
+    })
 
     util.uiRow('crop', function()
         ui.toggle('crop off', 'crop on', component.properties.cropEnabled, {
