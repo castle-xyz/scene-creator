@@ -346,6 +346,11 @@ function Client:uiupdate()
         return
     end
 
+    if not self.connected then
+        ui.markdown('connecting...')
+        return
+    end
+
     -- Refresh tools first to make sure selections and applicable tool set are valid
     self:applySelections() 
 
