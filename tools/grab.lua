@@ -26,6 +26,8 @@ function GrabTool:getHandles()
         return {}
     end
 
+    local handleDrawRadius = love.graphics.getDPIScale() * HANDLE_DRAW_RADIUS
+
     local handles = {}
 
     -- Single selection?
@@ -86,7 +88,7 @@ function GrabTool:getHandles()
 
         -- Rotation
         local centerX, centerY = body:getWorldPoint(0, 0)
-        local x, y = body:getWorldPoint(0, -0.5 * height - 8 * HANDLE_DRAW_RADIUS)
+        local x, y = body:getWorldPoint(0, -0.5 * height - 6 * handleDrawRadius)
         local endX, endY = body:getWorldPoint(0, -0.5 * height) 
         table.insert(handles, {
             x = x,
