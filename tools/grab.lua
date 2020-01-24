@@ -396,25 +396,29 @@ function GrabTool.handlers:uiSettings(closeSettings)
     -- Grid
     ui.box('grid box', { flexDirection = 'row' }, function()
         self._gridEnabled = ui.toggle('grid off', 'grid on', self._gridEnabled)
-        ui.box('grid size box', {
-            marginLeft = self._gridEnabled and 16 or 5000, -- Hack to hide while keeping layout height
-            flex = 1,
-        }, function()
-            self._gridSize = ui.numberInput('grid size', self._gridSize, { min = 0, step = 50 })
-        end)
+        if self._gridEnabled then
+            ui.box('grid size box', {
+                marginLeft = 16,
+                flex = 1,
+            }, function()
+                self._gridSize = ui.numberInput('grid size', self._gridSize, { min = 0, step = 50 })
+            end)
+        end
     end)
 
     -- Rotate increment
     ui.box('rotate increment box', { flexDirection = 'row' }, function()
         self._rotateIncrementEnabled = ui.toggle(
             'rotate snap off', 'rotate snap on', self._rotateIncrementEnabled)
-        ui.box('rotate increment value box', {
-            marginLeft = self._rotateIncrementEnabled and 16 or 5000, -- Hack to hide while keeping layout height
-            flex = 1,
-        }, function()
-            self._rotateIncrementDegrees = ui.numberInput(
-                'increment (degrees)', self._rotateIncrementDegrees, { min = 0, step = 5 })
-        end)
+        if self._rotateIncrementEnabled then
+            ui.box('rotate increment value box', {
+                marginLeft = 16,
+                flex = 1,
+            }, function()
+                self._rotateIncrementDegrees = ui.numberInput(
+                    'increment (degrees)', self._rotateIncrementDegrees, { min = 0, step = 5 })
+            end)
+        end
     end)
 end
 
