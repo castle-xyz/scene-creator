@@ -24,7 +24,7 @@ local HANDLE_DRAW_RADIUS = 10
 
 function GrabTool.handlers:addBehavior(opts)
     self._gridEnabled = false
-    self._gridSizeX, self._gridSizeY = UNIT, UNIT
+    self._gridSize, self._gridSize = UNIT, UNIT
 
     self._rotateIncrementEnabled = false
     self._rotateIncrementDegrees = 45
@@ -271,11 +271,11 @@ function GrabTool.handlers:update(dt)
             if self._gridEnabled then
                 local touchPrevX, touchPrevY = touch.x - touch.dx, touch.y - touch.dy
 
-                local qTouchPrevX = util.quantize(touchPrevX, self._gridSizeX, touch.initialX)
-                local qTouchPrevY = util.quantize(touchPrevY, self._gridSizeY, touch.initialY)
+                local qTouchPrevX = util.quantize(touchPrevX, self._gridSize, touch.initialX)
+                local qTouchPrevY = util.quantize(touchPrevY, self._gridSize, touch.initialY)
 
-                local qTouchX = util.quantize(touch.x, self._gridSizeX, touch.initialX)
-                local qTouchY = util.quantize(touch.y, self._gridSizeY, touch.initialY)
+                local qTouchX = util.quantize(touch.x, self._gridSize, touch.initialX)
+                local qTouchY = util.quantize(touch.y, self._gridSize, touch.initialY)
 
                 moveX, moveY = qTouchX - qTouchPrevX, qTouchY - qTouchPrevY
             else
@@ -295,11 +295,11 @@ function GrabTool.handlers:update(dt)
                 local centerInitialX = 0.5 * (touch1.initialX + touch2.initialX)
                 local centerInitialY = 0.5 * (touch1.initialY + touch2.initialY)
 
-                centerPrevX = util.quantize(centerPrevX, self._gridSizeX, centerInitialX)
-                centerPrevY = util.quantize(centerPrevY, self._gridSizeX, centerInitialY)
+                centerPrevX = util.quantize(centerPrevX, self._gridSize, centerInitialX)
+                centerPrevY = util.quantize(centerPrevY, self._gridSize, centerInitialY)
 
-                centerX = util.quantize(centerX, self._gridSizeX, centerInitialX)
-                centerY = util.quantize(centerY, self._gridSizeX, centerInitialY)
+                centerX = util.quantize(centerX, self._gridSize, centerInitialX)
+                centerY = util.quantize(centerY, self._gridSize, centerInitialY)
             end
 
             moveX, moveY = centerX - centerPrevX, centerY - centerPrevY
@@ -349,25 +349,27 @@ end
 
 function GrabTool.handlers:uiSettings(closeSettings)
     -- Grid
-    self._gridEnabled = ui.toggle('grid off', 'grid on', self._gridEnabled)
-    if self._gridEnabled then
-        util.uiRow('grid size', function()
-            self._gridSizeX = ui.numberInput('grid size x', self._gridSizeX, { min = 0, step = 50 })
-        end, function()
-            self._gridSizeY = ui.numberInput('grid size y', self._gridSizeY, { min = 0, step = 50 })
+    ui.box('grid box', { flexDirection = 'row' }, function()
+        self._gridEnabled = ui.toggle('grid off', 'grid on', self._gridEnabled)
+        ui.box('grid size box', {
+            marginLeft = self._gridEnabled and 16 or 5000, -- Hack to hide while keeping layout height
+            flex = 1,
+        }, function()
+            self._gridSize = ui.numberInput('grid size', self._gridSize, { min = 0, step = 50 })
         end)
-    end
+    end)
 
     -- Rotate increment
     ui.box('rotate increment box', { flexDirection = 'row' }, function()
         self._rotateIncrementEnabled = ui.toggle(
             'rotate snap off', 'rotate snap on', self._rotateIncrementEnabled)
-        if self._rotateIncrementEnabled then
-            ui.box('rotate increment value box', { flex = 1, marginLeft = 16 }, function()
-                self._rotateIncrementDegrees = ui.numberInput(
-                    'increment (degrees)', self._rotateIncrementDegrees, { min = 0, step = 5 })
-            end)
-        end
+        ui.box('rotate increment value box', {
+            marginLeft = self._rotateIncrementEnabled and 16 or 5000, -- Hack to hide while keeping layout height
+            flex = 1,
+        }, function()
+            self._rotateIncrementDegrees = ui.numberInput(
+                'increment (degrees)', self._rotateIncrementDegrees, { min = 0, step = 5 })
+        end)
     end)
 end
 
