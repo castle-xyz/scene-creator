@@ -31,6 +31,10 @@ end
 
 
 function util.quantize(value, divisor, start)
+    if divisor == 0 then
+        return value
+    end
+    start = start or 0
     return divisor * math.floor(0.5 + (value - start) / divisor) + start
 end
 

@@ -226,8 +226,13 @@ function GrabTool.handlers:update(dt)
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
 
                 if handle.shapeType == 'rectangle' then
-                    local desiredWidth = math.max(MIN_BODY_SIZE, math.min(2 * math.abs(lx), MAX_BODY_SIZE))
-                    local desiredHeight = math.max(MIN_BODY_SIZE, math.min(2 * math.abs(ly), MAX_BODY_SIZE))
+                    local desiredWidth, desiredHeight = 2 * math.abs(lx), 2 * math.abs(ly)
+                    if self._gridEnabled then
+                        desiredWidth = util.quantize(desiredWidth, self._gridSize)
+                        desiredHeight = util.quantize(desiredHeight, self._gridSize)
+                    end
+                    desiredWidth = math.max(MIN_BODY_SIZE, math.min(desiredWidth, MAX_BODY_SIZE))
+                    desiredHeight = math.max(MIN_BODY_SIZE, math.min(desiredHeight, MAX_BODY_SIZE))
                     if handle.handleType == 'corner' then
                         local s = math.max(desiredWidth / handle.width, desiredHeight / handle.height)
                         self.dependencies.Body:setRectangleShape(actorId, s * handle.width, s * handle.height)
@@ -237,7 +242,11 @@ function GrabTool.handlers:update(dt)
                         self.dependencies.Body:setRectangleShape(actorId, handle.width, desiredHeight)
                     end
                 elseif handle.shapeType == 'circle' then
-                    local desiredRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(math.sqrt(lx * lx + ly * ly), 0.5 * MAX_BODY_SIZE))
+                    local desiredRadius = math.sqrt(lx * lx + ly * ly)
+                    if self._gridEnabled then
+                        desiredRadius = util.quantize(desiredRadius, 0.5 * self._gridSize)
+                    end
+                    desiredRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(desiredRadius, 0.5 * MAX_BODY_SIZE))
                     local physics = self.dependencies.Body:getPhysics()
                     self.dependencies.Body:setShape(actorId, physics:newCircleShape(desiredRadius))
                 end
