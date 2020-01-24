@@ -18,8 +18,6 @@ require 'ui'
 -- Start / stop
 
 function Client:start()
-    Common.start(self)
-
     self.photoImages = {}
 
     self:startSelect()
@@ -33,6 +31,8 @@ end
 -- Connect / reconnect / disconnect
 
 function Client:connect()
+    Common.start(self)
+
     -- Send `me`
     local me = castle.user.getMe()
     self:send('me', self.clientId, me)
