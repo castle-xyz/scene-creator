@@ -25,6 +25,9 @@ local HANDLE_DRAW_RADIUS = 10
 function GrabTool.handlers:addBehavior(opts)
     self._gridEnabled = false
     self._gridSizeX, self._gridSizeY = UNIT, UNIT
+
+    self._rotateIncrementEnabled = false
+    self._rotateIncrementDegrees = 45
 end
 
 
@@ -243,6 +246,12 @@ function GrabTool.handlers:update(dt)
             if handle.handleType == 'rotate' then
                 local angle = math.atan2(touch.y - handle.pivotY, touch.x - handle.pivotX)
                 local prevAngle = math.atan2(touch.y - touch.dy - handle.pivotY, touch.x - touch.dx - handle.pivotX)
+                if self._rotateIncrementEnabled then
+                    local increment = self._rotateIncrementDegrees * math.pi / 180
+                    local initialAngle = math.atan2(touch.initialX - handle.pivotY, touch.initialY - handle.pivotX)
+                    angle = util.quantize(angle, increment, initialAngle)
+                    prevAngle = util.quantize(prevAngle, increment, initialAngle)
+                end
                 rotation = angle - prevAngle
                 self:moveRotate(0, 0, rotation, handle.pivotX, handle.pivotY)
             end
@@ -292,10 +301,18 @@ function GrabTool.handlers:update(dt)
                 centerX = util.quantize(centerX, self._gridSizeX, centerInitialX)
                 centerY = util.quantize(centerY, self._gridSizeX, centerInitialY)
             end
+
             moveX, moveY = centerX - centerPrevX, centerY - centerPrevY
 
             local angle = math.atan2(touch2.y - touch1.y, touch2.x - touch1.x)
             local prevAngle = math.atan2(touch2PrevY - touch1PrevY, touch2PrevX - touch1PrevX)
+            if self._rotateIncrementEnabled then
+                local increment = self._rotateIncrementDegrees * math.pi / 180
+                local initialAngle = math.atan2(
+                    touch2.initialY - touch1.initialY, touch2.initialX - touch1.initialX)
+                angle = util.quantize(angle, increment, initialAngle)
+                prevAngle = util.quantize(prevAngle, increment, initialAngle)
+            end
             rotation = angle - prevAngle
         end
 
@@ -335,10 +352,22 @@ function GrabTool.handlers:uiSettings(closeSettings)
     self._gridEnabled = ui.toggle('grid off', 'grid on', self._gridEnabled)
     if self._gridEnabled then
         util.uiRow('grid size', function()
-            self._gridSizeX = ui.numberInput('grid size x', self._gridSizeX)
+            self._gridSizeX = ui.numberInput('grid size x', self._gridSizeX, { min = 0, step = 50 })
         end, function()
-            self._gridSizeY = ui.numberInput('grid size y', self._gridSizeY)
+            self._gridSizeY = ui.numberInput('grid size y', self._gridSizeY, { min = 0, step = 50 })
         end)
     end
+
+    -- Rotate increment
+    ui.box('rotate increment box', { flexDirection = 'row' }, function()
+        self._rotateIncrementEnabled = ui.toggle(
+            'rotate snap off', 'rotate snap on', self._rotateIncrementEnabled)
+        if self._rotateIncrementEnabled then
+            ui.box('rotate increment value box', { flex = 1, marginLeft = 16 }, function()
+                self._rotateIncrementDegrees = ui.numberInput(
+                    'increment (degrees)', self._rotateIncrementDegrees, { min = 0, step = 5 })
+            end)
+        end
+    end)
 end
 
