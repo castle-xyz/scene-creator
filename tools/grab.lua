@@ -339,12 +339,48 @@ end
 
 -- Draw
 
+local gridShader
+if love.graphics then
+    gridShader = love.graphics.newShader([[
+        uniform float gridSize;
+        uniform float lineSize;
+        vec4 effect(vec4 color, Image tex, vec2 texCoords, vec2 screenCoords)
+        {
+            vec2 f = mod(screenCoords + lineSize, gridSize);
+            float l = length(f - lineSize);
+            float s = 1.0 - smoothstep(lineSize - 1.0, lineSize + 1.0, l);
+            return vec4(color.rgb, s * color.a);
+        }
+    ]], [[
+        vec4 position(mat4 transformProjection, vec4 vertexPosition)
+        {
+            return transformProjection * vertexPosition;
+        }
+    ]])
+end
+
 function GrabTool.handlers:drawOverlay(dt)
     if not self:isActive() then
         return
     end
 
-    local handleDrawRadius = love.graphics.getDPIScale() * HANDLE_DRAW_RADIUS
+    local dpiScale = love.graphics.getDPIScale()
+
+    if self._gridEnabled and self._gridSize > 0 then
+        love.graphics.push('all')
+
+        gridShader:send('gridSize', dpiScale * self._gridSize)
+        gridShader:send('lineSize', dpiScale * 2)
+        love.graphics.setShader(gridShader)
+
+        local windowWidth, windowHeight = love.graphics.getDimensions()
+        love.graphics.setColor(0, 0, 0, 0.5)
+        love.graphics.rectangle('fill', 0, 0, windowWidth, windowHeight)
+
+        love.graphics.pop()
+    end
+
+    local handleDrawRadius = dpiScale * HANDLE_DRAW_RADIUS
     for _, handle in ipairs(self:getHandles()) do
         love.graphics.circle('fill', handle.x, handle.y, handleDrawRadius)
         if handle.endX and handle.endY then
