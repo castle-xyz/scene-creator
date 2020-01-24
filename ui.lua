@@ -401,7 +401,8 @@ function Client:uiupdate()
                                 local actorBp = util.deepCopyTable(entry.actorBlueprint)
                                 if actorBp.Body then -- Has a `Body`? Position at center of window.
                                     local windowWidth, windowHeight = love.graphics.getDimensions()
-                                    actorBp.Body.x, actorBp.Body.y = 0.5 * windowWidth, 0.5 * windowHeight
+                                    actorBp.Body.x = util.quantize(0.5 * windowWidth, UNIT, 0)
+                                    actorBp.Body.y = util.quantize(0.5 * windowHeight, UNIT, 0)
                                 end
                                 local actorId = self:sendAddActor(actorBp, entry.entryId)
 
