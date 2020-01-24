@@ -30,6 +30,11 @@ function util.deepCopyTable(t)
 end
 
 
+function util.quantize(value, divisor, start)
+    return divisor * math.floor(0.5 + (value - start) / divisor) + start
+end
+
+
 function util.uuid()
     return uuidLib()
 end

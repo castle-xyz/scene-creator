@@ -9,14 +9,18 @@ function BaseBehavior:getUiName()
     return (self.displayName or self.name):lower()
 end
 
+function BaseBehavior:isActive()
+    if self.tool then
+        if self.game.server or (self.game.client and self.game.activeToolBehaviorId ~= self.behaviorId) then
+            return false
+        end
+    end
+    return true
+end
+
 function BaseBehavior:callHandler(handlerName, ...)
     local handler = self.handlers[handlerName]
     if handler then
-        if self.tool then -- Tool? Skip if server or if not currently active on client.
-            if self.game.server or (self.game.client and self.game.activeToolBehaviorId ~= self.behaviorId) then
-                return
-            end
-        end
         return handler(self, ...)
     end
 end

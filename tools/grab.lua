@@ -9,6 +9,7 @@ local GrabTool = {
     tool = {
         icon = 'move',
         iconFamily = 'Feather',
+        needsPerformingOff = true,
     },
 }
 
@@ -17,6 +18,14 @@ registerCoreBehavior(GrabTool)
 
 local HANDLE_TOUCH_RADIUS = 18
 local HANDLE_DRAW_RADIUS = 10
+
+
+-- Behavior management
+
+function GrabTool.handlers:addBehavior(opts)
+    self._gridEnabled = false
+    self._gridSizeX, self._gridSizeY = UNIT, UNIT
+end
 
 
 -- Methods
@@ -172,6 +181,10 @@ end
 -- Update
 
 function GrabTool.handlers:preUpdate(dt)
+    if not self:isActive() then
+        return
+    end
+
     -- Check for handle touches and steal them
     local handleTouchRadius = love.graphics.getDPIScale() * HANDLE_TOUCH_RADIUS
     local touchData = self:getTouchData()
@@ -191,6 +204,10 @@ function GrabTool.handlers:preUpdate(dt)
 end
 
 function GrabTool.handlers:update(dt)
+    if not self:isActive() then
+        return
+    end
+
     local touchData = self:getTouchData()
 
     -- Continuing a handle gesture?
@@ -242,7 +259,19 @@ function GrabTool.handlers:update(dt)
 
         if touchData.numTouches == 1 then -- 1-finger move
             local touchId, touch = next(touchData.touches)
-            moveX, moveY = touch.dx, touch.dy
+            if self._gridEnabled then
+                local touchPrevX, touchPrevY = touch.x - touch.dx, touch.y - touch.dy
+
+                local qTouchPrevX = util.quantize(touchPrevX, self._gridSizeX, touch.initialX)
+                local qTouchPrevY = util.quantize(touchPrevY, self._gridSizeY, touch.initialY)
+
+                local qTouchX = util.quantize(touch.x, self._gridSizeX, touch.initialX)
+                local qTouchY = util.quantize(touch.y, self._gridSizeY, touch.initialY)
+
+                moveX, moveY = qTouchX - qTouchPrevX, qTouchY - qTouchPrevY
+            else
+                moveX, moveY = touch.dx, touch.dy
+            end
         elseif touchData.numTouches == 2 then -- 2-finger move and rotate
             local touchId1, touch1 = next(touchData.touches)
             local touchId2, touch2 = next(touchData.touches, touchId1)
@@ -253,6 +282,16 @@ function GrabTool.handlers:update(dt)
             centerX, centerY = 0.5 * (touch1.x + touch2.x), 0.5 * (touch1.y + touch2.y)
             local centerPrevX, centerPrevY = 0.5 * (touch1PrevX + touch2PrevX), 0.5 * (touch1PrevY + touch2PrevY)
 
+            if self._gridEnabled then
+                local centerInitialX = 0.5 * (touch1.initialX + touch2.initialX)
+                local centerInitialY = 0.5 * (touch1.initialY + touch2.initialY)
+
+                centerPrevX = util.quantize(centerPrevX, self._gridSizeX, centerInitialX)
+                centerPrevY = util.quantize(centerPrevY, self._gridSizeX, centerInitialY)
+
+                centerX = util.quantize(centerX, self._gridSizeX, centerInitialX)
+                centerY = util.quantize(centerY, self._gridSizeX, centerInitialY)
+            end
             moveX, moveY = centerX - centerPrevX, centerY - centerPrevY
 
             local angle = math.atan2(touch2.y - touch1.y, touch2.x - touch1.x)
@@ -275,12 +314,31 @@ end
 -- Draw
 
 function GrabTool.handlers:drawOverlay(dt)
+    if not self:isActive() then
+        return
+    end
+
     local handleDrawRadius = love.graphics.getDPIScale() * HANDLE_DRAW_RADIUS
     for _, handle in ipairs(self:getHandles()) do
         love.graphics.circle('fill', handle.x, handle.y, handleDrawRadius)
         if handle.endX and handle.endY then
             love.graphics.line(handle.x, handle.y, handle.endX, handle.endY)
         end
+    end
+end
+
+
+-- Draw
+
+function GrabTool.handlers:uiSettings(closeSettings)
+    -- Grid
+    self._gridEnabled = ui.toggle('grid off', 'grid on', self._gridEnabled)
+    if self._gridEnabled then
+        util.uiRow('grid size', function()
+            self._gridSizeX = ui.numberInput('grid size x', self._gridSizeX)
+        end, function()
+            self._gridSizeY = ui.numberInput('grid size y', self._gridSizeY)
+        end)
     end
 end
 

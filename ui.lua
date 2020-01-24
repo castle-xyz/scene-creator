@@ -38,14 +38,29 @@ function Client:uiToolbar()
                 return tool1.behaviorId < tool2.behaviorId
             end)
             for _, tool in ipairs(order) do
+                local selected = self.activeToolBehaviorId == tool.behaviorId
+
+                local popoverAllowed, popoverStyle, popover
+
+                if tool.handlers.uiSettings then
+                    popoverAllowed = selected
+                    popoverStyle = { width = 300 }
+                    popover = function(closePopover)
+                        tool:callHandler('uiSettings', closePopover)
+                    end
+                end
+
                 ui.button(tool.name, {
                     icon = tool.tool.icon,
                     iconFamily = tool.tool.iconFamily,
                     hideLabel = true,
-                    selected = self.activeToolBehaviorId == tool.behaviorId,
+                    selected = selected,
                     onClick = function()
                         self:setActiveTool(tool.behaviorId)
                     end,
+                    popoverAllowed = popoverAllowed,
+                    popoverStyle = popoverStyle,
+                    popover = popover,
                 })
             end
         end
