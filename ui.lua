@@ -150,7 +150,7 @@ function Client:uiToolbar()
                     for actorId in pairs(self.selectedActorIds) do
                         local bp = self:blueprintActor(actorId)
                         if bp.Body then
-                            bp.Body.x, bp.Body.y = bp.Body.x + 64, bp.Body.y + 64
+                            bp.Body.x, bp.Body.y = bp.Body.x + UNIT, bp.Body.y + UNIT
                         end
                         local actor = self.actors[actorId]
                         duplicateActorIds[self:sendAddActor(bp, actor.parentEntryId)] = true
