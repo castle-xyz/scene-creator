@@ -166,14 +166,17 @@ end
 function Client:selectActorAtPoint(x, y, hits)
     local hits = hits or self.behaviorsByName.Body:getActorsAtPoint(x, y)
     local pick
-    if next(hits) then -- Pick the next unselected hit in some sorted order
+    if next(hits) then -- Pick the next unselected hit in draw order
         local order = {}
         for actorId in pairs(hits) do
             table.insert(order, actorId)
         end
-        table.sort(order)
+        table.sort(order, function(actorId1, actorId2)
+            local actor1, actor2 = self.actors[actorId1], self.actors[actorId2]
+            return actor1.drawOrder < actor2.drawOrder
+        end)
         for i = #order, 1, -1 do
-            local nextI = i == 1 and #order or i - 1
+            local nextI = i == 1 and #order or i - 1 -- Wrap around end of order
             if self.selectedActorIds[order[i]] then
                 pick = order[nextI]
             end
