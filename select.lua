@@ -4,7 +4,7 @@ function Client:startSelect()
     self.selectedActorIds = {} -- `actorId` -> `true` for all selected actors
 
     self.activeToolBehaviorId = nil -- `behaviorId` of active tool
-    self.lastActiveToolBehaviorId = nil -- the last non-`nil` value of `self.activeToolBehaviorId`
+    self.activeToolHistory = {} -- `{ behaviorId1, behaviorId2, ... }` of last active tools, oldest first, deduped, max 10
     self.applicableTools = {} -- `behaviorId` -> behavior, for tools applicable to selection
 end
 
@@ -79,9 +79,14 @@ function Client:applySelections()
         if not self.applicableTools[self.activeToolBehaviorId] then
             self:setActiveTool(nil)
         end
-    else -- No tool currently active, but see if the last active tool can be re-activated
-        if self.applicableTools[self.lastActiveToolBehaviorId] then
-            self:setActiveTool(self.lastActiveToolBehaviorId)
+    end
+    if not self.activeToolBehaviorId then
+        -- No tool currently active, pick last used tool that can be activated
+        for i = #self.activeToolHistory, 1, -1 do
+            if self.applicableTools[self.activeToolHistory[i]] then
+                self:setActiveTool(self.activeToolHistory[i])
+                return
+            end
         end
     end
 
@@ -135,8 +140,16 @@ function Client:setActiveTool(toolBehaviorId)
     end
 
     self.activeToolBehaviorId = toolBehaviorId
-    if self.activeToolBehaviorId then
-        self.lastActiveToolBehaviorId = self.activeToolBehaviorId
+    if self.activeToolBehaviorId then -- If non-`nil`, add to history
+        for i = #self.activeToolHistory, 1, -1 do -- Dedup
+            if self.activeToolHistory[i] == self.activeToolBehaviorId then
+                table.remove(self.activeToolHistory, i) -- This shouldn't happen more than once...
+            end
+        end
+        table.insert(self.activeToolHistory, self.activeToolBehaviorId)
+        while #self.activeToolHistory > 10 do -- Limit to 10
+            table.remove(self.activeToolHistory, 1)
+        end
     end
 
     -- Activate new tool and add components to it if it applies
