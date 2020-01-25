@@ -331,13 +331,6 @@ function GrabTool.handlers:update(dt)
             rotation = angle - prevAngle
         end
 
-        -- If will make changes and performance is on, turn it off
-        if not (moveX == 0 and moveY == 0 and (rotation == nil or rotation == 0)) then
-            if self.game.performing then
-                self.game:send('setPerforming', false)
-            end
-        end
-
         self:moveRotate(moveX, moveY, rotation, centerX, centerY)
     end
 end
