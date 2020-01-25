@@ -152,6 +152,10 @@ function GrabTool:moveRotate(moveX, moveY, rotation, pivotX, pivotY)
                 local lX, lY = x - pivotX, y - pivotY
                 lX = cosRotation * lX - sinRotation * lY
                 lY = sinRotation * lX + cosRotation * lY
+                if self._gridEnabled then
+                    lX = util.quantize(lX, self._gridSize, x - pivotX)
+                    lY = util.quantize(lY, self._gridSize, y - pivotY)
+                end
                 newX, newY = pivotX + moveX + lX, pivotY + moveY + lY
                 newAngle = angle + rotation
             else
