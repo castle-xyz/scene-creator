@@ -38,6 +38,7 @@ function GrabTool:getHandles()
         return {}
     end
 
+    local handleTouchRadius = love.graphics.getDPIScale() * HANDLE_TOUCH_RADIUS
     local handleDrawRadius = love.graphics.getDPIScale() * HANDLE_DRAW_RADIUS
 
     local handles = {}
@@ -84,6 +85,7 @@ function GrabTool:getHandles()
                     width = width,
                     height = height,
                     shapeType = shapeType,
+                    touchRadius = handleTouchRadius,
                 }
                 if shapeType == 'rectangle' and i ~= 0 and j ~= 0 then -- Corner
                     handle.handleType = 'corner'
@@ -106,6 +108,7 @@ function GrabTool:getHandles()
             x = x,
             y = y,
             handleType = 'rotate',
+            touchRadius = 1.5 * handleTouchRadius, -- Make rotate handles a bit easier to touch
             pivotX = centerX,
             pivotY = centerY,
             endX = endX,
@@ -193,14 +196,13 @@ function GrabTool.handlers:preUpdate(dt)
     end
 
     -- Check for handle touches and steal them
-    local handleTouchRadius = love.graphics.getDPIScale() * HANDLE_TOUCH_RADIUS
     local touchData = self:getTouchData()
     if touchData.numTouches == 1 then
         local touchId, touch = next(touchData.touches)
         if touch.pressed then
             for _, handle in ipairs(self:getHandles()) do
                 local distX, distY = handle.x - touch.x, handle.y - touch.y
-                if distX * distX + distY * distY <= handleTouchRadius * handleTouchRadius then
+                if distX * distX + distY * distY <= handle.touchRadius * handle.touchRadius then
                     touch.grabHandle = handle
                     touch.used = true
                     break
