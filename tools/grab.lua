@@ -342,12 +342,12 @@ local gridShader
 if love.graphics then
     gridShader = love.graphics.newShader([[
         uniform float gridSize;
-        uniform float lineSize;
+        uniform float dotRadius;
         vec4 effect(vec4 color, Image tex, vec2 texCoords, vec2 screenCoords)
         {
-            vec2 f = mod(screenCoords + lineSize, gridSize);
-            float l = length(f - lineSize);
-            float s = 1.0 - smoothstep(lineSize - 1.0, lineSize + 1.0, l);
+            vec2 f = mod(screenCoords + dotRadius, gridSize);
+            float l = length(f - dotRadius);
+            float s = 1.0 - smoothstep(dotRadius - 1.0, dotRadius + 1.0, l);
             return vec4(color.rgb, s * color.a);
         }
     ]], [[
@@ -369,7 +369,7 @@ function GrabTool.handlers:drawOverlay(dt)
         love.graphics.push('all')
 
         gridShader:send('gridSize', dpiScale * self._gridSize)
-        gridShader:send('lineSize', dpiScale * 2)
+        gridShader:send('dotRadius', dpiScale * 2)
         love.graphics.setShader(gridShader)
 
         local windowWidth, windowHeight = love.graphics.getDimensions()
