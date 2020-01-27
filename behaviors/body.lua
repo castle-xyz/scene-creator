@@ -190,11 +190,11 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     end
 end
 
-function BodyBehavior.handlers:addDependentComponent(addedComponent)
-    -- Promote body type based on what dependents request. The order is: static, kinematic, dynamic.
-    -- Bodies are static by default. A request for a higher type always wins.
-
+function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
     local addedBehavior = self:getOtherBehavior(addedComponent.behaviorId)
+
+    -- Promote body type. Order is: static, kinematic, dynamic. Bodies are
+    -- static by default. A request for a higher type always wins.
     local addedBodyType = addedBehavior:callHandler('bodyTypeComponent', addedComponent)
     if addedBodyType then
         local actor = self:getActor(addedComponent.actorId)
@@ -222,12 +222,34 @@ function BodyBehavior.handlers:addDependentComponent(addedComponent)
             self._physics:setType(bodyId, finalBodyType)
         end
     end
+
+    -- Promote ownership
+    if opts.isOrigin and self.game.client then
+        local addedBodyOwnership, interpolationDelay = addedBehavior:callHandler('bodyOwnershipComponent', addedComponent)
+        if addedBodyOwnership then
+            local actor = self:getActor(addedComponent.actorId)
+
+            local finalInterpolationDelay = interpolationDelay
+            for otherBehaviorId, otherComponent in pairs(actor.components) do
+                if otherBehaviorId ~= addedComponent.behaviorId then
+                    local otherBehavior = self:getOtherBehavior(otherBehaviorId)
+                    local otherBodyOwnership, otherInterpolationDelay = otherBehavior:callHandler('bodyOwnershipComponent', otherComponent)
+                    if otherBodyOwnership then
+                        finalInterpolationDelay = math.max(finalInterpolationDelay, otherInterpolationDelay)
+                    end
+                end
+            end
+
+            local bodyId, body = self:getBody(addedComponent.actorId)
+            self._physics:setOwner(bodyId, self.game.clientId, true, finalInterpolationDelay)
+        end
+    end
 end
 
-function BodyBehavior.handlers:removeDependentComponent(removedComponent)
-    -- Demote body type based on removal of dependents.
-
+function BodyBehavior.handlers:removeDependentComponent(removedComponent, opts)
     local removedBehavior = self:getOtherBehavior(removedComponent.behaviorId)
+
+    -- Demote body type
     local removedBodyType = removedBehavior:callHandler('bodyTypeComponent', removedComponent)
     if removedBodyType then
         local actor = self:getActor(removedComponent.actorId)
@@ -251,6 +273,30 @@ function BodyBehavior.handlers:removeDependentComponent(removedComponent)
         local bodyId, body = self:getBody(removedComponent.actorId)
         if body:getType() ~= finalBodyType then
             self._physics:setType(bodyId, finalBodyType)
+        end
+    end
+
+    -- Demote ownership
+    if opts.isOrigin and self.game.client then
+        local removedBodyOwnership, interpolationDelay = removedBehavior:callHandler('bodyOwnershipComponent', removedComponent)
+        if removedBodyOwnership then
+            local actor = self:getActor(removedComponent.actorId)
+
+            local finalBodyOwnership, finalInterpolationDelay = false, 0
+            for otherBehaviorId, otherComponent in pairs(actor.components) do
+                if otherBehaviorId ~= removedComponent.behaviorId then
+                    local otherBehavior = self:getOtherBehavior(otherBehaviorId)
+                    local otherBodyOwnership, otherInterpolationDelay = otherBehavior:callHandler('bodyOwnershipComponent', otherComponent)
+                    if otherBodyOwnership then
+                        finalBodyOwnership = true
+                        finalInterpolationDelay = math.max(finalInterpolationDelay, otherInterpolationDelay)
+                    end
+                end
+            end
+
+            local bodyId, body = self:getBody(removedComponent.actorId)
+            self._physics:setOwner(bodyId, self.game.clientId,
+                finalBodyOwnership, finalBodyOwnership and finalInterpolationDelay or nil)
         end
     end
 end

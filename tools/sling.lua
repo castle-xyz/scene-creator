@@ -26,6 +26,13 @@ local TRIANGLE_LENGTH = 0.25 * UNIT
 local TRIANGLE_WIDTH = 0.1 * UNIT
 
 
+-- Body ownership
+
+function SlingTool.handlers:bodyOwnershipComponent(component)
+    return true, 0
+end
+
+
 -- Update
 
 function SlingTool.handlers:preUpdate(dt)
@@ -63,14 +70,9 @@ function SlingTool.handlers:update(dt)
 
             for actorId, component in pairs(self.components) do
                 if self.game.clientId == component.clientId then
+                    -- We own the body, so just set velocity locally and the physics system will sync it
                     local bodyId, body = self.dependencies.Body:getBody(actorId)
-
-                    -- Send a message to set velocity, but also set one locally for smoothness
-                    physics:setLinearVelocity({
-                        selfSend = false,
-                        forwardToOrigin = true,
-                    }, bodyId, SPEED_MULTIPLIER * vX, SPEED_MULTIPLIER * vY)
-                    body:setLinearVelocity(0.5 * SPEED_MULTIPLIER * vX, 0.5 * SPEED_MULTIPLIER * vY)
+                    body:setLinearVelocity(SPEED_MULTIPLIER * vX, SPEED_MULTIPLIER * vY)
                 end
             end
         end

@@ -384,7 +384,9 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
     behavior.components[actorId] = component
 
     for _, dependency in pairs(behavior.dependencies) do
-        dependency:callHandler('addDependentComponent', component)
+        dependency:callHandler('addDependentComponent', component, {
+            isOrigin = self.clientId == clientId,
+        })
     end
 
     behavior:callHandler('addComponent', component, bp or {}, {
@@ -404,7 +406,9 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
     })
 
     for _, dependency in pairs(behavior.dependencies) do
-        dependency:callHandler('removeDependentComponent', component)
+        dependency:callHandler('removeDependentComponent', component, {
+            isOrigin = self.clientId == clientId,
+        })
     end
 
     actor.components[behaviorId] = nil
