@@ -189,6 +189,12 @@ function Client:selectActorAtPoint(x, y, hits)
     end
 end
 
+function Client:selectActorAtTouch(touch, hits)
+    self:selectActorAtPoint(touch.x, touch.y, hits)
+    touch.used = true
+    self:applySelections()
+end
+
 function Client:touchToSelect()
     -- Touch-to-select. We skip if `touch.used` since the touch is already being used for some gesture.
     if self.numTouches == 1 and self.maxNumTouches == 1 then
@@ -205,9 +211,7 @@ function Client:touchToSelect()
                 end
             end
             if not someSelectedHit then
-                self:selectActorAtPoint(touch.x, touch.y, hits)
-                touch.used = true
-                self:applySelections()
+                self:selectActorAtTouch(touch, hits)
             end
         end
 
@@ -215,9 +219,7 @@ function Client:touchToSelect()
         if (not touch.used and touch.released and
                 touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 and
                 love.timer.getTime() - touch.pressTime < 0.2) then
-            self:selectActorAtPoint(touch.x, touch.y)
-            touch.used = true
-            self:applySelections()
+            self:selectActorAtTouch(touch)
         end
     end
 end

@@ -26,6 +26,7 @@ require 'behaviors.solid'
 require 'behaviors.circle_shape'
 require 'behaviors.free_motion'
 require 'behaviors.rotating_motion'
+require 'tools.sling'
 
 require 'library'
 
