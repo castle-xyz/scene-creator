@@ -103,6 +103,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
         id = 'image',
         type = 'image',
         onChange = function(newUrl)
+            self:sendSetProperties(component.actorId, 'cropEnabled', false)
             if not newUrl then
                 self:sendSetProperties(component.actorId, 'url', CHECKERBOARD_IMAGE_URL)
             elseif newUrl:match('^file://') then
@@ -149,6 +150,13 @@ function ImageBehavior.handlers:uiComponent(component, opts)
     util.uiRow('crop', function()
         ui.toggle('crop off', 'crop on', component.properties.cropEnabled, {
             onToggle = function(newCropEnabled)
+                if not component.properties.cropEnabled and newCropEnabled and component._imageHolder then
+                    -- Reset crop size to image dimensions when enabling
+                    local image = component._imageHolder.image
+                    local imageWidth, imageHeight = image:getDimensions()
+                    self:sendSetProperties(component.actorId,
+                        'cropX', 0, 'cropY', 0, 'cropWidth', imageWidth, 'cropHeight', imageHeight)
+                end
                 self:sendSetProperties(component.actorId, 'cropEnabled', newCropEnabled)
             end,
         })
