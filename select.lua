@@ -80,12 +80,26 @@ function Client:applySelections()
             self:setActiveTool(nil)
         end
     end
+
     if not self.activeToolBehaviorId then
         -- No tool currently active, pick last used tool that can be activated
         for i = #self.activeToolHistory, 1, -1 do
             if self.applicableTools[self.activeToolHistory[i]] then
                 self:setActiveTool(self.activeToolHistory[i])
-                return
+                break
+            end
+        end
+
+        if not self.activeToolBehaviorId then
+            -- Still didn't pick anything, just pick applicable tool with lowest id
+            local someApplicableTool
+            for behaviorId in pairs(self.applicableTools) do
+                if not someApplicableTool or behaviorId < someApplicableTool then
+                    someApplicableTool = behaviorId
+                end
+            end
+            if someApplicableTool then
+                self:setActiveTool(someApplicableTool)
             end
         end
     end
