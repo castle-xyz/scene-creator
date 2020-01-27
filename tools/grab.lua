@@ -389,7 +389,7 @@ function GrabTool.handlers:drawOverlay(dt)
 end
 
 
--- Draw
+-- UI
 
 function GrabTool.handlers:uiSettings(closeSettings)
     -- Grid
