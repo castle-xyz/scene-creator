@@ -64,14 +64,7 @@ function Common:define()
     self:defineSnapshotMessageKinds()
 
 
-    self:defineMessageKind('setPerforming', {
-        to = 'all',
-        reliable = true,
-        channel = self.channels.mainReliable,
-        selfSend = true,
-        forward = true,
-        forwardToOrigin = true,
-    })
+    self:defineMessageKind('setPerforming', self.sendOpts.reliableToAll)
 end
 
 
