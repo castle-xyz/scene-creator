@@ -29,6 +29,7 @@ require 'behaviors.rotating_motion'
 require 'tools.sling'
 
 require 'library'
+require 'snapshot'
 
 
 -- Message kind definition
@@ -60,6 +61,7 @@ function Common:define()
 
     self:defineActorBehaviorMessageKinds()
     self:defineLibraryMessageKinds()
+    self:defineSnapshotMessageKinds()
 
 
     self:defineMessageKind('setPerforming', self.sendOpts.reliableToAll)
@@ -73,6 +75,7 @@ function Common:start()
 
     self:startActorBehavior()
     self:startLibrary()
+    self:startSnapshot()
 
     self.performing = false
 end

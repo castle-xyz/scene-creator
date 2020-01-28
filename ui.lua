@@ -13,16 +13,36 @@ end
 
 function Client:uiToolbar()
     ui.box('left', { flexDirection = 'row' }, function()
-        -- Performance
-        ui.button('toggle performing', {
-            icon = 'play',
-            iconFamily = 'FontAwesome',
-            hideLabel = true,
-            selected = self.performing,
-            onClick = function()
-                self:send('setPerforming', not self.performing)
-            end,
-        })
+        if not self.performing then
+            -- Paused mode
+
+            -- Play
+            ui.button('play', {
+                icon = 'play',
+                iconFamily = 'FontAwesome',
+                hideLabel = true,
+                onClick = function()
+                    self:send('addSnapshot', util.uuid(), self:createSnapshot(), { isRewind = true })
+                    self:send('setPerforming', true)
+                end,
+            })
+        else
+            -- Play mode
+
+            -- Rewind
+            if self.rewindSnapshotId then
+                ui.button('rewind', {
+                    icon = 'stop',
+                    iconFamily = 'FontAwesome',
+                    hideLabel = true,
+                    onClick = function()
+                        self:send('setPerforming', false)
+                        self:restoreSnapshot(self.snapshots[self.rewindSnapshotId])
+                        self:send('removeSnapshot', self.rewindSnapshotId)
+                    end,
+                })
+            end
+        end
     end)
 
     ui.box('spacer', { flex = 1 }, function() end)
@@ -148,13 +168,18 @@ function Client:uiToolbar()
 
                     -- Use blueprints to duplicate. Nudge position a little bit.
                     for actorId in pairs(self.selectedActorIds) do
+                        local actor = self.actors[actorId]
+
                         local bp = self:blueprintActor(actorId)
                         if bp.components.Body then
                             bp.components.Body.x = bp.components.Body.x + UNIT
                             bp.components.Body.y = bp.components.Body.y + UNIT
                         end
-                        local actor = self.actors[actorId]
-                        duplicateActorIds[self:sendAddActor(bp, actor.parentEntryId)] = true
+
+                        local newActorId = self:sendAddActor(bp, {
+                            parentEntryId = actor.parentEntryId
+                        })
+                        duplicateActorIds[newActorId] = true
                     end
 
                     -- Select new actors
@@ -405,7 +430,9 @@ function Client:uiupdate()
                                     actorBp.components.Body.x = util.quantize(0.5 * windowWidth, UNIT, 0)
                                     actorBp.components.Body.y = util.quantize(0.5 * windowHeight, UNIT, 0)
                                 end
-                                local actorId = self:sendAddActor(actorBp, entry.entryId)
+                                local actorId = self:sendAddActor(actorBp, {
+                                    parentEntryId = entry.entryId,
+                                })
 
                                 -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
                                 if actorBp.components.Body then

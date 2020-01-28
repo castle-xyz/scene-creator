@@ -454,10 +454,10 @@ end
 
 -- Methods
 
-function Common:sendAddActor(bp, parentEntryId)
-    local actorId = self:generateId()
+function Common:sendAddActor(bp, opts)
+    local actorId = opts.actorId or self:generateId()
 
-    self:send('addActor', self.clientId, actorId, parentEntryId)
+    self:send('addActor', self.clientId, actorId, opts.parentEntryId)
 
     -- Add components in depth-first order through dependency graph
 
