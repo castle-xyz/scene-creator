@@ -39,15 +39,16 @@ end
 function Common:createSnapshot(opts)
     snapshot = {}
 
-    -- Blueprint actors, preserving the parent entry id
+    -- Snapshot actors in draw order
     snapshot.actors = {}
-    for actorId, actor in pairs(self.actors) do
-        local actorBp = self:blueprintActor(actorId)
-        snapshot.actors[actorId] = {
+    self:forEachActorByDrawOrder(function(actor)
+        local actorBp = self:blueprintActor(actor.actorId)
+        table.insert(snapshot.actors, {
+            actorId = actor.actorId,
             parentEntryId = actor.parentEntryId,
             bp = actorBp,
-        }
-    end
+        })
+    end)
 
     return snapshot
 end
@@ -90,9 +91,9 @@ function Server.receivers:restoreSnapshot(time, snapshotId, opts)
     end
 
     -- Add new
-    for actorId, actorSp in pairs(snapshot.actors) do
+    for _, actorSp in pairs(snapshot.actors) do
         self:sendAddActor(actorSp.bp, {
-            actorId = actorId,
+            actorId = actorSp.actorId,
             parentEntryId = actorSp.parentEntryId,
         })
     end
