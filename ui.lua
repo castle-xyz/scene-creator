@@ -88,6 +88,10 @@ function Client:uiToolbar()
     ui.box('spacer', { flex = 1 }, function() end)
 
     ui.box('right', { flexDirection = 'row' }, function()
+        if self.performing then
+            return
+        end
+
         -- Move up / down
         if next(self.selectedActorIds) then
             -- TODO(nikki): Support multiple selections
@@ -409,50 +413,56 @@ function Client:uiupdate()
             containerStyle = { flex = 1, margin = 0 },
             contentStyle = { flex = 1 },
         }, function()
-            -- Blueprints tab
-            ui.tab('blueprints', function()
-                self:uiLibrary({
-                    filterType = 'actorBlueprint',
-                    buttons = function(entry)
-                        ui.button('add to scene', {
-                            flex = 1,
-                            icon = 'plus',
-                            iconFamily = 'FontAwesome5',
-                            onClick = function()
-                                -- Stop performing
-                                self:send('setPerforming', false)
+            if self.performing then
+                -- Play tab
+                ui.tab('play', function()
+                end)
+            else
+                -- Blueprints tab
+                ui.tab('blueprints', function()
+                    self:uiLibrary({
+                        filterType = 'actorBlueprint',
+                        buttons = function(entry)
+                            ui.button('add to scene', {
+                                flex = 1,
+                                icon = 'plus',
+                                iconFamily = 'FontAwesome5',
+                                onClick = function()
+                                    -- Stop performing
+                                    self:send('setPerforming', false)
 
-                                -- Add the actor, initializing some values in the blueprint
-                                local actorBp = util.deepCopyTable(entry.actorBlueprint)
-                                if actorBp.components.Body then -- Has a `Body`? Position at center of window.
-                                    local windowWidth, windowHeight = love.graphics.getDimensions()
-                                    actorBp.components.Body.x = util.quantize(0.5 * windowWidth, UNIT, 0)
-                                    actorBp.components.Body.y = util.quantize(0.5 * windowHeight, UNIT, 0)
-                                end
-                                local actorId = self:sendAddActor(actorBp, {
-                                    parentEntryId = entry.entryId,
-                                })
+                                    -- Add the actor, initializing some values in the blueprint
+                                    local actorBp = util.deepCopyTable(entry.actorBlueprint)
+                                    if actorBp.components.Body then -- Has a `Body`? Position at center of window.
+                                        local windowWidth, windowHeight = love.graphics.getDimensions()
+                                        actorBp.components.Body.x = util.quantize(0.5 * windowWidth, UNIT, 0)
+                                        actorBp.components.Body.y = util.quantize(0.5 * windowHeight, UNIT, 0)
+                                    end
+                                    local actorId = self:sendAddActor(actorBp, {
+                                        parentEntryId = entry.entryId,
+                                    })
 
-                                -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
-                                if actorBp.components.Body then
-                                    self:setActiveTool(nil)
+                                    -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
+                                    if actorBp.components.Body then
+                                        self:setActiveTool(nil)
+                                    end
+                                    self:deselectAllActors()
+                                    self:selectActor(actorId)
+                                    self:applySelections()
+                                    if actorBp.components.Body then
+                                        self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
+                                    end
                                 end
-                                self:deselectAllActors()
-                                self:selectActor(actorId)
-                                self:applySelections()
-                                if actorBp.components.Body then
-                                    self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
-                                end
-                            end
-                        })
-                    end,
-                })
-            end)
+                            })
+                        end,
+                    })
+                end)
 
-            -- Properties tab
-            ui.tab('properties', function()
-                self:uiProperties()
-            end)
+                -- Properties tab
+                ui.tab('properties', function()
+                    self:uiProperties()
+                end)
+            end
         end)
     end)
 end
