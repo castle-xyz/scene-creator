@@ -23,7 +23,7 @@ function Client:uiToolbar()
                 hideLabel = true,
                 onClick = function()
                     self:send('addSnapshot', util.uuid(), self:createSnapshot(), { isRewind = true })
-                    self:send('setPerforming', true)
+                    self:send({ kind = 'setPerforming', selfSend = false }, true)
                 end,
             })
         else
