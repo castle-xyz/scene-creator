@@ -30,18 +30,17 @@ function Client:uiToolbar()
             -- Play mode
 
             -- Rewind
-            if self.rewindSnapshotId then
-                ui.button('rewind', {
-                    icon = 'stop',
-                    iconFamily = 'FontAwesome',
-                    hideLabel = true,
-                    onClick = function()
-                        self:send('setPerforming', false)
+            ui.button('rewind', {
+                icon = 'stop',
+                iconFamily = 'FontAwesome',
+                hideLabel = true,
+                onClick = function()
+                    if self.rewindSnapshotId then
                         self:send('restoreSnapshot', self.rewindSnapshotId)
                         self:send('removeSnapshot', self.rewindSnapshotId)
-                    end,
-                })
-            end
+                    end
+                end,
+            })
         end
     end)
 

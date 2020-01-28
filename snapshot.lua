@@ -77,6 +77,11 @@ function Server.receivers:restoreSnapshot(time, snapshotId, opts)
 
     local snapshot = assert(self.snapshots[snapshotId], 'restoreSnapshot: no such snapshot')
 
+    -- Stop performance
+    if self.performing then
+        self:send('setPerforming', false)
+    end
+
     -- Clear existing
     if opts.clear ~= false then
         for actorId in pairs(self.actors) do
