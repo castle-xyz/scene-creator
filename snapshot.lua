@@ -9,8 +9,17 @@ end
 -- Message kind definitions
 
 function Common:defineSnapshotMessageKinds()
+    -- From anyone to all
     self:defineMessageKind('addSnapshot', self.sendOpts.reliableToAll)
     self:defineMessageKind('removeSnapshot', self.sendOpts.reliableToAll)
+
+    -- From client to server
+    self:defineMessageKind('restoreSnapshot', {
+        reliable = true,
+        channel = self.channels.mainReliable,
+        selfSend = false,
+        forward = false,
+    })
 end
 
 
@@ -43,28 +52,6 @@ function Common:createSnapshot(opts)
     return snapshot
 end
 
-function Common:restoreSnapshot(snapshot, opts)
-    opts = opts or {}
-
-    -- Clear existing
-    if opts.clear ~= false then
-        for actorId in pairs(self.actors) do
-            self:send('removeActor', self.clientId, actorId)
-        end
-    end
-
-    -- Add new
-    for actorId, actorSp in pairs(snapshot.actors) do
-        self:sendAddActor(actorSp.bp, {
-            actorId = actorId,
-            parentEntryId = actorSp.parentEntryId,
-        })
-    end
-
-    -- Refresh tools
-    self:applySelections() 
-end
-
 
 -- Message receivers
 
@@ -83,5 +70,26 @@ function Common.receivers:removeSnapshot(time, snapshotId)
         self.rewindSnapshotId = nil
     end
     self.snapshots[snapshotId] = nil
+end
+
+function Server.receivers:restoreSnapshot(time, snapshotId, opts)
+    opts = opts or {}
+
+    local snapshot = assert(self.snapshots[snapshotId], 'restoreSnapshot: no such snapshot')
+
+    -- Clear existing
+    if opts.clear ~= false then
+        for actorId in pairs(self.actors) do
+            self:send('removeActor', self.clientId, actorId)
+        end
+    end
+
+    -- Add new
+    for actorId, actorSp in pairs(snapshot.actors) do
+        self:sendAddActor(actorSp.bp, {
+            actorId = actorId,
+            parentEntryId = actorSp.parentEntryId,
+        })
+    end
 end
 

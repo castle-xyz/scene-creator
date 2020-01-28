@@ -37,7 +37,7 @@ function Client:uiToolbar()
                     hideLabel = true,
                     onClick = function()
                         self:send('setPerforming', false)
-                        self:restoreSnapshot(self.snapshots[self.rewindSnapshotId])
+                        self:send('restoreSnapshot', self.rewindSnapshotId)
                         self:send('removeSnapshot', self.rewindSnapshotId)
                     end,
                 })
