@@ -468,7 +468,7 @@ function Common:sendAddActor(bp, parentEntryId)
         end
         visited[behaviorName] = true
 
-        componentBp = componentBp or bp[behaviorName]
+        componentBp = componentBp or bp.components[behaviorName]
 
         local behavior = self.behaviorsByName[behaviorName]
         if not behavior then
@@ -481,7 +481,7 @@ function Common:sendAddActor(bp, parentEntryId)
 
         self:send('addComponent', self.clientId, actorId, behavior.behaviorId, componentBp)
     end
-    for behaviorName, componentBp in pairs(bp) do
+    for behaviorName, componentBp in pairs(bp.components) do
         visit(behaviorName, componentBp)
     end
 
@@ -494,12 +494,13 @@ function Common:blueprintActor(actorId)
     local actor = assert(self.actors[actorId], 'blueprintActor: no such actor')
 
     -- Blueprint each component that isn't a tool
+    bp.components = {}
     for behaviorId, component in pairs(actor.components) do
         if not self.tools[behaviorId] then
             local behavior = self.behaviors[component.behaviorId]
-            local behaviorBp = {}
-            behavior:callHandler('blueprintComponent', component, behaviorBp)
-            bp[behavior.name] = behaviorBp
+            local componentBp = {}
+            behavior:callHandler('blueprintComponent', component, componentBp)
+            bp.components[behavior.name] = componentBp
         end
     end
 

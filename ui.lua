@@ -149,8 +149,9 @@ function Client:uiToolbar()
                     -- Use blueprints to duplicate. Nudge position a little bit.
                     for actorId in pairs(self.selectedActorIds) do
                         local bp = self:blueprintActor(actorId)
-                        if bp.Body then
-                            bp.Body.x, bp.Body.y = bp.Body.x + UNIT, bp.Body.y + UNIT
+                        if bp.components.Body then
+                            bp.components.Body.x = bp.components.Body.x + UNIT
+                            bp.components.Body.y = bp.components.Body.y + UNIT
                         end
                         local actor = self.actors[actorId]
                         duplicateActorIds[self:sendAddActor(bp, actor.parentEntryId)] = true
@@ -399,21 +400,21 @@ function Client:uiupdate()
 
                                 -- Add the actor, initializing some values in the blueprint
                                 local actorBp = util.deepCopyTable(entry.actorBlueprint)
-                                if actorBp.Body then -- Has a `Body`? Position at center of window.
+                                if actorBp.components.Body then -- Has a `Body`? Position at center of window.
                                     local windowWidth, windowHeight = love.graphics.getDimensions()
-                                    actorBp.Body.x = util.quantize(0.5 * windowWidth, UNIT, 0)
-                                    actorBp.Body.y = util.quantize(0.5 * windowHeight, UNIT, 0)
+                                    actorBp.components.Body.x = util.quantize(0.5 * windowWidth, UNIT, 0)
+                                    actorBp.components.Body.y = util.quantize(0.5 * windowHeight, UNIT, 0)
                                 end
                                 local actorId = self:sendAddActor(actorBp, entry.entryId)
 
                                 -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
-                                if actorBp.Body then
+                                if actorBp.components.Body then
                                     self:setActiveTool(nil)
                                 end
                                 self:deselectAllActors()
                                 self:selectActor(actorId)
                                 self:applySelections()
-                                if actorBp.Body then
+                                if actorBp.components.Body then
                                     self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
                                 end
                             end

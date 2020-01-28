@@ -6,27 +6,29 @@ local CORE_LIBRARY = {
         title = 'dog',
         description = 'A canine friend that falls and rolls around!',
         actorBlueprint = {
-            Image = {
-                url = 'https://art.pixilart.com/5d29768f5c3f448.png',
-                cropEnabled = true,
-                cropX = 256,
-                cropY = 150,
-                cropWidth = 600,
-                cropHeight = 700,
-            },
-            Body = {
-                fixture = {
-                    shapeType = 'polygon',
-                    points = {
-                        -50, -50,
-                        -50, 50,
-                        50, 50,
-                        50, -50,
+            components = {
+                Image = {
+                    url = 'https://art.pixilart.com/5d29768f5c3f448.png',
+                    cropEnabled = true,
+                    cropX = 256,
+                    cropY = 150,
+                    cropWidth = 600,
+                    cropHeight = 700,
+                },
+                Body = {
+                    fixture = {
+                        shapeType = 'polygon',
+                        points = {
+                            -50, -50,
+                            -50, 50,
+                            50, 50,
+                            50, -50,
+                        },
                     },
                 },
+                Solid = {},
+                FreeMotion = {},
             },
-            Solid = {},
-            FreeMotion = {},
         },
     },
     {
@@ -34,22 +36,24 @@ local CORE_LIBRARY = {
         title = 'ice platform',
         description = 'Something to stand on...',
         actorBlueprint = {
-            Image = {
-                url = 'http://www.photonstorm.com/wp-content/uploads/2015/01/ice-platform.png',
-            },
-            Body = {
-                fixture = {
-                    shapeType = 'polygon',
-                    points = {
-                        -200, -50,
-                        -200, 50,
-                        200, 50,
-                        200, -50,
-                    },
+            components = {
+                Image = {
+                    url = 'http://www.photonstorm.com/wp-content/uploads/2015/01/ice-platform.png',
                 },
-                bodyType = 'static',
+                Body = {
+                    fixture = {
+                        shapeType = 'polygon',
+                        points = {
+                            -200, -50,
+                            -200, 50,
+                            200, 50,
+                            200, -50,
+                        },
+                    },
+                    bodyType = 'static',
+                },
+                Solid = {},
             },
-            Solid = {},
         },
     },
 }
@@ -177,8 +181,8 @@ function Client:uiLibrary(opts)
                 -- Figure out image based on type
                 if entry.entryType == 'actorBlueprint' then
                     local actorBp = entry.actorBlueprint
-                    if actorBp.Image and actorBp.Image.url then
-                        imageUrl = actorBp.Image.url
+                    if actorBp.components.Image and actorBp.components.Image.url then
+                        imageUrl = actorBp.components.Image.url
                     end
                 end
 
