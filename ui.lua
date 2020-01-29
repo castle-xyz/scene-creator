@@ -3,7 +3,7 @@
 function Client:startUi()
     self.updateCounts = setmetatable({}, { __mode = 'k' }) -- `actor` -> count to force UI updates
 
-    self.componentSectionOpens = setmetatable({}, { __mode = 'k' }) -- `actor` -> `behaviorId` of open component section
+    self.openComponentBehaviorId = nil -- `behaviorId` of open component section
 
     self.saveBlueprintDatas = setmetatable({}, { __mode = 'k' }) -- `actor` -> data for "save blueprint" popover
 end
@@ -241,9 +241,10 @@ function Client:uiProperties()
                     local behavior = self.behaviors[component.behaviorId]
 
                     local uiName = behavior:getUiName()
+
                     local newOpen = ui.section(uiName, {
                         id = actorId .. '-' .. component.behaviorId,
-                        open = self.componentSectionOpens[actor] == component.behaviorId,
+                        open = self.openComponentBehaviorId == component.behaviorId,
                         header = function()
                             ui.button('description', {
                                 margin = 0,
@@ -285,9 +286,9 @@ function Client:uiProperties()
 
                     -- Track open section
                     if newOpen then
-                        self.componentSectionOpens[actor] = component.behaviorId
-                    elseif self.componentSectionOpens[actor] == component.behaviorId then
-                        self.componentSectionOpens[actor] = 'none' -- Sentinel to mark none as open
+                        self.openComponentBehaviorId = component.behaviorId
+                    elseif self.openComponentBehaviorId == component.behaviorId then
+                        self.openComponentBehaviorId = nil
                     end
                 end
 
