@@ -16,10 +16,10 @@ local SlingTool = {
 registerCoreBehavior(SlingTool)
 
 
-local MAX_SPEED = 2.8 * UNIT
+local MAX_SPEED = 3 * UNIT
 
-local SPEED_MULTIPLIER = 2.8
-local DRAW_MULTIPLIER = 0.6
+local SPEED_MULTIPLIER = 3.2
+local DRAW_MULTIPLIER = 0.8
 
 local CIRCLE_RADIUS = 18 * UNIT
 local TRIANGLE_LENGTH = 25 * UNIT
