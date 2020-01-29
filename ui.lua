@@ -428,9 +428,6 @@ function Client:uiupdate()
                                 icon = 'plus',
                                 iconFamily = 'FontAwesome5',
                                 onClick = function()
-                                    -- Stop performing
-                                    self:send('setPerforming', false)
-
                                     -- Add the actor, initializing some values in the blueprint
                                     local actorBp = util.deepCopyTable(entry.actorBlueprint)
                                     if actorBp.components.Body then -- Has a `Body`? Position at center of window.
