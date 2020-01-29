@@ -18,26 +18,28 @@ end
 function Server:syncClient(clientId)
     -- Perform a full synchronization for a new or reconnecting client
 
-    local function send(kind, ...) -- Shorthand to send messages to this client only
-        self:send({
-            kind = kind,
-            to = clientId,
-            selfSend = false,
-            channel = self.channels.mainReliable,
-        }, ...)
+    local function send(kind, ...)
+        self:send(kind, ...)
     end
 
-    for clientId, me in pairs(self.mes) do
-        send('me', clientId, me)
-    end
+    self:transact({
+        to = clientId,
+        reliable = true,
+        selfSend = false,
+        channel = self.channels.mainReliable,
+    }, function()
+        for clientId, me in pairs(self.mes) do
+            send('me', clientId, me)
+        end
 
-    self:syncClientLibrary(clientId, send)
+        self:syncClientLibrary(clientId, send)
 
-    self:syncClientActorBehavior(clientId, send)
+        self:syncClientActorBehavior(clientId, send)
 
-    self:syncClientSnapshot(clientId, send)
+        self:syncClientSnapshot(clientId, send)
 
-    send('setPerforming', self.performing)
+        send('setPerforming', self.performing)
+    end)
 end
 
 function Server:connect(clientId)
