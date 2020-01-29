@@ -1,7 +1,7 @@
 ui = castle.ui
 
 
-UNIT = 100
+UNIT = 1
 MAX_BODY_SIZE = 40 * UNIT
 MIN_BODY_SIZE = UNIT
 

@@ -25,6 +25,8 @@ function Client:start()
     self:startTouch()
 
     self:startUi()
+
+    self.viewTransform = love.math.newTransform()
 end
 
 
@@ -93,6 +95,15 @@ end
 
 local debugFont = love.graphics.newFont(14)
 
+function Client:getViewScale()
+    local scale = self.viewTransform:getMatrix()
+    return scale
+end
+
+function Client:getPixelScale()
+    return love.graphics.getDPIScale() / self:getViewScale()
+end
+
 function Client:draw()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
@@ -107,6 +118,15 @@ function Client:draw()
         local text = peer and ('connection state: ' .. peer:state()) or 'trying to connect...'
         love.graphics.print(text, 16, windowHeight - debugFont:getHeight() - 16)
         return
+    end
+
+    love.graphics.push('all')
+
+    do -- View transform
+        self.viewTransform:reset()
+        self.viewTransform:scale(windowWidth / (8 * UNIT))
+        self.viewTransform:translate(4 * UNIT, 4 * UNIT)
+        love.graphics.applyTransform(self.viewTransform)
     end
 
     do -- Behaviors
@@ -125,7 +145,7 @@ function Client:draw()
         local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
 
         -- All body outlines (if not performing)
-        love.graphics.setLineWidth(1.25 * love.graphics.getDPIScale())
+        love.graphics.setLineWidth(1.25 * self:getPixelScale())
         love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
         if not self.performing then
             for actorId, component in pairs(self.behaviorsByName.Body.components) do
@@ -134,7 +154,7 @@ function Client:draw()
         end
 
         -- Selection outlines
-        love.graphics.setLineWidth(2 * love.graphics.getDPIScale())
+        love.graphics.setLineWidth(2 * self:getPixelScale())
         love.graphics.setColor(0, 1, 0, 0.8)
         for actorId in pairs(self.selectedActorIds) do
             if self.behaviorsByName.Body:has(actorId) then
@@ -156,6 +176,8 @@ function Client:draw()
             activeTool:callHandler('drawOverlay')
         end
     end
+
+    love.graphics.pop()
 
     do -- Debug overlay
         local networkText = ''

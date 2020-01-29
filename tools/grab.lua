@@ -38,8 +38,8 @@ function GrabTool:getHandles()
         return {}
     end
 
-    local handleTouchRadius = love.graphics.getDPIScale() * HANDLE_TOUCH_RADIUS
-    local handleDrawRadius = love.graphics.getDPIScale() * HANDLE_DRAW_RADIUS
+    local handleTouchRadius = HANDLE_TOUCH_RADIUS * self.game:getPixelScale()
+    local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
 
     local handles = {}
 
@@ -363,23 +363,23 @@ function GrabTool.handlers:drawOverlay(dt)
         return
     end
 
-    local dpiScale = love.graphics.getDPIScale()
-
     if self._gridEnabled and self._gridSize > 0 then
         love.graphics.push('all')
 
-        gridShader:send('gridSize', dpiScale * self._gridSize)
+        local dpiScale = love.graphics.getDPIScale()
+        gridShader:send('gridSize', dpiScale * self._gridSize * self.game:getViewScale())
         gridShader:send('dotRadius', dpiScale * 2)
         love.graphics.setShader(gridShader)
 
         local windowWidth, windowHeight = love.graphics.getDimensions()
         love.graphics.setColor(0, 0, 0, 0.5)
+        love.graphics.origin()
         love.graphics.rectangle('fill', 0, 0, windowWidth, windowHeight)
 
         love.graphics.pop()
     end
 
-    local handleDrawRadius = dpiScale * HANDLE_DRAW_RADIUS
+    local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
     for _, handle in ipairs(self:getHandles()) do
         love.graphics.circle('fill', handle.x, handle.y, handleDrawRadius)
         if handle.endX and handle.endY then

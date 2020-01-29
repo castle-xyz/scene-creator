@@ -21,9 +21,9 @@ local MAX_SPEED = 8 * UNIT
 local SPEED_MULTIPLIER = 2
 local DRAW_MULTIPLIER = 0.6
 
-local CIRCLE_RADIUS = 0.25 * UNIT
-local TRIANGLE_LENGTH = 0.25 * UNIT
-local TRIANGLE_WIDTH = 0.1 * UNIT
+local CIRCLE_RADIUS = 25 * UNIT
+local TRIANGLE_LENGTH = 25 * UNIT
+local TRIANGLE_WIDTH = 10 * UNIT
 
 
 -- Body ownership
@@ -99,24 +99,28 @@ function SlingTool.handlers:drawOverlay(dt)
                 vX, vY = vX * MAX_SPEED / vLen, vY * MAX_SPEED / vLen
             end
 
+            local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
+            local triangleLength = TRIANGLE_LENGTH * self.game:getPixelScale()
+            local triangleWidth = TRIANGLE_WIDTH * self.game:getPixelScale()
+
             -- Circle with solid outline and transparent fill
-            love.graphics.circle('line', touch.initialX, touch.initialY, CIRCLE_RADIUS)
+            love.graphics.circle('line', touch.initialX, touch.initialY, circleRadius)
             local r, g, b, a = love.graphics.getColor()
             love.graphics.setColor(r, g, b, 0.5 * a)
-            love.graphics.circle('fill', touch.initialX, touch.initialY, CIRCLE_RADIUS)
+            love.graphics.circle('fill', touch.initialX, touch.initialY, circleRadius)
             love.graphics.setColor(r, g, b, a)
 
             -- Line and triangle
             local endX, endY = touch.initialX + DRAW_MULTIPLIER * vX, touch.initialY + DRAW_MULTIPLIER * vY
             love.graphics.line(
                 touch.initialX, touch.initialY,
-                endX - TRIANGLE_LENGTH * vX / vLen, endY - TRIANGLE_LENGTH * vY / vLen)
+                endX - triangleLength * vX / vLen, endY - triangleLength * vY / vLen)
             love.graphics.polygon('fill',
                 endX, endY,
-                endX - TRIANGLE_LENGTH * vX / vLen - TRIANGLE_WIDTH * vY / vLen,
-                endY - TRIANGLE_LENGTH * vY / vLen + TRIANGLE_WIDTH * vX / vLen,
-                endX - TRIANGLE_LENGTH * vX / vLen + TRIANGLE_WIDTH * vY / vLen,
-                endY - TRIANGLE_LENGTH * vY / vLen - TRIANGLE_WIDTH * vX / vLen)
+                endX - triangleLength * vX / vLen - triangleWidth * vY / vLen,
+                endY - triangleLength * vY / vLen + triangleWidth * vX / vLen,
+                endX - triangleLength * vX / vLen + triangleWidth * vY / vLen,
+                endY - triangleLength * vY / vLen - triangleWidth * vX / vLen)
         end
     end
 end

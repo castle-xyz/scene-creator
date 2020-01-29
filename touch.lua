@@ -30,10 +30,22 @@ end
 
 -- Main touch events
 
+function Client:screenToWorld(x, y, dx, dy)
+    if dx and dy then
+        local prevX, prevY = self.viewTransform:inverseTransformPoint(x - dx, y - dy)
+        x, y = self.viewTransform:inverseTransformPoint(x, y)
+        return x, y, x - prevX, y - prevY
+    else
+        return self.viewTransform:inverseTransformPoint(x, y)
+    end
+end
+
 function Client:touchpressed(touchId, x, y, dx, dy)
     if not self.connected then
         return
     end
+
+    x, y, dx, dy = self:screenToWorld(x, y, dx, dy)
 
     local touch = {}
 
@@ -52,6 +64,8 @@ end
 function Client:touchreleased(touchId, x, y, dx, dy)
     local touch = self.touches[touchId]
     if touch then
+        x, y, dx, dy = self:screenToWorld(x, y, dx, dy)
+
         touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
         touch.released = true
 
@@ -68,6 +82,8 @@ end
 function Client:touchmoved(touchId, x, y, dx, dy)
     local touch = self.touches[touchId]
     if touch then
+        x, y, dx, dy = self:screenToWorld(x, y, dx, dy)
+
         touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
     end
 end

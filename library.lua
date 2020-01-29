@@ -19,10 +19,10 @@ local CORE_LIBRARY = {
                     fixture = {
                         shapeType = 'polygon',
                         points = {
-                            -50, -50,
-                            -50, 50,
-                            50, 50,
-                            50, -50,
+                            -0.5, -0.5,
+                            -0.5, 0.5,
+                            0.5, 0.5,
+                            0.5, -0.5,
                         },
                     },
                 },
@@ -44,10 +44,10 @@ local CORE_LIBRARY = {
                     fixture = {
                         shapeType = 'polygon',
                         points = {
-                            -200, -50,
-                            -200, 50,
-                            200, 50,
-                            200, -50,
+                            -2, -0.5,
+                            -2, 0.5,
+                            2, 0.5,
+                            2, -0.5,
                         },
                     },
                     bodyType = 'static',
