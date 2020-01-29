@@ -2,88 +2,70 @@
 
 function Client:startTouch()
     self.touches = {} -- `touchId` -> touch
-    self.numTouches = 0 -- Number of currently active touches
+    self.numTouches = 0 -- Number of current touches (including 'just released' ones)
     self.maxNumTouches = 0 -- Max number of touches in the current gesture
     self.allTouchesReleased = false -- Whether we are at the end of a gesture
 end
 
 
--- Methods
+-- Update
 
-function Client:flushTouches()
-    -- Clear touch state
+function Client:preUpdateTouches()
+    self.numTouches = 0
+
+    -- Active touches
+    local activeTouches = {}
+    for _, touchId in ipairs(love.touch.getTouches()) do
+        activeTouches[touchId] = true
+
+        self.numTouches = self.numTouches + 1
+
+        local x, y = self.viewTransform:inverseTransformPoint(love.touch.getPosition(touchId))
+
+        local touch = self.touches[touchId]
+        if not touch then -- Press
+            touch = {}
+
+            touch.initialX, touch.initialY = x, y
+            touch.x, touch.y = x, y
+            touch.dx, touch.dy = 0, 0
+            touch.pressTime = love.timer.getTime()
+            touch.pressed = true
+            touch.released = false
+
+            self.touches[touchId] = touch
+        else -- Move
+            touch.pressed = false
+            touch.dx, touch.dy = x - touch.x, y - touch.y
+            touch.x, touch.y = x, y
+        end
+    end
+
+    -- Releases
+    local someTouchReleased = false
+    for touchId, touch in pairs(self.touches) do
+        if not activeTouches[touchId] then
+            self.numTouches = self.numTouches + 1
+            touch.released = true
+            someTouchReleased = true
+        end
+    end
+    self.allTouchesReleased = someTouchReleased and not next(activeTouches)
+
+    -- Update max touches
+    if self.numTouches == 0 then
+        self.maxNumTouches = 0
+    else
+        self.maxNumTouches = math.max(self.maxNumTouches, self.numTouches)
+    end
+end
+
+function Client:postUpdateTouches()
+    -- Remove released touches
     for touchId, touch in pairs(self.touches) do
         if touch.released then
             self.touches[touchId] = nil
-            self.numTouches = self.numTouches - 1
-            if self.numTouches == 0 then
-                self.maxNumTouches = 0
-            end
-        else
-            touch.pressed = false
-            touch.dx, touch.dy = 0, 0
-        end
-    end
-    self.allTouchesReleased = false
-end
-
-
--- Main touch events
-
-function Client:screenToWorld(x, y, dx, dy)
-    if dx and dy then
-        local prevX, prevY = self.viewTransform:inverseTransformPoint(x - dx, y - dy)
-        x, y = self.viewTransform:inverseTransformPoint(x, y)
-        return x, y, x - prevX, y - prevY
-    else
-        return self.viewTransform:inverseTransformPoint(x, y)
-    end
-end
-
-function Client:touchpressed(touchId, x, y, dx, dy)
-    if not self.connected then
-        return
-    end
-
-    x, y, dx, dy = self:screenToWorld(x, y, dx, dy)
-
-    local touch = {}
-
-    touch.initialX, touch.initialY = x, y
-    touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
-    touch.pressTime = love.timer.getTime()
-    touch.pressed = true
-    touch.released = false
-
-    self.touches[touchId] = touch
-
-    self.numTouches = self.numTouches + 1
-    self.maxNumTouches = math.max(self.maxNumTouches, self.numTouches)
-end
-
-function Client:touchreleased(touchId, x, y, dx, dy)
-    local touch = self.touches[touchId]
-    if touch then
-        x, y, dx, dy = self:screenToWorld(x, y, dx, dy)
-
-        touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
-        touch.released = true
-
-        -- Check if end of gesture
-        self.allTouchesReleased = true
-        for touchId, touch in pairs(self.touches) do
-            if not touch.released then
-                self.allTouchesReleased = false
-            end
         end
     end
 end
 
-function Client:touchmoved(touchId, x, y, dx, dy)
-    local touch = self.touches[touchId]
-    if touch then
-        x, y, dx, dy = self:screenToWorld(x, y, dx, dy)
-
-        touch.x, touch.y, touch.dx, touch.dy = x, y, dx, dy
-    end
-end
