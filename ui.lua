@@ -85,13 +85,13 @@ function Client:uiToolbar()
         end
     end)
 
+    if self.performing then
+        return -- Everything to the right of this is for pause mode only
+    end
+
     ui.box('spacer', { flex = 1 }, function() end)
 
     ui.box('right', { flexDirection = 'row' }, function()
-        if self.performing then
-            return
-        end
-
         -- Move up / down
         if next(self.selectedActorIds) then
             -- TODO(nikki): Support multiple selections
