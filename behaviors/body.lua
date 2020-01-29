@@ -327,25 +327,6 @@ function BodyBehavior.handlers:postUpdate(dt)
     end
 end
 
-function BodyBehavior.handlers:setPerforming(performing)
-    if performing then 
-        -- Wake up all non-static bodies when performance starts, because things may have moved
-        for actorId, component in pairs(self.components) do
-            local bodyId, body = self:getBody(component)
-            if body:getType() ~= 'static' then
-                body:setAwake(true)
-            end
-        end
-    else
-        -- Send a final reliable sync when performance stops, because we'll stop sending
-        -- continuous syncs
-        self._physics:sendSyncs({
-            reliable = true,
-            channel = self.game.channels.mainReliable,
-        }, self.globals.worldId)
-    end
-end
-
 
 -- UI
 
