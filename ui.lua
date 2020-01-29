@@ -320,7 +320,7 @@ function Client:uiProperties()
 
                                         -- Add the component and open its section
                                         self:send('addComponent', self.clientId, actorId, entry.behaviorId, {})
-                                        self.componentSectionOpens[actor] = entry.behaviorId
+                                        self.openComponentBehaviorId = entry.behaviorId
                                     end,
                                 })
                             end,
