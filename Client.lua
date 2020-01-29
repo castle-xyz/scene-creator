@@ -26,6 +26,8 @@ function Client:start()
 
     self:startUi()
 
+    self.viewX, self.viewY = 0, 0
+    self.viewWidth = 8 * UNIT
     self.viewTransform = love.math.newTransform()
 end
 
@@ -124,8 +126,8 @@ function Client:draw()
 
     do -- View transform
         self.viewTransform:reset()
-        self.viewTransform:scale(windowWidth / (8 * UNIT))
-        self.viewTransform:translate(4 * UNIT, 4 * UNIT)
+        self.viewTransform:scale(windowWidth / self.viewWidth)
+        self.viewTransform:translate(0.5 * self.viewWidth, 0.5 * self.viewWidth)
         love.graphics.applyTransform(self.viewTransform)
     end
 
