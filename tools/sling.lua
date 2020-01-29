@@ -16,12 +16,12 @@ local SlingTool = {
 registerCoreBehavior(SlingTool)
 
 
-local MAX_SPEED = 8 * UNIT
+local MAX_SPEED = 2.8 * UNIT
 
-local SPEED_MULTIPLIER = 2
+local SPEED_MULTIPLIER = 2.8
 local DRAW_MULTIPLIER = 0.6
 
-local CIRCLE_RADIUS = 25 * UNIT
+local CIRCLE_RADIUS = 18 * UNIT
 local TRIANGLE_LENGTH = 25 * UNIT
 local TRIANGLE_WIDTH = 10 * UNIT
 
@@ -64,6 +64,7 @@ function SlingTool.handlers:update(dt)
             local vLen = math.sqrt(vX * vX + vY * vY)
             if vLen > MAX_SPEED then
                 vX, vY = vX * MAX_SPEED / vLen, vY * MAX_SPEED / vLen
+                vLen = MAX_SPEED
             end
 
             local physics = self.dependencies.Body:getPhysics()
@@ -97,6 +98,7 @@ function SlingTool.handlers:drawOverlay(dt)
         if vLen > 0 then
             if vLen > MAX_SPEED then
                 vX, vY = vX * MAX_SPEED / vLen, vY * MAX_SPEED / vLen
+                vLen = MAX_SPEED
             end
 
             local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
