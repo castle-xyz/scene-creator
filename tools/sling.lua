@@ -89,7 +89,7 @@ function SlingTool.handlers:drawOverlay(dt)
 
     -- Look for a single-finger drag
     local touchData = self:getTouchData()
-    if touchData.numTouches == 1 then
+    if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
 
         local vX, vY = touch.initialX - touch.x, touch.initialY - touch.y

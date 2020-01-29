@@ -77,7 +77,7 @@ function Client:update(dt)
         return
     end
 
-    self:preUpdateTouches()
+    self:updateTouches()
 
     self:updatePerformance(dt)
     self:applySelections() -- Performance may have added or removed actors or components, so apply changes
@@ -88,8 +88,6 @@ function Client:update(dt)
 
     self:callHandlers('update', dt)
     self:callHandlers('postUpdate', dt)
-
-    self:postUpdateTouches()
 end
 
 

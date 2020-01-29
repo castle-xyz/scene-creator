@@ -10,15 +10,18 @@ end
 
 -- Update
 
-function Client:preUpdateTouches()
-    self.numTouches = 0
+function Client:updateTouches()
+    -- Clear old released touches
+    for touchId, touch in pairs(self.touches) do
+        if touch.released then
+            self.touches[touchId] = nil
+        end
+    end
 
-    -- Active touches
+    -- Track active touches
     local activeTouches = {}
     for _, touchId in ipairs(love.touch.getTouches()) do
         activeTouches[touchId] = true
-
-        self.numTouches = self.numTouches + 1
 
         local x, y = self.viewTransform:inverseTransformPoint(love.touch.getPosition(touchId))
 
@@ -41,18 +44,29 @@ function Client:preUpdateTouches()
         end
     end
 
-    -- Releases
-    local someTouchReleased = false
+    -- Just released
     for touchId, touch in pairs(self.touches) do
         if not activeTouches[touchId] then
-            self.numTouches = self.numTouches + 1
             touch.released = true
-            someTouchReleased = true
         end
     end
-    self.allTouchesReleased = someTouchReleased and not next(activeTouches)
 
-    -- Update max touches
+    -- End of gesture?
+    self.allTouchesReleased = false
+    for touchId, touch in pairs(self.touches) do
+        if touch.released then
+            self.allTouchesReleased = true
+        else
+            self.allTouchesReleased = false
+            break
+        end
+    end
+
+    -- Count
+    self.numTouches = 0
+    for touchId, touch in pairs(self.touches) do
+        self.numTouches = self.numTouches + 1
+    end
     if self.numTouches == 0 then
         self.maxNumTouches = 0
     else
@@ -60,12 +74,4 @@ function Client:preUpdateTouches()
     end
 end
 
-function Client:postUpdateTouches()
-    -- Remove released touches
-    for touchId, touch in pairs(self.touches) do
-        if touch.released then
-            self.touches[touchId] = nil
-        end
-    end
-end
 
