@@ -308,16 +308,6 @@ function BodyBehavior.handlers:prePerform(dt)
     -- Update the world at the very start of the performance to allow other behaviors to make
     -- changes after
     self._physics:updateWorld(self.globals.worldId, dt)
-
-    if self.game.server then -- Remove out-of-bound bodies
-        for actorId, component in pairs(self.components) do
-            local bodyId, body = self:getBody(component)
-            local x, y = body:getPosition()
-            if y > 1600 or y < -800 or x < -400 or x > 800 + 400 then
-                self.game:send('removeActor', self.clientId, actorId)
-            end
-        end
-    end
 end
 
 function BodyBehavior.handlers:postUpdate(dt)
