@@ -23,10 +23,10 @@ local HANDLE_DRAW_RADIUS = 10
 -- Behavior management
 
 function GrabTool.handlers:addBehavior(opts)
-    self._gridEnabled = false
-    self._gridSize, self._gridSize = UNIT, UNIT
+    self._gridEnabled = true
+    self._gridSize, self._gridSize = 0.5 * UNIT, 0.5 * UNIT
 
-    self._rotateIncrementEnabled = false
+    self._rotateIncrementEnabled = true
     self._rotateIncrementDegrees = 45
 end
 
@@ -400,7 +400,7 @@ function GrabTool.handlers:uiSettings(closeSettings)
                 marginLeft = 16,
                 flex = 1,
             }, function()
-                self._gridSize = ui.numberInput('grid size', self._gridSize, { min = 0, step = 50 })
+                self._gridSize = ui.numberInput('grid size', self._gridSize, { min = 0, step = 0.5 * UNIT })
             end)
         end
     end)

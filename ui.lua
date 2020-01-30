@@ -175,8 +175,8 @@ function Client:uiToolbar()
 
                         local bp = self:blueprintActor(actorId)
                         if bp.components.Body then
-                            bp.components.Body.x = bp.components.Body.x + UNIT
-                            bp.components.Body.y = bp.components.Body.y + UNIT
+                            bp.components.Body.x = bp.components.Body.x + 0.5 * UNIT
+                            bp.components.Body.y = bp.components.Body.y + 0.5 * UNIT
                         end
 
                         local newActorId = self:sendAddActor(bp, {
@@ -433,8 +433,8 @@ function Client:uiupdate()
                                     local actorBp = util.deepCopyTable(entry.actorBlueprint)
                                     if actorBp.components.Body then -- Has a `Body`? Position at center of window.
                                         local windowWidth, windowHeight = love.graphics.getDimensions()
-                                        actorBp.components.Body.x = 0
-                                        actorBp.components.Body.y = 0
+                                        actorBp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
+                                        actorBp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
                                     end
                                     local actorId = self:sendAddActor(actorBp, {
                                         parentEntryId = entry.entryId,
