@@ -9,6 +9,7 @@ local ViewTool = {
         icon = 'magnifying-glass',
         iconFamily = 'Entypo',
         noSelect = true,
+        noHistory = true,
     },
 }
 

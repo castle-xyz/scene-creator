@@ -156,14 +156,17 @@ function Client:setActiveTool(toolBehaviorId)
 
     self.activeToolBehaviorId = toolBehaviorId
     if self.activeToolBehaviorId then -- If non-`nil`, add to history
-        for i = #self.activeToolHistory, 1, -1 do -- Dedup
-            if self.activeToolHistory[i] == self.activeToolBehaviorId then
-                table.remove(self.activeToolHistory, i) -- This shouldn't happen more than once...
+        local activeTool = self.tools[self.activeToolBehaviorId]
+        if not activeTool.tool.noHistory then
+            for i = #self.activeToolHistory, 1, -1 do -- Dedup
+                if self.activeToolHistory[i] == self.activeToolBehaviorId then
+                    table.remove(self.activeToolHistory, i) -- This shouldn't happen more than once...
+                end
             end
-        end
-        table.insert(self.activeToolHistory, self.activeToolBehaviorId)
-        while #self.activeToolHistory > 10 do -- Limit to 10
-            table.remove(self.activeToolHistory, 1)
+            table.insert(self.activeToolHistory, self.activeToolBehaviorId)
+            while #self.activeToolHistory > 10 do -- Limit to 10
+                table.remove(self.activeToolHistory, 1)
+            end
         end
     end
 
