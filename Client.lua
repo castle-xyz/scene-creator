@@ -101,7 +101,7 @@ function Client:resetViewPosition()
 end
 
 function Client:resetViewSize()
-    self.viewWidth = 8 * UNIT
+    self.viewWidth = DEFAULT_VIEW_WIDTH
 end
 
 function Client:resetView()

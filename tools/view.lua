@@ -60,34 +60,102 @@ function ViewTool.handlers:update(dt)
 
     if touchData.numTouches == 1 or touchData.numTouches == 2 then
         local moveX, moveY = 0, 0
-        local centerX, centerY
+        local scale
 
         if touchData.numTouches == 1 then -- 1-finger move
             local touchId, touch = next(touchData.touches)
             moveX, moveY = touch.screenDX / self.game:getViewScale(), touch.screenDY / self.game:getViewScale()
-        elseif touchData.numTouches == 2 then -- 2-finger move and rotate
+        elseif touchData.numTouches == 2 then -- 2-finger move and scale
             local touchId1, touch1 = next(touchData.touches)
             local touchId2, touch2 = next(touchData.touches, touchId1)
 
-            local touch1PrevX, touch1PrevY = touch1.x - touch1.dx, touch1.y - touch1.dy
-            local touch2PrevX, touch2PrevY = touch2.x - touch2.dx, touch2.y - touch2.dy
+            local touch1PrevSX, touch1PrevSY = touch1.screenX - touch1.screenDX, touch1.screenY - touch1.screenDY
+            local touch2PrevSX, touch2PrevSY = touch2.screenX - touch2.screenDX, touch2.screenY - touch2.screenDY
 
-            centerX, centerY = 0.5 * (touch1.x + touch2.x), 0.5 * (touch1.y + touch2.y)
-            local centerPrevX, centerPrevY = 0.5 * (touch1PrevX + touch2PrevX), 0.5 * (touch1PrevY + touch2PrevY)
+            local centerSX, centerSY = 0.5 * (touch1.screenX + touch2.screenX), 0.5 * (touch1.screenY + touch2.screenY)
+            local centerPrevSX, centerPrevSY = 0.5 * (touch1PrevSX + touch2PrevSX), 0.5 * (touch1PrevSY + touch2PrevSY)
 
-            moveX, moveY = centerX - centerPrevX, centerY - centerPrevY
+            moveX, moveY = (centerSX - centerPrevSX) / self.game:getViewScale(), (centerSY - centerPrevSY) / self.game:getViewScale()
+
+            local px, py = touch1.screenX - touch2.screenX, touch1.screenY - touch2.screenY
+            local prevPX, prevPY = touch1PrevSX - touch2PrevSX, touch1PrevSY - touch2PrevSY
+            scale = math.sqrt(prevPX * prevPX + prevPY * prevPY) / math.sqrt(px * px + py * py)
+
+            local centerX, centerY = self.game.viewTransform:inverseTransformPoint(centerSX, centerSY)
+            moveX = moveX - (1 - scale) * (centerX - self.game.viewX)
+            moveY = moveY - (1 - scale) * (centerY - self.game.viewY)
         end
 
         self.game.viewX, self.game.viewY = self.game.viewX - moveX, self.game.viewY - moveY
+        if scale then
+            self.game.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(scale * self.game.viewWidth, MAX_VIEW_WIDTH))
+        end
     end
+end
+
+
+-- Draw
+
+function ViewTool.handlers:drawOverlay()
+    self.game.behaviorsByName.Grab:drawGrid()
 end
 
 
 -- UI
 
 function ViewTool.handlers:uiSettings(closeSettings)
-    if ui.button('reset') then
-        self.game:resetView()
-    end
+    util.uiRow('position and reset position', function()
+        ui.markdown('position: ' .. util.quantize(self.game.viewX, 0.01) .. ', ' .. util.quantize(self.game.viewY, 0.01))
+    end, function()
+        ui.button('reset position', {
+            icon = 'crosshairs',
+            iconFamily = 'FontAwesome',
+            onClick = function()
+                self.game:resetViewPosition()
+            end,
+        })
+    end)
+
+    ui.box('spacer', { height = 32 }, function() end)
+
+    util.uiRow('zoom level and reset zoom', function()
+        local prefix
+        local scale = self.game.viewWidth / DEFAULT_VIEW_WIDTH
+        if scale < 1 then
+            prefix = 'zoomed in: '
+            scale = 1 / scale
+        elseif scale > 1 then
+            prefix = 'zoomed out: '
+        else
+            prefix = 'no zoom'
+        end
+        ui.markdown(prefix .. (scale ~= 1 and (util.quantize(scale, 0.01) .. 'x') or ''))
+    end, function()
+        ui.button('reset zoom', {
+            icon = 'dot-circle-o',
+            iconFamily = 'FontAwesome',
+            onClick = function()
+                self.game:resetViewSize()
+            end,
+        })
+    end)
+
+    util.uiRow('zoom in out', function()
+        ui.button('zoom in', {
+            icon = 'zoom-in',
+            iconFamily = 'Feather',
+            onClick = function()
+                self.game.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(0.5 * self.game.viewWidth, MAX_VIEW_WIDTH))
+            end,
+        })
+    end, function()
+        ui.button('zoom out', {
+            icon = 'zoom-out',
+            iconFamily = 'Feather',
+            onClick = function()
+                self.game.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(2 * self.game.viewWidth, MAX_VIEW_WIDTH))
+            end,
+        })
+    end)
 end
 

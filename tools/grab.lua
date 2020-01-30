@@ -344,9 +344,10 @@ if love.graphics then
     gridShader = love.graphics.newShader([[
         uniform float gridSize;
         uniform float dotRadius;
+        uniform vec2 offset;
         vec4 effect(vec4 color, Image tex, vec2 texCoords, vec2 screenCoords)
         {
-            vec2 f = mod(screenCoords + dotRadius, gridSize);
+            vec2 f = mod(screenCoords + offset + dotRadius, gridSize);
             float l = length(f - dotRadius);
             float s = 1.0 - smoothstep(dotRadius - 1.0, dotRadius + 1.0, l);
             return vec4(color.rgb, s * color.a);
@@ -359,26 +360,35 @@ if love.graphics then
     ]])
 end
 
-function GrabTool.handlers:drawOverlay(dt)
-    if not self:isActive() then
-        return
-    end
-
+function GrabTool:drawGrid()
     if self._gridEnabled and self._gridSize > 0 then
         love.graphics.push('all')
+
+        local windowWidth, windowHeight = love.graphics.getDimensions()
 
         local dpiScale = love.graphics.getDPIScale()
         gridShader:send('gridSize', dpiScale * self._gridSize * self.game:getViewScale())
         gridShader:send('dotRadius', dpiScale * 2)
+        gridShader:send('offset', {
+            dpiScale * (self.game.viewX - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
+            dpiScale * (self.game.viewY - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
+        })
         love.graphics.setShader(gridShader)
 
-        local windowWidth, windowHeight = love.graphics.getDimensions()
         love.graphics.setColor(0, 0, 0, 0.5)
         love.graphics.origin()
         love.graphics.rectangle('fill', 0, 0, windowWidth, windowHeight)
 
         love.graphics.pop()
     end
+end
+
+function GrabTool.handlers:drawOverlay()
+    if not self:isActive() then
+        return
+    end
+
+    self:drawGrid()
 
     local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
     for _, handle in ipairs(self:getHandles()) do

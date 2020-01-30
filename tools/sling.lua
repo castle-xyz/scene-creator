@@ -83,7 +83,7 @@ end
 
 -- Draw
 
-function SlingTool.handlers:drawOverlay(dt)
+function SlingTool.handlers:drawOverlay()
     if not self:isActive() then
         return
     end

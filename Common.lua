@@ -4,6 +4,9 @@ ui = castle.ui
 UNIT = 1
 MAX_BODY_SIZE = 40 * UNIT
 MIN_BODY_SIZE = UNIT
+DEFAULT_VIEW_WIDTH = 8 * UNIT
+MIN_VIEW_WIDTH = 0.25 * DEFAULT_VIEW_WIDTH
+MAX_VIEW_WIDTH = 4 * DEFAULT_VIEW_WIDTH
 
 CHECKERBOARD_IMAGE_URL = 'https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png'
 
