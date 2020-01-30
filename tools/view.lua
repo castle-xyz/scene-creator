@@ -36,13 +36,22 @@ function ViewTool.handlers:update(dt)
 
     local touchData = self:getTouchData()
 
-    -- Still allow tap-to-select
-    if self.numTouches == 1 and self.maxNumTouches == 1 then
-        local touchId, touch = next(self.touches)
+    -- Still allow selection with touch-and-release
+    if touchData.numTouches == 1 and touchData.maxNumTouches == 1 then
+        local touchId, touch = next(touchData.touches)
         if (touch.released and
                 touch.x - touch.initialX == 0 and touch.y - touch.initialY == 0 and
                 love.timer.getTime() - touch.pressTime < 0.2) then
-            self:selectActorAtTouch(touch)
+            self.game:selectActorAtTouch(touch)
+            self.game:applySelections()
+            --if next(self.game.selectedActorIds) then
+            --    for i = #self.game.activeToolHistory - 1, 1, -1 do
+            --        if self.game.applicableTools[self.game.activeToolHistory[i]] then
+            --            self.game:setActiveTool(self.game.activeToolHistory[i])
+            --            break
+            --        end
+            --    end
+            --end
             return
         end
     end

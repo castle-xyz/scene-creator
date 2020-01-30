@@ -48,40 +48,38 @@ function Client:uiToolbar()
 
     ui.box('middle', { flexDirection = 'row' }, function()
         -- Tools
-        if next(self.selectedActorIds) then
-            local order = {}
-            for _, tool in pairs(self.applicableTools) do
-                table.insert(order, tool)
-            end
-            table.sort(order, function(tool1, tool2)
-                return tool1.behaviorId < tool2.behaviorId
-            end)
-            for _, tool in ipairs(order) do
-                local selected = self.activeToolBehaviorId == tool.behaviorId
+        local order = {}
+        for _, tool in pairs(self.applicableTools) do
+            table.insert(order, tool)
+        end
+        table.sort(order, function(tool1, tool2)
+            return tool1.behaviorId < tool2.behaviorId
+        end)
+        for _, tool in ipairs(order) do
+            local selected = self.activeToolBehaviorId == tool.behaviorId
 
-                local popoverAllowed, popoverStyle, popover
+            local popoverAllowed, popoverStyle, popover
 
-                if tool.handlers.uiSettings then
-                    popoverAllowed = selected
-                    popoverStyle = { width = 300 }
-                    popover = function(closePopover)
-                        tool:callHandler('uiSettings', closePopover)
-                    end
+            if tool.handlers.uiSettings then
+                popoverAllowed = selected
+                popoverStyle = { width = 300 }
+                popover = function(closePopover)
+                    tool:callHandler('uiSettings', closePopover)
                 end
-
-                ui.button(tool.name, {
-                    icon = tool.tool.icon,
-                    iconFamily = tool.tool.iconFamily,
-                    hideLabel = true,
-                    selected = selected,
-                    onClick = function()
-                        self:setActiveTool(tool.behaviorId)
-                    end,
-                    popoverAllowed = popoverAllowed,
-                    popoverStyle = popoverStyle,
-                    popover = popover,
-                })
             end
+
+            ui.button(tool.name, {
+                icon = tool.tool.icon,
+                iconFamily = tool.tool.iconFamily,
+                hideLabel = true,
+                selected = selected,
+                onClick = function()
+                    self:setActiveTool(tool.behaviorId)
+                end,
+                popoverAllowed = popoverAllowed,
+                popoverStyle = popoverStyle,
+                popover = popover,
+            })
         end
     end)
 

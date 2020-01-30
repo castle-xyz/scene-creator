@@ -10,6 +10,7 @@ local GrabTool = {
         icon = 'move',
         iconFamily = 'Feather',
         needsPerformingOff = true,
+        emptySelect = true,
     },
 }
 

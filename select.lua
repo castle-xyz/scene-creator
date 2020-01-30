@@ -60,7 +60,9 @@ function Client:applySelections()
         end
 
         -- Check that dependencies are satisfied
-        if not tool.tool.noSelect and applicable then
+        if (not tool.tool.noSelect and
+                not (tool.tool.emptySelect and not(next(self.selectedActorIds))) and
+                applicable) then
             for dependencyName, dependency in pairs(tool.dependencies) do
                 if not commonBehaviorIds[dependency.behaviorId] then
                     applicable = false
