@@ -96,9 +96,17 @@ end
 
 local debugFont = love.graphics.newFont(14)
 
-function Client:resetView()
+function Client:resetViewPosition()
     self.viewX, self.viewY = 0, 0
+end
+
+function Client:resetViewSize()
     self.viewWidth = 8 * UNIT
+end
+
+function Client:resetView()
+    self:resetViewPosition()
+    self:resetViewSize()
 end
 
 function Client:getViewScale()
@@ -112,12 +120,13 @@ end
 
 function Client.receivers:setPerforming(time, performing)
     if not self.performing and performing then
-        -- Save paused view state
+        -- Save paused view state and reset view size
         self._pausedView = {
             x = self.viewX,
             y = self.viewY,
             width = self.viewWidth,
         }
+        self:resetViewSize()
     end
 
     if self.performing and not performing and self._pausedView then
