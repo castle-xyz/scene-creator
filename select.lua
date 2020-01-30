@@ -60,7 +60,7 @@ function Client:applySelections()
         end
 
         -- Check that dependencies are satisfied
-        if applicable then
+        if not tool.tool.noSelect and applicable then
             for dependencyName, dependency in pairs(tool.dependencies) do
                 if not commonBehaviorIds[dependency.behaviorId] then
                     applicable = false
@@ -116,7 +116,7 @@ function Client:applySelections()
 
         -- Add components for new selections
         for actorId in pairs(self.selectedActorIds) do
-            if not activeTool:has(actorId) then
+            if not activeTool.tool.noSelect and not activeTool:has(actorId) then
                 self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
             end
         end
@@ -143,8 +143,7 @@ function Client:setActiveTool(toolBehaviorId)
     end
 
     if self.activeToolBehaviorId then
-        -- Clear our components from old tool -- we could use `self.selectedActorIds` but
-        -- we actually go through the tool's components to make sure
+        -- Clear our components from old tool
         local activeTool = self.tools[self.activeToolBehaviorId]
         for actorId, component in pairs(activeTool.components) do
             if self.clientId == component.clientId then
@@ -170,7 +169,7 @@ function Client:setActiveTool(toolBehaviorId)
     if self.activeToolBehaviorId and self.applicableTools[self.activeToolBehaviorId] then
         local activeTool = self.tools[self.activeToolBehaviorId]
         for actorId in pairs(self.selectedActorIds) do
-            if not activeTool:has(actorId) then
+            if not activeTool.tool.noSelect and not activeTool:has(actorId) then
                 self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
             end
         end

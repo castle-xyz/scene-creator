@@ -21,11 +21,12 @@ require 'actor_behavior'
 
 require 'behaviors.body'
 require 'behaviors.image'
-require 'tools.grab'
 require 'behaviors.solid'
 require 'behaviors.circle_shape'
 require 'behaviors.free_motion'
 require 'behaviors.rotating_motion'
+require 'tools.view'
+require 'tools.grab'
 require 'tools.sling'
 
 require 'library'

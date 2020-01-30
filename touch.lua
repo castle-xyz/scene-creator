@@ -23,7 +23,8 @@ function Client:updateTouches()
     for _, touchId in ipairs(love.touch.getTouches()) do
         activeTouches[touchId] = true
 
-        local x, y = self.viewTransform:inverseTransformPoint(love.touch.getPosition(touchId))
+        local screenX, screenY = love.touch.getPosition(touchId)
+        local x, y = self.viewTransform:inverseTransformPoint(screenX, screenY)
 
         local touch = self.touches[touchId]
         if not touch then -- Press
@@ -32,6 +33,8 @@ function Client:updateTouches()
             touch.initialX, touch.initialY = x, y
             touch.x, touch.y = x, y
             touch.dx, touch.dy = 0, 0
+            touch.screenX, touch.screenY = screenX, screenY
+            touch.screenDX, touch.screenDY = 0, 0
             touch.pressTime = love.timer.getTime()
             touch.pressed = true
             touch.released = false
@@ -41,6 +44,8 @@ function Client:updateTouches()
             touch.pressed = false
             touch.dx, touch.dy = x - touch.x, y - touch.y
             touch.x, touch.y = x, y
+            touch.screenDX, touch.screenDY = screenX - touch.screenX, screenY - touch.screenY
+            touch.screenX, touch.screenY = screenX, screenY
         end
     end
 

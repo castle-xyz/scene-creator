@@ -26,8 +26,7 @@ function Client:start()
 
     self:startUi()
 
-    self.viewX, self.viewY = 0, 0
-    self.viewWidth = 8 * UNIT
+    self:resetView()
     self.viewTransform = love.math.newTransform()
 end
 
@@ -97,6 +96,11 @@ end
 
 local debugFont = love.graphics.newFont(14)
 
+function Client:resetView()
+    self.viewX, self.viewY = 0, 0
+    self.viewWidth = 8 * UNIT
+end
+
 function Client:getViewScale()
     local scale = self.viewTransform:getMatrix()
     return scale
@@ -127,6 +131,7 @@ function Client:draw()
     do -- View transform
         self.viewTransform:reset()
         self.viewTransform:scale(windowWidth / self.viewWidth)
+        self.viewTransform:translate(-self.viewX, -self.viewY)
         self.viewTransform:translate(0.5 * self.viewWidth, 0.5 * self.viewWidth)
         love.graphics.applyTransform(self.viewTransform)
     end
