@@ -110,6 +110,26 @@ function Client:getPixelScale()
     return love.graphics.getDPIScale() / self:getViewScale()
 end
 
+function Client.receivers:setPerforming(time, performing)
+    if not self.performing and performing then
+        -- Save paused view state
+        self._pausedView = {
+            x = self.viewX,
+            y = self.viewY,
+            width = self.viewWidth,
+        }
+    end
+
+    if self.performing and not performing and self._pausedView then
+        -- Load paused view state
+        self.viewX, self.viewY = self._pausedView.x, self._pausedView.y
+        self.viewWidth = self._pausedView.width
+        self._pausedView = nil
+    end
+
+    Common.receivers.setPerforming(self, time, performing)
+end
+
 function Client:draw()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
@@ -129,6 +149,29 @@ function Client:draw()
     love.graphics.push('all')
 
     do -- View transform
+        if self.performing and next(self.selectedActorIds) then
+            -- In perform mode, make view follow selected actor
+            local actorId = next(self.selectedActorIds)
+            local bodyId, body = self.behaviorsByName.Body:getBody(actorId)
+            if body then
+                local GUTTER = 2 * UNIT
+                local x, y = body:getPosition()
+                local viewHeight = self.viewWidth * windowHeight / windowWidth
+                if x < self.viewX - 0.5 * self.viewWidth + GUTTER then
+                    self.viewX = x + 0.5 * self.viewWidth - GUTTER
+                end
+                if x > self.viewX + 0.5 * self.viewWidth - GUTTER then
+                    self.viewX = x - 0.5 * self.viewWidth + GUTTER
+                end
+                if y < self.viewY - 0.5 * self.viewWidth + GUTTER then
+                    self.viewY = y + 0.5 * self.viewWidth - GUTTER
+                end
+                if y > self.viewY + 0.5 * self.viewWidth - GUTTER then
+                    self.viewY = y - 0.5 * self.viewWidth + GUTTER
+                end
+            end
+        end
+
         self.viewTransform:reset()
         self.viewTransform:scale(windowWidth / self.viewWidth)
         self.viewTransform:translate(-self.viewX, -self.viewY)
