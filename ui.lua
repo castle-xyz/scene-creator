@@ -168,20 +168,23 @@ function Client:uiToolbar()
                     local duplicateActorIds = {}
 
                     -- Use blueprints to duplicate. Nudge position a little bit.
-                    for actorId in pairs(self.selectedActorIds) do
-                        local actor = self.actors[actorId]
+                    self:transact(self.sendOpts.reliableToAll, function()
+                        for actorId in pairs(self.selectedActorIds) do
+                            local actor = self.actors[actorId]
 
-                        local bp = self:blueprintActor(actorId)
-                        if bp.components.Body then
-                            bp.components.Body.x = bp.components.Body.x + 0.5 * UNIT
-                            bp.components.Body.y = bp.components.Body.y + 0.5 * UNIT
+                            local bp = self:blueprintActor(actorId)
+                            if bp.components.Body then
+                                bp.components.Body.x = bp.components.Body.x + 0.5 * UNIT
+                                bp.components.Body.y = bp.components.Body.y + 0.5 * UNIT
+                            end
+
+                            local newActorId = self:sendAddActor(bp, {
+                                parentEntryId = actor.parentEntryId,
+                                drawOrder = actor.drawOrder + 1,
+                            })
+                            duplicateActorIds[newActorId] = true
                         end
-
-                        local newActorId = self:sendAddActor(bp, {
-                            parentEntryId = actor.parentEntryId
-                        })
-                        duplicateActorIds[newActorId] = true
-                    end
+                    end)
 
                     -- Select new actors
                     self:deselectAllActors()
@@ -199,10 +202,12 @@ function Client:uiToolbar()
                 iconFamily = 'FontAwesome5',
                 hideLabel = true,
                 onClick = function()
-                    for actorId in pairs(self.selectedActorIds) do
-                        self:deselectActor(actorId)
-                        self:send('removeActor', self.clientId, actorId)
-                    end
+                    self:transact(self.sendOpts.reliableToAll, function()
+                        for actorId in pairs(self.selectedActorIds) do
+                            self:deselectActor(actorId)
+                            self:send('removeActor', self.clientId, actorId)
+                        end
+                    end)
                 end,
             })
         end

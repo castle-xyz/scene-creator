@@ -459,8 +459,12 @@ function Common:sendAddActor(bp, opts)
 
     self:send('addActor', self.clientId, actorId, opts.parentEntryId)
 
-    -- Add components in depth-first order through dependency graph
+    -- Set draw order if given
+    if opts.drawOrder then
+        self:send('setActorDrawOrder', actorId, opts.drawOrder)
+    end
 
+    -- Add components in depth-first order through dependency graph
     local visited = {}
     local function visit(behaviorName, componentBp)
         if visited[behaviorName] then
