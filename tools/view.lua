@@ -60,6 +60,7 @@ function ViewTool.handlers:update(dt)
 
     if touchData.numTouches == 1 or touchData.numTouches == 2 then
         local moveX, moveY = 0, 0
+        local centerX, centerY
         local scale
 
         if touchData.numTouches == 1 then -- 1-finger move
@@ -81,15 +82,17 @@ function ViewTool.handlers:update(dt)
             local prevPX, prevPY = touch1PrevSX - touch2PrevSX, touch1PrevSY - touch2PrevSY
             scale = math.sqrt(prevPX * prevPX + prevPY * prevPY) / math.sqrt(px * px + py * py)
 
-            local centerX, centerY = self.game.viewTransform:inverseTransformPoint(centerSX, centerSY)
+            centerX, centerY = self.game.viewTransform:inverseTransformPoint(centerSX, centerSY)
+        end
+
+        if scale then
+            local prevViewWidth = self.game.viewWidth
+            self.game.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(scale * self.game.viewWidth, MAX_VIEW_WIDTH))
+            scale = self.game.viewWidth / prevViewWidth -- Recompute to account for clamping above
             moveX = moveX - (1 - scale) * (centerX - self.game.viewX)
             moveY = moveY - (1 - scale) * (centerY - self.game.viewY)
         end
-
         self.game.viewX, self.game.viewY = self.game.viewX - moveX, self.game.viewY - moveY
-        if scale then
-            self.game.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(scale * self.game.viewWidth, MAX_VIEW_WIDTH))
-        end
     end
 end
 
