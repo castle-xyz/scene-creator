@@ -370,8 +370,8 @@ function GrabTool:drawGrid()
         gridShader:send('gridSize', dpiScale * self._gridSize * self.game:getViewScale())
         gridShader:send('dotRadius', dpiScale * 2)
         gridShader:send('offset', {
-            dpiScale * (self.game.viewX - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
-            dpiScale * (self.game.viewY - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
+            dpiScale * (self.game.viewX % self._gridSize - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
+            dpiScale * (self.game.viewY % self._gridSize - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
         })
         love.graphics.setShader(gridShader)
 
