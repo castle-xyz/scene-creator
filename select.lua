@@ -11,89 +11,109 @@ end
 
 -- Methods
 
+function Client:removeToolComponents(filter)
+    if self.activeToolBehaviorId then
+        local activeTool = self.tools[self.activeToolBehaviorId]
+        for actorId, component in pairs(activeTool.components) do
+            if self.clientId == component.clientId and filter(component) then
+                self:send('removeComponent', self.clientId, actorId, activeTool.behaviorId)
+            end
+        end
+    end
+end
+
+function Client:addToolComponents()
+    if self.activeToolBehaviorId and self.applicableTools[self.activeToolBehaviorId] then
+        local activeTool = self.tools[self.activeToolBehaviorId]
+        for actorId in pairs(self.selectedActorIds) do
+            if not activeTool.tool.noSelect and not activeTool:has(actorId) then
+                self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
+            end
+        end
+    end
+end
+
 function Client:applySelections()
-    -- Clear stale selections of removed actors
+    -- Clear stale selections and tools
     for actorId in pairs(self.selectedActorIds) do
         if not self.actors[actorId] then
             self:deselectActor(actorId)
         end
     end
-
-    -- Clear stale active tool if removed
     if not self.tools[self.activeToolBehaviorId] then
         self.activeToolBehaviorId = nil
     end
 
-    -- Refresh applicable tool set
-    self.applicableTools = {}
+    -- Recompute applicable tool set
+    do
+        self.applicableTools = {}
 
-    -- Find common behaviors across all actors -- used by dependency check below
-    local commonBehaviorIds
-    for actorId in pairs(self.selectedActorIds) do
-        local actor = self.actors[actorId]
-        if commonBehaviorIds then
-            for behaviorId in pairs(commonBehaviorIds) do
-                if not actor.components[behaviorId] then
-                    commonBehaviorIds[behaviorId] = nil
+        -- Find common behaviors across all actors -- used by dependency check below
+        local commonBehaviorIds
+        for actorId in pairs(self.selectedActorIds) do
+            local actor = self.actors[actorId]
+            if commonBehaviorIds then
+                for behaviorId in pairs(commonBehaviorIds) do
+                    if not actor.components[behaviorId] then
+                        commonBehaviorIds[behaviorId] = nil
+                    end
+                end
+            else
+                commonBehaviorIds = {}
+                for behaviorId in pairs(actor.components) do
+                    commonBehaviorIds[behaviorId] = true
                 end
             end
-        else
-            commonBehaviorIds = {}
-            for behaviorId in pairs(actor.components) do
-                commonBehaviorIds[behaviorId] = true
-            end
         end
-    end
-    commonBehaviorIds = commonBehaviorIds or {}
+        commonBehaviorIds = commonBehaviorIds or {}
 
-    for behaviorId, tool in pairs(self.tools) do
-        local applicable = true
+        for behaviorId, tool in pairs(self.tools) do
+            local applicable = true
 
-        -- Check if it needs performance to be off or on
-        if applicable then
-            if self.performing and tool.tool.needsPerformingOff then
-                applicable = false
-            end
-            if not self.performing and tool.tool.needsPerformingOn then
-                applicable = false
-            end
-        end
-
-        -- Check that dependencies are satisfied
-        if (not tool.tool.noSelect and
-                not (tool.tool.emptySelect and not(next(self.selectedActorIds))) and
-                applicable) then
-            for dependencyName, dependency in pairs(tool.dependencies) do
-                if not commonBehaviorIds[dependency.behaviorId] then
+            -- Check if it needs performance to be off or on
+            if applicable then
+                if self.performing and tool.tool.needsPerformingOff then
                     applicable = false
-                    break
+                end
+                if not self.performing and tool.tool.needsPerformingOn then
+                    applicable = false
                 end
             end
-        end
 
-        if applicable then
-            self.applicableTools[behaviorId] = tool
+            -- Check that dependencies are satisfied
+            if (not tool.tool.noSelect and
+                    not (tool.tool.emptySelect and not(next(self.selectedActorIds))) and
+                    applicable) then
+                for dependencyName, dependency in pairs(tool.dependencies) do
+                    if not commonBehaviorIds[dependency.behaviorId] then
+                        applicable = false
+                        break
+                    end
+                end
+            end
+
+            if applicable then
+                self.applicableTools[behaviorId] = tool
+            end
         end
     end
 
+    -- Deactivate active tool if it doesn't apply any more
     if self.activeToolBehaviorId then
-        -- Deactivate active tool if it doesn't apply any more
         if not self.applicableTools[self.activeToolBehaviorId] then
             self:setActiveTool(nil)
         end
     end
 
+    -- If this deactivated the tool, pick another one
     if not self.activeToolBehaviorId then
-        -- No tool currently active, pick last used tool that can be activated
-        for i = #self.activeToolHistory, 1, -1 do
+        for i = #self.activeToolHistory, 1, -1 do -- Try history
             if self.applicableTools[self.activeToolHistory[i]] then
                 self:setActiveTool(self.activeToolHistory[i])
                 break
             end
         end
-
-        if not self.activeToolBehaviorId then
-            -- Still didn't pick anything, just pick applicable tool with lowest id
+        if not self.activeToolBehaviorId then -- Still nothing? Pick tool with lowest id
             local someApplicableTool
             for behaviorId in pairs(self.applicableTools) do
                 if not someApplicableTool or behaviorId < someApplicableTool then
@@ -106,23 +126,11 @@ function Client:applySelections()
         end
     end
 
-    -- Add or remove components for active tool based on selections
-    if self.activeToolBehaviorId then
-        -- Remove components whose actors aren't selected any more
-        local activeTool = self.tools[self.activeToolBehaviorId]
-        for actorId, component in pairs(activeTool.components) do
-            if self.clientId == component.clientId and not self.selectedActorIds[actorId] then
-                self:send('removeComponent', self.clientId, actorId, activeTool.behaviorId)
-            end
-        end
-
-        -- Add components for new selections
-        for actorId in pairs(self.selectedActorIds) do
-            if not activeTool.tool.noSelect and not activeTool:has(actorId) then
-                self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
-            end
-        end
-    end
+    -- Remove components whose actors aren't selected any more, add components for new selections
+    self:removeToolComponents(function(component)
+        return not self.selectedActorIds[component.actorId]
+    end)
+    self:addToolComponents()
 end
 
 function Client:selectActor(actorId)
@@ -144,18 +152,15 @@ function Client:setActiveTool(toolBehaviorId)
         return -- Already active, skip
     end
 
-    if self.activeToolBehaviorId then
-        -- Clear our components from old tool
-        local activeTool = self.tools[self.activeToolBehaviorId]
-        for actorId, component in pairs(activeTool.components) do
-            if self.clientId == component.clientId then
-                self:send('removeComponent', self.clientId, actorId, activeTool.behaviorId)
-            end
-        end
-    end
-
+    -- Remove all components from old tool, set new tool as active, add components to new tool
+    self:removeToolComponents(function(component)
+        return true
+    end)
     self.activeToolBehaviorId = toolBehaviorId
-    if self.activeToolBehaviorId then -- If non-`nil`, add to history
+    self:addToolComponents()
+
+    -- Save to history
+    if self.activeToolBehaviorId then 
         local activeTool = self.tools[self.activeToolBehaviorId]
         if not activeTool.tool.noHistory then
             for i = #self.activeToolHistory, 1, -1 do -- Dedup
@@ -166,16 +171,6 @@ function Client:setActiveTool(toolBehaviorId)
             table.insert(self.activeToolHistory, self.activeToolBehaviorId)
             while #self.activeToolHistory > 10 do -- Limit to 10
                 table.remove(self.activeToolHistory, 1)
-            end
-        end
-    end
-
-    -- Activate new tool and add components to it if it applies
-    if self.activeToolBehaviorId and self.applicableTools[self.activeToolBehaviorId] then
-        local activeTool = self.tools[self.activeToolBehaviorId]
-        for actorId in pairs(self.selectedActorIds) do
-            if not activeTool.tool.noSelect and not activeTool:has(actorId) then
-                self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
             end
         end
     end
