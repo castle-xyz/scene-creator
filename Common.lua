@@ -61,6 +61,12 @@ function Common:define()
         selfSend = true,
         forward = true,
     })
+    self:defineMessageKind('ping', {
+        reliable = true,
+        channel = self.channels.secondaryReliable,
+        selfSend = true,
+        forward = true,
+    })
 
 
     self:defineActorBehaviorMessageKinds()
@@ -76,6 +82,7 @@ end
 
 function Common:start()
     self.mes = {}
+    self.lastPingTimes = {}
 
     self:startActorBehavior()
     self:startLibrary()
@@ -93,6 +100,10 @@ end
 
 function Common.receivers:me(time, clientId, me)
     self.mes[clientId] = me
+end
+
+function Common.receivers:ping(time, clientId)
+    self.lastPingTimes[clientId] = time
 end
 
 

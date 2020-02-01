@@ -25,9 +25,23 @@ end
 function Client:addToolComponents()
     if self.activeToolBehaviorId and self.applicableTools[self.activeToolBehaviorId] then
         local activeTool = self.tools[self.activeToolBehaviorId]
-        for actorId in pairs(self.selectedActorIds) do
-            if not activeTool.tool.noSelect and not activeTool:has(actorId) then
-                self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
+        if not activeTool.tool.noSelect then
+            for actorId in pairs(self.selectedActorIds) do
+                -- Check if there's already a component for this tool
+                local component = activeTool.components[actorId]
+                if component then
+                    -- If the component is our own we can just keep it, else check if we can take it from the other client
+                    if component.clientId ~= self.clientId then
+                        local lastPingTime = self.lastPingTimes[component.clientId]
+                        if not (lastPingTime and self.time - lastPingTime < 5) then
+                            -- No ping from them recently, let's take it from them
+                            self:send('removeComponent', self.clientId, actorId, self.activeToolBehaviorId)
+                            self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
+                        end
+                    end
+                else -- No component, just add
+                    self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
+                end
             end
         end
     end

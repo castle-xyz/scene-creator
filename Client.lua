@@ -18,6 +18,8 @@ require 'ui'
 -- Start / stop
 
 function Client:start()
+    self.lastPingSentTime = nil
+
     self.photoImages = {}
 
     self:startSelect()
@@ -76,6 +78,12 @@ end
 function Client:update(dt)
     if not self.connected then
         return
+    end
+
+    local currTime = love.timer.getTime()
+    if not lastPingSentTime or currTime - lastPingSentTime > 2 then
+        lastPingSentTime = currTime
+        self:send('ping', self.clientId)
     end
 
     self:updateTouches()
