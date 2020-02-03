@@ -44,8 +44,8 @@ function util.uuid()
 end
 
 
-function util.stacktrace()
-    local stack = debug.traceback(2)
+function util.stacktrace(message)
+    local stack = debug.traceback(message, 2)
     for chunkName, filename in pairs(CHUNK_NAME_TO_FILE_NAME) do
         local pattern = '%[string "' .. chunkName .. '"%]'
         stack = stack:gsub(pattern, filename)
