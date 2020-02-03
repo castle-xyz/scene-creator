@@ -31,6 +31,9 @@ function Server:syncClient(clientId)
         for clientId, me in pairs(self.mes) do
             send('me', clientId, me)
         end
+        for clientId, lastPingTime in pairs(self.lastPingTimes) do
+            send({ time = lastPingTime, kind = 'ping' }, clientId)
+        end
 
         self:syncClientLibrary(clientId, send)
 
