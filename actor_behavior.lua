@@ -156,7 +156,7 @@ function Server:syncClientActorBehavior(clientId, send)
         send('addActor', self.clientId, actor.actorId, actor.parentEntryId)
 
         for behaviorId, component in pairs(actor.components) do
-            send('addComponent', self.clientId, actor.actorId, behaviorId)
+            send('addComponent', component.clientId or self.clientId, actor.actorId, behaviorId)
 
             local behavior = self.behaviors[behaviorId]
             behavior:sendSetProperties({
