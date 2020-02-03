@@ -44,6 +44,16 @@ function util.uuid()
 end
 
 
+function util.stacktrace()
+    local stack = debug.traceback(2)
+    for chunkName, filename in pairs(CHUNK_NAME_TO_FILE_NAME) do
+        local pattern = '%[string "' .. chunkName .. '"%]'
+        stack = stack:gsub(pattern, filename)
+    end
+    return stack
+end
+
+
 local ui = castle.ui
 
 function util.uiRow(id, ...)
