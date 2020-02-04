@@ -56,8 +56,12 @@ function Common:command(description, opts, params, doFunc, undoFunc)
                     command.params[name] = value -- Save implicit param
                 end
             end
-            debug.setupvalue(func, i, nil)
         end)
+    end
+
+    -- Now that upvalues are read, clone the functions (unjoins upvalues)
+    for funcKey, func in pairs(command.funcs) do
+        command.funcs[funcKey] = load(string.dump(func))
     end
 
     -- Generate a coalesce id or use given one
