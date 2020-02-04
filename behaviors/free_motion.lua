@@ -34,26 +34,25 @@ end
 
 function FreeMotionBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
-    local physics = self.dependencies.Body:getPhysics()
-    local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-    local fixture = body:getFixtures()[1]
-    local fixtureId = fixture and physics:idForObject(fixture)
+    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
 
     -- Density and gravity
     util.uiRow('density and gravity', function()
         if fixture then
-            ui.numberInput('density', fixture:getDensity(), {
-                onChange = function(newDensity)
-                    physics:setDensity(fixtureId, newDensity)
-                    physics:resetMassData(bodyId)
+            self:uiValue('numberInput', 'density', fixture:getDensity(), {
+                onChange = function(params)
+                    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
+                    if fixtureId then
+                        physics:setDensity(fixtureId, params.value)
+                        physics:resetMassData(bodyId)
+                    end
                 end,
             })
         end
     end, function()
         self:uiValue('numberInput', 'gravity', body:getGravityScale(), {
             onChange = function(params)
-                local physics = self.dependencies.Body:getPhysics()
-                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
                 physics:setGravityScale(bodyId, params.value)
             end,
         })

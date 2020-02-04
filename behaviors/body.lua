@@ -418,6 +418,14 @@ function BodyBehavior:getBody(componentOrActorId)
     end
 end
 
+function BodyBehavior:getMembers(componentOrActorId)
+    local physics = self._physics
+    local bodyId, body = self:getBody(componentOrActorId)
+    local fixture = body and body:getFixtures()[1]
+    local fixtureId = fixture and physics:idForObject(fixture)
+    return physics, bodyId, body, fixtureId, fixture
+end
+
 local sizeCache = setmetatable({}, { __mode = 'k' })
 
 function BodyBehavior:getSize(actorId)
