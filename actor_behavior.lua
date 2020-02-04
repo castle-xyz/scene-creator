@@ -79,25 +79,31 @@ function BaseBehavior:getActor(actorId)
     return self.game.actors[actorId]
 end
 
-function BaseBehavior:command(description, params, doFunc, undoFunc, opts)
-    self.game:command(description, params, doFunc, undoFunc,
-        setmetatable({ behaviorId = self.behaviorId }, { __index = opts }))
+function BaseBehavior:command(description, opts, params, doFunc, undoFunc)
+    self.game:command(
+        description,
+        setmetatable({ behaviorId = self.behaviorId }, { __index = opts }),
+        params, 
+        doFunc, undoFunc)
 end
 
 function BaseBehavior:uiValue(method, label, value, opts)
     local newProps = util.deepCopyTable(opts.props or {})
     newProps.onChange = function(newValue)
+        local newOpts = util.deepCopyTable(opts or {})
+        newOpts.coalesceSuffix = label
+        newOpts.extraParams = {
+            ['do'] = { value = newValue },
+            ['undo'] = { value = value },
+        }
         self:command(
             'set ' .. self:getUiName() .. ' ' .. label,
+            newOpts,
             opts.params or {},
             opts.onChange,
-            opts.onChange, {
-            extraParams = {
-                ['do'] = { value = newValue },
-                ['undo'] = { value = value },
-            },
-        })
+            opts.onChange)
     end
+
     ui[method](label, value, newProps)
 end
 

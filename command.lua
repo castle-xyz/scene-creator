@@ -7,6 +7,10 @@ local STANDARD_IMPLICITS = {
     actorId = true,
 }
 
+local DEFAULT_COALESCE_INTERVAL = 1.2
+
+local MAX_UNDOS = 100
+
 local function forEachUpvalue(func, body)
     local i = 1
     while true do
@@ -19,9 +23,10 @@ local function forEachUpvalue(func, body)
     end
 end
 
-function Common:command(description, params, doFunc, undoFunc, opts)
+function Common:command(description, opts, params, doFunc, undoFunc)
     local command = {}
     command.time = self.time
+    command.localTime = love.timer.getTime()
     command.commandId = util.uuid()
     command.description = description
     command.funcs = { ['do'] = doFunc, ['undo'] = undoFunc }
@@ -55,8 +60,39 @@ function Common:command(description, params, doFunc, undoFunc, opts)
         end)
     end
 
-    -- Track command
-    table.insert(self.undos, command)
+    -- Generate a coalesce id or use given one
+    if opts.coalesceId then
+        command.coalesceId = opts.coalesceId
+    else
+        command.coalesceId = love.data.hash('md5',
+            (opts.behaviorId or '*') .. '-' ..
+            (command.params.actorId or '*') .. '-' .. 
+            (opts.coalesceSuffix or command.description))
+    end
+
+    -- Insert into undos, coalescing with an applicable previous command. Limit undo list size.
+    local coalesced = false
+    for i = #self.undos, 1, -1 do
+        local prevCommand = self.undos[i]
+        if (command.coalesceId == prevCommand.coalesceId and
+                command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL)) then
+            command.funcs['undo'] = prevCommand.funcs['undo']
+            if command.extraParams and prevCommand.extraParams then
+                command.extraParams['undo'] = prevCommand.extraParams['undo']
+            end
+            self.undos[i] = command
+            coalesced = true
+            break
+        end
+    end
+    if not coalesced then
+        table.insert(self.undos, command)
+    end
+    while #self.undos > MAX_UNDOS do
+        table.remove(self.undos, 1)
+    end
+
+    -- Reset redos
     self.redos = {}
 
     -- Do command
