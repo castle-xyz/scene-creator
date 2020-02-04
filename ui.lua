@@ -26,6 +26,29 @@ function Client:uiToolbar()
                     self:send('setPerforming', true)
                 end,
             })
+
+            -- Undo / redo
+            local hasUndo, hasRedo = #self.undos > 0, #self.redos > 0
+            if hasUndo then
+                ui.button('undo', {
+                    icon = 'ios-undo',
+                    iconFamily = 'Ionicons',
+                    hideLabel = true,
+                    onClick = function()
+                        self:undo()
+                    end,
+                })
+            end
+            if hasRedo then
+                ui.button('redo', {
+                    icon = 'ios-redo',
+                    iconFamily = 'Ionicons',
+                    hideLabel = true,
+                    onClick = function()
+                        self:redo()
+                    end,
+                })
+            end
         else
             -- Play mode
 

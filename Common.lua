@@ -34,6 +34,7 @@ require 'tools.view'
 
 require 'library'
 require 'snapshot'
+require 'command'
 
 
 -- Message kind definition
@@ -87,6 +88,7 @@ function Common:start()
     self:startActorBehavior()
     self:startLibrary()
     self:startSnapshot()
+    self:startCommand()
 
     self.performing = false
 end

@@ -33,6 +33,7 @@ end
 -- UI
 
 function FreeMotionBehavior.handlers:uiComponent(component, opts)
+    local actorId = component.actorId
     local physics = self.dependencies.Body:getPhysics()
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)
     local fixture = body:getFixtures()[1]
@@ -49,9 +50,20 @@ function FreeMotionBehavior.handlers:uiComponent(component, opts)
             })
         end
     end, function()
-        ui.numberInput('gravity', body:getGravityScale(), {
+        local oldGravityScale = body:getGravityScale()
+        ui.numberInput('gravity', oldGravityScale, {
             onChange = function(newGravityScale)
-                physics:setGravityScale(bodyId, newGravityScale)
+                self:command('set gravity scale', {
+                    'newGravityScale', 'oldGravityScale',
+                }, function()
+                    local physics = self.dependencies.Body:getPhysics()
+                    local bodyId, body = self.dependencies.Body:getBody(actorId)
+                    physics:setGravityScale(bodyId, newGravityScale)
+                end, function()
+                    local physics = self.dependencies.Body:getPhysics()
+                    local bodyId, body = self.dependencies.Body:getBody(actorId)
+                    physics:setGravityScale(bodyId, oldGravityScale)
+                end)
             end,
         })
     end)

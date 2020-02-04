@@ -79,6 +79,11 @@ function BaseBehavior:getActor(actorId)
     return self.game.actors[actorId]
 end
 
+function BaseBehavior:command(description, params, doFunc, undoFunc, opts)
+    self.game:command(description, params, doFunc, undoFunc,
+        setmetatable({ behaviorId = self.behaviorId }, { __index = opts }))
+end
+
 
 -- Core behavior registration
 
