@@ -104,7 +104,13 @@ function BaseBehavior:uiValue(method, label, value, opts)
             opts.onChange)
     end
 
-    ui[method](label, value, newProps)
+    if method == 'toggle' then
+        newProps.onToggle = newProps.onChange
+        newProps.onChange = nil
+        ui.toggle(label .. ' off', label .. ' on', value, newProps)
+    else
+        ui[method](label, value, newProps)
+    end
 end
 
 

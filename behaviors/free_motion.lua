@@ -81,9 +81,10 @@ function FreeMotionBehavior.handlers:uiComponent(component, opts)
     -- Fixed rotation / angular velocity
     local isFixedRotation = body:isFixedRotation()
     local function fixedRotationToggle()
-        ui.toggle('fixed rotation off', 'fixed rotation on', isFixedRotation, {
-            onToggle = function(newFixedRotation)
-                physics:setFixedRotation(bodyId, newFixedRotation)
+        self:uiValue('toggle', 'fixed rotation', isFixedRotation, {
+            onChange = function(params)
+                local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
+                physics:setFixedRotation(bodyId, params.value)
             end,
         })
     end
