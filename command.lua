@@ -26,6 +26,7 @@ function Common:command(description, params, doFunc, undoFunc, opts)
     command.description = description
     command.funcs = { ['do'] = doFunc, ['undo'] = undoFunc }
     command.behaviorId = opts.behaviorId
+    command.extraParams = opts.extraParams
 
     -- Collect allowed implicit params
     local implicits = {}
@@ -83,6 +84,14 @@ end
 function Common:runCommand(funcKey, command)
     local func = command.funcs[funcKey]
 
+    -- Construct params
+    local params = util.deepCopyTable(command.params)
+    if command.extraParams and command.extraParams[funcKey] then
+        for name, value in pairs(command.extraParams[funcKey]) do
+            params[name] = value
+        end
+    end
+
     -- Set upvalues, call function, then unset upvalues
     forEachUpvalue(func, function(name, value, i)
         assert(value == nil, 'command function upvalue aleady set')
@@ -90,10 +99,10 @@ function Common:runCommand(funcKey, command)
             debug.setupvalue(func, i,
                 command.behaviorId and self.behaviors[command.behaviorId] or self)
         else
-            debug.setupvalue(func, i, command.params[name])
+            debug.setupvalue(func, i, params[name])
         end
     end)
-    local succeeded, err = pcall(func)
+    local succeeded, err = pcall(func, params)
     forEachUpvalue(func, function(name, value, i)
         debug.setupvalue(func, i, nil)
     end)

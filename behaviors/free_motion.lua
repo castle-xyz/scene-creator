@@ -50,20 +50,11 @@ function FreeMotionBehavior.handlers:uiComponent(component, opts)
             })
         end
     end, function()
-        local oldGravityScale = body:getGravityScale()
-        ui.numberInput('gravity', oldGravityScale, {
-            onChange = function(newGravityScale)
-                self:command('set gravity scale', {
-                    'newGravityScale', 'oldGravityScale',
-                }, function()
-                    local physics = self.dependencies.Body:getPhysics()
-                    local bodyId, body = self.dependencies.Body:getBody(actorId)
-                    physics:setGravityScale(bodyId, newGravityScale)
-                end, function()
-                    local physics = self.dependencies.Body:getPhysics()
-                    local bodyId, body = self.dependencies.Body:getBody(actorId)
-                    physics:setGravityScale(bodyId, oldGravityScale)
-                end)
+        self:uiValue('numberInput', 'gravity', body:getGravityScale(), {
+            onChange = function(params)
+                local physics = self.dependencies.Body:getPhysics()
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                physics:setGravityScale(bodyId, params.value)
             end,
         })
     end)

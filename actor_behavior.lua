@@ -84,6 +84,23 @@ function BaseBehavior:command(description, params, doFunc, undoFunc, opts)
         setmetatable({ behaviorId = self.behaviorId }, { __index = opts }))
 end
 
+function BaseBehavior:uiValue(method, label, value, opts)
+    local newProps = util.deepCopyTable(opts.props or {})
+    newProps.onChange = function(newValue)
+        self:command(
+            'set ' .. self:getUiName() .. ' ' .. label,
+            opts.params or {},
+            opts.onChange,
+            opts.onChange, {
+            extraParams = {
+                ['do'] = { value = newValue },
+                ['undo'] = { value = value },
+            },
+        })
+    end
+    ui[method](label, value, newProps)
+end
+
 
 -- Core behavior registration
 
