@@ -7,7 +7,7 @@ local STANDARD_IMPLICITS = {
     actorId = true,
 }
 
-local DEFAULT_COALESCE_INTERVAL = 1.2
+local DEFAULT_COALESCE_INTERVAL = 2.2
 
 local MAX_UNDOS = 100
 

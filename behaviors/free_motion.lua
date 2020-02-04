@@ -61,15 +61,19 @@ function FreeMotionBehavior.handlers:uiComponent(component, opts)
     -- Linear velocity
     local vx, vy = body:getLinearVelocity()
     util.uiRow('linear velocity', function()
-        ui.numberInput('velocity x', vx, {
-            onChange = function(newVX)
-                physics:setLinearVelocity(bodyId, newVX, vy)
+        self:uiValue('numberInput', 'velocity x', vx, {
+            onChange = function(params)
+                local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
+                local vx, vy = body:getLinearVelocity()
+                physics:setLinearVelocity(bodyId, params.value, vy)
             end,
         })
     end, function()
-        ui.numberInput('velocity y', vy, {
-            onChange = function(newVY)
-                physics:setLinearVelocity(bodyId, vx, newVY)
+        self:uiValue('numberInput', 'velocity y', vy, {
+            onChange = function(params)
+                local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
+                local vx, vy = body:getLinearVelocity()
+                physics:setLinearVelocity(bodyId, vx, params.value)
             end,
         })
     end)
@@ -87,9 +91,10 @@ function FreeMotionBehavior.handlers:uiComponent(component, opts)
         fixedRotationToggle()
     else
         util.uiRow('rotation speed and fixed rotation', function()
-            ui.numberInput('rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
-                onChange = function(newAV)
-                    physics:setAngularVelocity(bodyId, newAV * math.pi / 180)
+            self:uiValue('numberInput', 'rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
+                onChange = function(params)
+                    local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
+                    physics:setAngularVelocity(bodyId, params.value * math.pi / 180)
                 end,
             })
         end, fixedRotationToggle)
@@ -97,17 +102,19 @@ function FreeMotionBehavior.handlers:uiComponent(component, opts)
 
     -- Damping
     util.uiRow('damping', function()
-        ui.numberInput('linear damping', body:getLinearDamping(), {
-            step = 0.05,
-            onChange = function(newLinearDamping)
-                physics:setLinearDamping(bodyId, newLinearDamping)
+        self:uiValue('numberInput', 'linear damping', body:getLinearDamping(), {
+            props = { step = 0.05 },
+            onChange = function(params)
+                local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
+                physics:setLinearDamping(bodyId, params.value)
             end,
         })
     end, function()
-        ui.numberInput('angular damping', body:getAngularDamping(), {
-            step = 0.05,
-            onChange = function(newAngularDamping)
-                physics:setAngularDamping(bodyId, newAngularDamping)
+        self:uiValue('numberInput', 'angular damping', body:getAngularDamping(), {
+            props = { step = 0.05 },
+            onChange = function(params)
+                local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
+                physics:setAngularDamping(bodyId, params.value)
             end,
         })
     end)
