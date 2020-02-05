@@ -328,9 +328,7 @@ function Client:uiProperties()
         if actorId then
             local actor = self.actors[actorId]
 
-            local updateCount = self.updateCounts[actor] or 1
-
-            ui.box('properties-' .. actor.actorId .. '-' .. updateCount, function()
+            ui.box('properties-' .. actor.actorId .. '-' .. (self.updateCounts[actorId] or 1), function()
                 -- Sort by `behaviorId`
                 local order = {}
                 for behaviorId, component in pairs(actor.components) do
@@ -378,8 +376,18 @@ function Client:uiProperties()
                                             message = "Remove '" .. uiName .. "' from this actor?",
                                             okLabel = 'Yes',
                                             onOk = function()
-                                                self:send('removeComponent', self.clientId, actorId, component.behaviorId)
-                                                self.updateCounts[actorId] = updateCount + 1
+                                                local behaviorId = component.behaviorId
+                                                local componentBp = {}
+                                                behavior:callHandler('blueprintComponent', component, componentBp)
+                                                self:command('remove ' .. uiName, {
+                                                    params = { 'behaviorId', 'componentBp' },
+                                                }, function()
+                                                    self:send('removeComponent', self.clientId, actorId, behaviorId)
+                                                    self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                end, function()
+                                                    self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
+                                                    self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                end)
                                             end,
                                             cancelLabel = 'No',
                                         })
@@ -421,7 +429,7 @@ function Client:uiProperties()
                                     icon = 'plus',
                                     iconFamily = 'FontAwesome5',
                                     onClick = function()
-                                        self.updateCounts[actorId] = updateCount + 1
+                                        self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
 
                                         closePopover()
 
