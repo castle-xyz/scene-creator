@@ -135,10 +135,6 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
         cosRotation, sinRotation = math.cos(rotation), math.sin(rotation)
     end
 
-    local physics = self.dependencies.Body:getPhysics()
-    local touchData = self:getTouchData()
-    local gestureEnded = touchData.allTouchesReleased
-
     local before, after = {}, {}
     local actorIds = {}
 
@@ -148,18 +144,8 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
 
             local bodyId, body = self.dependencies.Body:getBody(actorId)
 
-            local x, y
-            local angle
-
-            -- We use these `.save` values to override stale incoming updates to the body
-            -- from other hosts that had not yet received the `setPerforming` message
-            if component.save then
-                x, y = component.save.x, component.save.y
-                angle = component.save.angle
-            else
-                x, y = body:getPosition()
-                angle = body:getAngle()
-            end
+            local x, y = body:getPosition()
+            local angle = body:getAngle()
 
             local newX, newY, newAngle
             if rotation then
@@ -177,20 +163,13 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
                 newAngle = angle
             end
 
-            -- Collect values
             before[actorId] = { x = x, y = y, angle = angle }
             after[actorId] = { x = newX, y = newY, angle = newAngle }
-
-            -- Write back to `.save`, or clear it out if the gesture ended
-            if gestureEnded then
-                component.save = nil
-            else
-                component.save = {}
-                component.save.x, component.save.y = newX, newY
-                component.save.angle = newAngle
-            end
         end
     end
+
+    local touchData = self:getTouchData()
+    local gestureEnded = touchData.allTouchesReleased
 
     self:command(description, {
         coalesceLast = true,
@@ -309,11 +288,8 @@ function GrabTool.handlers:update(dt)
         local moveX, moveY = 0, 0
         local rotation
         local centerX, centerY
-        local description
 
         if touchData.numTouches == 1 then -- 1-finger move
-            description = 'move'
-
             local touchId, touch = next(touchData.touches)
             if self._gridEnabled then
                 local touchPrevX, touchPrevY = touch.x - touch.dx, touch.y - touch.dy
@@ -329,8 +305,6 @@ function GrabTool.handlers:update(dt)
                 moveX, moveY = touch.dx, touch.dy
             end
         elseif touchData.numTouches == 2 then -- 2-finger move and rotate
-            description = 'move and rotate'
-
             local touchId1, touch1 = next(touchData.touches)
             local touchId2, touch2 = next(touchData.touches, touchId1)
 
@@ -365,6 +339,7 @@ function GrabTool.handlers:update(dt)
             rotation = angle - prevAngle
         end
 
+        local description = touchData.maxNumTouches > 1 and 'move and rotate' or 'move'
         self:moveRotate(description, moveX, moveY, rotation, centerX, centerY)
     end
 end
