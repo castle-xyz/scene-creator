@@ -321,25 +321,29 @@ end
 -- UI
 
 function BodyBehavior.handlers:uiComponent(component, opts)
-    local bodyId, body = self:getBody(component)
+    local actorId = component.actorId
+    local physics, bodyId, body = self:getMembers(actorId)
 
     -- Position and angle
     util.uiRow('position', function()
-        ui.numberInput('x', body:getX(), {
-            onChange = function(newX)
-                self._physics:setX(bodyId, newX)
+        self:uiValue('numberInput', 'x', body:getX(), {
+            onChange = function(params)
+                local physics, bodyId, body = self:getMembers(actorId)
+                physics:setX(bodyId, params.value)
             end,
         })
     end, function()
-        ui.numberInput('y', body:getY(), {
-            onChange = function(newY)
-                self._physics:setY(bodyId, newY)
+        self:uiValue('numberInput', 'y', body:getY(), {
+            onChange = function(params)
+                local physics, bodyId, body = self:getMembers(actorId)
+                physics:setY(bodyId, params.value)
             end,
         })
     end)
-    ui.numberInput('angle (degrees)', body:getAngle() * 180 / math.pi, {
-        onChange = function(newAngle)
-            self._physics:setAngle(bodyId, newAngle * math.pi / 180)
+    self:uiValue('numberInput', 'angle (degrees)', body:getAngle() * 180 / math.pi, {
+        onChange = function(params)
+            local physics, bodyId, body = self:getMembers(actorId)
+            physics:setAngle(bodyId, params.value * math.pi / 180)
         end,
     })
 
@@ -347,19 +351,19 @@ function BodyBehavior.handlers:uiComponent(component, opts)
     local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
     if rectangleWidth and rectangleHeight then
         util.uiRow('rectangle size', function()
-            ui.numberInput('width', rectangleWidth, {
-                min = MIN_BODY_SIZE,
-                max = MAX_BODY_SIZE,
-                onChange = function(newRectangleWidth)
-                    self:setRectangleShape(component, newRectangleWidth, rectangleHeight)
+            self:uiValue('numberInput', 'width', rectangleWidth, {
+                props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE },
+                onChange = function(params)
+                    local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
+                    self:setRectangleShape(actorId, params.value, rectangleHeight)
                 end,
             })
         end, function()
-            ui.numberInput('height', rectangleHeight, {
-                min = MIN_BODY_SIZE,
-                max = MAX_BODY_SIZE,
-                onChange = function(newRectangleHeight)
-                    self:setRectangleShape(component, rectangleWidth, newRectangleHeight)
+            self:uiValue('numberInput', 'height', rectangleHeight, {
+                props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE },
+                onChange = function(params)
+                    local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
+                    self:setRectangleShape(actorId, rectangleWidth, params.value)
                 end,
             })
         end)

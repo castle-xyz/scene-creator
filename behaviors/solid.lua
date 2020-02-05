@@ -51,23 +51,22 @@ end
 -- UI
 
 function SolidBehavior.handlers:uiComponent(component, opts)
-    local physics = self.dependencies.Body:getPhysics()
-    local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-    local fixture = body:getFixtures()[1]
+    local actorId = component.actorId
+    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
     if fixture then
-        local fixtureId = physics:idForObject(fixture)
-
-        ui.numberInput('bounciness', fixture:getRestitution(), {
-            step = 0.05,
-            onChange = function(newBounciness)
-                physics:setRestitution(fixtureId, newBounciness)
+        self:uiValue('numberInput', 'bounciness', fixture:getRestitution(), {
+            props = { step = 0.05 },
+            onChange = function(params)
+                local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
+                physics:setRestitution(fixtureId, params.value)
             end,
         })
 
-        ui.numberInput('friction', fixture:getFriction(), {
-            step = 0.05,
-            onChange = function(newFriction)
-                physics:setFriction(fixtureId, newFriction)
+        self:uiValue('numberInput', 'friction', fixture:getFriction(), {
+            props = { step = 0.05 },
+            onChange = function(params)
+                local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
+                physics:setFriction(fixtureId, params.value)
             end,
         })
     end

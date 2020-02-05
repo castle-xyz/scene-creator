@@ -53,11 +53,9 @@ end
 -- UI
 
 function RotatingMotionBehavior.handlers:uiComponent(component, opts)
-    ui.numberInput('rotations per second', component.properties.rotationsPerSecond, {
-        onChange = function(newRotationsPerSecond)
-            self:sendSetProperties(component.actorId, 'rotationsPerSecond', newRotationsPerSecond)
-        end,
-    })
+    local actorId = component.actorId
+
+    self:uiProperty('numberInput', 'rotations per second', actorId, 'rotationsPerSecond')
 end
 
 

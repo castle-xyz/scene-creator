@@ -113,6 +113,18 @@ function BaseBehavior:uiValue(method, label, value, opts)
     end
 end
 
+function BaseBehavior:uiProperty(method, label, actorId, propertyName, opts)
+    opts = opts or {}
+    local value = self.components[actorId].properties[propertyName]
+    self:uiValue(method, label, value, {
+        props = opts.props,
+        params = { 'propertyName' },
+        onChange = function(params)
+            self:sendSetProperties(actorId, propertyName, params.value)
+        end,
+    })
+end
+
 
 -- Core behavior registration
 
