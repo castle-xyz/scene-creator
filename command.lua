@@ -97,6 +97,9 @@ function Common:command(description, opts, params, doFunc, undoFunc)
                 coalesced = true
                 break
             end
+            if opts.coalesceLast then
+                break
+            end
         end
     end
     if not coalesced then
@@ -110,7 +113,7 @@ function Common:command(description, opts, params, doFunc, undoFunc)
     self.redos = {}
 
     -- Do command
-    self:runCommand('do', command)
+    self:runCommand('do', command, true)
 end
 
 function Common:undo()
@@ -131,7 +134,7 @@ function Common:redo()
     end
 end
 
-function Common:runCommand(mode, command)
+function Common:runCommand(mode, command, live)
     local func = command.funcs[mode]
 
     -- Construct params
@@ -152,7 +155,7 @@ function Common:runCommand(mode, command)
             debug.setupvalue(func, i, params[name])
         end
     end)
-    local succeeded, err = pcall(func, params)
+    local succeeded, err = pcall(func, params, not not live)
     forEachUpvalue(func, function(name, value, i)
         debug.setupvalue(func, i, nil)
     end)

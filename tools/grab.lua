@@ -123,19 +123,29 @@ function GrabTool:getHandles()
     return handles
 end
 
-function GrabTool:moveRotate(moveX, moveY, rotation, pivotX, pivotY)
+function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY)
     -- Move and rotate multiple actors around a pivot. `rotation` may be `nil` to skip.
 
-    local physics = self.dependencies.Body:getPhysics()
-    local touchData = self:getTouchData()
+    if not (moveX ~= 0 or moveY ~= 0 or (rotation and rotation ~= 0)) then
+        return
+    end
 
     local cosRotation, sinRotation 
     if rotation then
         cosRotation, sinRotation = math.cos(rotation), math.sin(rotation)
     end
 
+    local physics = self.dependencies.Body:getPhysics()
+    local touchData = self:getTouchData()
+    local gestureEnded = touchData.allTouchesReleased
+
+    local before, after = {}, {}
+    local actorIds = {}
+
     for actorId, component in pairs(self.components) do
         if self.game.clientId == component.clientId then
+            table.insert(actorIds, actorId)
+
             local bodyId, body = self.dependencies.Body:getBody(actorId)
 
             local x, y
@@ -167,17 +177,12 @@ function GrabTool:moveRotate(moveX, moveY, rotation, pivotX, pivotY)
                 newAngle = angle
             end
 
-            -- When not performing we need to actually send the sync messages. We also send a
-            -- reliable message on gesture end to make sure the final state is reflected.
-            local sendOpts = {
-                reliable = touchData.allTouchesReleased,
-                channel = touchData.allTouchesReleased and physics.reliableChannel or nil,
-            }
-            physics:setPosition(sendOpts, bodyId, newX, newY)
-            physics:setAngle(sendOpts, bodyId, newAngle)
+            -- Collect values
+            before[actorId] = { x = x, y = y, angle = angle }
+            after[actorId] = { x = newX, y = newY, angle = newAngle }
 
             -- Write back to `.save`, or clear it out if the gesture ended
-            if touchData.allTouchesReleased then
+            if gestureEnded then
                 component.save = nil
             else
                 component.save = {}
@@ -186,6 +191,29 @@ function GrabTool:moveRotate(moveX, moveY, rotation, pivotX, pivotY)
             end
         end
     end
+
+    self:command(description, {
+        coalesceLast = true,
+        coalesceSuffix = description .. '-' .. table.concat(actorIds, '-'),
+        paramOverrides = {
+            ['do'] = { values = after },
+            ['undo'] = { values = before },
+        },
+    }, {
+        'gestureEnded',
+    }, function(params, live)
+        local physics = self.dependencies.Body:getPhysics()
+        local reliable = gestureEnded or not live
+        local sendOpts = {
+            reliable = reliable,
+            channel = reliable and physics.reliableChannel or nil,
+        }
+        for actorId, values in pairs(params.values) do
+            local bodyId, body = self.dependencies.Body:getBody(actorId)
+            physics:setPosition(sendOpts, bodyId, values.x, values.y)
+            physics:setAngle(sendOpts, bodyId, values.angle)
+        end
+    end)
 end
 
 
@@ -269,7 +297,7 @@ function GrabTool.handlers:update(dt)
                     prevAngle = util.quantize(prevAngle, increment, initialAngle)
                 end
                 rotation = angle - prevAngle
-                self:moveRotate(0, 0, rotation, handle.pivotX, handle.pivotY)
+                self:moveRotate('rotate', 0, 0, rotation, handle.pivotX, handle.pivotY)
             end
 
             return -- We processed a handle, skip other gestures
@@ -281,8 +309,11 @@ function GrabTool.handlers:update(dt)
         local moveX, moveY = 0, 0
         local rotation
         local centerX, centerY
+        local description
 
         if touchData.numTouches == 1 then -- 1-finger move
+            description = 'move'
+
             local touchId, touch = next(touchData.touches)
             if self._gridEnabled then
                 local touchPrevX, touchPrevY = touch.x - touch.dx, touch.y - touch.dy
@@ -298,6 +329,8 @@ function GrabTool.handlers:update(dt)
                 moveX, moveY = touch.dx, touch.dy
             end
         elseif touchData.numTouches == 2 then -- 2-finger move and rotate
+            description = 'move and rotate'
+
             local touchId1, touch1 = next(touchData.touches)
             local touchId2, touch2 = next(touchData.touches, touchId1)
 
@@ -332,7 +365,7 @@ function GrabTool.handlers:update(dt)
             rotation = angle - prevAngle
         end
 
-        self:moveRotate(moveX, moveY, rotation, centerX, centerY)
+        self:moveRotate(description, moveX, moveY, rotation, centerX, centerY)
     end
 end
 
