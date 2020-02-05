@@ -225,7 +225,7 @@ function Client:uiToolbar()
                 iconFamily = 'FontAwesome5',
                 hideLabel = true,
                 onClick = function()
-                    -- Generated map of actor ids to new ids for their duplicates
+                    -- Generate map of actor ids to new ids for their duplicates
                     local newActorIds = {}
                     for actorId in pairs(self.selectedActorIds) do
                         newActorIds[actorId] = self:generateId()
@@ -234,6 +234,13 @@ function Client:uiToolbar()
                     self:command('duplicate', {
                         params = { 'newActorIds' },
                     }, function()
+                        -- Make sure actors still exist
+                        for actorId in pairs(newActorIds) do
+                            if not self.actors[actorId] then
+                                return 'actor was deleted'
+                            end
+                        end
+
                         -- Use blueprints to duplicate. Nudge position a little bit.
                         for actorId in pairs(newActorIds) do
                             local bp = self:blueprintActor(actorId)
@@ -250,13 +257,20 @@ function Client:uiToolbar()
                             })
                         end
 
-                        -- Select created actors
+                        -- Select new actors
                         self:deselectAllActors()
                         for actorId, newActorId in pairs(newActorIds) do
                             self:selectActor(newActorId)
                         end
                     end, function()
-                        -- Remove created actors
+                        -- Make sure new actors still exist
+                        for actorId, newActorId in pairs(newActorIds) do
+                            if not self.actors[newActorId] then
+                                return 'actor was deleted'
+                            end
+                        end
+
+                        -- Remove new actors
                         for actorId, newActorId in pairs(newActorIds) do
                             self:send('removeActor', self.clientId, newActorId)
                         end
@@ -290,6 +304,13 @@ function Client:uiToolbar()
                     self:command('delete', {
                         params = { 'saves' },
                     }, function()
+                        -- Make sure actors still exist
+                        for _, save in ipairs(saves) do
+                            if not self.actors[save.actorId] then
+                                return 'actor was deleted'
+                            end
+                        end
+
                         -- Deselect and remove actors
                         for _, save in ipairs(saves) do
                             self:deselectActor(save.actorId)
@@ -375,9 +396,17 @@ function Client:uiProperties()
                                                 self:command('remove ' .. uiName, {
                                                     params = { 'behaviorId', 'componentBp' },
                                                 }, function()
+                                                    local behavior = self.behaviors[behaviorId]
+                                                    if not behavior.components[actorId] then
+                                                        return 'behavior was removed'
+                                                    end
                                                     self:send('removeComponent', self.clientId, actorId, behaviorId)
                                                     self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
                                                 end, function()
+                                                    local behavior = self.behaviors[behaviorId]
+                                                    if behavior.components[actorId] then
+                                                        return 'behavior was added'
+                                                    end
                                                     self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
                                                     self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
                                                 end)
@@ -429,10 +458,18 @@ function Client:uiProperties()
                                         self:command('add ' .. behavior:getUiName(), {
                                             params = { 'behaviorId' },
                                         }, function()
+                                            local behavior = self.behaviors[behaviorId]
+                                            if behavior.components[actorId] then
+                                                return 'behavior was added'
+                                            end
                                             self:send('addComponent', self.clientId, actorId, behaviorId, {})
                                             self.openComponentBehaviorId = behaviorId
                                             self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
                                         end, function()
+                                            local behavior = self.behaviors[behaviorId]
+                                            if not behavior.components[actorId] then
+                                                return 'behavior was removed'
+                                            end
                                             self:send('removeComponent', self.clientId, actorId, behaviorId)
                                             self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
                                         end)
@@ -545,38 +582,43 @@ function Client:uiupdate()
                                 iconFamily = 'FontAwesome5',
                                 onClick = function()
                                     -- Set up actor blueprint and id
-                                    local actorBp = util.deepCopyTable(entry.actorBlueprint)
-                                    if actorBp.components.Body then -- Has a `Body`? Position at center of window.
+                                    local bp = util.deepCopyTable(entry.actorBlueprint)
+                                    if bp.components.Body then -- Has a `Body`? Position at center of window.
                                         local windowWidth, windowHeight = love.graphics.getDimensions()
-                                        actorBp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
-                                        actorBp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
+                                        bp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
+                                        bp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
                                     end
-                                    local actorId = self:generateId()
+                                    local newActorId = self:generateId()
 
                                     local entryId = entry.entryId
                                     self:command('add', {
-                                        params = { 'actorBp', 'actorId', 'entryId' },
+                                        params = { 'bp', 'newActorId', 'entryId' },
                                     }, function()
                                         -- Add the actor
-                                        self:sendAddActor(actorBp, {
-                                            actorId = actorId,
+                                        self:sendAddActor(bp, {
+                                            actorId = newActorId,
                                             parentEntryId = entryId,
                                         })
 
                                         -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
-                                        if actorBp.components.Body then
+                                        if bp.components.Body then
                                             self:setActiveTool(nil)
                                         end
                                         self:deselectAllActors()
-                                        self:selectActor(actorId)
+                                        self:selectActor(newActorId)
                                         self:applySelections()
-                                        if actorBp.components.Body then
+                                        if bp.components.Body then
                                             self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
                                         end
                                     end, function()
+                                        -- Make sure actor still exists
+                                        if not self.actors[newActorId] then
+                                            return 'actor was deleted'
+                                        end
+
                                         -- Deselect and remove the actor
-                                        self:deselectActor(actorId)
-                                        self:send('removeActor', self.clientId, actorId)
+                                        self:deselectActor(newActorId)
+                                        self:send('removeActor', self.clientId, newActorId)
                                     end)
                                 end
                             })

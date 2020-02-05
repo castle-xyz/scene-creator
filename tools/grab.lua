@@ -180,6 +180,15 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
             gestureEnded = touchData.allTouchesReleased,
         },
     }, function(params, live)
+        -- Make sure actors still exist
+        for actorId, values in pairs(params.values) do
+            local bodyId, body = self.dependencies.Body:getBody(actorId)
+            if not bodyId then
+                return 'actor was deleted'
+            end
+        end
+
+        -- Decide whether messages will be reliable, then send the messages
         local physics = self.dependencies.Body:getPhysics()
         local reliable = params.gestureEnded or not live
         local sendOpts = {

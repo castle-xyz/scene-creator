@@ -133,8 +133,7 @@ function Common:undoOrRedo(mode, fromList, toList, presentTense, pastTense)
         local command = table.remove(fromList)
         local err = self:runCommand(mode, command)
         if err then
-            self:notify('skipped ' .. presentTense .. ': ' .. command.description, nil, true)
-            print(presentTense .. ' skipped due to: ' .. err)
+            self:notify('skipped ' .. presentTense .. ': ' .. command.description .. ' (' .. err .. ')', nil, true)
         else
             self:notify(pastTense .. ': ' .. command.description)
             table.insert(toList, command)
@@ -161,6 +160,19 @@ function Common:runCommand(mode, command, live)
         end
     end
 
+    -- Check actor and component existence
+    if params.actorId then
+        if not self.actors[params.actorId] then
+            return 'actor was deleted'
+        end
+        if command.behaviorId then
+            local behavior = self.behaviors[command.behaviorId]
+            if not behavior.tool and not behavior.components[params.actorId] then
+                return 'behavior was removed'
+            end
+        end
+    end
+
     -- Set upvalues, call function, then unset upvalues
     forEachUpvalue(func, function(name, value, i)
         assert(value == nil, 'command function upvalue aleady set')
@@ -176,6 +188,10 @@ function Common:runCommand(mode, command, live)
         debug.setupvalue(func, i, nil)
     end)
     if not succeeded then
+        print('command error: ' .. err)
+        return 'error'
+    end
+    if err then
         return err
     end
 
