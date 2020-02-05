@@ -120,26 +120,28 @@ function ImageBehavior.handlers:uiComponent(component, opts)
     ui.box('color and opacity', { flexDirection = 'row', alignItems = 'flex-start' }, function()
         ui.box('color', { flex = 1 }, function()
             local color = component.properties.color
-            ui.colorPicker('color', color[1], color[2], color[3], 1, {
-                enableAlpha = false,
-                onChange = function(newColor)
-                    self:sendSetProperties(component.actorId, 'color', { newColor.r, newColor.g, newColor.b, color[4] })
+            self:uiValue('colorPicker', 'color', { color[1], color[2], color[3], 1 }, {
+                props = { enableAlpha = false },
+                onChange = function(params)
+                    local color = self.components[actorId].properties.color
+                    self:sendSetProperties(actorId, 'color',
+                        { params.value[1], params.value[2], params.value[3], color[4] })
                 end,
             })
         end)
-        ui.box('color', { flex = 3 }, function()
-            ui.slider('opacity', component.properties.color[4], 0, 1, {
-                step = 0.01,
-                onChange = function(newOpacity)
-                    local color = component.properties.color
-                    self:sendSetProperties(component.actorId, 'color', { color[1], color[2], color[3], newOpacity })
+        ui.box('opacity', { flex = 3 }, function()
+            self:uiValue('slider', 'opacity', component.properties.color[4], {
+                props = { min = 0, max = 1, step = 0.01 },
+                onChange = function(params)
+                    local color = self.components[actorId].properties.color
+                    self:sendSetProperties(actorId, 'color', { color[1], color[2], color[3], params.value })
                 end,
             })
         end)
     end)
 
     self:uiValue('dropdown', 'scaling style', component.properties.filter == 'nearest' and 'pixelated' or 'smooth', {
-        items = { 'pixelated', 'smooth' },
+        props = { items = { 'pixelated', 'smooth' } },
         onChange = function(params)
             if params.value == 'pixelated' then
                 self:sendSetProperties(actorId, 'filter', 'nearest')
@@ -164,7 +166,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
                     newCropSize.x, newCropSize.y = 0, 0
                     newCropSize.width, newCropSize.height = imageWidth, imageHeight
                 end
-                self:command('set crop', {
+                self:command('change crop', {
                     noCoalesce = true,
                 }, {
                     'cropEnabled', 'newCropEnabled',

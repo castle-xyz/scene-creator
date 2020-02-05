@@ -97,14 +97,22 @@ function BaseBehavior:uiValue(method, label, value, opts)
             ['undo'] = { value = value },
         }
         self:command(
-            'set ' .. self:getUiName() .. ' ' .. label,
+            'change ' .. self:getUiName() .. ' ' .. label,
             newOpts,
             opts.params or {},
             opts.onChange)
     end
 
-    if method == 'dropdown' then
-        ui.dropdown(label, value, opts.items, newProps)
+    if method == 'colorPicker' then
+        local oldOnChange = newProps.onChange
+        newProps.onChange = function(newValue)
+            oldOnChange({ newValue.r, newValue.g, newValue.b, newValue.a })
+        end
+        ui.colorPicker(label, value[1], value[2], value[3], value[4], newProps)
+    elseif method == 'slider' then
+        ui.slider(label, value, opts.props.min, opts.props.max, newProps)
+    elseif method == 'dropdown' then
+        ui.dropdown(label, value, opts.props.items, newProps)
     elseif method == 'toggle' then
         newProps.onToggle = newProps.onChange
         newProps.onChange = nil
