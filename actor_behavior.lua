@@ -92,7 +92,7 @@ function BaseBehavior:uiValue(method, label, value, opts)
     newProps.onChange = function(newValue)
         local newOpts = util.deepCopyTable(opts.opts or {})
         newOpts.coalesceSuffix = newOpts.coalesceSuffix or label
-        newOpts.extraParams = {
+        newOpts.paramOverrides = {
             ['do'] = { value = newValue },
             ['undo'] = { value = value },
         }

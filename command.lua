@@ -32,7 +32,7 @@ function Common:command(description, opts, params, doFunc, undoFunc)
     undoFunc = undoFunc or doFunc
     command.funcs = { ['do'] = doFunc, ['undo'] = undoFunc }
     command.behaviorId = opts.behaviorId
-    command.extraParams = opts.extraParams
+    command.paramOverrides = opts.paramOverrides
 
     -- Collect allowed implicit params
     local implicits = {}
@@ -61,8 +61,8 @@ function Common:command(description, opts, params, doFunc, undoFunc)
     end
 
     -- Now that upvalues are read, clone the functions (unjoins upvalues)
-    for funcKey, func in pairs(command.funcs) do
-        command.funcs[funcKey] = load(string.dump(func), nil, nil, _G)
+    for mode, func in pairs(command.funcs) do
+        command.funcs[mode] = load(string.dump(func), nil, nil, _G)
     end
 
     -- Generate a coalesce id or use given one
@@ -82,14 +82,17 @@ function Common:command(description, opts, params, doFunc, undoFunc)
             local prevCommand = self.undos[i]
             if (command.coalesceId == prevCommand.coalesceId and
                     command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL)) then
+                -- Use undo part of `prevCommand`
                 command.funcs.undo = prevCommand.funcs.undo
-                command.extraParams = command.extraParams or {}
-                command.extraParams.undo = prevCommand.params
-                if prevCommand.extraParams and prevCommand.extraParams.undo then
-                    for name, value in pairs(prevCommand.extraParams.undo) do
-                        command.extraParams.undo[name] = value
+                command.paramOverrides = command.paramOverrides or {}
+                command.paramOverrides.undo = prevCommand.params
+                if prevCommand.paramOverrides and prevCommand.paramOverrides.undo then
+                    for name, value in pairs(prevCommand.paramOverrides.undo) do
+                        command.paramOverrides.undo[name] = value
                     end
                 end
+
+                -- Replace in undo list
                 self.undos[i] = command
                 coalesced = true
                 break
@@ -128,13 +131,13 @@ function Common:redo()
     end
 end
 
-function Common:runCommand(funcKey, command)
-    local func = command.funcs[funcKey]
+function Common:runCommand(mode, command)
+    local func = command.funcs[mode]
 
     -- Construct params
     local params = util.deepCopyTable(command.params)
-    if command.extraParams and command.extraParams[funcKey] then
-        for name, value in pairs(command.extraParams[funcKey]) do
+    if command.paramOverrides and command.paramOverrides[mode] then
+        for name, value in pairs(command.paramOverrides[mode]) do
             params[name] = value
         end
     end
