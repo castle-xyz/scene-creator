@@ -5,6 +5,7 @@ function Client:startTouch()
     self.numTouches = 0 -- Number of current touches (including 'just released' ones)
     self.maxNumTouches = 0 -- Max number of touches in the current gesture
     self.allTouchesReleased = false -- Whether we are at the end of a gesture
+    self.gestureId = nil -- Unique id for this gesture
 end
 
 
@@ -76,6 +77,13 @@ function Client:updateTouches()
         self.maxNumTouches = 0
     else
         self.maxNumTouches = math.max(self.maxNumTouches, self.numTouches)
+    end
+
+    -- Gesture id
+    if self.numTouches > 0 then
+        self.gestureId = self.gestureId or util.uuid()
+    else
+        self.gestureId = nil
     end
 end
 

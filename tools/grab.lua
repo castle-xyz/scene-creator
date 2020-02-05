@@ -173,7 +173,7 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
 
     self:command(description, {
         coalesceLast = true,
-        coalesceSuffix = description .. '-' .. table.concat(actorIds, '-'),
+        coalesceSuffix = touchData.gestureId .. '-' .. table.concat(actorIds, '-'),
         paramOverrides = {
             ['do'] = { values = after },
             ['undo'] = { values = before },
@@ -247,13 +247,26 @@ function GrabTool.handlers:update(dt)
                     end
                     desiredWidth = math.max(MIN_BODY_SIZE, math.min(desiredWidth, MAX_BODY_SIZE))
                     desiredHeight = math.max(MIN_BODY_SIZE, math.min(desiredHeight, MAX_BODY_SIZE))
+                    local newWidth, newHeight
                     if handle.handleType == 'corner' then
                         local s = math.max(desiredWidth / handle.width, desiredHeight / handle.height)
-                        self.dependencies.Body:setRectangleShape(actorId, s * handle.width, s * handle.height)
+                        newWidth, newHeight = s * handle.width, s * handle.height
                     elseif handle.handleType == 'width' then
-                        self.dependencies.Body:setRectangleShape(actorId, desiredWidth, handle.height)
+                        newWidth, newHeight = desiredWidth, handle.height
                     elseif handle.handleType == 'height' then
-                        self.dependencies.Body:setRectangleShape(actorId, handle.width, desiredHeight)
+                        newWidth, newHeight = handle.width, desiredHeight
+                    end
+                    if newWidth and newHeight then
+                        self:command('resize', {
+                            coalesceSuffix = touchData.gestureId .. '-' .. actorId,
+                            paramOverrides = {
+                                ['do'] = { width = newWidth, height = newHeight },
+                                ['undo'] = { width = handle.width, height = handle.height },
+                            },
+                        }, {
+                        }, function(params)
+                            self.dependencies.Body:setRectangleShape(actorId, params.width, params.height)
+                        end)
                     end
                 elseif handle.shapeType == 'circle' then
                     local desiredRadius = math.sqrt(lx * lx + ly * ly)
@@ -261,8 +274,17 @@ function GrabTool.handlers:update(dt)
                         desiredRadius = util.quantize(desiredRadius, 0.5 * self._gridSize)
                     end
                     desiredRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(desiredRadius, 0.5 * MAX_BODY_SIZE))
-                    local physics = self.dependencies.Body:getPhysics()
-                    self.dependencies.Body:setShape(actorId, physics:newCircleShape(desiredRadius))
+                    self:command('resize', {
+                        coalesceSuffix = touchData.gestureId .. '-' .. actorId,
+                        paramOverrides = {
+                            ['do'] = { radius = desiredRadius },
+                            ['undo'] = { radius = 0.5 * handle.width },
+                        },
+                    }, {
+                    }, function(params)
+                        local physics = self.dependencies.Body:getPhysics()
+                        self.dependencies.Body:setShape(actorId, physics:newCircleShape(params.radius))
+                    end)
                 end
             end
 

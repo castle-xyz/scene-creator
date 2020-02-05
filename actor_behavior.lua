@@ -59,6 +59,7 @@ function BaseBehavior:getTouchData()
             numTouches = 0,
             maxNumTouches = 0,
             allTouchesReleased = false,
+            gestureId = nil,
         }
     end
     if self.game.client then
@@ -67,6 +68,7 @@ function BaseBehavior:getTouchData()
             numTouches = self.game.numTouches,
             maxNumTouches = self.game.maxNumTouches,
             allTouchesReleased = self.game.allTouchesReleased,
+            gestureId = self.game.gestureId,
         }
     end
 end
