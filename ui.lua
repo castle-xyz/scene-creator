@@ -554,7 +554,7 @@ function Client:uiupdate()
                                     local actorId = self:generateId()
 
                                     local entryId = entry.entryId
-                                    self:command('add actor', {
+                                    self:command('add', {
                                         params = { 'actorBp', 'actorId', 'entryId' },
                                     }, function()
                                         -- Add the actor

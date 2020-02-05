@@ -100,7 +100,7 @@ function BaseBehavior:uiValue(method, label, value, opts)
         }
         newOpts.params = opts.params
         self:command(
-            'change ' .. self:getUiName() .. ' ' .. label,
+            'change ' .. label,
             newOpts,
             opts.onChange)
     end
