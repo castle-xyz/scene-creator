@@ -13,6 +13,7 @@ require 'Common'
 require 'select'
 require 'touch'
 require 'ui'
+require 'notify'
 
 
 -- Start / stop
@@ -27,6 +28,8 @@ function Client:start()
     self:startTouch()
 
     self:startUi()
+
+    self:startNotify()
 
     self:resetView()
     self.viewTransform = love.math.newTransform()
@@ -97,6 +100,8 @@ function Client:update(dt)
 
     self:callHandlers('update', dt)
     self:callHandlers('postUpdate', dt)
+
+    self:updateNotify(dt)
 end
 
 
@@ -245,6 +250,10 @@ function Client:draw()
     end
 
     love.graphics.pop()
+
+    do -- Screen-space overlay
+        self:drawNotify()
+    end
 
     do -- Debug overlay
         local networkText = ''
