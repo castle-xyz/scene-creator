@@ -128,22 +128,26 @@ function Common:command(description, opts, doFunc, undoFunc)
     end
 end
 
-function Common:undo()
-    if #self.undos > 0 then
-        local command = table.remove(self.undos)
-        self:runCommand('undo', command)
-        self:notify('undid: ' .. command.description)
-        table.insert(self.redos, command)
+function Common:undoOrRedo(mode, fromList, toList, presentTense, pastTense)
+    if #fromList > 0 then
+        local command = table.remove(fromList)
+        local err = self:runCommand(mode, command)
+        if err then
+            self:notify('skipped ' .. presentTense .. ': ' .. command.description, nil, true)
+            print(presentTense .. ' skipped due to: ' .. err)
+        else
+            self:notify(pastTense .. ': ' .. command.description)
+            table.insert(toList, command)
+        end
     end
 end
 
+function Common:undo()
+    self:undoOrRedo('undo', self.undos, self.redos, 'undo', 'undid')
+end
+
 function Common:redo()
-    if #self.redos > 0 then
-        local command = table.remove(self.redos)
-        self:runCommand('do', command)
-        self:notify('redid: ' .. command.description)
-        table.insert(self.undos, command)
-    end
+    self:undoOrRedo('do', self.redos, self.undos, 'redo', 'redid')
 end
 
 function Common:runCommand(mode, command, live)
@@ -172,7 +176,7 @@ function Common:runCommand(mode, command, live)
         debug.setupvalue(func, i, nil)
     end)
     if not succeeded then
-        error(err, 0)
+        return err
     end
 
     -- Restore selections if not a live run

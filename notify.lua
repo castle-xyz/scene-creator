@@ -47,7 +47,7 @@ function Client:drawNotify()
     local rectangleBorderRadius = dpiScale * RECTANGLE_BORDER_RADIUS
     local padding = dpiScale * PADDING
 
-    if notifyError then
+    if self.notifyError then
         love.graphics.setColor(0.5, 0, 0, 0.7)
     else
         love.graphics.setColor(0, 0, 0, 0.7)
