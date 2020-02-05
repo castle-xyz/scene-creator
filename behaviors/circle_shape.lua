@@ -35,19 +35,18 @@ end
 -- UI
 
 function CircleShapeBehavior.handlers:uiComponent(component, opts)
-    local physics = self.dependencies.Body:getPhysics()
-    local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-    local fixture = body:getFixtures()[1]
+    local actorId = component.actorId
+    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
     if fixture then
         local shape = fixture:getShape()
         if shape:getType() == 'circle' then
-            ui.numberInput('radius', shape:getRadius(), {
-                min = 0.5 * MIN_BODY_SIZE,
-                max = 0.5 * MAX_BODY_SIZE,
-                onChange = function(newRadius)
-                    newRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(newRadius, 0.5 * MAX_BODY_SIZE))
-                    self.dependencies.Body:setShape(component.actorId, physics:newCircleShape(newRadius))
-                end,
+            self:uiValue('numberInput', 'radius', shape:getRadius(), {
+                props = { min = 0.5 * MIN_BODY_SIZE, max = 0.5 * MAX_BODY_SIZE },
+                onChange = function(params)
+                    local value = math.max(0.5 * MIN_BODY_SIZE, math.min(params.value, 0.5 * MAX_BODY_SIZE))
+                    local physics = self.dependencies.Body:getPhysics()
+                    self.dependencies.Body:setShape(actorId, physics:newCircleShape(value))
+                end
             })
         end
     end
