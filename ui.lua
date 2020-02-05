@@ -9,6 +9,83 @@ function Client:startUi()
 end
 
 
+-- Methods
+
+function Client:moveActorForward(actorId, command)
+    local actor = self.actors[actorId]
+    if actor.drawOrder < table.maxn(self.actorsByDrawOrder) then
+        local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
+        local fixture = body:getFixtures()[1]
+        if fixture then
+            local newDrawOrder
+            local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
+                fixture:getBoundingBox())
+            for hit in pairs(hits) do -- Find greatest draw order below us
+                local otherActor = self.actors[hit]
+                if (otherActor.drawOrder > actor.drawOrder and
+                        (not newDrawOrder or otherActor.drawOrder < newDrawOrder)) then
+                    newDrawOrder = otherActor.drawOrder
+                end
+            end
+            if newDrawOrder then
+                if command then
+                    self:command('move forward', {
+                        params = { 'newDrawOrder' },
+                    }, function(params, live)
+                        if live then
+                            self:send('setActorDrawOrder', actorId, newDrawOrder)
+                        else
+                            self:moveActorForward(actorId, false)
+                        end
+                    end, function()
+                        self:moveActorBackward(actorId, false)
+                    end)
+                else
+                    self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
+                end
+            end
+        end
+    end
+end
+
+function Client:moveActorBackward(actorId, command)
+    local actor = self.actors[actorId]
+    if actor.drawOrder > 1 then
+        local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
+        local fixture = body:getFixtures()[1]
+        if fixture then
+            local newDrawOrder
+            local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
+                fixture:getBoundingBox())
+            for hit in pairs(hits) do -- Find greatest draw order below us
+                local otherActor = self.actors[hit]
+                if (otherActor.drawOrder < actor.drawOrder and
+                        (not newDrawOrder or otherActor.drawOrder > newDrawOrder)) then
+                    newDrawOrder = otherActor.drawOrder
+                end
+            end
+            if newDrawOrder then
+                if command then
+                    self:command('move backward', {
+                        params = { 'newDrawOrder' },
+                    }, function(params, live)
+                        if live then
+                            self:send('setActorDrawOrder', actorId, newDrawOrder)
+                        else
+                            self:moveActorBackward(actorId, false)
+                        end
+                    end, function()
+                        self:moveActorForward(actorId, false)
+                    end)
+                else
+                    self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
+                end
+            end
+        end
+    end
+end
+
+
 -- UI
 
 function Client:uiToolbar()
@@ -113,10 +190,8 @@ function Client:uiToolbar()
     ui.box('spacer', { flex = 1 }, function() end)
 
     ui.box('right', { flexDirection = 'row' }, function()
-        -- Move up / down
+        -- Move forward / backward
         if next(self.selectedActorIds) then
-            -- TODO(nikki): Support multiple selections
-
             ui.button('ordering', {
                 icon = 'layers',
                 iconFamily = 'Entypo',
@@ -128,52 +203,14 @@ function Client:uiToolbar()
                         icon = 'arrow-bold-up',
                         iconFamily = 'Entypo',
                         onClick = function()
-                            local actor = self.actors[next(self.selectedActorIds)]
-                            if actor.drawOrder < table.maxn(self.actorsByDrawOrder) then
-                                local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
-                                local fixture = body:getFixtures()[1]
-                                if fixture then
-                                    local newDrawOrder
-                                    local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
-                                        fixture:getBoundingBox())
-                                    for hit in pairs(hits) do -- Find greatest draw order below us
-                                        local otherActor = self.actors[hit]
-                                        if (otherActor.drawOrder > actor.drawOrder and
-                                                (not newDrawOrder or otherActor.drawOrder < newDrawOrder)) then
-                                            newDrawOrder = otherActor.drawOrder
-                                        end
-                                    end
-                                    if newDrawOrder then
-                                        self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
-                                    end
-                                end
-                            end
+                            self:moveActorForward(next(self.selectedActorIds), true)
                         end,
                     })
                     ui.button('move backward', {
                         icon = 'arrow-bold-down',
                         iconFamily = 'Entypo',
                         onClick = function()
-                            local actor = self.actors[next(self.selectedActorIds)]
-                            if actor.drawOrder > 1 then
-                                local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
-                                local fixture = body:getFixtures()[1]
-                                if fixture then
-                                    local newDrawOrder
-                                    local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
-                                        fixture:getBoundingBox())
-                                    for hit in pairs(hits) do -- Find greatest draw order below us
-                                        local otherActor = self.actors[hit]
-                                        if (otherActor.drawOrder < actor.drawOrder and
-                                                (not newDrawOrder or otherActor.drawOrder > newDrawOrder)) then
-                                            newDrawOrder = otherActor.drawOrder
-                                        end
-                                    end
-                                    if newDrawOrder then
-                                        self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
-                                    end
-                                end
-                            end
+                            self:moveActorBackward(next(self.selectedActorIds), true)
                         end,
                     })
                 end,
@@ -188,30 +225,48 @@ function Client:uiToolbar()
                 iconFamily = 'FontAwesome5',
                 hideLabel = true,
                 onClick = function()
-                    local duplicateActorIds = {}
-
-                    -- Use blueprints to duplicate. Nudge position a little bit.
+                    -- Generated map of actor ids to new ids for their duplicates
+                    local newActorIds = {}
                     for actorId in pairs(self.selectedActorIds) do
-                        local actor = self.actors[actorId]
+                        newActorIds[actorId] = self:generateId()
+                    end
 
-                        local bp = self:blueprintActor(actorId)
-                        if bp.components.Body then
-                            bp.components.Body.x = bp.components.Body.x + 0.5 * UNIT
-                            bp.components.Body.y = bp.components.Body.y + 0.5 * UNIT
+                    self:command('duplicate', {
+                        params = { 'newActorIds' },
+                    }, function()
+                        -- Use blueprints to duplicate. Nudge position a little bit.
+                        for actorId in pairs(newActorIds) do
+                            local bp = self:blueprintActor(actorId)
+                            if bp.components.Body then
+                                bp.components.Body.x = bp.components.Body.x + 0.5 * UNIT
+                                bp.components.Body.y = bp.components.Body.y + 0.5 * UNIT
+                            end
+
+                            local actor = self.actors[actorId]
+                            self:sendAddActor(bp, {
+                                actorId = newActorIds[actorId],
+                                parentEntryId = actor.parentEntryId,
+                                drawOrder = actor.drawOrder + 1,
+                            })
                         end
 
-                        local newActorId = self:sendAddActor(bp, {
-                            parentEntryId = actor.parentEntryId,
-                            drawOrder = actor.drawOrder + 1,
-                        })
-                        duplicateActorIds[newActorId] = true
-                    end
+                        -- Select new actors
+                        self:deselectAllActors()
+                        for actorId, newActorId in pairs(newActorIds) do
+                            self:selectActor(newActorId)
+                        end
+                    end, function()
+                        -- Remove created actors
+                        for actorId, newActorId in pairs(newActorIds) do
+                            self:send('removeActor', self.clientId, newActorId)
+                        end
 
-                    -- Select new actors
-                    self:deselectAllActors()
-                    for actorId in pairs(duplicateActorIds) do
-                        self:selectActor(actorId)
-                    end
+                        -- Select original actors
+                        self:deselectAllActors()
+                        for actorId, newActorId in pairs(newActorIds) do
+                            self:selectActor(actorId)
+                        end
+                    end)
                 end,
             })
         end

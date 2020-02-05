@@ -67,19 +67,19 @@ function Common:command(description, opts, doFunc, undoFunc)
         command.funcs[mode] = load(string.dump(func), nil, nil, _G)
     end
 
-    -- Generate a coalesce id or use given one
+    -- Use given coalesce id or generate one with the given suffix
     if opts.coalesceId then
         command.coalesceId = opts.coalesceId
-    else
+    elseif opts.coalesceSuffix then
         command.coalesceId = love.data.hash('md5',
             (opts.behaviorId or '*') .. '-' ..
             (command.params.actorId or '*') .. '-' .. 
-            (opts.coalesceSuffix or command.description))
+            opts.coalesceSuffix)
     end
 
     -- Insert into undos, coalescing with an applicable previous command. Limit undo list size.
     local coalesced = false
-    if not opts.noCoalesce then
+    if command.coalesceId then
         for i = #self.undos, 1, -1 do
             local prevCommand = self.undos[i]
             if (command.coalesceId == prevCommand.coalesceId and
