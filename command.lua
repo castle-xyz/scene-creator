@@ -33,6 +33,7 @@ function Common:command(description, opts, doFunc, undoFunc)
     command.funcs = { ['do'] = doFunc, ['undo'] = undoFunc }
     command.behaviorId = opts.behaviorId
     command.paramOverrides = opts.paramOverrides
+    command.selections = { ['do'] = {}, ['undo'] = {} }
 
     local params = opts.params or {}
 
@@ -114,8 +115,14 @@ function Common:command(description, opts, doFunc, undoFunc)
     -- Reset redos
     self.redos = {}
 
-    -- Do command
+    -- Do command, saving selections before and after
+    for actorId in pairs(self.selectedActorIds) do
+        table.insert(command.selections['undo'], actorId)
+    end
     self:runCommand('do', command, true)
+    for actorId in pairs(self.selectedActorIds) do
+        table.insert(command.selections['do'], actorId)
+    end
 end
 
 function Common:undo()
@@ -163,5 +170,15 @@ function Common:runCommand(mode, command, live)
     end)
     if not succeeded then
         error(err, 0)
+    end
+
+    -- Restore selections if not a live run
+    if not live and command.selections[mode] then
+        self:deselectAllActors()
+        for _, actorId in ipairs(command.selections[mode]) do
+            if self.actors[actorId] then
+                self:selectActor(actorId)
+            end
+        end
     end
 end

@@ -260,12 +260,6 @@ function Client:uiToolbar()
                         for actorId, newActorId in pairs(newActorIds) do
                             self:send('removeActor', self.clientId, newActorId)
                         end
-
-                        -- Select original actors
-                        self:deselectAllActors()
-                        for actorId, newActorId in pairs(newActorIds) do
-                            self:selectActor(actorId)
-                        end
                     end)
                 end,
             })
@@ -302,14 +296,13 @@ function Client:uiToolbar()
                             self:send('removeActor', self.clientId, save.actorId)
                         end
                     end, function()
-                        -- Resurrect and select actors
+                        -- Resurrect actors
                         for _, save in ipairs(saves) do
                             self:sendAddActor(save.bp, {
                                 actorId = save.actorId,
                                 parentEntryId = save.parentEntryId,
                                 drawOrder = save.drawOrder,
                             })
-                            self:selectActor(save.actorId)
                         end
                     end)
                 end,
