@@ -61,7 +61,7 @@ function Common:command(description, opts, params, doFunc, undoFunc)
 
     -- Now that upvalues are read, clone the functions (unjoins upvalues)
     for funcKey, func in pairs(command.funcs) do
-        command.funcs[funcKey] = load(string.dump(func))
+        command.funcs[funcKey] = load(string.dump(func), nil, nil, _G)
     end
 
     -- Generate a coalesce id or use given one
