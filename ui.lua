@@ -429,13 +429,20 @@ function Client:uiProperties()
                                     icon = 'plus',
                                     iconFamily = 'FontAwesome5',
                                     onClick = function()
-                                        self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-
                                         closePopover()
 
-                                        -- Add the component and open its section
-                                        self:send('addComponent', self.clientId, actorId, entry.behaviorId, {})
-                                        self.openComponentBehaviorId = entry.behaviorId
+                                        local behaviorId = entry.behaviorId
+                                        local behavior = self.behaviors[behaviorId]
+                                        self:command('add ' .. behavior:getUiName(), {
+                                            params = { 'behaviorId' },
+                                        }, function()
+                                            self:send('addComponent', self.clientId, actorId, behaviorId, {})
+                                            self.openComponentBehaviorId = behaviorId
+                                            self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                        end, function()
+                                            self:send('removeComponent', self.clientId, actorId, behaviorId)
+                                            self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                        end)
                                     end,
                                 })
                             end,
