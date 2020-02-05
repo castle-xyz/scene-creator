@@ -100,11 +100,12 @@ function BaseBehavior:uiValue(method, label, value, opts)
             'set ' .. self:getUiName() .. ' ' .. label,
             newOpts,
             opts.params or {},
-            opts.onChange,
             opts.onChange)
     end
 
-    if method == 'toggle' then
+    if method == 'dropdown' then
+        ui.dropdown(label, value, opts.items, newProps)
+    elseif method == 'toggle' then
         newProps.onToggle = newProps.onChange
         newProps.onChange = nil
         ui.toggle(label .. ' off', label .. ' on', value, newProps)

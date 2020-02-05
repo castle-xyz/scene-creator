@@ -98,6 +98,8 @@ end
 -- UI
 
 function ImageBehavior.handlers:uiComponent(component, opts)
+    local actorId = component.actorId
+
     ui.filePicker(component.properties.localUrl and 'image (uploading...)' or 'image',
         component.properties.localUrl or component.properties.url, {
         id = 'image',
@@ -136,28 +138,52 @@ function ImageBehavior.handlers:uiComponent(component, opts)
         end)
     end)
 
-    ui.dropdown('scaling style',
-        component.properties.filter == 'nearest' and 'pixelated' or 'smooth', { 'pixelated', 'smooth' }, {
-        onChange = function(newScalingStyle)
-            if newScalingStyle == 'pixelated' then
-                self:sendSetProperties(component.actorId, 'filter', 'nearest')
-            elseif newScalingStyle == 'smooth' then
-                self:sendSetProperties(component.actorId, 'filter', 'linear')
+    self:uiValue('dropdown', 'scaling style', component.properties.filter == 'nearest' and 'pixelated' or 'smooth', {
+        items = { 'pixelated', 'smooth' },
+        onChange = function(params)
+            if params.value == 'pixelated' then
+                self:sendSetProperties(actorId, 'filter', 'nearest')
+            elseif params.value == 'smooth' then
+                self:sendSetProperties(actorId, 'filter', 'linear')
             end
         end,
     })
 
     util.uiRow('crop', function()
-        ui.toggle('crop off', 'crop on', component.properties.cropEnabled, {
+        local cropEnabled = component.properties.cropEnabled
+        ui.toggle('crop off', 'crop on', cropEnabled, {
             onToggle = function(newCropEnabled)
-                if not component.properties.cropEnabled and newCropEnabled and component._imageHolder then
+                local newCropSize, cropSize
+                if not cropEnabled and newCropEnabled and component._imageHolder then
                     -- Reset crop size to image dimensions when enabling
+                    newCropSize, cropSize = {}, {}
+                    cropSize.x, cropSize.y = component.properties.cropX, component.properties.cropY
+                    cropSize.width, cropSize.height = component.properties.cropWidth, component.properties.cropHeight
                     local image = component._imageHolder.image
                     local imageWidth, imageHeight = image:getDimensions()
-                    self:sendSetProperties(component.actorId,
-                        'cropX', 0, 'cropY', 0, 'cropWidth', imageWidth, 'cropHeight', imageHeight)
+                    newCropSize.x, newCropSize.y = 0, 0
+                    newCropSize.width, newCropSize.height = imageWidth, imageHeight
                 end
-                self:sendSetProperties(component.actorId, 'cropEnabled', newCropEnabled)
+                self:command('set crop', {
+                    noCoalesce = true,
+                }, {
+                    'cropEnabled', 'newCropEnabled',
+                    'cropSize', 'newCropSize',
+                }, function()
+                    if newCropSize then
+                        self:sendSetProperties(actorId,
+                            'cropX', newCropSize.x, 'cropY', newCropSize.y,
+                            'cropWidth', newCropSize.width, 'cropHeight', newCropSize.height)
+                    end
+                    self:sendSetProperties(actorId, 'cropEnabled', newCropEnabled)
+                end, function()
+                    if cropSize then
+                        self:sendSetProperties(actorId,
+                            'cropX', cropSize.x, 'cropY', cropSize.y,
+                            'cropWidth', cropSize.width, 'cropHeight', cropSize.height)
+                    end
+                    self:sendSetProperties(actorId, 'cropEnabled', cropEnabled)
+                end)
             end,
         })
     end, function()
@@ -169,30 +195,14 @@ function ImageBehavior.handlers:uiComponent(component, opts)
     end)
     if component.properties.cropEnabled then
         util.uiRow('crop position', function()
-            ui.numberInput('crop x', component.properties.cropX, {
-                onChange = function(newCropX)
-                    self:sendSetProperties(component.actorId, 'cropX', newCropX)
-                end,
-            })
+            self:uiProperty('numberInput', 'crop x', actorId, 'cropX')
         end, function()
-            ui.numberInput('crop y', component.properties.cropY, {
-                onChange = function(newCropY)
-                    self:sendSetProperties(component.actorId, 'cropY', newCropY)
-                end,
-            })
+            self:uiProperty('numberInput', 'crop y', actorId, 'cropY')
         end)
         util.uiRow('crop size', function()
-            ui.numberInput('crop width', component.properties.cropWidth, {
-                onChange = function(newCropWidth)
-                    self:sendSetProperties(component.actorId, 'cropWidth', newCropWidth)
-                end,
-            })
+            self:uiProperty('numberInput', 'crop width', actorId, 'cropWidth')
         end, function()
-            ui.numberInput('crop height', component.properties.cropHeight, {
-                onChange = function(newCropHeight)
-                    self:sendSetProperties(component.actorId, 'cropHeight', newCropHeight)
-                end,
-            })
+            self:uiProperty('numberInput', 'crop height', actorId, 'cropHeight')
         end)
     end
 end

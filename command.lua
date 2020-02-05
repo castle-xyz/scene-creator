@@ -29,6 +29,7 @@ function Common:command(description, opts, params, doFunc, undoFunc)
     command.localTime = love.timer.getTime()
     command.commandId = util.uuid()
     command.description = description
+    undoFunc = undoFunc or doFunc
     command.funcs = { ['do'] = doFunc, ['undo'] = undoFunc }
     command.behaviorId = opts.behaviorId
     command.extraParams = opts.extraParams
@@ -76,17 +77,19 @@ function Common:command(description, opts, params, doFunc, undoFunc)
 
     -- Insert into undos, coalescing with an applicable previous command. Limit undo list size.
     local coalesced = false
-    for i = #self.undos, 1, -1 do
-        local prevCommand = self.undos[i]
-        if (command.coalesceId == prevCommand.coalesceId and
-                command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL)) then
-            command.funcs['undo'] = prevCommand.funcs['undo']
-            if command.extraParams and prevCommand.extraParams then
-                command.extraParams['undo'] = prevCommand.extraParams['undo']
+    if not opts.noCoalesce then
+        for i = #self.undos, 1, -1 do
+            local prevCommand = self.undos[i]
+            if (command.coalesceId == prevCommand.coalesceId and
+                    command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL)) then
+                command.funcs['undo'] = prevCommand.funcs['undo']
+                if command.extraParams and prevCommand.extraParams then
+                    command.extraParams['undo'] = prevCommand.extraParams['undo']
+                end
+                self.undos[i] = command
+                coalesced = true
+                break
             end
-            self.undos[i] = command
-            coalesced = true
-            break
         end
     end
     if not coalesced then
