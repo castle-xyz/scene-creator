@@ -99,7 +99,7 @@ function Common:command(description, opts, doFunc, undoFunc)
                 coalesced = true
                 break
             end
-            if opts.coalesceLast then
+            if opts.coalesceLast ~= false then
                 break
             end
         end

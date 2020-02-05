@@ -171,7 +171,6 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
     local touchData = self:getTouchData()
 
     self:command(description, {
-        coalesceLast = true,
         coalesceSuffix = touchData.gestureId .. '-' .. table.concat(actorIds, '-'),
         paramOverrides = {
             ['do'] = { values = after },
