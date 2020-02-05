@@ -115,6 +115,9 @@ function Common:command(description, opts, doFunc, undoFunc)
     -- Reset redos
     self.redos = {}
 
+    -- Clear notifications
+    self:clearNotify()
+
     -- Do command, saving selections before and after
     for actorId in pairs(self.selectedActorIds) do
         table.insert(command.selections['undo'], actorId)
@@ -129,7 +132,7 @@ function Common:undo()
     if #self.undos > 0 then
         local command = table.remove(self.undos)
         self:runCommand('undo', command)
-        print("undid '" .. command.description .. "'")
+        self:notify('undid: ' .. command.description)
         table.insert(self.redos, command)
     end
 end
@@ -138,7 +141,7 @@ function Common:redo()
     if #self.redos > 0 then
         local command = table.remove(self.redos)
         self:runCommand('do', command)
-        print("redid '" .. command.description .. "'")
+        self:notify('redid: ' .. command.description)
         table.insert(self.undos, command)
     end
 end
