@@ -114,8 +114,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
                 local oldUrl = component.properties.url
                 self:command('remove image', {
                     coalesceSuffix = 'remove image',
-                }, {
-                    'oldCropEnabled', 'oldUrl',
+                    params = { 'oldCropEnabled', 'oldUrl' },
                 }, function()
                     self:sendSetProperties(actorId, 'cropEnabled', false)
                     self:sendSetProperties(actorId, 'url', CHECKERBOARD_IMAGE_URL)
@@ -129,8 +128,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
                 self:command('change image', {
                     coalesceSuffix = 'image-' .. newUrl,
                     coalesceInterval = 30,
-                }, {
-                    'oldCropEnabled', 'oldUrl',
+                    params = { 'oldCropEnabled', 'oldUrl' },
                 }, function()
                     self:sendSetProperties(actorId, 'cropEnabled', false)
                 end, function()
@@ -145,8 +143,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
                     self:command('change image', {
                         coalesceSuffix = 'image-' .. component._localUrl,
                         coalesceInterval = 30,
-                    }, {
-                        'oldCropEnabled', 'oldUrl', 'newUrl',
+                        params = { 'oldCropEnabled', 'oldUrl', 'newUrl' },
                     }, function()
                         IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
                         self.components[actorId]._localUrl = nil
@@ -214,9 +211,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
                 end
                 self:command('change crop', {
                     noCoalesce = true,
-                }, {
-                    'cropEnabled', 'newCropEnabled',
-                    'cropSize', 'newCropSize',
+                    params = { 'cropEnabled', 'newCropEnabled', 'cropSize', 'newCropSize' },
                 }, function()
                     if newCropSize then
                         self:sendSetProperties(actorId,

@@ -81,11 +81,10 @@ function BaseBehavior:getActor(actorId)
     return self.game.actors[actorId]
 end
 
-function BaseBehavior:command(description, opts, params, doFunc, undoFunc)
+function BaseBehavior:command(description, opts, doFunc, undoFunc)
     self.game:command(
         description,
         setmetatable({ behaviorId = self.behaviorId }, { __index = opts }),
-        params, 
         doFunc, undoFunc)
 end
 
@@ -98,10 +97,10 @@ function BaseBehavior:uiValue(method, label, value, opts)
             ['do'] = { value = newValue },
             ['undo'] = { value = value },
         }
+        newOpts.params = opts.params
         self:command(
             'change ' .. self:getUiName() .. ' ' .. label,
             newOpts,
-            opts.params or {},
             opts.onChange)
     end
 

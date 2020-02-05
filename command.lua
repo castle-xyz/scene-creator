@@ -23,7 +23,7 @@ local function forEachUpvalue(func, body)
     end
 end
 
-function Common:command(description, opts, params, doFunc, undoFunc)
+function Common:command(description, opts, doFunc, undoFunc)
     local command = {}
     command.time = self.time
     command.localTime = love.timer.getTime()
@@ -33,6 +33,8 @@ function Common:command(description, opts, params, doFunc, undoFunc)
     command.funcs = { ['do'] = doFunc, ['undo'] = undoFunc }
     command.behaviorId = opts.behaviorId
     command.paramOverrides = opts.paramOverrides
+
+    local params = opts.params or {}
 
     -- Collect allowed implicit params
     local implicits = {}

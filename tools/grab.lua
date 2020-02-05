@@ -126,9 +126,9 @@ end
 function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY)
     -- Move and rotate multiple actors around a pivot. `rotation` may be `nil` to skip.
 
-    if not (moveX ~= 0 or moveY ~= 0 or (rotation and rotation ~= 0)) then
-        return
-    end
+    --if not (moveX ~= 0 or moveY ~= 0 or (rotation and rotation ~= 0)) then
+    --    return
+    --end
 
     local cosRotation, sinRotation 
     if rotation then
@@ -169,7 +169,6 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
     end
 
     local touchData = self:getTouchData()
-    local gestureEnded = touchData.allTouchesReleased
 
     self:command(description, {
         coalesceLast = true,
@@ -178,11 +177,12 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
             ['do'] = { values = after },
             ['undo'] = { values = before },
         },
-    }, {
-        'gestureEnded',
+        params = { 
+            gestureEnded = touchData.allTouchesReleased,
+        },
     }, function(params, live)
         local physics = self.dependencies.Body:getPhysics()
-        local reliable = gestureEnded or not live
+        local reliable = params.gestureEnded or not live
         local sendOpts = {
             reliable = reliable,
             channel = reliable and physics.reliableChannel or nil,
@@ -263,7 +263,6 @@ function GrabTool.handlers:update(dt)
                                 ['do'] = { width = newWidth, height = newHeight },
                                 ['undo'] = { width = handle.width, height = handle.height },
                             },
-                        }, {
                         }, function(params)
                             self.dependencies.Body:setRectangleShape(actorId, params.width, params.height)
                         end)
@@ -280,7 +279,6 @@ function GrabTool.handlers:update(dt)
                             ['do'] = { radius = desiredRadius },
                             ['undo'] = { radius = 0.5 * handle.width },
                         },
-                    }, {
                     }, function(params)
                         local physics = self.dependencies.Body:getPhysics()
                         self.dependencies.Body:setShape(actorId, physics:newCircleShape(params.radius))
