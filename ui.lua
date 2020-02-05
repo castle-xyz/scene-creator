@@ -250,7 +250,7 @@ function Client:uiToolbar()
                             })
                         end
 
-                        -- Select new actors
+                        -- Select created actors
                         self:deselectAllActors()
                         for actorId, newActorId in pairs(newActorIds) do
                             self:selectActor(newActorId)
@@ -273,15 +273,45 @@ function Client:uiToolbar()
 
         -- Delete
         if next(self.selectedActorIds) then
-            ui.button('remove actor', {
+            ui.button('delete', {
                 icon = 'trash-alt',
                 iconFamily = 'FontAwesome5',
                 hideLabel = true,
                 onClick = function()
+                    -- Save actor data
+                    local saves = {}
                     for actorId in pairs(self.selectedActorIds) do
-                        self:deselectActor(actorId)
-                        self:send('removeActor', self.clientId, actorId)
+                        local actor = self.actors[actorId]
+                        table.insert(saves, {
+                            actorId = actorId,
+                            bp = self:blueprintActor(actorId),
+                            parentEntryId = actor.parentEntryId,
+                            drawOrder = actor.drawOrder,
+                        })
                     end
+                    table.sort(saves, function(save1, save2)
+                        return save1.drawOrder < save2.drawOrder
+                    end)
+
+                    self:command('delete', {
+                        params = { 'saves' },
+                    }, function()
+                        -- Deselect and remove actors
+                        for _, save in ipairs(saves) do
+                            self:deselectActor(save.actorId)
+                            self:send('removeActor', self.clientId, save.actorId)
+                        end
+                    end, function()
+                        -- Resurrect and select actors
+                        for _, save in ipairs(saves) do
+                            self:sendAddActor(save.bp, {
+                                actorId = save.actorId,
+                                parentEntryId = save.parentEntryId,
+                                drawOrder = save.drawOrder,
+                            })
+                            self:selectActor(save.actorId)
+                        end
+                    end)
                 end,
             })
         end
