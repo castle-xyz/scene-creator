@@ -536,27 +536,40 @@ function Client:uiupdate()
                                 icon = 'plus',
                                 iconFamily = 'FontAwesome5',
                                 onClick = function()
-                                    -- Add the actor, initializing some values in the blueprint
+                                    -- Set up actor blueprint and id
                                     local actorBp = util.deepCopyTable(entry.actorBlueprint)
                                     if actorBp.components.Body then -- Has a `Body`? Position at center of window.
                                         local windowWidth, windowHeight = love.graphics.getDimensions()
                                         actorBp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
                                         actorBp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
                                     end
-                                    local actorId = self:sendAddActor(actorBp, {
-                                        parentEntryId = entry.entryId,
-                                    })
+                                    local actorId = self:generateId()
 
-                                    -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
-                                    if actorBp.components.Body then
-                                        self:setActiveTool(nil)
-                                    end
-                                    self:deselectAllActors()
-                                    self:selectActor(actorId)
-                                    self:applySelections()
-                                    if actorBp.components.Body then
-                                        self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
-                                    end
+                                    local entryId = entry.entryId
+                                    self:command('add actor', {
+                                        params = { 'actorBp', 'actorId', 'entryId' },
+                                    }, function()
+                                        -- Add the actor
+                                        self:sendAddActor(actorBp, {
+                                            actorId = actorId,
+                                            parentEntryId = entryId,
+                                        })
+
+                                        -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
+                                        if actorBp.components.Body then
+                                            self:setActiveTool(nil)
+                                        end
+                                        self:deselectAllActors()
+                                        self:selectActor(actorId)
+                                        self:applySelections()
+                                        if actorBp.components.Body then
+                                            self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
+                                        end
+                                    end, function()
+                                        -- Deselect and remove the actor
+                                        self:deselectActor(actorId)
+                                        self:send('removeActor', self.clientId, actorId)
+                                    end)
                                 end
                             })
                         end,
