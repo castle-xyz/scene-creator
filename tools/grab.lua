@@ -303,7 +303,13 @@ function GrabTool.handlers:update(dt)
     end
 
     -- No handle gestures, check for other gestures
-    if touchData.numTouches == 1 or touchData.numTouches == 2 then
+    local moved = false
+    for touchId, touch in pairs(touchData.touches) do
+        if touch.x ~= touch.initialX or touch.y ~= touch.initialY then
+            moved = true
+        end
+    end
+    if moved and touchData.numTouches == 1 or touchData.numTouches == 2 then
         local moveX, moveY = 0, 0
         local rotation
         local centerX, centerY
