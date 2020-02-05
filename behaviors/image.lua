@@ -57,7 +57,7 @@ local theQuad = love.graphics and love.graphics.newQuad(0, 0, 32, 32, 32, 32)
 function ImageBehavior.handlers:drawComponent(component)
     -- Image drawable
     component._imageHolder = resource_loader.loadImage(
-        component.properties.localUrl or component.properties.url,
+        component._localUrl or component.properties.url,
         component.properties.filter)
     local image = component._imageHolder.image
     local imageWidth, imageHeight = image:getDimensions()
@@ -97,22 +97,68 @@ end
 
 -- UI
 
+IMAGE_UI_COUNTER = 1 -- Forces resetting of the image `filePicker` ui id so old uploades don't override new ones
+
 function ImageBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    ui.filePicker(component.properties.localUrl and 'image (uploading...)' or 'image',
-        component.properties.localUrl or component.properties.url, {
-        id = 'image',
+    ui.filePicker(component._localUrl and 'image (uploading...)' or 'image',
+        component._localUrl or component.properties.url, {
+        id = 'image-' .. IMAGE_UI_COUNTER,
         type = 'image',
         onChange = function(newUrl)
-            self:sendSetProperties(component.actorId, 'cropEnabled', false)
-            if not newUrl then
-                self:sendSetProperties(component.actorId, 'url', CHECKERBOARD_IMAGE_URL)
-            elseif newUrl:match('^file://') then
-                component.properties.localUrl = newUrl
-            else
-                component.properties.localUrl = nil
-                self:sendSetProperties(component.actorId, 'url', newUrl)
+            local oldCropEnabled = component.properties.cropEnabled
+            if not newUrl then -- Removing?
+                IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
+                component._localUrl = nil
+                local oldUrl = component.properties.url
+                self:command('remove image', {
+                    coalesceSuffix = 'remove image',
+                }, {
+                    'oldCropEnabled', 'oldUrl',
+                }, function()
+                    self:sendSetProperties(actorId, 'cropEnabled', false)
+                    self:sendSetProperties(actorId, 'url', CHECKERBOARD_IMAGE_URL)
+                end, function()
+                    self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
+                    self:sendSetProperties(actorId, 'url', oldUrl)
+                end)
+            elseif newUrl:match('^file://') then -- Local, still uploading
+                component._localUrl = newUrl
+                local oldUrl = component.properties.url
+                self:command('change image', {
+                    coalesceSuffix = 'image-' .. newUrl,
+                    coalesceInterval = 30,
+                }, {
+                    'oldCropEnabled', 'oldUrl',
+                }, function()
+                    self:sendSetProperties(actorId, 'cropEnabled', false)
+                end, function()
+                    IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
+                    self.components[actorId]._localUrl = nil
+                    self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
+                    self:sendSetProperties(actorId, 'url', oldUrl)
+                end)
+            else -- Uploaded
+                if component._localUrl then
+                    local oldUrl = component.properties.url
+                    self:command('change image', {
+                        coalesceSuffix = 'image-' .. component._localUrl,
+                        coalesceInterval = 30,
+                    }, {
+                        'oldCropEnabled', 'oldUrl', 'newUrl',
+                    }, function()
+                        IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
+                        self.components[actorId]._localUrl = nil
+                        self:sendSetProperties(actorId, 'cropEnabled', false)
+                        self:sendSetProperties(actorId, 'url', newUrl)
+                    end, function()
+                        IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
+                        self.components[actorId]._localUrl = nil
+                        self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
+                        self:sendSetProperties(actorId, 'url', oldUrl)
+                    end)
+                end
             end
         end,
     })

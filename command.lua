@@ -82,9 +82,13 @@ function Common:command(description, opts, params, doFunc, undoFunc)
             local prevCommand = self.undos[i]
             if (command.coalesceId == prevCommand.coalesceId and
                     command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL)) then
-                command.funcs['undo'] = prevCommand.funcs['undo']
-                if command.extraParams and prevCommand.extraParams then
-                    command.extraParams['undo'] = prevCommand.extraParams['undo']
+                command.funcs.undo = prevCommand.funcs.undo
+                command.extraParams = command.extraParams or {}
+                command.extraParams.undo = prevCommand.params
+                if prevCommand.extraParams and prevCommand.extraParams.undo then
+                    for name, value in pairs(prevCommand.extraParams.undo) do
+                        command.extraParams.undo[name] = value
+                    end
                 end
                 self.undos[i] = command
                 coalesced = true
