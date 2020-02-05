@@ -1,6 +1,7 @@
 function Common:startCommand()
-    self.undos = {}
-    self.redos = {}
+    -- Don't lose state if already exists (eg. when reconnecting)
+    self.undos = self.undos or {}
+    self.redos = self.redos or {}
 end
 
 local STANDARD_IMPLICITS = {
