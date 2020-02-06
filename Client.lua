@@ -149,6 +149,8 @@ function Client.receivers:setPerforming(time, performing)
         self._pausedView = nil
     end
 
+    self:clearNotify()
+
     Common.receivers.setPerforming(self, time, performing)
 end
 
