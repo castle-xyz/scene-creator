@@ -3,14 +3,35 @@
 local CORE_LIBRARY = {
     {
         entryType = 'actorBlueprint',
-        title = 'empty',
-        description = 'An actor with a basic body and image.',
+        title = 'wall',
+        description = "A rectangular actor that doesn't move.",
         actorBlueprint = {
             components = {
                 Image = {
-                    url = CHECKERBOARD_IMAGE_URL,
+                    url = 'assets/rectangle.png',
+                    color = { 0.596, 0.631, 0.659, 1 },
                 },
                 Body = {},
+                Solid = {},
+            },
+        },
+    },
+    {
+        entryType = 'actorBlueprint',
+        title = 'ball',
+        description = "A circular actor that falls and bounces.",
+        actorBlueprint = {
+            components = {
+                Image = {
+                    url = 'assets/circle.png',
+                    color = { 0.706, 0.557, 0.91, 1 },
+                },
+                Body = {
+                    gravityScale = 1,
+                },
+                Solid = {},
+                FreeMotion = {},
+                CircleShape = {},
             },
         },
     },
