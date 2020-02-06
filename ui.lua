@@ -439,6 +439,7 @@ function Client:uiProperties()
                     popoverStyle = { width = 300, height = 300 },
                     popover = function(closePopover)
                         self:uiLibrary({
+                            id = 'add behavior',
                             filterType = 'behavior',
                             filterBehavior = function(behavior)
                                 -- Skip behaviors we already have, skip tools
@@ -477,7 +478,7 @@ function Client:uiProperties()
                                 })
                             end,
                         })
-                    end
+                    end,
                 })
 
                 -- Save blueprint
@@ -574,6 +575,7 @@ function Client:uiupdate()
                 -- Blueprints tab
                 ui.tab('blueprints', function()
                     self:uiLibrary({
+                        id = 'add actor',
                         filterType = 'actorBlueprint',
                         buttons = function(entry)
                             ui.button('add to scene', {

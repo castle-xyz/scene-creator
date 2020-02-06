@@ -102,63 +102,115 @@ IMAGE_UI_COUNTER = 1 -- Forces resetting of the image `filePicker` ui id so old 
 function ImageBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    ui.filePicker(component._localUrl and 'image (uploading...)' or 'image',
-        component._localUrl or component.properties.url, {
-        id = 'image-' .. IMAGE_UI_COUNTER,
-        type = 'image',
-        onChange = function(newUrl)
-            local oldCropEnabled = component.properties.cropEnabled
-            if not newUrl then -- Removing?
-                IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
-                component._localUrl = nil
-                local oldUrl = component.properties.url
-                self:command('remove image', {
-                    coalesceSuffix = 'remove image',
-                    params = { 'oldCropEnabled', 'oldUrl' },
-                }, function()
-                    self:sendSetProperties(actorId, 'cropEnabled', false)
-                    self:sendSetProperties(actorId, 'url', CHECKERBOARD_IMAGE_URL)
-                end, function()
-                    self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
-                    self:sendSetProperties(actorId, 'url', oldUrl)
-                end)
-            elseif newUrl:match('^file://') then -- Local, still uploading
-                component._localUrl = newUrl
-                local oldUrl = component.properties.url
-                self:command('change image', {
-                    coalesceSuffix = 'image-' .. newUrl,
-                    coalesceInterval = 30,
-                    params = { 'oldCropEnabled', 'oldUrl' },
-                }, function()
-                    self:sendSetProperties(actorId, 'cropEnabled', false)
-                end, function()
-                    IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
-                    self.components[actorId]._localUrl = nil
-                    self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
-                    self:sendSetProperties(actorId, 'url', oldUrl)
-                end)
-            else -- Uploaded
-                if component._localUrl then
-                    local oldUrl = component.properties.url
-                    self:command('change image', {
-                        coalesceSuffix = 'image-' .. component._localUrl,
-                        coalesceInterval = 30,
-                        params = { 'oldCropEnabled', 'oldUrl', 'newUrl' },
-                    }, function()
+    ui.box('image picker', { flexDirection = 'row', alignItems = 'flex-start' }, function()
+        ui.box('file picker', { flex = 1 }, function()
+            ui.filePicker(component._localUrl and 'image (uploading...)' or 'image',
+                component._localUrl or component.properties.url, {
+                id = 'image-' .. IMAGE_UI_COUNTER,
+                type = 'image',
+                onChange = function(newUrl)
+                    local oldCropEnabled = component.properties.cropEnabled
+                    if not newUrl then -- Removing?
                         IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
-                        self.components[actorId]._localUrl = nil
-                        self:sendSetProperties(actorId, 'cropEnabled', false)
-                        self:sendSetProperties(actorId, 'url', newUrl)
-                    end, function()
-                        IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
-                        self.components[actorId]._localUrl = nil
-                        self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
-                        self:sendSetProperties(actorId, 'url', oldUrl)
-                    end)
-                end
-            end
-        end,
-    })
+                        component._localUrl = nil
+                        local oldUrl = component.properties.url
+                        self:command('remove image', {
+                            coalesceSuffix = 'remove image',
+                            params = { 'oldCropEnabled', 'oldUrl' },
+                        }, function()
+                            self:sendSetProperties(actorId, 'cropEnabled', false)
+                            self:sendSetProperties(actorId, 'url', CHECKERBOARD_IMAGE_URL)
+                        end, function()
+                            self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
+                            self:sendSetProperties(actorId, 'url', oldUrl)
+                        end)
+                    elseif newUrl:match('^file://') then -- Local, still uploading
+                        component._localUrl = newUrl
+                        local oldUrl = component.properties.url
+                        self:command('change image', {
+                            coalesceSuffix = 'image-' .. newUrl,
+                            coalesceInterval = 30,
+                            params = { 'oldCropEnabled', 'oldUrl' },
+                        }, function()
+                            self:sendSetProperties(actorId, 'cropEnabled', false)
+                        end, function()
+                            IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
+                            self.components[actorId]._localUrl = nil
+                            self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
+                            self:sendSetProperties(actorId, 'url', oldUrl)
+                        end)
+                    else -- Uploaded
+                        if component._localUrl then
+                            local oldUrl = component.properties.url
+                            self:command('change image', {
+                                coalesceSuffix = 'image-' .. component._localUrl,
+                                coalesceInterval = 30,
+                                params = { 'oldCropEnabled', 'oldUrl', 'newUrl' },
+                            }, function()
+                                IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
+                                self.components[actorId]._localUrl = nil
+                                self:sendSetProperties(actorId, 'cropEnabled', false)
+                                self:sendSetProperties(actorId, 'url', newUrl)
+                            end, function()
+                                IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
+                                self.components[actorId]._localUrl = nil
+                                self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
+                                self:sendSetProperties(actorId, 'url', oldUrl)
+                            end)
+                        end
+                    end
+                end,
+            })
+        end)
+        ui.box('library picker', {
+            flex = 3,
+            alignSelf = 'stretch',
+            flexDirection = 'row',
+            alignItems = 'flex-end',
+            justifyContent = 'flex-start',
+        }, function()
+            ui.button('choose from library', {
+                icon = 'book',
+                iconFamily = 'FontAwesome',
+                popoverAllowed = true,
+                popoverStyle = { width = 300, height = 300 },
+                popover = function(closePopover)
+                    self.game:uiLibrary({
+                        id = 'image',
+                        filterType = 'image',
+                        emptyText = 'No images!',
+                        buttons = function(entry)
+                            ui.button('use', {
+                                flex = 1,
+                                icon = 'plus',
+                                iconFamily = 'FontAwesome5',
+                                onClick = function()
+                                    closePopover()
+
+                                    local oldCropEnabled = component.properties.cropEnabled
+                                    local oldUrl = component.properties.url
+                                    local newUrl = entry.image.url
+                                    self:command('change image', {
+                                        params = { 'oldCropEnabled', 'oldUrl', 'newUrl' },
+                                    }, function()
+                                        self:sendSetProperties(actorId, 'cropEnabled', false)
+                                        self.components[actorId]._localUrl = nil
+                                        self:sendSetProperties(actorId, 'cropEnabled', false)
+                                        self:sendSetProperties(actorId, 'url', newUrl)
+                                    end, function()
+                                        IMAGE_UI_COUNTER = IMAGE_UI_COUNTER + 1
+                                        self.components[actorId]._localUrl = nil
+                                        self:sendSetProperties(actorId, 'cropEnabled', oldCropEnabled)
+                                        self:sendSetProperties(actorId, 'url', oldUrl)
+                                    end)
+                                end,
+                            })
+                        end,
+                    })
+                end,
+            })
+        end)
+    end)
 
     ui.box('color and opacity', { flexDirection = 'row', alignItems = 'flex-start' }, function()
         ui.box('color', { flex = 1 }, function()

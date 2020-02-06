@@ -16,6 +16,21 @@ local CORE_LIBRARY = {
     },
 }
 
+local assets = require 'assets'
+for _, asset in ipairs(assets) do
+    -- Image?
+    if asset:match('%.png$') then
+        table.insert(CORE_LIBRARY, {
+            entryType = 'image',
+            title = asset:gsub('%.png$', ''),
+            description = 'An image from the default asset pack.',
+            image = {
+                url = 'assets/' .. asset,
+            },
+        })
+    end
+end
+
 
 -- Start / stop
 
@@ -63,55 +78,104 @@ end
 
 -- UI
 
+local PAGE_SIZE = 10
+
+local currPage = {}
+
 function Client:uiLibrary(opts)
     -- Reusable library UI component
 
     opts = opts or {}
 
-    ui.scrollBox('scrollBox1', {
+    opts.id = opts.id or 'library'
+
+    local order = {}
+
+    -- Add regular library entries
+    for entryId, entry in pairs(self.library) do
+        local skip = false
+        if opts.filter then
+            if not opts.filter(entry) then
+                skip = true
+            end
+        elseif opts.filterType then
+            if entry.entryType ~= opts.filterType then
+                skip = true
+            end
+        end
+        if not skip then
+            table.insert(order, entry)
+        end
+    end
+
+    -- Add behaviors unless filtered out
+    if not opts.filterType or opts.filterType == 'behavior' then
+        for behaviorId, behavior in pairs(self.behaviors) do
+            if not opts.filterBehavior or opts.filterBehavior(behavior) then
+                table.insert(order, {
+                    entryId = tostring(behaviorId),
+                    entryType = 'behavior',
+                    title = behavior:getUiName(),
+                    description = behavior.description,
+                    behaviorId = behaviorId,
+                })
+            end
+        end
+    end
+
+    -- Sort
+    table.sort(order, function(entry1, entry2)
+        return entry1.title:upper() < entry2.title:upper()
+    end)
+
+    -- Paginate
+    local numPages = 1
+    if #order > PAGE_SIZE then
+        currPage[opts.id] = currPage[opts.id] or 1
+
+        local newOrder = {}
+        for i = 1, PAGE_SIZE do
+            local j = PAGE_SIZE * (currPage[opts.id] - 1) + i
+            if j > #order then
+                break
+            end
+            table.insert(newOrder, order[j])
+        end
+        order = newOrder
+
+        local numPages = math.ceil(#order / PAGE_SIZE)
+
+        ui.box('top page buttons', {
+            flexDirection = 'row',
+        }, function()
+            ui.button('previous page', {
+                icon = 'arrow-bold-left',
+                iconFamily = 'Entypo',
+                hideLabel = true,
+                onClick = function()
+                    currPage[opts.id] = math.max(1, currPage[opts.id] - 1)
+                end,
+            })
+            ui.box('spacer', { flex = 1 }, function() end)
+            ui.markdown('page ' .. currPage[opts.id] .. ' of ' .. numPages)
+            ui.box('spacer', { flex = 1 }, function() end)
+            ui.button('previous page', {
+                icon = 'arrow-bold-right',
+                iconFamily = 'Entypo',
+                hideLabel = true,
+                onClick = function()
+                    currPage[opts.id] = math.min(currPage[opts.id] + 1, numPages)
+                end,
+            })
+        end)
+    end
+
+    -- Scrolling view of current page
+    ui.scrollBox('scrollBox' .. opts.id .. (currPage[opts.id] or 1), {
         padding = 2,
         margin = 2,
         flex = 1,
     }, function()
-        local order = {}
-
-        -- Add regular library entries
-        for entryId, entry in pairs(self.library) do
-            local skip = false
-            if opts.filter then
-                if not opts.filter(entry) then
-                    skip = true
-                end
-            elseif opts.filterType then
-                if entry.entryType ~= opts.filterType then
-                    skip = true
-                end
-            end
-            if not skip then
-                table.insert(order, entry)
-            end
-        end
-
-        -- Add behaviors unless filtered out
-        if not opts.filterType or opts.filterType == 'behavior' then
-            for behaviorId, behavior in pairs(self.behaviors) do
-                if not opts.filterBehavior or opts.filterBehavior(behavior) then
-                    table.insert(order, {
-                        entryId = tostring(behaviorId),
-                        entryType = 'behavior',
-                        title = behavior:getUiName(),
-                        description = behavior.description,
-                        behaviorId = behaviorId,
-                    })
-                end
-            end
-        end
-
-        -- Sort
-        table.sort(order, function(entry1, entry2)
-            return entry1.title:upper() < entry2.title:upper()
-        end)
-
         -- Empty?
         if #order == 0 then
             ui.box('empty text', {
@@ -142,6 +206,9 @@ function Client:uiLibrary(opts)
                     if actorBp.components.Image and actorBp.components.Image.url then
                         imageUrl = actorBp.components.Image.url
                     end
+                end
+                if entry.entryType == 'image' then
+                    imageUrl = entry.image.url
                 end
 
                 -- Show image if applies
