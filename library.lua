@@ -3,56 +3,14 @@
 local CORE_LIBRARY = {
     {
         entryType = 'actorBlueprint',
-        title = 'dog',
-        description = 'A canine friend that falls and rolls around!',
+        title = 'empty',
+        description = 'An actor with a basic body and image.',
         actorBlueprint = {
             components = {
                 Image = {
-                    url = 'https://art.pixilart.com/5d29768f5c3f448.png',
-                    cropEnabled = true,
-                    cropX = 256,
-                    cropY = 150,
-                    cropWidth = 600,
-                    cropHeight = 700,
+                    url = CHECKERBOARD_IMAGE_URL,
                 },
-                Body = {
-                    fixture = {
-                        shapeType = 'polygon',
-                        points = {
-                            -0.5, -0.5,
-                            -0.5, 0.5,
-                            0.5, 0.5,
-                            0.5, -0.5,
-                        },
-                    },
-                },
-                Solid = {},
-                FreeMotion = {},
-            },
-        },
-    },
-    {
-        entryType = 'actorBlueprint',
-        title = 'ice platform',
-        description = 'Something to stand on...',
-        actorBlueprint = {
-            components = {
-                Image = {
-                    url = 'http://www.photonstorm.com/wp-content/uploads/2015/01/ice-platform.png',
-                },
-                Body = {
-                    fixture = {
-                        shapeType = 'polygon',
-                        points = {
-                            -2, -0.5,
-                            -2, 0.5,
-                            2, 0.5,
-                            2, -0.5,
-                        },
-                    },
-                    bodyType = 'static',
-                },
-                Solid = {},
+                Body = {},
             },
         },
     },
