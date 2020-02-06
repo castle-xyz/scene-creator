@@ -16,21 +16,6 @@ local CORE_LIBRARY = {
     },
 }
 
-local assets = require 'assets'
-for _, asset in ipairs(assets) do
-    -- Image?
-    if asset:match('%.png$') then
-        table.insert(CORE_LIBRARY, {
-            entryType = 'image',
-            title = asset:gsub('%.png$', ''),
-            description = 'An image from the default asset pack.',
-            image = {
-                url = 'assets/' .. asset,
-            },
-        })
-    end
-end
-
 
 -- Start / stop
 
