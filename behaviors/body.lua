@@ -86,6 +86,8 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         end
         if bp.gravityScale ~= nil then
             self._physics:setGravityScale(bodyId, bp.gravityScale)
+        else
+            self._physics:setGravityScale(bodyId, 0)
         end
 
         local fixtureBps = bp.fixture and { bp.fixture } or bp.fixtures
