@@ -128,6 +128,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         else -- Default shape
             local shapeId = self._physics:newRectangleShape(UNIT, UNIT)
             local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
+            self._physics:setSensor(fixtureId, true) -- Sensor by default
             self._physics:destroyObject(shapeId)
         end
 
