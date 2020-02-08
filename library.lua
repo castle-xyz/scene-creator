@@ -7,9 +7,12 @@ local CORE_LIBRARY = {
         description = "A rectangular actor that doesn't move.",
         actorBlueprint = {
             components = {
-                Image = {
-                    url = 'assets/rectangle.png',
-                    color = { 0.596, 0.631, 0.659, 1 },
+                --Image = {
+                --    url = 'assets/rectangle.png',
+                --    color = { 0.596, 0.631, 0.659, 1 },
+                --},
+                Drawing = {
+                    url = 'assets/rectangle.svg',
                 },
                 Body = {},
                 Solid = {},
@@ -22,9 +25,12 @@ local CORE_LIBRARY = {
         description = "A circular actor that falls and bounces.",
         actorBlueprint = {
             components = {
-                Image = {
-                    url = 'assets/circle.png',
-                    color = { 0.706, 0.557, 0.91, 1 },
+                --Image = {
+                --    url = 'assets/circle.png',
+                --    color = { 0.706, 0.557, 0.91, 1 },
+                --},
+                Drawing = {
+                    url = 'assets/circle.svg',
                 },
                 Body = {
                     gravityScale = 1,
@@ -36,6 +42,21 @@ local CORE_LIBRARY = {
         },
     },
 }
+
+local assetNames = require 'asset_names'
+for _, assetName in ipairs(assetNames) do
+    -- SVG?
+    if assetName:match('%.svg$') then
+        table.insert(CORE_LIBRARY, {
+            entryType = 'drawing',
+            title = assetName:gsub('%.svg', ''),
+            description = 'A drawing from the default asset library.',
+            drawing = {
+                url = 'assets/' .. assetName,
+            },
+        })
+    end
+end
 
 
 -- Start / stop
@@ -212,9 +233,15 @@ function Client:uiLibrary(opts)
                     if actorBp.components.Image and actorBp.components.Image.url then
                         imageUrl = actorBp.components.Image.url
                     end
+                    if actorBp.components.Drawing and actorBp.components.Drawing.url then
+                        imageUrl = actorBp.components.Drawing.url
+                    end
                 end
                 if entry.entryType == 'image' then
                     imageUrl = entry.image.url
+                end
+                if entry.entryType == 'drawing' then
+                    imageUrl = entry.drawing.url
                 end
 
                 -- Show image if applies

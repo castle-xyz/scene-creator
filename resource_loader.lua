@@ -54,4 +54,19 @@ function resource_loader.loadFont(url, size)
 end
 
 
+local fileDataHolders = setmetatable({}, { __mode = 'v' })
+
+function resource_loader.loadFileData(url)
+    local holder = fileDataHolders[url]
+    if not holder then
+        holder = {}
+        fileDataHolders[url] = holder
+        network.async(function()
+            holder.fileData = love.filesystem.newFileData(url)
+        end)
+    end
+    return holder
+end
+
+
 return resource_loader

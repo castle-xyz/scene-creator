@@ -16,6 +16,8 @@ serpent = require 'https://raw.githubusercontent.com/pkulchenko/serpent/879580fb
 
 -- Modules
 
+tove = require 'lib.tove'
+
 resource_loader = require 'resource_loader'
 util = require 'util'
 helps = require 'helps'
@@ -24,6 +26,7 @@ require 'actor_behavior'
 
 require 'behaviors.body'
 require 'behaviors.image'
+require 'behaviors.drawing'
 require 'behaviors.solid'
 require 'behaviors.circle_shape'
 require 'behaviors.free_motion'
