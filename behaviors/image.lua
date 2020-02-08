@@ -51,7 +51,6 @@ end
 
 -- Draw
 
-local theTransform = love.math.newTransform()
 local theQuad = love.graphics and love.graphics.newQuad(0, 0, 32, 32, 32, 32)
 
 function ImageBehavior.handlers:drawComponent(component)
