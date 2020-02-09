@@ -13,7 +13,7 @@ registerCoreBehavior(DrawingBehavior)
 
 
 local DEFAULT_URL = 'assets/rectangle.svg'
-local DEFAULT_CONTENTS = love.filesystem.newFileData(DEFAULT_URL):getString()
+local DEFAULT_GRAPHICS = tove.newGraphics(love.filesystem.newFileData(DEFAULT_URL):getString(), 1024)
 
 
 -- Component management
@@ -30,44 +30,59 @@ end
 
 -- Draw
 
-local graphicsCache = setmetatable({}, { __mode = 'k' })
+local cache = setmetatable({}, { __mode = 'v' })
+
 local sizeCache = setmetatable({}, { __mode = 'k' })
 
 function DrawingBehavior.handlers:drawComponent(component)
-    -- Load graphics
-    local fileDataHolder = resource_loader.loadFileData(component.properties.url)
-    component._fileDataHolder = fileDataHolder
-    local fileData = fileDataHolder.fileData
-    local fileContents = (fileData and fileData:getString()) or DEFAULT_CONTENTS
-    local graphics = graphicsCache[fileContents]
-    if not graphics then
-        graphics = tove.newGraphics(fileContents, 256)
-        graphics:setResolution(4)
-        graphicsCache[fileContents] = graphics
-    end
-
-    -- Size
-    local size = sizeCache[graphics]
-    if not size then
-        local minX, minY, maxX, maxY = graphics:computeAABB('high')
-        size = { width = maxX - minX, height = maxY - minY }
-        sizeCache[graphics] = size
-    end
-
-    -- Scale from body size
+    -- Body attributes
     local bodyWidth, bodyHeight = self.dependencies.Body:getSize(component.actorId)
-    local scaleX, scaleY = bodyWidth / size.width, bodyHeight / size.height
-
-    -- Position and angle from body
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-    local x, y = body:getPosition()
-    local angle = body:getAngle()
+    local bodyX, bodyY = body:getPosition()
+    local bodyAngle = body:getAngle()
+
+    -- Load graphics
+    local renderSize = math.max(bodyWidth, bodyHeight) * self.game:getViewScale()
+    local graphicsSize = 256
+    while graphicsSize < renderSize and graphicsSize < 2048 do
+        graphicsSize = graphicsSize * 2
+    end
+    local cacheKey = component.properties.url .. '@' .. graphicsSize
+    local cacheEntry = cache[cacheKey]
+    if not cacheEntry then
+        cacheEntry = {}
+        cache[cacheKey] = cacheEntry
+        print('loading svg: ' .. cacheKey)
+    end
+    component._cacheEntry = cacheEntry -- Maintain strong reference
+    local graphics = cacheEntry.graphics
+    if not graphics then
+        if not cacheEntry.graphicsRequested then
+            cacheEntry.graphicsRequested = true
+            network.async(function()
+                local fileContents = love.filesystem.newFileData(component.properties.url):getString()
+                cacheEntry.graphics = tove.newGraphics(fileContents)
+                cacheEntry.graphics:setDisplay('mesh', 'adaptive', graphicsSize)
+                cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
+            end)
+        end
+        graphics = component._lastGraphics or DEFAULT_GRAPHICS
+    end
+    component._lastGraphics = graphics
+
+    -- Graphics size
+    local graphicsWidth, graphicsHeight = cacheEntry.graphicsWidth, cacheEntry.graphicsHeight
+    if not (graphicsWidth and graphicsHeight) then
+        local minX, minY, maxX, maxY = graphics:computeAABB('high')
+        graphicsWidth, graphicsHeight = maxX - minX, maxY - minY
+        cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = graphicsWidth, graphicsHeight
+    end
 
     -- Draw!
     love.graphics.push()
-    love.graphics.translate(x, y)
-    love.graphics.rotate(angle)
-    love.graphics.scale(scaleX, scaleY)
+    love.graphics.translate(bodyX, bodyY)
+    love.graphics.rotate(bodyAngle)
+    love.graphics.scale(bodyWidth / graphicsWidth, bodyHeight / graphicsHeight)
     graphics:draw()
     love.graphics.pop()
 end
