@@ -19,6 +19,12 @@ The source image can be **cropped** to only use a part of it.
             ]],
         },
 
+        Drawing = {
+            description = [[
+Represents the actor visually with a **drawing**.
+            ]],
+        },
+
         Grab = {
             description = [[
 A tool that allows moving and rotating actors using touch.
