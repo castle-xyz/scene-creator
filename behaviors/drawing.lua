@@ -12,10 +12,60 @@ local DrawingBehavior = {
 registerCoreBehavior(DrawingBehavior)
 
 
+-- Default drawing
+
 local DEFAULT_URL = 'assets/rectangle.svg'
 local DEFAULT_GRAPHICS
 if not castle.system.isRemoteServer() then
     DEFAULT_GRAPHICS = tove.newGraphics(love.filesystem.newFileData(DEFAULT_URL):getString(), 1024)
+end
+
+
+-- Wobble
+
+local NORMAL_WOBBLE_AMOUNT = 8.07
+local WOBBLE_NOISE_SCALE = 1
+local WOBBLE_FRAMES = 8
+local WOBBLE_TWEEN = 1
+local WOBBLE_SPEED = 8
+local WOBBLE_POINTS = false
+
+local function wobblePoint(x, y, amount, seed, scale)
+    local dx = amount * (2 * love.math.noise(scale * x, scale * y, 1, seed) - 1)
+    local dy = amount * (2 * love.math.noise(scale * x, scale * y, 2, seed) - 1)
+    return x + dx, y + dy
+end
+
+local function wobbleDrawing(drawing, amount)
+    amount = amount or 3
+    local frames = {}
+    for f = 1, WOBBLE_FRAMES do
+        local clone = drawing:clone()
+        for i = 1, clone.paths.count do
+            local path = clone.paths[i]
+            for j = 1, path.subpaths.count do
+                local subpath = path.subpaths[j]
+                local numCurves = subpath.curves.count
+                for k = 1, numCurves do
+                    local seed = WOBBLE_FRAMES * f + j
+                    local curve = subpath.curves[k]
+                    curve.cp1x, curve.cp1y = wobblePoint(curve.cp1x, curve.cp1y, amount, seed, WOBBLE_NOISE_SCALE)
+                    curve.cp2x, curve.cp2y = wobblePoint(curve.cp2x, curve.cp2y, amount, seed, WOBBLE_NOISE_SCALE)
+                    if WOBBLE_POINTS then
+                        curve.x0, curve.y0 = wobblePoint(curve.x0, curve.y0, amount, seed, WOBBLE_NOISE_SCALE)
+                        curve.x, curve.y = wobblePoint(curve.x, curve.y, amount, seed, WOBBLE_NOISE_SCALE)
+                    end
+                end
+            end
+        end
+        table.insert(frames, clone)
+    end
+    local tween = tove.newTween(frames[1])
+    for i = 2, #frames do
+        tween = tween:to(frames[i], 1)
+    end
+    tween = tween:to(frames[1], 1)
+    return tove.newFlipbook(WOBBLE_TWEEN, tween, 'mesh', 1024)
 end
 
 
@@ -53,7 +103,7 @@ function DrawingBehavior.handlers:drawComponent(component)
         print('loading svg: ' .. cacheKey)
     end
     component._cacheEntry = cacheEntry -- Maintain strong reference
-    local graphics = cacheEntry.graphics
+    local graphics, flipbook = cacheEntry.graphics, cacheEntry.flipbook
     if not graphics then
         if not cacheEntry.graphicsRequested then
             cacheEntry.graphicsRequested = true
@@ -62,6 +112,9 @@ function DrawingBehavior.handlers:drawComponent(component)
                 cacheEntry.graphics = tove.newGraphics(fileContents)
                 cacheEntry.graphics:setDisplay('mesh', 1024)
                 cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
+                if true then
+                    cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics, NORMAL_WOBBLE_AMOUNT)
+                end
             end)
         end
         graphics = component._lastGraphics or DEFAULT_GRAPHICS
@@ -76,12 +129,21 @@ function DrawingBehavior.handlers:drawComponent(component)
         cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = graphicsWidth, graphicsHeight
     end
 
-    -- Draw!
+    -- Push transform
     love.graphics.push()
     love.graphics.translate(bodyX, bodyY)
     love.graphics.rotate(bodyAngle)
     love.graphics.scale(bodyWidth / graphicsWidth, bodyHeight / graphicsHeight)
-    graphics:draw()
+
+    -- Draw!
+    if flipbook then
+        flipbook.t = (WOBBLE_SPEED * love.timer.getTime()) % flipbook._duration
+        flipbook:draw()
+    else
+        graphics:draw()
+    end
+
+    -- Pop transform
     love.graphics.pop()
 end
 
