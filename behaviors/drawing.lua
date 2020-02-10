@@ -45,12 +45,7 @@ function DrawingBehavior.handlers:drawComponent(component)
     local bodyAngle = body:getAngle()
 
     -- Load graphics
-    local renderSize = math.max(bodyWidth, bodyHeight) * self.game:getViewScale()
-    local graphicsSize = 256
-    while graphicsSize < renderSize and graphicsSize < 2048 do
-        graphicsSize = graphicsSize * 2
-    end
-    local cacheKey = component.properties.url .. '@' .. graphicsSize
+    local cacheKey = component.properties.url
     local cacheEntry = cache[cacheKey]
     if not cacheEntry then
         cacheEntry = {}
@@ -65,7 +60,7 @@ function DrawingBehavior.handlers:drawComponent(component)
             network.async(function()
                 local fileContents = love.filesystem.newFileData(component.properties.url):getString()
                 cacheEntry.graphics = tove.newGraphics(fileContents)
-                cacheEntry.graphics:setDisplay('mesh', 'adaptive', graphicsSize)
+                cacheEntry.graphics:setDisplay('mesh', 1024)
                 cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
             end)
         end
