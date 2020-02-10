@@ -25,15 +25,17 @@ end
 
 local NORMAL_WOBBLE_AMOUNT = 4
 local WOBBLE_NOISE_SCALE = 0.02
-local WOBBLE_FRAMES = 8
+local WOBBLE_FRAMES = 4
 local WOBBLE_TWEEN = 1
-local WOBBLE_SPEED = 8
+local WOBBLE_SPEED = 6
 local WOBBLE_POINTS = false
 
 local function wobblePoint(x, y, amount, seed)
-    local dx = amount * (2 * love.math.noise(WOBBLE_NOISE_SCALE * x, WOBBLE_NOISE_SCALE * y, 1, seed) - 1)
-    local dy = amount * (2 * love.math.noise(WOBBLE_NOISE_SCALE * x, WOBBLE_NOISE_SCALE * y, 2, seed) - 1)
-    return x + dx, y + dy
+    local dx1 = amount * (2 * love.math.noise(WOBBLE_NOISE_SCALE * x, WOBBLE_NOISE_SCALE * y, 1, seed) - 1)
+    local dy1 = amount * (2 * love.math.noise(WOBBLE_NOISE_SCALE * x, WOBBLE_NOISE_SCALE * y, 2, seed) - 1)
+    local dx2 = 1.7 * amount * (2 * love.math.noise(0.38 * WOBBLE_NOISE_SCALE * x, WOBBLE_NOISE_SCALE * y, 1, seed) - 1)
+    local dy2 = 1.7 * amount * (2 * love.math.noise(0.38 * WOBBLE_NOISE_SCALE * x, WOBBLE_NOISE_SCALE * y, 2, seed) - 1)
+    return x + dx1 + dx2, y + dy1 + dy2
 end
 
 local function wobbleDrawing(drawing, amount)
@@ -52,7 +54,7 @@ local function wobbleDrawing(drawing, amount)
         tween = tween:to(frames[i], 1)
     end
     tween = tween:to(frames[1], 1)
-    return tove.newFlipbook(WOBBLE_TWEEN, tween, 'mesh', 1024)--, 'mesh', 1024)
+    return tove.newFlipbook(WOBBLE_TWEEN, tween)
 end
 
 
@@ -96,8 +98,9 @@ function DrawingBehavior.handlers:drawComponent(component)
             cacheEntry.graphicsRequested = true
             network.async(function()
                 local fileContents = love.filesystem.newFileData(component.properties.url):getString()
-                cacheEntry.graphics = tove.newGraphics(fileContents, 400)
-                cacheEntry.graphics:setDisplay('mesh', 1024)
+                cacheEntry.graphics = tove.newGraphics(fileContents, 1024)
+                cacheEntry.graphics:setResolution(2)
+                --cacheEntry.graphics:setDisplay('mesh', 1024)
                 cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
                 if true then
                     cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics, NORMAL_WOBBLE_AMOUNT)
