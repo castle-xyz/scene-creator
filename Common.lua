@@ -16,7 +16,9 @@ serpent = require 'https://raw.githubusercontent.com/pkulchenko/serpent/879580fb
 
 -- Modules
 
-tove = require 'lib.tove'
+if not castle.system.isRemoteServer() then
+    tove = require 'lib.tove'
+end
 
 resource_loader = require 'resource_loader'
 util = require 'util'

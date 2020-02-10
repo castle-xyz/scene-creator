@@ -13,7 +13,10 @@ registerCoreBehavior(DrawingBehavior)
 
 
 local DEFAULT_URL = 'assets/rectangle.svg'
-local DEFAULT_GRAPHICS = tove.newGraphics(love.filesystem.newFileData(DEFAULT_URL):getString(), 1024)
+local DEFAULT_GRAPHICS
+if not castle.system.isRemoteServer() then
+    DEFAULT_GRAPHICS = tove.newGraphics(love.filesystem.newFileData(DEFAULT_URL):getString(), 1024)
+end
 
 
 -- Component management
