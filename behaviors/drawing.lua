@@ -2,6 +2,7 @@ local DrawingBehavior = {
     name = 'Drawing',
     propertyNames = {
         'url',
+        'wobble',
     },
     dependencies = {
         'Body',
@@ -69,10 +70,16 @@ end
 function DrawingBehavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.url = bp.url or DEFAULT_URL
+    if bp.wobble ~= nil then
+        component.properties.wobble = bp.wobble
+    else
+        component.properties.wobble = false
+    end
 end
 
 function DrawingBehavior.handlers:blueprintComponent(component, bp)
     bp.url = component.properties.url
+    bp.wobble = component.properties.wobble
 end
 
 
@@ -98,7 +105,7 @@ function DrawingBehavior.handlers:drawComponent(component)
         print('loading svg: ' .. cacheKey)
     end
     component._cacheEntry = cacheEntry -- Maintain strong reference
-    local graphics, flipbook = cacheEntry.graphics, cacheEntry.flipbook
+    local graphics = cacheEntry.graphics
     if not graphics then
         if not cacheEntry.graphicsRequested then
             cacheEntry.graphicsRequested = true
@@ -107,9 +114,9 @@ function DrawingBehavior.handlers:drawComponent(component)
                 cacheEntry.graphics = tove.newGraphics(fileContents, 1024)
                 cacheEntry.graphics:setDisplay('mesh', 'rigid', 4)
                 cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
-                if true then
-                    cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics)
-                end
+                --if true then
+                --    cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics)
+                --end
             end)
         end
         graphics = component._lastGraphics or DEFAULT_GRAPHICS
@@ -122,6 +129,16 @@ function DrawingBehavior.handlers:drawComponent(component)
         local minX, minY, maxX, maxY = graphics:computeAABB('high')
         graphicsWidth, graphicsHeight = maxX - minX, maxY - minY
         cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = graphicsWidth, graphicsHeight
+    end
+
+    -- Wobble
+    local flipbook
+    if component.properties.wobble and cacheEntry.graphics then
+        flipbook = cacheEntry.flipbook
+        if not flipbook then
+            flipbook = wobbleDrawing(graphics)
+            cacheEntry.flipbook = flipbook
+        end
     end
 
     -- Push transform
@@ -215,6 +232,8 @@ function DrawingBehavior.handlers:uiComponent(component, opts)
             })
         end)
     end)
+
+    self:uiProperty('toggle', 'wobble', actorId, 'wobble')
 end
 
 
