@@ -139,7 +139,7 @@ function Client:uiToolbar()
                         self:send('restoreSnapshot', self.rewindSnapshotId)
                         self:send('removeSnapshot', self.rewindSnapshotId)
                     else
-                        self:send(setPerforming, false)
+                        self:send('setPerforming', false)
                     end
                 end,
             })
