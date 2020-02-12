@@ -1,5 +1,5 @@
 -- 'multi' boilerplate
---LOCAL_SERVER = true -- Enable to force a local server and never use a remote one
+LOCAL_SERVER = true -- Enable to force a local server and never use a remote one
 function GET_SERVER_MODULE_NAME()
     return 'Server'
 end
@@ -18,7 +18,11 @@ require 'notify'
 
 -- Start / stop
 
+local instance
+
 function Client:start()
+    instance = self
+
     self.lastPingSentTime = nil
 
     self.photoImages = {}
@@ -74,6 +78,40 @@ function Client.receivers:me(time, clientId, me)
         end)
     end
 end
+
+
+-- JS Events
+
+jsEvents.listen('SCENE_CREATOR_EDITING', function(params)
+    if not instance then
+        return
+    end
+    local self = instance
+
+    if params.isEditing ~= nil then
+        if params.isEditing then -- Edit
+            if self.performing then
+                if self.rewindSnapshotId then
+                    self:send('restoreSnapshot', self.rewindSnapshotId)
+                    self:send('removeSnapshot', self.rewindSnapshotId)
+                else
+                    self:send('setPerforming', false)
+                end
+            end
+        else -- View
+            if self.performing then
+                if self.rewindSnapshotId then
+                    self:send('restoreSnapshot', self.rewindSnapshotId, {
+                        stopPerforming = false,
+                    })
+                end
+            else
+                self:send('addSnapshot', util.uuid(), self:createSnapshot(), { isRewind = true })
+                self:send('setPerforming', true)
+            end
+        end
+    end
+end)
 
 
 -- Update
@@ -257,7 +295,7 @@ function Client:draw()
         self:drawNotify()
     end
 
-    do -- Debug overlay
+    if false then -- Debug overlay
         local networkText = ''
         if self.connected then
             networkText = networkText .. '    ping: ' .. self.client.getPing() .. 'ms'

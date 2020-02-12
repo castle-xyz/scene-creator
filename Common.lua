@@ -13,6 +13,8 @@ CHECKERBOARD_IMAGE_URL = 'https://raw.githubusercontent.com/nikki93/edit-world/4
 
 serpent = require 'https://raw.githubusercontent.com/pkulchenko/serpent/879580fb21933f63eb23ece7d60ba2349a8d2848/src/serpent.lua'
 
+jsEvents = require '__ghost__.jsEvents'
+
 
 -- Modules
 
@@ -95,7 +97,7 @@ function Common:start()
     self:startSnapshot()
     self:startCommand()
 
-    self.performing = false
+    self.performing = true
 end
 
 function Common:stop()

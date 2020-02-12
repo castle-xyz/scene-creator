@@ -85,7 +85,7 @@ function Server.receivers:restoreSnapshot(time, snapshotId, opts)
         channel = self.channels.mainReliable,
     }, function()
         -- Stop performance
-        if self.performing then
+        if opts.stopPerforming ~= false and self.performing then
             self:send('setPerforming', false)
         end
 
