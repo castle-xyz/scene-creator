@@ -8,6 +8,11 @@ Common, Server, Client = Game.Common, Game.Server, Game.Client
 require 'Common'
 
 
+-- Initial params
+
+INITIAL_PARAMS = castle.game.getInitialParams()
+
+
 -- Client modules
 
 require 'select'
@@ -80,34 +85,61 @@ function Client.receivers:me(time, clientId, me)
 end
 
 
+-- Enter / exit editing
+
+function Client:beginEditing()
+    if self.performing then
+        if self.rewindSnapshotId then
+            self:send('restoreSnapshot', self.rewindSnapshotId)
+            self:send('removeSnapshot', self.rewindSnapshotId)
+        else
+            self:send('setPerforming', false)
+        end
+    end
+end
+
+function Client:endEditing()
+    if self.performing then
+        if self.rewindSnapshotId then
+            self:send('restoreSnapshot', self.rewindSnapshotId, { stopPerforming = false })
+        end
+    else
+        self:send('addSnapshot', util.uuid(), self:createSnapshot(), { isRewind = true })
+        self:send('setPerforming', true)
+    end
+end
+
+
+-- Ready
+
+function Client.receivers:ready(time)
+    if not self.initialParamsRead then
+        local scene = INITIAL_PARAMS.scene
+        self.sceneId = scene and scene.sceneId
+        if scene and scene.data and scene.data.snapshot then
+            self:send('addSnapshot', util.uuid(), scene.data.snapshot, { isRewind = true })
+            self:send('restoreSnapshot', self.rewindSnapshotId, {
+                stopPerforming = not not INITIAL_PARAMS.isEditing,
+            })
+        elseif INITIAL_PARAMS.isEditing then
+            self:beginEditing()
+        end
+
+        self.initialParamsRead = true
+    end
+end
+
+
 -- JS Events
 
 jsEvents.listen('SCENE_CREATOR_EDITING', function(params)
-    if not instance then
-        return
-    end
     local self = instance
-
-    if params.isEditing ~= nil then
-        if params.isEditing then -- Edit
-            if self.performing then
-                if self.rewindSnapshotId then
-                    self:send('restoreSnapshot', self.rewindSnapshotId)
-                    self:send('removeSnapshot', self.rewindSnapshotId)
-                else
-                    self:send('setPerforming', false)
-                end
-            end
-        else -- View
-            if self.performing then
-                if self.rewindSnapshotId then
-                    self:send('restoreSnapshot', self.rewindSnapshotId, {
-                        stopPerforming = false,
-                    })
-                end
+    if self then
+        if params.isEditing ~= nil then
+            if params.isEditing then
+                self:beginEditing()
             else
-                self:send('addSnapshot', util.uuid(), self:createSnapshot(), { isRewind = true })
-                self:send('setPerforming', true)
+                self:endEditing()
             end
         end
     end
@@ -122,8 +154,8 @@ function Client:update(dt)
     end
 
     local currTime = love.timer.getTime()
-    if not lastPingSentTime or currTime - lastPingSentTime > 2 then
-        lastPingSentTime = currTime
+    if not self.lastPingSentTime or currTime - self.lastPingSentTime > 2 then
+        self.lastPingSentTime = currTime
         self:send('ping', self.clientId)
     end
 
@@ -140,6 +172,8 @@ function Client:update(dt)
     self:callHandlers('postUpdate', dt)
 
     self:updateNotify(dt)
+
+    self:updateAutoSaveScene()
 end
 
 

@@ -3,6 +3,8 @@
 function Common:startSnapshot()
     self.snapshots = {}
     self.rewindSnapshotId = nil
+    self.lastSaveAttemptTime = nil
+    self.lastSuccessfulSaveData = nil
 end
 
 
@@ -51,6 +53,56 @@ function Common:createSnapshot(opts)
     end)
 
     return snapshot
+end
+
+function Common:saveScene()
+    if not self.sceneId then
+        return
+    end
+
+    self.lastSaveAttemptTime = love.timer.getTime()
+
+    local snapshot
+    if self.performing then
+        if self.rewindSnapshotId then
+            snapshot = self.snapshots[self.rewindSnapshotId]
+        end
+    else
+        snapshot = self:createSnapshot()
+    end
+    if snapshot then
+        local data = cjson.encode({ snapshot = snapshot })
+        if data ~= self.lastSuccessfulSaveData then
+            network.async(function()
+                local encoded = cjson.encode({ snapshot = self:createSnapshot() })
+                local result = jsBridge.js.gqlMutate {
+                    mutation = [[
+                        mutation UpdateScene($sceneId: ID!, $data: Json!) {
+                          updateScene(sceneId: $sceneId, data: $data) {
+                            sceneId
+                          }
+                        }
+                    ]],
+                    variables = {
+                        sceneId = self.sceneId,
+                        data = encoded,
+                    },
+                    fetchPolicy = 'no-cache',
+                }
+                if result and result.data and result.data.updateScene and result.data.updateScene.sceneId then
+                    self.lastSuccessfulSaveData = data
+                end
+            end)
+        end
+    end
+end
+
+function Common:updateAutoSaveScene()
+    if self.sceneId then
+        if not self.lastSaveAttemptTime or love.timer.getTime() - self.lastSaveAttemptTime > 5 then
+            self:saveScene()
+        end
+    end
 end
 
 

@@ -4,15 +4,6 @@ Common, Server, Client = Game.Common, Game.Server, Game.Client
 require 'Common'
 
 
--- Start / stop
-
-function Server:start()
-    Common.start(self)
-
-    self.rewindSnapshot = nil
-end
-
-
 -- Connect / reconnect / disconnect
 
 function Server:syncClient(clientId)
@@ -42,6 +33,8 @@ function Server:syncClient(clientId)
         self:syncClientSnapshot(clientId, send)
 
         send('setPerforming', self.performing)
+
+        send('ready')
     end)
 end
 
@@ -55,22 +48,6 @@ end
 
 function Server:disconnect(clientId)
     self:disconnectActorBehavior(clientId)
-end
-
-
--- Performance
-
-function Server.receivers:setPerforming(time, performing)
-    if not self.performing and performing then
-        -- About to start performing, save a rewind snapshot
-    end
-
-    Common.receivers.setPerforming(self, time, performing)
-
-    if self.performing ~= performing then
-        self.performing = performing
-        self:callHandlers('setPerforming', performing)
-    end
 end
 
 
