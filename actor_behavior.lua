@@ -153,6 +153,8 @@ end
 -- Start / stop
 
 function Common:startActorBehavior()
+    self.nextActorIdSuffix = 1
+
     self.actors = {} -- `actorId` -> actor
     self.actorsByDrawOrder = {} -- { `actor1`, `actor2`, ... }
     self.behaviors = {} -- `behaviorId` -> behavior
@@ -511,8 +513,28 @@ end
 
 -- Methods
 
+function Common:generateActorId()
+    local prefix
+    if self.server then
+        prefix = '0'
+    else
+        prefix = tostring(self.clientId)
+    end
+
+    local newId
+    while true do
+        newId = prefix .. '-' .. self.nextActorIdSuffix
+        self.nextActorIdSuffix = self.nextActorIdSuffix + 1
+        if not self.actors[newId] then
+            break
+        end
+    end
+
+    return newId
+end
+
 function Common:sendAddActor(bp, opts)
-    local actorId = opts.actorId or self:generateId()
+    local actorId = opts.actorId or self:generateActorId()
 
     self:send('addActor', self.clientId, actorId, opts.parentEntryId)
 

@@ -99,8 +99,7 @@ function Client:uiToolbar()
                 iconFamily = 'FontAwesome',
                 hideLabel = true,
                 onClick = function()
-                    self:send('addSnapshot', util.uuid(), self:createSnapshot(), { isRewind = true })
-                    self:send('setPerforming', true)
+                    self:endEditing()
                 end,
             })
 
@@ -135,12 +134,7 @@ function Client:uiToolbar()
                 iconFamily = 'FontAwesome',
                 hideLabel = true,
                 onClick = function()
-                    if self.rewindSnapshotId then
-                        self:send('restoreSnapshot', self.rewindSnapshotId)
-                        self:send('removeSnapshot', self.rewindSnapshotId)
-                    else
-                        self:send('setPerforming', false)
-                    end
+                    self:beginEditing()
                 end,
             })
         end
@@ -230,7 +224,7 @@ function Client:uiToolbar()
                     -- Generate map of actor ids to new ids for their duplicates
                     local newActorIds = {}
                     for actorId in pairs(self.selectedActorIds) do
-                        newActorIds[actorId] = self:generateId()
+                        newActorIds[actorId] = self:generateActorId()
                     end
 
                     self:command('duplicate', {
@@ -592,7 +586,7 @@ function Client:uiupdate()
                                         bp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
                                         bp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
                                     end
-                                    local newActorId = self:generateId()
+                                    local newActorId = self:generateActorId()
 
                                     local entryId = entry.entryId
                                     self:command('add', {
