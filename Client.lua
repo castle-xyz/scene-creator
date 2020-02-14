@@ -104,6 +104,7 @@ function Client:endEditing()
             self:send('restoreSnapshot', self.rewindSnapshotId, { stopPerforming = false })
         end
     else
+        self:saveScreenshot()
         local snapshot = self:createSnapshot()
         self:saveScene(snapshot)
         self:send('addSnapshot', util.uuid(), snapshot, { isRewind = true })
@@ -231,12 +232,64 @@ function Client.receivers:setPerforming(time, performing)
     Common.receivers.setPerforming(self, time, performing)
 end
 
-function Client:draw()
-    local windowWidth, windowHeight = love.graphics.getDimensions()
-
+function Client:drawScene()
     do -- Background color
         love.graphics.clear(1, 0.98, 0.98)
     end
+
+    do -- Behaviors
+        local drawBehaviors = self.behaviorsByHandler['drawComponent'] or {}
+        self:forEachActorByDrawOrder(function(actor)
+            for behaviorId, behavior in pairs(drawBehaviors) do
+                local component = actor.components[behaviorId]
+                if component then
+                    behavior:callHandler('drawComponent', component)
+                end
+            end
+        end)
+    end
+end
+
+local screenshotWidth, screenshotHeight = 1350, 2400
+local screenshotCanvas = love.graphics.newCanvas(screenshotWidth, screenshotHeight, {
+    dpiscale = 1,
+    msaa = 4,
+})
+
+function Client:saveScreenshot()
+    screenshotCanvas:renderTo(function()
+        love.graphics.push('all')
+
+        love.graphics.origin()
+        love.graphics.scale(screenshotWidth / DEFAULT_VIEW_WIDTH)
+        love.graphics.translate(0, 0)
+        love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, 0.5 * DEFAULT_VIEW_WIDTH)
+
+        self:drawScene()
+
+        love.graphics.pop()
+    end)
+    local channel = love.thread.getChannel('SCENE_CREATOR_ENCODE_SCREENSHOT')
+    channel:push(screenshotCanvas:newImageData())
+    love.thread.originalNewThread([[
+        require 'love.system'
+        require 'love.image'
+        jsEvents = require '__ghost__.jsEvents'
+        local channel = love.thread.getChannel('SCENE_CREATOR_ENCODE_SCREENSHOT')
+        local imageData = channel:pop()
+        if imageData then
+            local filename = 'screenshot.png'
+            imageData:encode('png', filename)
+            jsEvents.send('GHOST_SCREENSHOT', {
+                path = love.filesystem.getSaveDirectory() .. '/' .. filename,
+            })
+            print('saved!')
+        end
+    ]]):start()
+end
+
+function Client:draw()
+    local windowWidth, windowHeight = love.graphics.getDimensions()
 
     if not self.connected then -- Not connected?
         love.graphics.setFont(debugFont)
@@ -280,17 +333,7 @@ function Client:draw()
         love.graphics.applyTransform(self.viewTransform)
     end
 
-    do -- Behaviors
-        local drawBehaviors = self.behaviorsByHandler['drawComponent'] or {}
-        self:forEachActorByDrawOrder(function(actor)
-            for behaviorId, behavior in pairs(drawBehaviors) do
-                local component = actor.components[behaviorId]
-                if component then
-                    behavior:callHandler('drawComponent', component)
-                end
-            end
-        end)
-    end
+    self:drawScene()
 
     do -- Overlays
         local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
