@@ -1,3 +1,13 @@
+-- Prefetch all hosted files
+if CASTLE_INITIAL_DATA and CASTLE_INITIAL_DATA.hostedFiles then
+    local filenames = {}
+    for filename in pairs(CASTLE_INITIAL_DATA.hostedFiles) do
+        table.insert(filenames, filename)
+    end
+    CASTLE_PREFETCH(filenames)
+end
+
+
 -- 'multi' boilerplate
 LOCAL_SERVER = true -- Enable to force a local server and never use a remote one
 function GET_SERVER_MODULE_NAME()
