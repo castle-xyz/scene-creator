@@ -12,7 +12,6 @@ if (portal.basePath:match('^https?://api%.castle%.games/') and
         if not ignore[filename] then
             local path = portal.basePath .. '/' .. filename
             if not network.findPersistedFetchResult(target, 'GET') then
-                print('prefetching', path)
                 network.async(function()
                     network.fetch(path, 'HEAD')
                 end)
