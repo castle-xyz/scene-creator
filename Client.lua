@@ -1,10 +1,27 @@
 -- Prefetch all hosted files
-if CASTLE_INITIAL_DATA and CASTLE_INITIAL_DATA.hostedFiles then
+if (portal.basePath:match('^https?://api%.castle%.games/') and
+        CASTLE_INITIAL_DATA and CASTLE_INITIAL_DATA.hostedFiles and
+        network.findPersistedFetchResult) then
+    local ignore = {
+        ['cover.png'] = true,
+        ['.castleid'] = true,
+        ['project.castle'] = true,
+    }
     local filenames = {}
-    for filename in pairs(CASTLE_INITIAL_DATA.hostedFiles) do
-        table.insert(filenames, filename)
+    for filename, target in pairs(CASTLE_INITIAL_DATA.hostedFiles) do
+        if not ignore[filename] then
+            local path = portal.basePath .. '/' .. filename
+            if not network.findPersistedFetchResult(target, 'GET') then
+                print('prefetching', path)
+                network.async(function()
+                    network.fetch(path, 'HEAD')
+                end)
+                network.async(function()
+                    network.fetch(path, 'GET')
+                end)
+            end
+        end
     end
-    CASTLE_PREFETCH(filenames)
 end
 
 
@@ -128,9 +145,9 @@ end
 function Client.receivers:ready(time)
     if not self.initialParamsRead then
         local scene = INITIAL_PARAMS.scene
-        if scene then
-            print('scene', serpent.block(scene))
-        end
+        --if scene then
+        --    print('scene', serpent.block(scene))
+        --end
         self.sceneId = scene and scene.sceneId
         if scene and scene.data and scene.data.snapshot then
             self:send('addSnapshot', util.uuid(), scene.data.snapshot, { isRewind = true })
