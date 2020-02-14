@@ -13,12 +13,44 @@ local DrawingBehavior = {
 registerCoreBehavior(DrawingBehavior)
 
 
--- Default drawing
+-- Default
 
 local DEFAULT_URL = 'assets/rectangle.svg'
 local DEFAULT_GRAPHICS
 if not castle.system.isRemoteServer() then
     DEFAULT_GRAPHICS = tove.newGraphics(love.filesystem.newFileData(DEFAULT_URL):getString(), 1024)
+end
+
+
+-- Loading
+
+local cache = setmetatable({}, { __mode = 'v' })
+
+local function cacheDrawing(url, async)
+    local cacheEntry = cache[url]
+    if not cacheEntry then
+        cacheEntry = {}
+        cache[url] = cacheEntry
+        print('loading svg: ' .. url)
+    end
+    local graphics = cacheEntry.graphics
+    if not graphics then
+        if not cacheEntry.graphicsRequested then
+            cacheEntry.graphicsRequested = true
+            local function inside()
+                local fileContents = love.filesystem.newFileData(url):getString()
+                cacheEntry.graphics = tove.newGraphics(fileContents, 1024)
+                cacheEntry.graphics:setDisplay('mesh', 'rigid', 4)
+                cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
+            end
+            if async then
+                network.async(inside)
+            else
+                inside()
+            end
+        end
+    end
+    return cacheEntry
 end
 
 
@@ -83,11 +115,28 @@ function DrawingBehavior.handlers:blueprintComponent(component, bp)
 end
 
 
+-- Update
+
+function DrawingBehavior.handlers:update()
+    local newUrls = {}
+    for actorId, component in pairs(self.components) do
+        local url = component.properties.url
+        if not cache[url] then
+            table.insert(newUrls, url)
+            cache[url] = {}
+        end
+    end
+    if #newUrls > 0 then
+        network.async(function()
+            for _, url in ipairs(newUrls) do
+                cacheDrawing(url, false)
+            end
+        end)
+    end
+end
+
+
 -- Draw
-
-local cache = setmetatable({}, { __mode = 'v' })
-
-local sizeCache = setmetatable({}, { __mode = 'k' })
 
 function DrawingBehavior.handlers:drawComponent(component)
     -- Body attributes
@@ -97,30 +146,9 @@ function DrawingBehavior.handlers:drawComponent(component)
     local bodyAngle = body:getAngle()
 
     -- Load graphics
-    local cacheKey = component.properties.url
-    local cacheEntry = cache[cacheKey]
-    if not cacheEntry then
-        cacheEntry = {}
-        cache[cacheKey] = cacheEntry
-        print('loading svg: ' .. cacheKey)
-    end
+    local cacheEntry = cacheDrawing(component.properties.url, true)
     component._cacheEntry = cacheEntry -- Maintain strong reference
-    local graphics = cacheEntry.graphics
-    if not graphics then
-        if not cacheEntry.graphicsRequested then
-            cacheEntry.graphicsRequested = true
-            network.async(function()
-                local fileContents = love.filesystem.newFileData(component.properties.url):getString()
-                cacheEntry.graphics = tove.newGraphics(fileContents, 1024)
-                cacheEntry.graphics:setDisplay('mesh', 'rigid', 4)
-                cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
-                --if true then
-                --    cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics)
-                --end
-            end)
-        end
-        graphics = component._lastGraphics or DEFAULT_GRAPHICS
-    end
+    local graphics = cacheEntry.graphics or component._lastGraphics or DEFAULT_GRAPHICS
     component._lastGraphics = graphics
 
     -- Graphics size
