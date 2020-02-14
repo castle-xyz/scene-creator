@@ -117,6 +117,9 @@ end
 function Client.receivers:ready(time)
     if not self.initialParamsRead then
         local scene = INITIAL_PARAMS.scene
+        if scene then
+            print('scene', serpent.block(scene))
+        end
         self.sceneId = scene and scene.sceneId
         if scene and scene.data and scene.data.snapshot then
             self:send('addSnapshot', util.uuid(), scene.data.snapshot, { isRewind = true })

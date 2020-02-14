@@ -523,7 +523,7 @@ function Common:generateActorId()
 
     local newId
     while true do
-        newId = prefix .. '-' .. self.nextActorIdSuffix
+        newId = prefix .. ':' .. tostring(self.nextActorIdSuffix)
         self.nextActorIdSuffix = self.nextActorIdSuffix + 1
         if not self.actors[newId] then
             break
