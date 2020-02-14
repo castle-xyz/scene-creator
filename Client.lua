@@ -85,7 +85,7 @@ function Client.receivers:me(time, clientId, me)
 end
 
 
--- Enter / exit editing
+-- Begin / end editing
 
 function Client:beginEditing()
     if self.performing then
