@@ -24,8 +24,8 @@ end
 
 -- Wobble
 
-local AMOUNT = 5
-local NOISE_SCALE = 0.03
+local AMOUNT = 4.2
+local NOISE_SCALE = 0.08
 local FRAMES = 3
 local TWEEN = 1
 local SPEED = 8
