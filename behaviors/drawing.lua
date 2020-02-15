@@ -24,12 +24,14 @@ end
 
 -- Wobble
 
-local AMOUNT = 2.8
-local NOISE_SCALE = 0.04
+local AMOUNT = 5
+local NOISE_SCALE = 0.03
 local FRAMES = 3
 local TWEEN = 1
 local SPEED = 8
 local POINTS = false
+
+local startTime = love.timer.getTime()
 
 local function wobblePoint(x, y, seed)
     seed = seed * 100
@@ -44,16 +46,10 @@ local function wobbleDrawing(drawing)
     local frames = {}
     for f = 1, FRAMES do
         local clone = drawing:clone()
-        for i = 1, clone.paths.count do
-            local path = clone.paths[i]
-            for j = 1, path.subpaths.count do
-                local subpath = path.subpaths[j]
-                subpath:warp(function(x, y, c)
-                    local newX, newY = wobblePoint(x, y, FRAMES * f + j)
-                    return newX, newY, c
-                end)
-            end
-        end
+        clone:warp(function(x, y, c)
+            local newX, newY = wobblePoint(x, y, f)
+            return newX, newY, c
+        end)
         table.insert(frames, clone)
     end
     local tween = tove.newTween(frames[1])
@@ -78,13 +74,12 @@ local function cacheDrawing(url, opts)
     if not cacheEntry then
         cacheEntry = {}
         cache[url] = cacheEntry
-        print('loading svg: ' .. url)
     end
     local graphics = cacheEntry.graphics
     if not graphics then
         if not cacheEntry.graphicsRequested then
             cacheEntry.graphicsRequested = true
-            local function inside()
+            network.async(function()
                 local fileContents = love.filesystem.newFileData(url):getString()
                 cacheEntry.graphics = tove.newGraphics(fileContents, 1024)
                 cacheEntry.graphics:setDisplay('mesh', 'rigid', 4)
@@ -92,12 +87,7 @@ local function cacheDrawing(url, opts)
                 if wobble then
                     cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics)
                 end
-            end
-            if async then
-                network.async(inside)
-            else
-                inside()
-            end
+            end)
         end
     end
     return cacheEntry
@@ -114,37 +104,14 @@ function DrawingBehavior.handlers:addComponent(component, bp, opts)
     else
         component.properties.wobble = false
     end
+    cacheDrawing(component.properties.url, {
+        wobble = component.properties.wobble,
+    })
 end
 
 function DrawingBehavior.handlers:blueprintComponent(component, bp)
     bp.url = component.properties.url
     bp.wobble = component.properties.wobble
-end
-
-
--- Update
-
-function DrawingBehavior.handlers:update()
-    local new = {}
-    for actorId, component in pairs(self.components) do
-        local url = component.properties.url
-        if not cache[url] then
-            local curr = new[url] or {}
-            new[url] = {
-                wobble = curr.wobble or component.properties.wobble,
-            }
-        end
-    end
-    if next(new) then
-        network.async(function()
-            for url, properties in pairs(new) do
-                cacheDrawing(url, {
-                    async = false,
-                    wobble = properties.wobble,
-                })
-            end
-        end)
-    end
 end
 
 
@@ -159,7 +126,6 @@ function DrawingBehavior.handlers:drawComponent(component)
 
     -- Load graphics
     local cacheEntry = cacheDrawing(component.properties.url, {
-        async = true, 
         wobble = component.properties.wobble,
     })
     component._cacheEntry = cacheEntry -- Maintain strong reference
