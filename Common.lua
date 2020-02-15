@@ -16,6 +16,7 @@ serpent = require 'https://raw.githubusercontent.com/pkulchenko/serpent/879580fb
 jsEvents = require '__ghost__.jsEvents'
 jsBridge = require '__ghost__.bridge'
 cjson = require 'cjson'
+copas = require 'copas'
 
 
 -- Modules
@@ -85,6 +86,7 @@ function Common:define()
 
 
     self:defineMessageKind('setPerforming', self.sendOpts.reliableToAll)
+    self:defineMessageKind('setPaused', self.sendOpts.reliableToAll)
 
     self:defineMessageKind('ready', {
         from = 'server',
@@ -108,6 +110,7 @@ function Common:start()
     self:startCommand()
 
     self.performing = true
+    self.paused = true
 end
 
 function Common:stop()
@@ -129,7 +132,7 @@ end
 -- Performance
 
 function Common:updatePerformance(dt)
-    if self.performing then
+    if self.performing and not self.paused then
         self:callHandlers('prePerform', dt)
         self:callHandlers('perform', dt)
         self:callHandlers('postPerform', dt)
@@ -140,6 +143,13 @@ function Common.receivers:setPerforming(time, performing)
     if self.performing ~= performing then
         self.performing = performing
         self:callHandlers('setPerforming', performing)
+    end
+end
+
+function Common.receivers:setPaused(time, paused)
+    if self.paused ~= paused then
+        self.paused = paused
+        self:callHandlers('setPaused', paused)
     end
 end
 

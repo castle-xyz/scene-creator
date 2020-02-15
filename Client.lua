@@ -159,6 +159,14 @@ function Client.receivers:ready(time)
 
         self.initialParamsRead = true
     end
+
+    -- Do a garbage collection cycle soon
+    network.async(function()
+        copas.sleep(0.18)
+        collectgarbage()
+        copas.sleep(0.1)
+        collectgarbage()
+    end)
 end
 
 

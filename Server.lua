@@ -4,6 +4,21 @@ Common, Server, Client = Game.Common, Game.Server, Game.Client
 require 'Common'
 
 
+-- Start / stop
+
+function Server:start()
+    Common.start(self)
+
+    -- Unpause scene soon if not editing
+    network.async(function()
+        copas.sleep(0.92)
+        if self.performing then
+            self:send('setPaused', false)
+        end
+    end)
+end
+
+
 -- Connect / reconnect / disconnect
 
 function Server:syncClient(clientId)
@@ -33,6 +48,7 @@ function Server:syncClient(clientId)
         self:syncClientSnapshot(clientId, send)
 
         send('setPerforming', self.performing)
+        send('setPaused', self.paused)
 
         send('ready')
     end)
