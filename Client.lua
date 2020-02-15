@@ -163,7 +163,7 @@ function Client.receivers:ready(time)
 
     -- Do a garbage collection cycle soon
     network.async(function()
-        copas.sleep(0.18)
+        copas.sleep(0.1)
         collectgarbage()
         copas.sleep(0.1)
         collectgarbage()

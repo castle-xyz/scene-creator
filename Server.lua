@@ -11,7 +11,7 @@ function Server:start()
 
     -- Unpause scene soon if not editing
     network.async(function()
-        copas.sleep(0.92)
+        copas.sleep(1)
         if self.performing then
             self:send('setPaused', false)
         end
