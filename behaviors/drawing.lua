@@ -58,7 +58,7 @@ end
 
 local AMOUNT = 2.8
 local NOISE_SCALE = 0.04
-local FRAMES = 10
+local FRAMES = 3
 local TWEEN = 1
 local SPEED = 8
 local POINTS = false
