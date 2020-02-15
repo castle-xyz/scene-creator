@@ -135,6 +135,7 @@ function Client:endEditing()
         self:saveScene(snapshot)
         self:send('addSnapshot', util.uuid(), snapshot, { isRewind = true })
         self:send('setPerforming', true)
+        self:send('setPaused', false)
     end
 end
 
