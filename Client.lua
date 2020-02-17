@@ -307,7 +307,7 @@ end
 
 function Client:drawScene()
     do -- Background color
-        love.graphics.clear(1, 0.98, 0.98)
+        love.graphics.clear(0.91, 0.87, 0.82)
     end
 
     do -- Behaviors
@@ -376,28 +376,29 @@ function Client:draw()
     love.graphics.push('all')
 
     do -- View transform
-        if self.performing and next(self.selectedActorIds) then
-            -- In perform mode, make view follow selected actor
-            local actorId = next(self.selectedActorIds)
-            local bodyId, body = self.behaviorsByName.Body:getBody(actorId)
-            if body then
-                local GUTTER = 2 * UNIT
-                local x, y = body:getPosition()
-                local viewHeight = self.viewWidth * windowHeight / windowWidth
-                if x < self.viewX - 0.5 * self.viewWidth + GUTTER then
-                    self.viewX = x + 0.5 * self.viewWidth - GUTTER
-                end
-                if x > self.viewX + 0.5 * self.viewWidth - GUTTER then
-                    self.viewX = x - 0.5 * self.viewWidth + GUTTER
-                end
-                if y < self.viewY - 0.5 * self.viewWidth + GUTTER then
-                    self.viewY = y + 0.5 * self.viewWidth - GUTTER
-                end
-                if y > self.viewY + 0.5 * self.viewWidth - GUTTER then
-                    self.viewY = y - 0.5 * self.viewWidth + GUTTER
-                end
-            end
-        end
+        -- NOTE(nikki): Not doing view-following, will add it back as a behavior...
+        --if self.performing and next(self.selectedActorIds) then
+        --    -- In perform mode, make view follow selected actor
+        --    local actorId = next(self.selectedActorIds)
+        --    local bodyId, body = self.behaviorsByName.Body:getBody(actorId)
+        --    if body then
+        --        local GUTTER = 2 * UNIT
+        --        local x, y = body:getPosition()
+        --        local viewHeight = self.viewWidth * windowHeight / windowWidth
+        --        if x < self.viewX - 0.5 * self.viewWidth + GUTTER then
+        --            self.viewX = x + 0.5 * self.viewWidth - GUTTER
+        --        end
+        --        if x > self.viewX + 0.5 * self.viewWidth - GUTTER then
+        --            self.viewX = x - 0.5 * self.viewWidth + GUTTER
+        --        end
+        --        if y < self.viewY - 0.5 * self.viewWidth + GUTTER then
+        --            self.viewY = y + 0.5 * self.viewWidth - GUTTER
+        --        end
+        --        if y > self.viewY + 0.5 * self.viewWidth - GUTTER then
+        --            self.viewY = y - 0.5 * self.viewWidth + GUTTER
+        --        end
+        --    end
+        --end
 
         self.viewTransform:reset()
         self.viewTransform:scale(windowWidth / self.viewWidth)
