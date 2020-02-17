@@ -53,16 +53,20 @@ function BaseBehavior:has(actorId)
 end
 
 function BaseBehavior:getTouchData()
+    local empty = {
+        touches = {},
+        numTouches = 0,
+        maxNumTouches = 0,
+        allTouchesReleased = false,
+        gestureId = nil,
+    }
     if self.game.server then
-        return {
-            touches = {},
-            numTouches = 0,
-            maxNumTouches = 0,
-            allTouchesReleased = false,
-            gestureId = nil,
-        }
+        return empty
     end
     if self.game.client then
+        if self.game.gestureStolen then
+            return empty
+        end
         return {
             touches = self.game.touches,
             numTouches = self.game.numTouches,

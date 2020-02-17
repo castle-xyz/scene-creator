@@ -143,7 +143,7 @@ end
 -- Ready
 
 function Client.receivers:ready(time)
-    if not self.initialParamsRead then
+    if not self.initialParamsRead and INITIAL_PARAMS then
         local scene = INITIAL_PARAMS.scene
         --if scene then
         --    print('scene', serpent.block(scene))
@@ -190,6 +190,42 @@ end)
 
 -- Update
 
+function Client:twoFingerPan()
+    if self.numTouches == 2 then
+        self.gestureStolen = true
+
+        local moveX, moveY = 0, 0
+        local centerX, centerY
+        local scale
+
+        local touchId1, touch1 = next(self.touches)
+        local touchId2, touch2 = next(self.touches, touchId1)
+
+        local touch1PrevSX, touch1PrevSY = touch1.screenX - touch1.screenDX, touch1.screenY - touch1.screenDY
+        local touch2PrevSX, touch2PrevSY = touch2.screenX - touch2.screenDX, touch2.screenY - touch2.screenDY
+
+        local centerSX, centerSY = 0.5 * (touch1.screenX + touch2.screenX), 0.5 * (touch1.screenY + touch2.screenY)
+        local centerPrevSX, centerPrevSY = 0.5 * (touch1PrevSX + touch2PrevSX), 0.5 * (touch1PrevSY + touch2PrevSY)
+
+        moveX, moveY = (centerSX - centerPrevSX) / self:getViewScale(), (centerSY - centerPrevSY) / self:getViewScale()
+
+        local px, py = touch1.screenX - touch2.screenX, touch1.screenY - touch2.screenY
+        local prevPX, prevPY = touch1PrevSX - touch2PrevSX, touch1PrevSY - touch2PrevSY
+        scale = math.sqrt(prevPX * prevPX + prevPY * prevPY) / math.sqrt(px * px + py * py)
+
+        centerX, centerY = self.viewTransform:inverseTransformPoint(centerSX, centerSY)
+
+        if scale then
+            local prevViewWidth = self.viewWidth
+            self.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(scale * self.viewWidth, MAX_VIEW_WIDTH))
+            scale = self.viewWidth / prevViewWidth -- Recompute to account for clamping above
+            moveX = moveX - (1 - scale) * (centerX - self.viewX)
+            moveY = moveY - (1 - scale) * (centerY - self.viewY)
+        end
+        self.viewX, self.viewY = self.viewX - moveX, self.viewY - moveY
+    end
+end
+
 function Client:update(dt)
     if not self.connected then
         return
@@ -208,7 +244,8 @@ function Client:update(dt)
 
     self:callHandlers('preUpdate', dt)
 
-    self:touchToSelect() -- Do this after `preUpdate` to allow tools to steal touches first
+    self:touchToSelect() -- Do these after `preUpdate` to allow tools to steal touches first
+    self:twoFingerPan()
 
     self:callHandlers('update', dt)
     self:callHandlers('postUpdate', dt)

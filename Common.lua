@@ -40,7 +40,6 @@ require 'behaviors.free_motion'
 require 'behaviors.rotating_motion'
 require 'tools.grab'
 require 'tools.sling'
-require 'tools.view'
 
 require 'library'
 require 'snapshot'

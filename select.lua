@@ -227,10 +227,12 @@ function Client:touchToSelect()
     if self.numTouches == 1 and self.maxNumTouches == 1 then
         local touchId, touch = next(self.touches)
 
-        -- Press? Check at point and select if nothing already selected there.
-        if not touch.used and touch.pressed then
+        -- Press and move? Check at point and select if nothing already selected there.
+        if (not touch.used and
+                touch.x - touch.initialX ~= 0 and touch.y - touch.initialY ~= 0 and
+                love.timer.getTime() - touch.pressTime < 0.2) then
             local someSelectedHit = false
-            local hits = self.behaviorsByName.Body:getActorsAtPoint(touch.x, touch.y)
+            local hits = self.behaviorsByName.Body:getActorsAtPoint(touch.initialX, touch.initialY)
             for actorId in pairs(hits) do
                 if self.selectedActorIds[actorId] then
                     someSelectedHit = true
@@ -238,7 +240,9 @@ function Client:touchToSelect()
                 end
             end
             if not someSelectedHit then
-                self:selectActorAtTouch(touch, hits)
+                self:selectActorAtPoint(touch.initialX, touch.initialY, hits)
+                touch.used = true
+                self:applySelections()
             end
         end
 

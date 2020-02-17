@@ -325,6 +325,7 @@ function GrabTool.handlers:update(dt)
 
         if touchData.numTouches == 1 then -- 1-finger move
             local touchId, touch = next(touchData.touches)
+            touch.used = true
             if self._gridEnabled then
                 local touchPrevX, touchPrevY = touch.x - touch.dx, touch.y - touch.dy
 
@@ -341,6 +342,8 @@ function GrabTool.handlers:update(dt)
         elseif touchData.numTouches == 2 then -- 2-finger move and rotate
             local touchId1, touch1 = next(touchData.touches)
             local touchId2, touch2 = next(touchData.touches, touchId1)
+            touch1.used = true
+            touch2.used = true
 
             local touch1PrevX, touch1PrevY = touch1.x - touch1.dx, touch1.y - touch1.dy
             local touch2PrevX, touch2PrevY = touch2.x - touch2.dx, touch2.y - touch2.dy
