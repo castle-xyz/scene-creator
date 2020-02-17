@@ -36,6 +36,7 @@ function Client:updateTouches()
             touch.x, touch.y = x, y
             touch.dx, touch.dy = 0, 0
             touch.screenX, touch.screenY = screenX, screenY
+            touch.initialScreenX, touch.initialScreenY = screenX, screenY
             touch.screenDX, touch.screenDY = 0, 0
             touch.pressTime = love.timer.getTime()
             touch.pressed = true
