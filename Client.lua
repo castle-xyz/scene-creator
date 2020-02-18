@@ -340,13 +340,13 @@ function Client:drawScene(opts)
         if opts.boundary then
             love.graphics.clear(0.749, 0.773, 0.788)
             love.graphics.push('all')
-            love.graphics.setColor(0.91, 0.87, 0.82)
+            love.graphics.setColor(0.82, 0.749, 0.639)
             love.graphics.rectangle('fill',
                 -0.5 * DEFAULT_VIEW_WIDTH, -0.5 * DEFAULT_VIEW_WIDTH,
                 DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * 16 / 9)
             love.graphics.pop()
         else
-            love.graphics.clear(0.91, 0.87, 0.82)
+            love.graphics.clear(0.82, 0.749, 0.639)
         end
     end
 
