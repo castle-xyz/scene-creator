@@ -215,7 +215,7 @@ function Client:twoFingerPan()
         local initialPX, initialPY = touch1.initialScreenX - touch2.initialScreenX, touch1.initialScreenY - touch2.initialScreenY
         local initialPL = math.sqrt(initialPX * initialPX + initialPY * initialPY)
         if (touch1.zooming or touch2.zooming or
-                not (self.viewWidth == DEFAULT_VIEW_WIDTH and math.abs(initialPL - pl) <= 0.2 * initialPL)) then
+                not (self.viewWidth == DEFAULT_VIEW_WIDTH and math.abs(initialPL - pl) <= 0.175 * initialPL)) then
             -- Don't zoom if close to 1:1
             local prevPL = math.sqrt(prevPX * prevPX + prevPY * prevPY)
             if not (touch1.zooming and touch2.zooming) then
@@ -241,12 +241,14 @@ function Client:twoFingerPan()
         if not (touch1.noPan or touch2.noPan) then
             local prevX, prevY = self.viewX, self.viewY
             self.viewX, self.viewY = self.viewX - moveX, self.viewY - moveY
-            local prevL = math.sqrt(prevX * prevX + prevY * prevY)
-            local l = math.sqrt(self.viewX * self.viewX + self.viewY * self.viewY)
-            if l < prevL and l < 0.2 * UNIT then -- Moved close to center? Snap and disable pan for rest of gesture.
-                self.viewX, self.viewY = 0, 0
-                touch1.noPan = true
-                touch2.noPan = true
+            if self.viewWidth == DEFAULT_VIEW_WIDTH then -- Move snap only when zoom is 1:1
+                local prevL = math.sqrt(prevX * prevX + prevY * prevY)
+                local l = math.sqrt(self.viewX * self.viewX + self.viewY * self.viewY)
+                if l < prevL and l < 0.2 * UNIT then -- Moved close to center? Snap and disable pan for rest of gesture.
+                    self.viewX, self.viewY = 0, 0
+                    touch1.noPan = true
+                    touch2.noPan = true
+                end
             end
         end
     end
@@ -331,9 +333,21 @@ function Client.receivers:setPerforming(time, performing)
     Common.receivers.setPerforming(self, time, performing)
 end
 
-function Client:drawScene()
-    do -- Background color
-        love.graphics.clear(0.91, 0.87, 0.82)
+function Client:drawScene(opts)
+    opts = opts or {}
+
+    do -- Background
+        if opts.boundary then
+            love.graphics.clear(0.749, 0.773, 0.788)
+            love.graphics.push('all')
+            love.graphics.setColor(0.91, 0.87, 0.82)
+            love.graphics.rectangle('fill',
+                -0.5 * DEFAULT_VIEW_WIDTH, -0.5 * DEFAULT_VIEW_WIDTH,
+                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * 16 / 9)
+            love.graphics.pop()
+        else
+            love.graphics.clear(0.91, 0.87, 0.82)
+        end
     end
 
     do -- Behaviors
@@ -433,15 +447,26 @@ function Client:draw()
         love.graphics.applyTransform(self.viewTransform)
     end
 
-    self:drawScene()
+    self:drawScene({
+        boundary = not self.performing,
+    })
 
     do -- Overlays
         local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
 
-        -- All body outlines (if not performing)
-        love.graphics.setLineWidth(1.25 * self:getPixelScale())
-        love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
+        -- Boundary
         if not self.performing then
+            love.graphics.setLineWidth(1.75 * self:getPixelScale())
+            love.graphics.setColor(0.596, 0.631, 0.659)
+            love.graphics.rectangle('line',
+                -0.5 * DEFAULT_VIEW_WIDTH, -0.5 * DEFAULT_VIEW_WIDTH,
+                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * 16 / 9)
+        end
+
+        -- All body outlines
+        if not self.performing then
+            love.graphics.setLineWidth(1.25 * self:getPixelScale())
+            love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
             for actorId, component in pairs(self.behaviorsByName.Body.components) do
                 self.behaviorsByName.Body:drawBodyOutline(component)
             end
