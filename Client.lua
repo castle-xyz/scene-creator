@@ -312,13 +312,13 @@ end
 
 function Client.receivers:setPerforming(time, performing)
     if not self.performing and performing then
-        -- Save paused view state and reset view size
+        -- Save paused view state and reset view
         self._pausedView = {
             x = self.viewX,
             y = self.viewY,
             width = self.viewWidth,
         }
-        self:resetViewSize()
+        self:resetView()
     end
 
     if self.performing and not performing and self._pausedView then
