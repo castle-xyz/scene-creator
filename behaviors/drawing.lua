@@ -24,14 +24,12 @@ end
 
 -- Wobble
 
-local AMOUNT = 4.2
+local AMOUNT = 3
 local NOISE_SCALE = 0.08
 local FRAMES = 3
 local TWEEN = 1
-local SPEED = 8
+local SPEED = 10
 local POINTS = false
-
-local startTime = love.timer.getTime()
 
 local function wobblePoint(x, y, seed)
     seed = seed * 100
@@ -42,14 +40,45 @@ local function wobblePoint(x, y, seed)
     return x + dx1 + dx2, y + dy1 + dy2
 end
 
+local function copyCurve(dest, src)
+    dest.x0, dest.y0 = src.x0, src.y0
+    dest.cp1x, dest.cp1y = src.cp1x, src.cp1y
+    dest.cp2x, dest.cp2y = src.cp2x, src.cp2y
+    dest.x, dest.y = src.x, src.y
+end
+
+local function wobbleCurve(dest, src, seed)
+    dest.x0, dest.y0 = wobblePoint(src.x0, src.y0, seed)
+    dest.cp1x, dest.cp1y = wobblePoint(src.cp1x, src.cp1y, seed)
+    dest.cp2x, dest.cp2y = wobblePoint(src.cp2x, src.cp2y, seed)
+    dest.x, dest.y = wobblePoint(src.x, src.y, seed)
+end
+
 local function wobbleDrawing(drawing)
     local frames = {}
+    local display = drawing:getDisplay()
     for f = 1, FRAMES do
         local clone = drawing:clone()
-        clone:warp(function(x, y, c)
-            local newX, newY = wobblePoint(x, y, f)
-            return newX, newY, c
-        end)
+        for i = 1, clone.paths.count do
+            local path = clone.paths[i]
+            local origPath = drawing.paths[i]
+            for j = 1, path.subpaths.count do
+                local subpath = path.subpaths[j]
+                local origSubpath = origPath.subpaths[j]
+                subpath:warp(function(x, y, c)
+                    local newX, newY = wobblePoint(x, y, f * FRAMES + j)
+                    return newX, newY, c
+                end)
+                if not subpath.isClosed then -- Need to fix ends if not closed
+                    local numCurves = subpath.curves.count
+                    if display ~= 'texture' then
+                        copyCurve(subpath.curves[1], origSubpath.curves[1])
+                        copyCurve(subpath.curves[numCurves - 1], origSubpath.curves[numCurves - 1])
+                    end
+                    copyCurve(subpath.curves[numCurves], origSubpath.curves[numCurves])
+                end
+            end
+        end
         table.insert(frames, clone)
     end
     local tween = tove.newTween(frames[1])
@@ -158,11 +187,11 @@ function DrawingBehavior.handlers:drawComponent(component)
 
     -- Draw!
     if flipbook then
-        if not component._flipbookPhase then
-            component._flipbookPhase = math.random(0, flipbook._duration - 1)
-            component._flipbookSign = math.random(2) == 1 and -1 or 1
+        if not component._wobblePhase then
+            component._wobblePhase = math.random(0, flipbook._duration - 1)
+            component._wobbleSign = math.random(2) == 1 and -1 or 1
         end
-        flipbook.t = (component._flipbookSign * SPEED * love.timer.getTime() + component._flipbookPhase) % flipbook._duration
+        flipbook.t = (component._wobbleSign * SPEED * love.timer.getTime() + component._wobblePhase) % flipbook._duration
         flipbook:draw()
     else
         graphics:draw()
