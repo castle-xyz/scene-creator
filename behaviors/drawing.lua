@@ -13,6 +13,10 @@ local DrawingBehavior = {
 registerCoreBehavior(DrawingBehavior)
 
 
+local ffi = require 'ffi'
+local C = ffi.C
+
+
 -- Default
 
 local DEFAULT_URL = 'assets/rectangle.svg'
@@ -94,7 +98,7 @@ end
 
 local cache = setmetatable({}, { __mode = 'v' })
 
-local function cacheDrawing(url, opts)
+function DrawingBehavior:cacheDrawing(url, opts)
     opts = opts or {}
     local async = opts.async
     local wobble = opts.wobble
@@ -108,18 +112,144 @@ local function cacheDrawing(url, opts)
     if not graphics then
         if not cacheEntry.graphicsRequested then
             cacheEntry.graphicsRequested = true
-            network.async(function()
-                local fileContents = love.filesystem.newFileData(url):getString()
-                cacheEntry.graphics = tove.newGraphics(fileContents, 1024)
-                cacheEntry.graphics:setDisplay('mesh', 'rigid', 4)
-                cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
-                if wobble then
-                    cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics)
-                end
-            end)
+            if url:match('^ser:') then -- Serialized
+                cacheEntry.graphics, cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = self:deserialize(url:sub(5))
+                --cacheEntry.graphics:setDisplay('texture', 1024)
+            else -- Network loaded
+                network.async(function()
+                    local fileContents = love.filesystem.newFileData(url):getString()
+                    cacheEntry.graphics = tove.newGraphics(fileContents, 1024)
+                    cacheEntry.graphics:setDisplay('mesh', 'rigid', 4)
+                    cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
+                    if wobble then
+                        cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics)
+                    end
+                end)
+            end
         end
     end
     return cacheEntry
+end
+
+function DrawingBehavior:serialize(graphics, width, height)
+    local payload = {}
+
+    -- Width, height
+    payload.width, payload.height = width, height
+
+    -- Paths
+    payload.paths = {}
+    local readPaths = graphics.paths
+    for pathI = 1, readPaths.count do
+        local readPath = readPaths[pathI]
+        local writePath = {}
+        payload.paths[pathI] = writePath
+
+        -- Subpaths
+        writePath.subpaths = {}
+        local readSubpaths = readPath.subpaths
+        for subpathI = 1, readSubpaths.count do
+            local readSubpath = readSubpaths[subpathI]
+            local writeSubpath = {}
+            writePath.subpaths[subpathI] = writeSubpath
+
+            -- Points
+            writeSubpath.points = {}
+            local readPoints = readSubpath.points
+            for pointI = 1, readPoints.count do
+                local readPoint = readPoints[pointI]
+                writeSubpath.points[2 * (pointI - 1) + 1] = readPoint.x
+                writeSubpath.points[2 * (pointI - 1) + 2] = readPoint.y
+            end
+
+            -- Closed?
+            writeSubpath.isClosed = readSubpath.isClosed
+        end
+
+        -- Line
+        local lineColor = readPath:getLineColor()
+        if lineColor then
+            writePath.lineColor = lineColor:serialize()
+            writePath.lineWidth = readPath:getLineWidth()
+            --writePath.lineJoin = readPath:getLineJoin()
+            writePath.miterLimit = readPath:getMiterLimit()
+        end
+
+        -- Fill
+        local fillColor = readPath:getFillColor()
+        if fillColor then
+            writePath.fillColor = fillColor:serialize()
+            --writePath.fillRule = readPath:getFillRule()
+        end
+
+        -- Opacity
+        --writePath.opacity = readPath:getOpacity()
+    end
+
+    return cjson.encode(payload)
+end
+
+function DrawingBehavior:deserialize(ser)
+    local payload = cjson.decode(ser)
+
+    -- Width, height
+    local width, height = payload.width, payload.height
+
+    local graphics = tove.newGraphics()
+
+    -- Paths
+    for _, readPath in ipairs(payload.paths or {}) do
+        local writePath = tove.newPath()
+        graphics:addPath(writePath)
+
+        -- Subpaths
+        for _, readSubpath in ipairs(readPath.subpaths or {}) do
+            local writeSubpath = tove.newSubpath()
+            writePath:addSubpath(writeSubpath)
+
+            -- Points
+            if readSubpath.points then
+                C.SubpathSetPoints(
+                    writeSubpath,
+                    ffi.new('float[?]', #readSubpath.points, readSubpath.points),
+                    #readSubpath.points / 2)
+            end
+
+            -- Closed?
+            if readSubpath.isClosed then
+                writeSubpath.isClosed = true
+            end
+        end
+
+        -- Line
+        if readPath.lineColor then
+            writePath:setLineColor(tove.newPaint(readPath.lineColor))
+            if readPath.lineWidth then
+                writePath:setLineWidth(readPath.lineWidth)
+            end
+            if readPath.lineJoin then
+                writePath:setLineJoin(readPath.lineJoin)
+            end
+            if readPath.miterLimit then
+                writePath:setMiterLimit(readPath.miterLimit)
+            end
+        end
+
+        -- Fill
+        if readPath.fillColor then
+            writePath:setFillColor(tove.newPaint(readPath.fillColor))
+            if readPath.fillRule then
+                writePath:setFillRule(readPath.fillRule)
+            end
+        end
+
+        -- Opacity
+        if readPath.opacity then
+            writePath:setOpacity(readPath.opacity)
+        end
+    end
+
+    return graphics, width, height
 end
 
 
@@ -133,7 +263,7 @@ function DrawingBehavior.handlers:addComponent(component, bp, opts)
     else
         component.properties.wobble = false
     end
-    cacheDrawing(component.properties.url, {
+    self:cacheDrawing(component.properties.url, {
         wobble = component.properties.wobble,
     })
 end
@@ -153,29 +283,37 @@ function DrawingBehavior.handlers:drawComponent(component)
     local bodyX, bodyY = body:getPosition()
     local bodyAngle = body:getAngle()
 
-    -- Load graphics
-    local cacheEntry = cacheDrawing(component.properties.url, {
-        wobble = component.properties.wobble,
-    })
-    component._cacheEntry = cacheEntry -- Maintain strong reference
-    local graphics = cacheEntry.graphics or component._lastGraphics or DEFAULT_GRAPHICS
-    component._lastGraphics = graphics
+    local graphics, flipbook, graphicsWidth, graphicsHeight
 
-    -- Graphics size
-    local graphicsWidth, graphicsHeight = cacheEntry.graphicsWidth, cacheEntry.graphicsHeight
-    if not (graphicsWidth and graphicsHeight) then
-        local minX, minY, maxX, maxY = graphics:computeAABB('high')
-        graphicsWidth, graphicsHeight = maxX - minX, maxY - minY
-        cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = graphicsWidth, graphicsHeight
-    end
+    -- Check if the draw tool is acting on us
+    local drawComponent = self.dependents.Draw:get(component.actorId)
+    if drawComponent and drawComponent._graphics then
+        graphics = drawComponent._graphics
+        graphicsWidth, graphicsHeight = drawComponent._graphicsWidth, drawComponent._graphicsHeight
+    else -- Use `url`
+        -- Load graphics
+        local cacheEntry = self:cacheDrawing(component.properties.url, {
+            wobble = component.properties.wobble,
+        })
+        component._cacheEntry = cacheEntry -- Maintain strong reference
+        graphics = cacheEntry.graphics or component._lastGraphics or DEFAULT_GRAPHICS
+        component._lastGraphics = graphics
 
-    -- Wobble
-    local flipbook
-    if component.properties.wobble and cacheEntry.graphics then
-        flipbook = cacheEntry.flipbook
-        if not flipbook then
-            flipbook = wobbleDrawing(graphics)
-            cacheEntry.flipbook = flipbook
+        -- Graphics size
+        graphicsWidth, graphicsHeight = cacheEntry.graphicsWidth, cacheEntry.graphicsHeight
+        if not (graphicsWidth and graphicsHeight) then
+            local minX, minY, maxX, maxY = graphics:computeAABB('high')
+            graphicsWidth, graphicsHeight = maxX - minX, maxY - minY
+            cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = graphicsWidth, graphicsHeight
+        end
+
+        -- Wobble
+        if component.properties.wobble and cacheEntry.graphics then
+            flipbook = cacheEntry.flipbook
+            if not flipbook then
+                flipbook = wobbleDrawing(graphics)
+                cacheEntry.flipbook = flipbook
+            end
         end
     end
 
@@ -208,25 +346,27 @@ function DrawingBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
     ui.box('preview and picker', { flexDirection = 'row', alignItems = 'flex-start' }, function()
-        ui.box('preview', {
-            width = '28%',
-            aspectRatio = 1,
-            margin = 4,
-            marginLeft = 8,
-            backgroundColor = 'white',
-        }, function()
-            ui.image(CHECKERBOARD_IMAGE_URL, { flex = 1, margin = 0 })
+        if not component.properties.url:match('^ser:') then
+            ui.box('preview', {
+                width = '28%',
+                aspectRatio = 1,
+                margin = 4,
+                marginLeft = 8,
+                backgroundColor = 'white',
+            }, function()
+                ui.image(CHECKERBOARD_IMAGE_URL, { flex = 1, margin = 0 })
 
-            if component.properties.url then
-                ui.image(component.properties.url, {
-                    position = 'absolute',
-                    left = 0, top = 0, bottom = 0, right = 0,
-                    margin = 0,
-                })
-            end
-        end)
+                if component.properties.url then
+                    ui.image(component.properties.url, {
+                        position = 'absolute',
+                        left = 0, top = 0, bottom = 0, right = 0,
+                        margin = 0,
+                    })
+                end
+            end)
 
-        ui.box('spacer', { width = 8 }, function() end)
+            ui.box('spacer', { width = 8 }, function() end)
+        end
 
         ui.box('library picker', {
             flex = 1,

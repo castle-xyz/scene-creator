@@ -52,6 +52,10 @@ function BaseBehavior:has(actorId)
     return not not self.components[actorId]
 end
 
+function BaseBehavior:get(actorId)
+    return self.components[actorId]
+end
+
 function BaseBehavior:getTouchData()
     local empty = {
         touches = {},
@@ -368,10 +372,13 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     end
 
     -- Reference dependencies
+    behavior.dependents = {}
     behavior.dependencies = {}
     for _, dependencyName in pairs(behaviorSpec.dependencies or {}) do
-        behavior.dependencies[dependencyName] = assert(self.behaviorsByName[dependencyName],
+        local dependency = assert(self.behaviorsByName[dependencyName],
             "dependency '" .. dependencyName .. "' not resolved")
+        behavior.dependencies[dependencyName] = dependency
+        dependency.dependents[behavior.name] = behavior
     end
 
     -- Copy tool spec
