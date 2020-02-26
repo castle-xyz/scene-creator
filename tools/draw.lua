@@ -33,27 +33,6 @@ end
 function DrawTool.handlers:addComponent(component, bp, opts)
 end
 
-function DrawTool.handlers:removeComponent(component, opts)
-    if opts.isOrigin and not opts.removeActor and component._graphics then
-        local actorId = component.actorId
-
-        local newUrl = 'ser:' .. self.dependencies.Drawing:serialize(
-            component._graphics,
-            component._graphicsWidth,
-            component._graphicsHeight)
-        print('newUrl', newUrl)
-        local oldUrl = self.dependencies.Drawing:get(actorId).properties.url
-
-        self.dependencies.Drawing:command('draw', {
-            params = { 'oldUrl', 'newUrl' },
-        }, function()
-            self:sendSetProperties(actorId, 'url', newUrl)
-        end, function()
-            self:sendSetProperties(actorId, 'url', oldUrl)
-        end)
-    end
-end
-
 
 -- Update
 
@@ -91,17 +70,19 @@ function DrawTool.handlers:update(dt)
 
     -- Make sure the graphics is initialized
     local drawingComponent = self.dependencies.Drawing:get(c.actorId)
-    if not (drawingComponent._cacheEntry and drawingComponent._cacheEntry.graphics) then
+    local cacheEntry = self.dependencies.Drawing:cacheDrawing(drawingComponent.properties.url)
+    if not cacheEntry then
         return
     end
-    if not c._graphics then
-        c._graphics = drawingComponent._cacheEntry.graphics:clone()
-        c._graphicsWidth = drawingComponent._cacheEntry.graphicsWidth
-        c._graphicsHeight = drawingComponent._cacheEntry.graphicsHeight
+    if not c._graphics or c._lastUrl ~= drawingComponent.properties.url then
+        c._graphics = cacheEntry.graphics:clone()
+        c._graphicsWidth = cacheEntry.graphicsWidth
+        c._graphicsHeight = cacheEntry.graphicsHeight
         c._graphics:setDisplay('mesh', 1024)
         c._currPath = nil
         c._currSubpath = nil
         c._lastCornerX, c._lastCornerY = nil
+        c._lastUrl = drawingComponent.properties.url
     end
 
     -- Look for a single-finger drag and release
@@ -235,6 +216,22 @@ function DrawTool.handlers:update(dt)
                 c._currSubpath = nil
                 c._currPath = nil
                 c._lastCornerX, c._lastCornerY = nil, nil
+
+                -- Save
+                local actorId = c.actorId
+                local newUrl = 'ser:' .. self.dependencies.Drawing:serialize(
+                    c._graphics,
+                    c._graphicsWidth,
+                    c._graphicsHeight)
+                c._lastUrl = newUrl
+                local oldUrl = self.dependencies.Drawing:get(actorId).properties.url
+                self.dependencies.Drawing:command('draw', {
+                    params = { 'oldUrl', 'newUrl' },
+                }, function()
+                    self:sendSetProperties(actorId, 'url', newUrl)
+                end, function()
+                    self:sendSetProperties(actorId, 'url', oldUrl)
+                end)
             end
         end
     end

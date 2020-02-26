@@ -196,6 +196,7 @@ function DrawingBehavior:deserialize(ser)
     local width, height = payload.width, payload.height
 
     local graphics = tove.newGraphics()
+    graphics:setDisplay('mesh', 1024)
 
     -- Paths
     for _, readPath in ipairs(payload.paths or {}) do
