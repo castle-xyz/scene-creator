@@ -312,7 +312,7 @@ function DrawingBehavior.handlers:drawComponent(component)
         component._cacheEntry = cacheEntry -- Maintain strong reference
         graphics = cacheEntry.graphics or component._lastGraphics or DEFAULT_GRAPHICS
         component._lastGraphics = graphics
-        graphicsWidth, graphicsHeight = cacheEntry.graphicsWidth, cacheEntry.graphicsHeight
+        graphicsWidth, graphicsHeight = cacheEntry.graphicsWidth or 1024, cacheEntry.graphicsHeight or 1024
 
         -- Wobble
         if component.properties.wobble and cacheEntry.graphics then
