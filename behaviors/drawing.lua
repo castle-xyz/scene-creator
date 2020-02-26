@@ -171,7 +171,7 @@ function DrawingBehavior:serialize(graphics, width, height)
         if lineColor then
             writePath.lineColor = lineColor:serialize()
             writePath.lineWidth = readPath:getLineWidth()
-            --writePath.lineJoin = readPath:getLineJoin()
+            writePath.lineJoin = readPath:getLineJoin()
             writePath.miterLimit = readPath:getMiterLimit()
         end
 
@@ -179,11 +179,11 @@ function DrawingBehavior:serialize(graphics, width, height)
         local fillColor = readPath:getFillColor()
         if fillColor then
             writePath.fillColor = fillColor:serialize()
-            --writePath.fillRule = readPath:getFillRule()
+            writePath.fillRule = readPath:getFillRule()
         end
 
         -- Opacity
-        --writePath.opacity = readPath:getOpacity()
+        writePath.opacity = readPath:getOpacity()
     end
 
     local encoded = bitser.dumps(payload)
