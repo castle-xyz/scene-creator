@@ -75,6 +75,7 @@ function DrawTool.handlers:update(dt)
         return
     end
     if not c._graphics or c._lastUrl ~= drawingComponent.properties.url then
+        -- Load from cache entry if not yet loaded or if the url changed
         c._graphics = cacheEntry.graphics:clone()
         c._graphicsWidth = cacheEntry.graphicsWidth
         c._graphicsHeight = cacheEntry.graphicsHeight
@@ -223,7 +224,7 @@ function DrawTool.handlers:update(dt)
                     c._graphics,
                     c._graphicsWidth,
                     c._graphicsHeight)
-                c._lastUrl = newUrl
+                c._lastUrl = newUrl -- Prevent reloading since we're already in sync
                 local oldUrl = self.dependencies.Drawing:get(actorId).properties.url
                 self.dependencies.Drawing:command('draw', {
                     params = { 'oldUrl', 'newUrl' },

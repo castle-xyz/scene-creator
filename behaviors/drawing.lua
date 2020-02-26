@@ -186,11 +186,19 @@ function DrawingBehavior:serialize(graphics, width, height)
         --writePath.opacity = readPath:getOpacity()
     end
 
-    return cjson.encode(payload)
+    local encoded = bitser.dumps(payload)
+    --print('encoded', #encoded)
+    local compressed = love.data.compress('string', 'zlib', encoded)
+    --print('compressed', #compressed)
+    local base64 = love.data.encode('string', 'base64', compressed)
+    --print('base64', #base64)
+    return base64
 end
 
-function DrawingBehavior:deserialize(ser)
-    local payload = cjson.decode(ser)
+function DrawingBehavior:deserialize(base64)
+    local compressed = love.data.decode('string', 'base64', base64)
+    local encoded = love.data.decompress('string', 'zlib', compressed)
+    local payload = bitser.loads(encoded)
 
     -- Width, height
     local width, height = payload.width, payload.height
