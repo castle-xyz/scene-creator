@@ -98,6 +98,11 @@ end
 
 local cache = setmetatable({}, { __mode = 'v' })
 
+local function graphicsDimensions(graphics)
+    local minX, minY, maxX, maxY = graphics:computeAABB('high')
+    return maxX - minX, maxY - minY
+end
+
 function DrawingBehavior:cacheDrawing(url, opts)
     opts = opts or {}
     local async = opts.async
@@ -120,7 +125,7 @@ function DrawingBehavior:cacheDrawing(url, opts)
                     local fileContents = love.filesystem.newFileData(url):getString()
                     cacheEntry.graphics = tove.newGraphics(fileContents, 1024)
                     cacheEntry.graphics:setDisplay('mesh', 'rigid', 4)
-                    cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = nil, nil
+                    cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = graphicsDimensions(cacheEntry.graphics)
                     if wobble then
                         cacheEntry.flipbook = wobbleDrawing(cacheEntry.graphics)
                     end
@@ -307,14 +312,7 @@ function DrawingBehavior.handlers:drawComponent(component)
         component._cacheEntry = cacheEntry -- Maintain strong reference
         graphics = cacheEntry.graphics or component._lastGraphics or DEFAULT_GRAPHICS
         component._lastGraphics = graphics
-
-        -- Graphics size
         graphicsWidth, graphicsHeight = cacheEntry.graphicsWidth, cacheEntry.graphicsHeight
-        if not (graphicsWidth and graphicsHeight) then
-            local minX, minY, maxX, maxY = graphics:computeAABB('high')
-            graphicsWidth, graphicsHeight = maxX - minX, maxY - minY
-            cacheEntry.graphicsWidth, cacheEntry.graphicsHeight = graphicsWidth, graphicsHeight
-        end
 
         -- Wobble
         if component.properties.wobble and cacheEntry.graphics then

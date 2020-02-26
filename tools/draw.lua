@@ -28,9 +28,36 @@ function DrawTool.handlers:addBehavior(opts)
 end
 
 
--- Component management
+-- Methods
 
-function DrawTool.handlers:addComponent(component, bp, opts)
+function DrawTool:saveDrawing(commandDescription, c)
+    local actorId = c.actorId
+    local newUrl = 'ser:' .. self.dependencies.Drawing:serialize(
+        c._graphics,
+        c._graphicsWidth,
+        c._graphicsHeight)
+    c._lastUrl = newUrl -- Prevent reloading since we're already in sync
+    local oldUrl = self.dependencies.Drawing:get(actorId).properties.url
+    self.dependencies.Drawing:command(commandDescription, {
+        params = { 'oldUrl', 'newUrl' },
+    }, function()
+        self:sendSetProperties(actorId, 'url', newUrl)
+    end, function()
+        self:sendSetProperties(actorId, 'url', oldUrl)
+    end)
+end
+
+function DrawTool:getSingleComponent()
+    local singleComponent
+    for actorId, component in pairs(self.components) do
+        if self.game.clientId == component.clientId then
+            if singleComponent then
+                return nil
+            end
+            singleComponent = component
+        end
+    end
+    return singleComponent
 end
 
 
@@ -54,19 +81,10 @@ function DrawTool.handlers:update(dt)
     end
 
     -- Make sure we have exactly one actor active
-    local singleActorId, singleComponent
-    for actorId, component in pairs(self.components) do
-        if self.game.clientId == component.clientId then
-            if singleActorId then
-                return
-            end
-            singleActorId, singleComponent = actorId, component
-        end
-    end
-    if not singleComponent then
+    local c = self:getSingleComponent()
+    if not c then
         return
     end
-    local c = singleComponent
 
     -- Make sure the graphics is initialized
     local drawingComponent = self.dependencies.Drawing:get(c.actorId)
@@ -219,20 +237,7 @@ function DrawTool.handlers:update(dt)
                 c._lastCornerX, c._lastCornerY = nil, nil
 
                 -- Save
-                local actorId = c.actorId
-                local newUrl = 'ser:' .. self.dependencies.Drawing:serialize(
-                    c._graphics,
-                    c._graphicsWidth,
-                    c._graphicsHeight)
-                c._lastUrl = newUrl -- Prevent reloading since we're already in sync
-                local oldUrl = self.dependencies.Drawing:get(actorId).properties.url
-                self.dependencies.Drawing:command('draw', {
-                    params = { 'oldUrl', 'newUrl' },
-                }, function()
-                    self:sendSetProperties(actorId, 'url', newUrl)
-                end, function()
-                    self:sendSetProperties(actorId, 'url', oldUrl)
-                end)
+                self:saveDrawing('draw', c)
             end
         end
     end
@@ -250,6 +255,43 @@ end
 
 -- UI
 
---function DrawTool.handlers:uiSettings(closeSettings)
---end
+function DrawTool.handlers:uiPanel()
+    if not self:isActive() then
+        return
+    end
+
+    local c = self:getSingleComponent()
+    if not c then
+        return
+    end
+
+    util.uiRow('line', function()
+        self._lineWidth = ui.numberInput('line width', self._lineWidth, {
+            min = 0,
+            max = 30,
+            step = 5,
+        })
+    end, function()
+        self._lineColor[1], self._lineColor[2], self._lineColor[3] = ui.colorPicker(
+            'line color', self._lineColor[1], self._lineColor[2], self._lineColor[3], 1, { enableAlpha = false })
+    end)
+
+    util.uiRow('fill', function()
+        self._fillEnabled = ui.toggle('fill off', 'fill on', self._fillEnabled)
+    end, function()
+        if self._fillEnabled then
+            self._fillColor[1], self._fillColor[2], self._fillColor[3] = ui.colorPicker(
+                'fill color', self._fillColor[1], self._fillColor[2], self._fillColor[3], 1, { enableAlpha = false })
+        end
+    end)
+
+    if ui.button('clear') then
+        c._graphics:clear()
+        c._currPath = nil
+        c._currSubpath = nil
+        c._lastCornerX, c._lastCornerY = nil
+
+        self:saveDrawing('clear drawing', c)
+    end
+end
 
