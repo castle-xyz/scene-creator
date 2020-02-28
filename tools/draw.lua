@@ -20,7 +20,7 @@ registerCoreBehavior(DrawTool)
 -- Behavior management
 
 function DrawTool.handlers:addBehavior(opts)
-    self._lineWidth = 10
+    self._lineWidth = 0
     self._lineColor = { 0, 0, 0, 1 }
 
     self._fillEnabled = true
@@ -134,9 +134,22 @@ function DrawTool.handlers:update(dt)
                 c._currPath:addSubpath(c._currSubpath)
                 c._graphics:addPath(c._currPath)
 
+                -- Line
                 c._currPath:setLineColor(unpack(self._lineColor))
-                c._currPath:setLineWidth(math.max(2, self._lineWidth))
+                if self._fillEnabled then
+                    c._currPath:setLineWidth(self._lineWidth)
+                else
+                    c._currPath:setLineWidth(math.max(2, self._lineWidth))
+                end
                 c._currPath:setMiterLimit(1)
+
+                -- Fill
+                if self._fillEnabled then
+                    c._currPath:setFillColor(unpack(self._fillColor))
+                    c._currSubpath.isClosed = true
+                else
+                    c._currSubpath.isClosed = false
+                end
 
                 c._currSubpath:moveTo(x - dx, y - dy)
             end
@@ -193,14 +206,6 @@ function DrawTool.handlers:update(dt)
                 -- Final curve
                 c._currSubpath:lineTo(x, y)
 
-                -- Fill
-                if self._fillEnabled then
-                    c._currPath:setFillColor(unpack(self._fillColor))
-                    c._currSubpath.isClosed = true
-                else
-                    c._currSubpath.isClosed = false
-                end
-
                 -- Curve smoothing
                 local numCurves = c._currSubpath.curves.count
                 if numCurves >= 3 then
@@ -224,9 +229,6 @@ function DrawTool.handlers:update(dt)
                         end
                     end
                 end
-                
-                -- Set to actual line width
-                c._currPath:setLineWidth(self._lineWidth)
 
                 -- Clean up
                 c._graphics:clean(0.2)
