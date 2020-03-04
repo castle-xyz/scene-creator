@@ -17,14 +17,41 @@ local DrawTool = {
 registerCoreBehavior(DrawTool)
 
 
+local DEFAULT_PALETTE = {
+    'a6c439', '586b2e', 'a8a8a8', '6d6d6d', '1a4253', '24233d',
+    'e3d0b9', 'f17f3b', '9b6524', 'be4d68', '59284f', '4f2d34',
+    '71823c', '708db7', '31314c', 'd1bfa3',
+}
+
+local function rgbToHexString(r, g, b)
+    local r255 = math.min(math.floor(255 * r + 0.5), 255)
+    local g255 = math.min(math.floor(255 * g + 0.5), 255)
+    local b255 = math.min(math.floor(255 * b + 0.5), 255)
+    return string.format('%x', r255 * 0x10000 + g255 * 0x100 + b255)
+end
+
+local function hexStringToRgb(str)
+    local rgb255 = tonumber(str, 16)
+    rgb255 = rgb255 % 0x1000000
+
+    local b255 = rgb255 % 0x100
+    local g255 = ((rgb255 - b255) % 0x10000) / 0x100
+    local r255 = (rgb255 - g255 - b255) / 0x10000
+
+    return r255 / 255, g255 / 255, b255 / 255, 1
+end
+
+
 -- Behavior management
 
 function DrawTool.handlers:addBehavior(opts)
-    self._lineWidth = 0
-    self._lineColor = { 0, 0, 0, 1 }
+    self._lineEnabled = false
+
+    self._lineWidth = 20
+    self._lineColor = { hexStringToRgb(DEFAULT_PALETTE[6]) }
 
     self._fillEnabled = true
-    self._fillColor = { 1, 1, 1, 1 }
+    self._fillColor = { hexStringToRgb(DEFAULT_PALETTE[7]) }
 end
 
 
@@ -135,13 +162,11 @@ function DrawTool.handlers:update(dt)
                 c._graphics:addPath(c._currPath)
 
                 -- Line
-                c._currPath:setLineColor(unpack(self._lineColor))
-                if self._fillEnabled then
+                if self._lineEnabled then
+                    c._currPath:setLineColor(unpack(self._lineColor))
                     c._currPath:setLineWidth(self._lineWidth)
-                else
-                    c._currPath:setLineWidth(math.max(2, self._lineWidth))
+                    c._currPath:setMiterLimit(1)
                 end
-                c._currPath:setMiterLimit(1)
 
                 -- Fill
                 if self._fillEnabled then
@@ -257,6 +282,50 @@ end
 
 -- UI
 
+local function uiPalette(r, g, b, props)
+    props = props or {}
+    local onChange = props.onChange
+    local palette = props.palette or DEFAULT_PALETTE
+
+    ui.button('     ', {
+        backgroundColor = '#' .. rgbToHexString(r, g, b),
+        borderWidth = 6,
+        popoverAllowed = true,
+        popoverStyle = { width = 200 },
+        popover = function(closePopover)
+            local i = 1
+            while palette[i] do
+                ui.box('row-' .. i, {
+                    flexDirection = 'row',
+                    justifyContent = 'space-between',
+                }, function()
+                    for j = 1, 4 do
+                        local hexString = palette[i]
+                        if not hexString then
+                            break
+                        end
+                        i = i + 1
+                        ui.button('     ', {
+                            flex = 1,
+                            aspectRatio = 1,
+                            backgroundColor = '#' .. hexString,
+                            onClick = function()
+                                closePopover()
+                                r, g, b = hexStringToRgb(hexString)
+                                if onChange then
+                                    onChange(r, g, b)
+                                end
+                            end,
+                        })
+                    end
+                end)
+            end
+        end,
+    })
+
+    return r, g, b
+end
+
 function DrawTool.handlers:uiPanel()
     if not self:isActive() then
         return
@@ -267,25 +336,67 @@ function DrawTool.handlers:uiPanel()
         return
     end
 
-    util.uiRow('line', function()
-        self._lineWidth = ui.numberInput('line width', self._lineWidth, {
-            min = 0,
-            max = 30,
-            step = 5,
-        })
-    end, function()
-        self._lineColor[1], self._lineColor[2], self._lineColor[3] = ui.colorPicker(
-            'line color', self._lineColor[1], self._lineColor[2], self._lineColor[3], 1, { enableAlpha = false })
+    ui.box('fill row', { flexDirection = 'row' }, function()
+        ui.box('fill enabled box', {
+            flex = 1,
+            justifyContent = 'flex-end',
+        }, function()
+            ui.toggle('fill off', 'fill on', self._fillEnabled, {
+                onToggle = function(newFillEnabled)
+                    self._fillEnabled = newFillEnabled
+                    if not self._fillEnabled then
+                        self._lineEnabled = true
+                    end
+                end,
+            })
+        end)
+        ui.box('fill color box', {
+            flex = 1,
+            alignItems = 'flex-start',
+            justifyContent = 'flex-end',
+        }, function()
+            if self._fillEnabled then
+                self._fillColor[1], self._fillColor[2], self._fillColor[3] = uiPalette(
+                    self._fillColor[1], self._fillColor[2], self._fillColor[3])
+            end
+        end)
     end)
 
-    util.uiRow('fill', function()
-        self._fillEnabled = ui.toggle('fill off', 'fill on', self._fillEnabled)
-    end, function()
-        if self._fillEnabled then
-            self._fillColor[1], self._fillColor[2], self._fillColor[3] = ui.colorPicker(
-                'fill color', self._fillColor[1], self._fillColor[2], self._fillColor[3], 1, { enableAlpha = false })
-        end
-    end)
+    ui.box('spacer-1', { height = 24 }, function() end)
+
+    ui.toggle('line off', 'line on', self._lineEnabled, {
+        onToggle = function(newlineEnabled)
+            self._lineEnabled = newlineEnabled
+            if not self._fillEnabled then
+                self._fillEnabled = true
+            end
+        end,
+    })
+    if self._lineEnabled then
+        ui.box('line row', { flexDirection = 'row' }, function()
+            ui.box('line width box', {
+                flex = 1,
+                justifyContent = 'flex-end',
+            }, function()
+                self._lineWidth = ui.numberInput('line width', self._lineWidth, {
+                    hideLabel = true,
+                    min = 5,
+                    max = 60,
+                    step = 5,
+                })
+            end)
+            ui.box('line color box', {
+                flex = 1,
+                alignItems = 'flex-start',
+                justifyContent = 'flex-end',
+            }, function()
+                self._lineColor[1], self._lineColor[2], self._lineColor[3] = uiPalette(
+                    self._lineColor[1], self._lineColor[2], self._lineColor[3])
+            end)
+        end)
+    end
+
+    ui.box('spacer-2', { height = 24 }, function() end)
 
     if ui.button('clear') then
         c._graphics:clear()
