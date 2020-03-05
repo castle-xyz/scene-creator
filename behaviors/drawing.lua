@@ -69,9 +69,9 @@ local function wobbleDrawing(drawing)
             for j = 1, path.subpaths.count do
                 local subpath = path.subpaths[j]
                 local origSubpath = origPath.subpaths[j]
-                subpath:warp(function(x, y, c)
+                subpath:warp(function(x, y)
                     local newX, newY = wobblePoint(x, y, f * FRAMES + j)
-                    return newX, newY, c
+                    return newX, newY
                 end)
                 if not subpath.isClosed then -- Need to fix ends if not closed
                     local numCurves = subpath.curves.count
