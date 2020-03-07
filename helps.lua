@@ -37,6 +37,12 @@ A tool that allows moving and rotating actors using touch.
             ]],
         },
 
+        Sling = {
+            description = [[
+Allows the actor to be slung with **user input** when the scene is being played. You can use the **free motion** behavior to adjust various properties of the actor's motion such as gravity and density.
+            ]],
+        },
+
         FreeMotion = {
             description = [[
 Makes the actor **move freely** and (optionally) fall due to **gravity**. If the actor has the "solid" behavior it will be prevented from passing through other solid actors.

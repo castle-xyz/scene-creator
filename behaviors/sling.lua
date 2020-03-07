@@ -1,19 +1,15 @@
-local SlingTool = {
+local SlingBehavior = {
     name = 'Sling',
+    displayName = 'sling',
     propertyNames = {
     },
     dependencies = {
         'Body',
     },
     handlers = {},
-    tool = {
-        icon = 'racquetball',
-        iconFamily = 'MaterialCommunityIcons',
-        needsPerformingOn = true,
-    },
 }
 
-registerCoreBehavior(SlingTool)
+registerCoreBehavior(SlingBehavior)
 
 
 local MAX_SPEED = 3 * UNIT
@@ -26,56 +22,46 @@ local TRIANGLE_LENGTH = 25 * UNIT
 local TRIANGLE_WIDTH = 10 * UNIT
 
 
--- Body ownership
+-- Body type
 
-function SlingTool.handlers:bodyOwnershipComponent(component)
-    return true, 0
+function SlingBehavior.handlers:bodyTypeComponent(component)
+    return 'dynamic'
 end
 
 
--- Update
+-- Perform
 
-function SlingTool.handlers:preUpdate(dt)
-    if not self:isActive() then
+function SlingBehavior.handlers:perform(dt)
+    if not self.game.clientId then
         return
     end
 
-    -- Steal all touches
-    local touchData = self:getTouchData()
-    for touchId, touch in pairs(touchData.touches) do
-        touch.used = true
-    end
-end
+    local physics = self.dependencies.Body:getPhysics()
 
-function SlingTool.handlers:update(dt)
-    if not self:isActive() then
-        return
+    -- Make our bodies owned by us
+    for actorId, component in pairs(self.components) do
+        local bodyId, body = self.dependencies.Body:getBody(actorId)
+        local owner = physics:getOwner(bodyId)
+        if owner ~= self.game.clientId then
+            physics:setOwner(bodyId, self.game.clientId, true, 0)
+        end
     end
 
-    -- Look for a single-finger drag and release
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 and touchData.allTouchesReleased then
         local touchId, touch = next(touchData.touches)
 
         local vX, vY = touch.initialX - touch.x, touch.initialY - touch.y
-        if vX == 0 and vY == 0 then -- Release without moving touch? Just select.
-            self.game:selectActorAtTouch(touch)
-        else -- Moved and released -- apply velocity
-            local vLen = math.sqrt(vX * vX + vY * vY)
-            if vLen > MAX_SPEED then
-                vX, vY = vX * MAX_SPEED / vLen, vY * MAX_SPEED / vLen
-                vLen = MAX_SPEED
-            end
+        local vLen = math.sqrt(vX * vX + vY * vY)
+        if vLen > MAX_SPEED then
+            vX, vY = vX * MAX_SPEED / vLen, vY * MAX_SPEED / vLen
+            vLen = MAX_SPEED
+        end
 
-            local physics = self.dependencies.Body:getPhysics()
-
-            for actorId, component in pairs(self.components) do
-                if self.game.clientId == component.clientId then
-                    -- We own the body, so just set velocity locally and the physics system will sync it
-                    local bodyId, body = self.dependencies.Body:getBody(actorId)
-                    body:setLinearVelocity(SPEED_MULTIPLIER * vX, SPEED_MULTIPLIER * vY)
-                end
-            end
+        for actorId, component in pairs(self.components) do
+            -- We own the body, so just set velocity locally and the physics system will sync it
+            local bodyId, body = self.dependencies.Body:getBody(actorId)
+            body:setLinearVelocity(SPEED_MULTIPLIER * vX, SPEED_MULTIPLIER * vY)
         end
     end
 end
@@ -83,8 +69,8 @@ end
 
 -- Draw
 
-function SlingTool.handlers:drawOverlay()
-    if not self:isActive() then
+function SlingBehavior.handlers:drawOverlay()
+    if not self.game.performing then
         return
     end
 
@@ -101,16 +87,18 @@ function SlingTool.handlers:drawOverlay()
                 vLen = MAX_SPEED
             end
 
+            love.graphics.setColor(1, 1, 1, 0.8)
+            love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
+
             local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
             local triangleLength = TRIANGLE_LENGTH * self.game:getPixelScale()
             local triangleWidth = TRIANGLE_WIDTH * self.game:getPixelScale()
 
             -- Circle with solid outline and transparent fill
             love.graphics.circle('line', touch.initialX, touch.initialY, circleRadius)
-            local r, g, b, a = love.graphics.getColor()
-            love.graphics.setColor(r, g, b, 0.5 * a)
+            love.graphics.setColor(1, 1, 1, 0.3)
             love.graphics.circle('fill', touch.initialX, touch.initialY, circleRadius)
-            love.graphics.setColor(r, g, b, a)
+            love.graphics.setColor(1, 1, 1, 0.8)
 
             -- Line and triangle
             local endX, endY = touch.initialX + DRAW_MULTIPLIER * vX, touch.initialY + DRAW_MULTIPLIER * vY
@@ -130,6 +118,6 @@ end
 
 -- UI
 
---function SlingTool.handlers:uiSettings(closeSettings)
---end
+function SlingBehavior.handlers:uiComponent(component, opts)
+end
 
