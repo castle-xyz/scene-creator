@@ -156,9 +156,10 @@ function Client:uiLibrary(opts)
     end)
 
     -- Paginate
-    local numPages = 1
     if #order > PAGE_SIZE then
         currPage[opts.id] = currPage[opts.id] or 1
+
+        local numPages = math.ceil(#order / PAGE_SIZE)
 
         local newOrder = {}
         for i = 1, PAGE_SIZE do
@@ -169,8 +170,6 @@ function Client:uiLibrary(opts)
             table.insert(newOrder, order[j])
         end
         order = newOrder
-
-        local numPages = math.ceil(#order / PAGE_SIZE)
 
         ui.box('top page buttons', {
             flexDirection = 'row',
