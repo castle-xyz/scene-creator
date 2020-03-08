@@ -398,13 +398,57 @@ function DrawTool.handlers:uiPanel()
 
     ui.box('spacer-2', { height = 24 }, function() end)
 
-    if ui.button('clear') then
-        c._graphics:clear()
-        c._currPath = nil
-        c._currSubpath = nil
-        c._lastCornerX, c._lastCornerY = nil
+    -- Flip
+    util.uiRow('flip', function()
+        ui.button('flip horizontal', {
+            icon = 'arrows-h',
+            iconFamily = 'FontAwesome',
+            onClick = function()
+                for i = 1, c._graphics.paths.count do
+                    local path = c._graphics.paths[i]
+                    for j = 1, path.subpaths.count do
+                        local subpath = path.subpaths[j]
+                        for k = 1, subpath.points.count do
+                            local point = subpath.points[k]
+                            point.x = -point.x
+                        end
+                    end
+                end
+                self:saveDrawing('flip drawing horizontally', c)
+            end,
+        })
+    end, function()
+        ui.button('flip vertical', {
+            icon = 'arrows-v',
+            iconFamily = 'FontAwesome',
+            onClick = function()
+                for i = 1, c._graphics.paths.count do
+                    local path = c._graphics.paths[i]
+                    for j = 1, path.subpaths.count do
+                        local subpath = path.subpaths[j]
+                        for k = 1, subpath.points.count do
+                            local point = subpath.points[k]
+                            point.y = -point.y
+                        end
+                    end
+                end
+                self:saveDrawing('flip drawing vertically', c)
+            end,
+        })
+    end)
 
-        self:saveDrawing('clear drawing', c)
-    end
+    -- Clear
+    ui.button('clear', {
+        icon = 'page-delete',
+        iconFamily = 'Foundation',
+        onClick = function()
+            c._graphics:clear()
+            c._currPath = nil
+            c._currSubpath = nil
+            c._lastCornerX, c._lastCornerY = nil
+
+            self:saveDrawing('clear drawing', c)
+        end,
+    })
 end
 
