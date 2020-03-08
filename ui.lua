@@ -190,7 +190,7 @@ function Client:uiToolbar()
         ui.box('spacer', { flex = 1 }, function() end)
 
         ui.box('right', { flexDirection = 'row' }, function()
-            -- Move forward / backward
+            -- Ordering
             if next(self.selectedActorIds) then
                 ui.button('ordering', {
                     icon = 'layers',
@@ -211,6 +211,41 @@ function Client:uiToolbar()
                             iconFamily = 'Entypo',
                             onClick = function()
                                 self:moveActorBackward(next(self.selectedActorIds), true)
+                            end,
+                        })
+                        ui.button('move to front', {
+                            icon = 'align-top',
+                            iconFamily = 'Entypo',
+                            onClick = function()
+                                local actorId = next(self.selectedActorIds)
+                                local oldDrawOrder = self.actors[actorId].drawOrder
+                                self:command('move to front', {
+                                    params = { 'oldDrawOrder' },
+                                }, function()
+                                    local highestDrawOrder = table.maxn(self.actorsByDrawOrder)
+                                    if self.actors[actorId].drawOrder ~= highestDrawOrder then
+                                        self:send('setActorDrawOrder', actorId, highestDrawOrder)
+                                    end
+                                end, function()
+                                    self:send('setActorDrawOrder', actorId, oldDrawOrder)
+                                end)
+                            end,
+                        })
+                        ui.button('move to back', {
+                            icon = 'align-bottom',
+                            iconFamily = 'Entypo',
+                            onClick = function()
+                                local actorId = next(self.selectedActorIds)
+                                local oldDrawOrder = self.actors[actorId].drawOrder
+                                self:command('move to back', {
+                                    params = { 'oldDrawOrder' },
+                                }, function()
+                                    if self.actors[actorId].drawOrder ~= 1 then
+                                        self:send('setActorDrawOrder', actorId, 1)
+                                    end
+                                end, function()
+                                    self:send('setActorDrawOrder', actorId, oldDrawOrder)
+                                end)
                             end,
                         })
                     end,
