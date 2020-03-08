@@ -41,8 +41,7 @@ function SlingBehavior.handlers:perform(dt)
     -- Make our bodies owned by us
     for actorId, component in pairs(self.components) do
         local bodyId, body = self.dependencies.Body:getBody(actorId)
-        local owner = physics:getOwner(bodyId)
-        if owner ~= self.game.clientId then
+        if physics:getOwner(bodyId) ~= self.game.clientId then
             physics:setOwner(bodyId, self.game.clientId, true, 0)
         end
     end
