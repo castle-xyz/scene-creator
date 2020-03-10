@@ -149,10 +149,17 @@ end
 
 function Client:selectActor(actorId)
     self.selectedActorIds[actorId] = true
+
+    self:snapBlueprintsPane(2)
+    self:snapInspectorPane(1)
 end
 
 function Client:deselectActor(actorId)
     self.selectedActorIds[actorId] = nil
+
+    if not next(self.selectedActorIds) then
+        self:snapInspectorPane(2)
+    end
 end
 
 function Client:deselectAllActors()

@@ -6,6 +6,9 @@ function Client:startUi()
     self.openComponentBehaviorId = nil -- `behaviorId` of open component section
 
     self.saveBlueprintDatas = setmetatable({}, { __mode = 'k' }) -- `actor` -> data for "save blueprint" popover
+
+    self.blueprintsSnap = { count = 1, point = 3 }
+    self.inspectorSnap = { count = 1, point = 2 }
 end
 
 
@@ -83,6 +86,16 @@ function Client:moveActorBackward(actorId, command)
             end
         end
     end
+end
+
+function Client:snapBlueprintsPane(point)
+    self.blueprintsSnap.point = point
+    self.blueprintsSnap.count = self.blueprintsSnap.count + 1
+end
+
+function Client:snapInspectorPane(point)
+    self.inspectorSnap.point = point
+    self.inspectorSnap.count = self.inspectorSnap.count + 1
 end
 
 
@@ -652,8 +665,6 @@ function Client:uiupdate()
     -- Refresh tools first to make sure selections and applicable tool set are valid
     self:applySelections() 
 
-    local showInspector = not self.performing and next(self.selectedActorIds) ~= nil
-
     -- Global actions
     ui.pane('sceneCreatorGlobalActions', function()
         self:uiGlobalActions()
@@ -661,7 +672,8 @@ function Client:uiupdate()
 
     -- Blueprints
     ui.pane('sceneCreatorBlueprints', {
-        open = not self.performing and not showInspector,
+        snapCount = self.blueprintsSnap.count,
+        snapPoint = self.blueprintsSnap.point,
     }, function()
         self:uiBlueprints()
     end)
@@ -671,7 +683,8 @@ function Client:uiupdate()
         self:uiInspectorActions()
     end)
     ui.pane('sceneCreatorInspector', {
-        open = showInspector,
+        snapCount = self.inspectorSnap.count,
+        snapPoint = self.inspectorSnap.point,
     }, function()
         self:uiInspector()
     end)
