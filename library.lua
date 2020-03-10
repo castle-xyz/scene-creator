@@ -278,5 +278,9 @@ function Client:uiLibrary(opts)
                 end)
             end)
         end
+
+        if opts.bottomSpace then
+            ui.box('bottom space', { height = opts.bottomSpace }, function() end)
+        end
     end)
 end

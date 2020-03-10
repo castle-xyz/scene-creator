@@ -88,10 +88,11 @@ end
 
 -- UI
 
-function Client:uiToolbar()
-    ui.box('toolbar-performing-' .. tostring(self.performing), {
+function Client:uiGlobalActions()
+    ui.box('spacer', { flex = 1 }, function() end)
+
+    ui.box('global-actions-performing-' .. tostring(self.performing), {
         flexDirection = 'row',
-        flex = 1,
     }, function()
         ui.box('left', { flexDirection = 'row' }, function()
             if not self.performing then
@@ -143,232 +144,279 @@ function Client:uiToolbar()
                 })
             end
         end)
+    end)
 
-        ui.box('spacer', { flex = 1 }, function() end)
+    ui.box('spacer', { flex = 1 }, function() end)
+end
 
-        ui.box('middle', { flexDirection = 'row' }, function()
-            -- Tools
-            local order = {}
-            for _, tool in pairs(self.applicableTools) do
-                table.insert(order, tool)
+function Client:uiBlueprints()
+    self:uiLibrary({
+        id = 'add actor',
+        filterType = 'actorBlueprint',
+        bottomSpace = 300,
+        buttons = function(entry)
+            ui.button('add to scene', {
+                flex = 1,
+                icon = 'plus',
+                iconFamily = 'FontAwesome5',
+                onClick = function()
+                    -- Set up actor blueprint and id
+                    local bp = util.deepCopyTable(entry.actorBlueprint)
+                    if bp.components.Body then -- Has a `Body`? Position at center of window.
+                        local windowWidth, windowHeight = love.graphics.getDimensions()
+                        bp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
+                        bp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
+                    end
+                    local newActorId = self:generateActorId()
+
+                    local entryId = entry.entryId
+                    self:command('add', {
+                        params = { 'bp', 'newActorId', 'entryId' },
+                    }, function()
+                        -- Add the actor
+                        self:sendAddActor(bp, {
+                            actorId = newActorId,
+                            parentEntryId = entryId,
+                        })
+
+                        -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
+                        if bp.components.Body then
+                            self:setActiveTool(nil)
+                        end
+                        self:deselectAllActors()
+                        self:selectActor(newActorId)
+                        self:applySelections()
+                        if bp.components.Body then
+                            self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
+                        end
+                    end, function()
+                        -- Make sure actor still exists
+                        if not self.actors[newActorId] then
+                            return 'actor was deleted'
+                        end
+
+                        -- Deselect and remove the actor
+                        self:deselectActor(newActorId)
+                        self:send('removeActor', self.clientId, newActorId)
+                    end)
+                end
+            })
+        end,
+    })
+end
+
+function Client:uiInspectorActions()
+    if not next(self.selectedActorIds) then
+        return
+    end
+
+    -- Tools
+    local order = {}
+    for _, tool in pairs(self.applicableTools) do
+        table.insert(order, tool)
+    end
+    table.sort(order, function(tool1, tool2)
+        return tool1.behaviorId < tool2.behaviorId
+    end)
+    for _, tool in ipairs(order) do
+        local selected = self.activeToolBehaviorId == tool.behaviorId
+
+        local popoverAllowed, popoverStyle, popover
+
+        if tool.handlers.uiSettings then
+            popoverAllowed = selected
+            popoverStyle = { width = 300 }
+            popover = function(closePopover)
+                tool:callHandler('uiSettings', closePopover)
             end
-            table.sort(order, function(tool1, tool2)
-                return tool1.behaviorId < tool2.behaviorId
-            end)
-            for _, tool in ipairs(order) do
-                local selected = self.activeToolBehaviorId == tool.behaviorId
+        end
 
-                local popoverAllowed, popoverStyle, popover
+        ui.button(tool.name, {
+            icon = tool.tool.icon,
+            iconFamily = tool.tool.iconFamily,
+            hideLabel = true,
+            selected = selected,
+            onClick = function()
+                self:setActiveTool(tool.behaviorId)
+            end,
+            popoverAllowed = popoverAllowed,
+            popoverStyle = popoverStyle,
+            popover = popover,
+        })
+    end
 
-                if tool.handlers.uiSettings then
-                    popoverAllowed = selected
-                    popoverStyle = { width = 300 }
-                    popover = function(closePopover)
-                        tool:callHandler('uiSettings', closePopover)
+    ui.box('spacer', { flex = 1 }, function() end)
+
+    -- Ordering
+    ui.button('ordering', {
+        icon = 'layers',
+        iconFamily = 'Entypo',
+        hideLabel = true,
+        popoverAllowed = true,
+        popoverStyle = { width = 200 },
+        popover = function()
+            ui.button('move forward', {
+                icon = 'arrow-bold-up',
+                iconFamily = 'Entypo',
+                onClick = function()
+                    self:moveActorForward(next(self.selectedActorIds), true)
+                end,
+            })
+            ui.button('move backward', {
+                icon = 'arrow-bold-down',
+                iconFamily = 'Entypo',
+                onClick = function()
+                    self:moveActorBackward(next(self.selectedActorIds), true)
+                end,
+            })
+            ui.button('move to front', {
+                icon = 'align-top',
+                iconFamily = 'Entypo',
+                onClick = function()
+                    local actorId = next(self.selectedActorIds)
+                    local oldDrawOrder = self.actors[actorId].drawOrder
+                    self:command('move to front', {
+                        params = { 'oldDrawOrder' },
+                    }, function()
+                        local highestDrawOrder = table.maxn(self.actorsByDrawOrder)
+                        if self.actors[actorId].drawOrder ~= highestDrawOrder then
+                            self:send('setActorDrawOrder', actorId, highestDrawOrder)
+                        end
+                    end, function()
+                        self:send('setActorDrawOrder', actorId, oldDrawOrder)
+                    end)
+                end,
+            })
+            ui.button('move to back', {
+                icon = 'align-bottom',
+                iconFamily = 'Entypo',
+                onClick = function()
+                    local actorId = next(self.selectedActorIds)
+                    local oldDrawOrder = self.actors[actorId].drawOrder
+                    self:command('move to back', {
+                        params = { 'oldDrawOrder' },
+                    }, function()
+                        if self.actors[actorId].drawOrder ~= 1 then
+                            self:send('setActorDrawOrder', actorId, 1)
+                        end
+                    end, function()
+                        self:send('setActorDrawOrder', actorId, oldDrawOrder)
+                    end)
+                end,
+            })
+        end,
+    })
+
+    -- Duplicate
+    ui.button('duplicate actor', {
+        icon = 'copy',
+        iconFamily = 'FontAwesome5',
+        hideLabel = true,
+        onClick = function()
+            -- Generate map of actor ids to new ids for their duplicates
+            local newActorIds = {}
+            for actorId in pairs(self.selectedActorIds) do
+                newActorIds[actorId] = self:generateActorId()
+            end
+
+            self:command('duplicate', {
+                params = { 'newActorIds' },
+            }, function()
+                -- Make sure actors still exist
+                for actorId in pairs(newActorIds) do
+                    if not self.actors[actorId] then
+                        return 'actor was deleted'
                     end
                 end
 
-                ui.button(tool.name, {
-                    icon = tool.tool.icon,
-                    iconFamily = tool.tool.iconFamily,
-                    hideLabel = true,
-                    selected = selected,
-                    onClick = function()
-                        self:setActiveTool(tool.behaviorId)
-                    end,
-                    popoverAllowed = popoverAllowed,
-                    popoverStyle = popoverStyle,
-                    popover = popover,
+                -- Use blueprints to duplicate. Nudge position a little bit.
+                for actorId in pairs(newActorIds) do
+                    local bp = self:blueprintActor(actorId)
+                    if bp.components.Body then
+                        bp.components.Body.x = bp.components.Body.x + 0.5 * UNIT
+                        bp.components.Body.y = bp.components.Body.y + 0.5 * UNIT
+                    end
+
+                    local actor = self.actors[actorId]
+                    self:sendAddActor(bp, {
+                        actorId = newActorIds[actorId],
+                        parentEntryId = actor.parentEntryId,
+                        drawOrder = actor.drawOrder + 1,
+                    })
+                end
+
+                -- Select new actors
+                self:deselectAllActors()
+                for actorId, newActorId in pairs(newActorIds) do
+                    self:selectActor(newActorId)
+                end
+            end, function()
+                -- Make sure new actors still exist
+                for actorId, newActorId in pairs(newActorIds) do
+                    if not self.actors[newActorId] then
+                        return 'actor was deleted'
+                    end
+                end
+
+                -- Remove new actors
+                for actorId, newActorId in pairs(newActorIds) do
+                    self:send('removeActor', self.clientId, newActorId)
+                end
+            end)
+        end,
+    })
+
+    -- Delete
+    ui.button('delete', {
+        icon = 'trash-alt',
+        iconFamily = 'FontAwesome5',
+        hideLabel = true,
+        onClick = function()
+            -- Save actor data
+            local saves = {}
+            for actorId in pairs(self.selectedActorIds) do
+                local actor = self.actors[actorId]
+                table.insert(saves, {
+                    actorId = actorId,
+                    bp = self:blueprintActor(actorId),
+                    parentEntryId = actor.parentEntryId,
+                    drawOrder = actor.drawOrder,
                 })
             end
-        end)
+            table.sort(saves, function(save1, save2)
+                return save1.drawOrder < save2.drawOrder
+            end)
 
-        if self.performing then
-            return -- Everything to the right of this is for pause mode only
-        end
+            self:command('delete', {
+                params = { 'saves' },
+            }, function()
+                -- Make sure actors still exist
+                for _, save in ipairs(saves) do
+                    if not self.actors[save.actorId] then
+                        return 'actor was deleted'
+                    end
+                end
 
-        ui.box('spacer', { flex = 1 }, function() end)
-
-        ui.box('right', { flexDirection = 'row' }, function()
-            -- Ordering
-            if next(self.selectedActorIds) then
-                ui.button('ordering', {
-                    icon = 'layers',
-                    iconFamily = 'Entypo',
-                    hideLabel = true,
-                    popoverAllowed = true,
-                    popoverStyle = { width = 200 },
-                    popover = function()
-                        ui.button('move forward', {
-                            icon = 'arrow-bold-up',
-                            iconFamily = 'Entypo',
-                            onClick = function()
-                                self:moveActorForward(next(self.selectedActorIds), true)
-                            end,
-                        })
-                        ui.button('move backward', {
-                            icon = 'arrow-bold-down',
-                            iconFamily = 'Entypo',
-                            onClick = function()
-                                self:moveActorBackward(next(self.selectedActorIds), true)
-                            end,
-                        })
-                        ui.button('move to front', {
-                            icon = 'align-top',
-                            iconFamily = 'Entypo',
-                            onClick = function()
-                                local actorId = next(self.selectedActorIds)
-                                local oldDrawOrder = self.actors[actorId].drawOrder
-                                self:command('move to front', {
-                                    params = { 'oldDrawOrder' },
-                                }, function()
-                                    local highestDrawOrder = table.maxn(self.actorsByDrawOrder)
-                                    if self.actors[actorId].drawOrder ~= highestDrawOrder then
-                                        self:send('setActorDrawOrder', actorId, highestDrawOrder)
-                                    end
-                                end, function()
-                                    self:send('setActorDrawOrder', actorId, oldDrawOrder)
-                                end)
-                            end,
-                        })
-                        ui.button('move to back', {
-                            icon = 'align-bottom',
-                            iconFamily = 'Entypo',
-                            onClick = function()
-                                local actorId = next(self.selectedActorIds)
-                                local oldDrawOrder = self.actors[actorId].drawOrder
-                                self:command('move to back', {
-                                    params = { 'oldDrawOrder' },
-                                }, function()
-                                    if self.actors[actorId].drawOrder ~= 1 then
-                                        self:send('setActorDrawOrder', actorId, 1)
-                                    end
-                                end, function()
-                                    self:send('setActorDrawOrder', actorId, oldDrawOrder)
-                                end)
-                            end,
-                        })
-                    end,
-                })
-            end
-
-
-            -- Duplicate
-            if next(self.selectedActorIds) then
-                ui.button('duplicate actor', {
-                    icon = 'copy',
-                    iconFamily = 'FontAwesome5',
-                    hideLabel = true,
-                    onClick = function()
-                        -- Generate map of actor ids to new ids for their duplicates
-                        local newActorIds = {}
-                        for actorId in pairs(self.selectedActorIds) do
-                            newActorIds[actorId] = self:generateActorId()
-                        end
-
-                        self:command('duplicate', {
-                            params = { 'newActorIds' },
-                        }, function()
-                            -- Make sure actors still exist
-                            for actorId in pairs(newActorIds) do
-                                if not self.actors[actorId] then
-                                    return 'actor was deleted'
-                                end
-                            end
-
-                            -- Use blueprints to duplicate. Nudge position a little bit.
-                            for actorId in pairs(newActorIds) do
-                                local bp = self:blueprintActor(actorId)
-                                if bp.components.Body then
-                                    bp.components.Body.x = bp.components.Body.x + 0.5 * UNIT
-                                    bp.components.Body.y = bp.components.Body.y + 0.5 * UNIT
-                                end
-
-                                local actor = self.actors[actorId]
-                                self:sendAddActor(bp, {
-                                    actorId = newActorIds[actorId],
-                                    parentEntryId = actor.parentEntryId,
-                                    drawOrder = actor.drawOrder + 1,
-                                })
-                            end
-
-                            -- Select new actors
-                            self:deselectAllActors()
-                            for actorId, newActorId in pairs(newActorIds) do
-                                self:selectActor(newActorId)
-                            end
-                        end, function()
-                            -- Make sure new actors still exist
-                            for actorId, newActorId in pairs(newActorIds) do
-                                if not self.actors[newActorId] then
-                                    return 'actor was deleted'
-                                end
-                            end
-
-                            -- Remove new actors
-                            for actorId, newActorId in pairs(newActorIds) do
-                                self:send('removeActor', self.clientId, newActorId)
-                            end
-                        end)
-                    end,
-                })
-            end
-
-            -- Delete
-            if next(self.selectedActorIds) then
-                ui.button('delete', {
-                    icon = 'trash-alt',
-                    iconFamily = 'FontAwesome5',
-                    hideLabel = true,
-                    onClick = function()
-                        -- Save actor data
-                        local saves = {}
-                        for actorId in pairs(self.selectedActorIds) do
-                            local actor = self.actors[actorId]
-                            table.insert(saves, {
-                                actorId = actorId,
-                                bp = self:blueprintActor(actorId),
-                                parentEntryId = actor.parentEntryId,
-                                drawOrder = actor.drawOrder,
-                            })
-                        end
-                        table.sort(saves, function(save1, save2)
-                            return save1.drawOrder < save2.drawOrder
-                        end)
-
-                        self:command('delete', {
-                            params = { 'saves' },
-                        }, function()
-                            -- Make sure actors still exist
-                            for _, save in ipairs(saves) do
-                                if not self.actors[save.actorId] then
-                                    return 'actor was deleted'
-                                end
-                            end
-
-                            -- Deselect and remove actors
-                            for _, save in ipairs(saves) do
-                                self:deselectActor(save.actorId)
-                                self:send('removeActor', self.clientId, save.actorId)
-                            end
-                        end, function()
-                            -- Resurrect actors
-                            for _, save in ipairs(saves) do
-                                self:sendAddActor(save.bp, {
-                                    actorId = save.actorId,
-                                    parentEntryId = save.parentEntryId,
-                                    drawOrder = save.drawOrder,
-                                })
-                            end
-                        end)
-                    end,
-                })
-            end
-        end)
-    end)
+                -- Deselect and remove actors
+                for _, save in ipairs(saves) do
+                    self:deselectActor(save.actorId)
+                    self:send('removeActor', self.clientId, save.actorId)
+                end
+            end, function()
+                -- Resurrect actors
+                for _, save in ipairs(saves) do
+                    self:sendAddActor(save.bp, {
+                        actorId = save.actorId,
+                        parentEntryId = save.parentEntryId,
+                        drawOrder = save.drawOrder,
+                    })
+                end
+            end)
+        end,
+    })
 end
 
-function Client:uiProperties()
+function Client:uiInspector()
     ui.scrollBox('scrollBox1', {
         padding = 2,
         margin = 2,
@@ -571,6 +619,8 @@ function Client:uiProperties()
                 })
             end)
         end
+
+        ui.box('bottom space', { height = 300 }, function() end)
     end)
 end
 
@@ -588,16 +638,32 @@ function Client:uiupdate()
     -- Refresh tools first to make sure selections and applicable tool set are valid
     self:applySelections() 
 
-    -- Toolbar
-    ui.pane('toolbar', {
-        customLayout = true,
-        flexDirection = 'row',
-        padding = 2,
+    local showInspector = not self.performing and next(self.selectedActorIds) ~= nil
+
+    -- Global actions
+    ui.pane('sceneCreatorGlobalActions', function()
+        self:uiGlobalActions()
+    end)
+
+    -- Blueprints
+    ui.pane('sceneCreatorBlueprints', {
+        open = not self.performing and not showInspector,
     }, function()
-        self:uiToolbar()
+        self:uiBlueprints()
+    end)
+
+    -- Inspector
+    ui.pane('sceneCreatorInspectorActions', function()
+        self:uiInspectorActions()
+    end)
+    ui.pane('sceneCreatorInspector', {
+        open = showInspector,
+    }, function()
+        self:uiInspector()
     end)
 
     -- Panel
+    do return end
     ui.pane('default', {
         visible = not self.performing,
         customLayout = true,
@@ -612,7 +678,6 @@ function Client:uiupdate()
                     containerStyle = { flex = 1, margin = 0 },
                     contentStyle = { flex = 1 },
                 }, function()
-                    -- Blueprints tab
                     ui.tab(uiName, function()
                         activeTool:callHandler('uiPanel')
                     end)
@@ -630,58 +695,6 @@ function Client:uiupdate()
             }, function()
                 -- Blueprints tab
                 ui.tab('blueprints', function()
-                    self:uiLibrary({
-                        id = 'add actor',
-                        filterType = 'actorBlueprint',
-                        buttons = function(entry)
-                            ui.button('add to scene', {
-                                flex = 1,
-                                icon = 'plus',
-                                iconFamily = 'FontAwesome5',
-                                onClick = function()
-                                    -- Set up actor blueprint and id
-                                    local bp = util.deepCopyTable(entry.actorBlueprint)
-                                    if bp.components.Body then -- Has a `Body`? Position at center of window.
-                                        local windowWidth, windowHeight = love.graphics.getDimensions()
-                                        bp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
-                                        bp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
-                                    end
-                                    local newActorId = self:generateActorId()
-
-                                    local entryId = entry.entryId
-                                    self:command('add', {
-                                        params = { 'bp', 'newActorId', 'entryId' },
-                                    }, function()
-                                        -- Add the actor
-                                        self:sendAddActor(bp, {
-                                            actorId = newActorId,
-                                            parentEntryId = entryId,
-                                        })
-
-                                        -- Select the actor. If it has a `Body`, switch to the `Grab` tool.
-                                        if bp.components.Body then
-                                            self:setActiveTool(nil)
-                                        end
-                                        self:deselectAllActors()
-                                        self:selectActor(newActorId)
-                                        self:applySelections()
-                                        if bp.components.Body then
-                                            self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
-                                        end
-                                    end, function()
-                                        -- Make sure actor still exists
-                                        if not self.actors[newActorId] then
-                                            return 'actor was deleted'
-                                        end
-
-                                        -- Deselect and remove the actor
-                                        self:deselectActor(newActorId)
-                                        self:send('removeActor', self.clientId, newActorId)
-                                    end)
-                                end
-                            })
-                        end,
-                    })
                 end)
 
                 -- Properties tab
