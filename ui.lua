@@ -417,7 +417,21 @@ function Client:uiInspectorActions()
 end
 
 function Client:uiInspector()
-    ui.scrollBox('scrollBox1', {
+    local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+    if activeTool and activeTool.handlers.uiPanel then
+        local uiName = activeTool:getUiName()
+        ui.scrollBox('inspector-tool-' .. uiName, {
+            padding = 2,
+            margin = 2,
+            flex = 1,
+        }, function()
+            activeTool:callHandler('uiPanel')
+            ui.box('bottom space', { height = 300 }, function() end)
+        end)
+        return
+    end
+
+    ui.scrollBox('inspector-properties', {
         padding = 2,
         margin = 2,
         flex = 1,
@@ -668,24 +682,6 @@ function Client:uiupdate()
         visible = not self.performing,
         customLayout = true,
     }, function()
-        local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
-        if activeTool and activeTool.handlers.uiPanel then
-            local uiName = activeTool:getUiName()
-            ui.box('tool-panel-' .. uiName, {
-                flex = 1,
-            }, function()
-                ui.tabs('tabs', {
-                    containerStyle = { flex = 1, margin = 0 },
-                    contentStyle = { flex = 1 },
-                }, function()
-                    ui.tab(uiName, function()
-                        activeTool:callHandler('uiPanel')
-                    end)
-                end)
-            end)
-            return
-        end
-
         ui.box('default-panel', {
             flex = 1,
         }, function()

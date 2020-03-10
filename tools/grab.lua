@@ -7,8 +7,8 @@ local GrabTool = {
     },
     handlers = {},
     tool = {
-        icon = 'move',
-        iconFamily = 'Feather',
+        icon = 'mouse-pointer',
+        iconFamily = 'FontAwesome5',
         needsPerformingOff = true,
         emptySelect = true,
     },
