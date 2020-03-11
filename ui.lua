@@ -102,6 +102,14 @@ end
 -- UI
 
 function Client:uiGlobalActions()
+    ui.button('back', {
+        icon = 'arrow-left',
+        iconFamily = 'FontAwesome5',
+        onClick = function()
+            jsEvents.send('GHOST_BACK', {})
+        end,
+    })
+
     ui.box('spacer', { flex = 1 }, function() end)
 
     ui.box('global-actions-performing-' .. tostring(self.performing), {
