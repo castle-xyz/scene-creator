@@ -272,8 +272,10 @@ function Client:update(dt)
 
     self:callHandlers('preUpdate', dt)
 
-    self:touchToSelect() -- Do these after `preUpdate` to allow tools to steal touches first
-    self:twoFingerPan()
+    if not self.performing then
+        self:touchToSelect() -- Do these after `preUpdate` to allow tools to steal touches first
+        self:twoFingerPan()
+    end
 
     self:callHandlers('update', dt)
     self:callHandlers('postUpdate', dt)

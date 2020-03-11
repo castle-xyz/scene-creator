@@ -150,15 +150,19 @@ end
 function Client:selectActor(actorId)
     self.selectedActorIds[actorId] = true
 
-    self:snapBlueprintsPane(2)
-    self:snapInspectorPane(1)
+    if not self.performing then
+        self:snapBlueprintsPane(2)
+        self:snapInspectorPane(1)
+    end
 end
 
 function Client:deselectActor(actorId)
     self.selectedActorIds[actorId] = nil
 
-    if not next(self.selectedActorIds) then
-        self:snapInspectorPane(2)
+    if not self.performing then
+        if not next(self.selectedActorIds) then
+            self:snapInspectorPane(2)
+        end
     end
 end
 
