@@ -2,6 +2,7 @@ local SlingBehavior = {
     name = 'Sling',
     displayName = 'sling',
     propertyNames = {
+        'speed',
     },
     dependencies = {
         'Body',
@@ -12,9 +13,8 @@ local SlingBehavior = {
 registerCoreBehavior(SlingBehavior)
 
 
-local MAX_SPEED = 3 * UNIT
+local MAX_DRAG_LENGTH = 3 * UNIT
 
-local SPEED_MULTIPLIER = 3.2
 local DRAW_MULTIPLIER = 0.8
 
 local CIRCLE_RADIUS = 18 * UNIT
@@ -26,6 +26,17 @@ local TRIANGLE_WIDTH = 10 * UNIT
 
 function SlingBehavior.handlers:bodyTypeComponent(component)
     return 'dynamic'
+end
+
+
+-- Component management
+
+function SlingBehavior.handlers:addComponent(component, bp, opts)
+    component.properties.speed = bp.speed or 3.5
+end
+
+function SlingBehavior.handlers:blueprintComponent(component, bp)
+    bp.speed = component.properties.speed
 end
 
 
@@ -50,17 +61,19 @@ function SlingBehavior.handlers:perform(dt)
     if touchData.maxNumTouches == 1 and touchData.allTouchesReleased then
         local touchId, touch = next(touchData.touches)
 
-        local vX, vY = touch.initialX - touch.x, touch.initialY - touch.y
-        local vLen = math.sqrt(vX * vX + vY * vY)
-        if vLen > MAX_SPEED then
-            vX, vY = vX * MAX_SPEED / vLen, vY * MAX_SPEED / vLen
-            vLen = MAX_SPEED
+        local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
+        local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+        if dragLen > MAX_DRAG_LENGTH then
+            dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
+            dragLen = MAX_DRAG_LENGTH
         end
 
         for actorId, component in pairs(self.components) do
             -- We own the body, so just set velocity locally and the physics system will sync it
             local bodyId, body = self.dependencies.Body:getBody(actorId)
-            body:setLinearVelocity(SPEED_MULTIPLIER * vX, SPEED_MULTIPLIER * vY)
+            body:setLinearVelocity(
+                component.properties.speed * dragX, 
+                component.properties.speed * dragY)
         end
     end
 end
@@ -78,12 +91,12 @@ function SlingBehavior.handlers:drawOverlay()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
 
-        local vX, vY = touch.initialX - touch.x, touch.initialY - touch.y
-        local vLen = math.sqrt(vX * vX + vY * vY)
-        if vLen > 0 then
-            if vLen > MAX_SPEED then
-                vX, vY = vX * MAX_SPEED / vLen, vY * MAX_SPEED / vLen
-                vLen = MAX_SPEED
+        local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
+        local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+        if dragLen > 0 then
+            if dragLen > MAX_DRAG_LENGTH then
+                dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
+                dragLen = MAX_DRAG_LENGTH
             end
 
             love.graphics.setColor(1, 1, 1, 0.8)
@@ -100,16 +113,16 @@ function SlingBehavior.handlers:drawOverlay()
             love.graphics.setColor(1, 1, 1, 0.8)
 
             -- Line and triangle
-            local endX, endY = touch.initialX + DRAW_MULTIPLIER * vX, touch.initialY + DRAW_MULTIPLIER * vY
+            local endX, endY = touch.initialX + DRAW_MULTIPLIER * dragX, touch.initialY + DRAW_MULTIPLIER * dragY
             love.graphics.line(
                 touch.initialX, touch.initialY,
-                endX - triangleLength * vX / vLen, endY - triangleLength * vY / vLen)
+                endX - triangleLength * dragX / dragLen, endY - triangleLength * dragY / dragLen)
             love.graphics.polygon('fill',
                 endX, endY,
-                endX - triangleLength * vX / vLen - triangleWidth * vY / vLen,
-                endY - triangleLength * vY / vLen + triangleWidth * vX / vLen,
-                endX - triangleLength * vX / vLen + triangleWidth * vY / vLen,
-                endY - triangleLength * vY / vLen - triangleWidth * vX / vLen)
+                endX - triangleLength * dragX / dragLen - triangleWidth * dragY / dragLen,
+                endY - triangleLength * dragY / dragLen + triangleWidth * dragX / dragLen,
+                endX - triangleLength * dragX / dragLen + triangleWidth * dragY / dragLen,
+                endY - triangleLength * dragY / dragLen - triangleWidth * dragX / dragLen)
         end
     end
 end
@@ -118,5 +131,10 @@ end
 -- UI
 
 function SlingBehavior.handlers:uiComponent(component, opts)
+    local actorId = component.actorId
+
+    self:uiProperty('numberInput', 'speed', actorId, 'speed', {
+        props = { min = 0, max = 10, step = 0.5 },
+    })
 end
 
