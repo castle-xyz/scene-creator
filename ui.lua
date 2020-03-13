@@ -454,7 +454,7 @@ function Client:uiInspector()
 
     ui.scrollBox('inspector-properties', {
         padding = 2,
-        margin = 2,
+        marginTop = -18,
         flex = 1,
     }, function()
         local actorId = next(self.selectedActorIds)
@@ -474,131 +474,159 @@ function Client:uiInspector()
                     return component1.behaviorId < component2.behaviorId
                 end)
 
-                -- Sections for each component
-                for _, component in ipairs(order) do
-                    local behavior = self.behaviors[component.behaviorId]
-
-                    local uiName = behavior:getUiName()
-
-                    local newOpen = ui.section(uiName, {
-                        id = actorId .. '-' .. component.behaviorId,
-                        open = self.openComponentBehaviorId == component.behaviorId,
-                        header = function()
-                            ui.button('description', {
-                                margin = 0,
-                                marginLeft = 6,
-                                icon = 'question',
-                                iconFamily = 'FontAwesome5',
-                                hideLabel = true,
-                                popoverAllowed = true,
-                                popoverStyle = { width = 300 },
-                                popover = function()
-                                    ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
-                                end,
+                -- Component header buttons
+                ui.box('tabs', {
+                    flexDirection = 'row',
+                    flexWrap = 'wrap',
+                }, function()
+                    -- Each existing component
+                    for i = 1, #order do
+                        local component = order[i]
+                        local behavior = self.behaviors[component.behaviorId]
+                        local uiName = behavior:getUiName()
+                        ui.box(uiName .. ' box', { 
+                            flexDirection = 'row',
+                        }, function()
+                            ui.button(uiName, {
+                                selected = self.openComponentBehaviorId == behavior.behaviorId,
+                                onClick = function()
+                                    self.openComponentBehaviorId = behavior.behaviorId
+                                end
                             })
-                            if behavior.name ~= 'Body' then
-                                ui.button('remove', {
-                                    margin = 0,
-                                    marginLeft = 6,
-                                    icon = 'close',
-                                    iconFamily = 'FontAwesome',
+
+                            -- Last box? Add '+'.
+                            if i == #order then
+                                ui.button('add behavior', {
+                                    icon = 'plus',
                                     hideLabel = true,
-                                    onClick = function()
-                                        castle.system.alert({
-                                            title = 'Remove behavior?',
-                                            message = "Remove '" .. uiName .. "' from this actor?",
-                                            okLabel = 'Yes',
-                                            onOk = function()
-                                                local behaviorId = component.behaviorId
-                                                local componentBp = {}
-                                                behavior:callHandler('blueprintComponent', component, componentBp)
-                                                self:command('remove ' .. uiName, {
-                                                    params = { 'behaviorId', 'componentBp' },
-                                                }, function()
-                                                    local behavior = self.behaviors[behaviorId]
-                                                    if not behavior.components[actorId] then
-                                                        return 'behavior was removed'
-                                                    end
-                                                    self:send('removeComponent', self.clientId, actorId, behaviorId)
-                                                    self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                                end, function()
-                                                    local behavior = self.behaviors[behaviorId]
-                                                    if behavior.components[actorId] then
-                                                        return 'behavior was added'
-                                                    end
-                                                    self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
-                                                    self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                                end)
+                                    iconFamily = 'FontAwesome5',
+                                    popoverAllowed = true,
+                                    popoverStyle = { width = 300, height = 300 },
+                                    popover = function(closePopover)
+                                        self:uiLibrary({
+                                            id = 'add behavior',
+                                            filterType = 'behavior',
+                                            filterBehavior = function(behavior)
+                                                -- Skip behaviors we already have, skip tools
+                                                return not (actor.components[behavior.behaviorId] or behavior.tool)
                                             end,
-                                            cancelLabel = 'No',
+                                            emptyText = 'No other behaviors to add!',
+                                            buttons = function(entry)
+                                                ui.button('add to actor', {
+                                                    flex = 1,
+                                                    icon = 'plus',
+                                                    iconFamily = 'FontAwesome5',
+                                                    onClick = function()
+                                                        closePopover()
+
+                                                        local behaviorId = entry.behaviorId
+                                                        local behavior = self.behaviors[behaviorId]
+                                                        self:command('add ' .. behavior:getUiName(), {
+                                                            params = { 'behaviorId' },
+                                                        }, function()
+                                                            local behavior = self.behaviors[behaviorId]
+                                                            if behavior.components[actorId] then
+                                                                return 'behavior was added'
+                                                            end
+                                                            self:send('addComponent', self.clientId, actorId, behaviorId, {})
+                                                            self.openComponentBehaviorId = behaviorId
+                                                            self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                        end, function()
+                                                            local behavior = self.behaviors[behaviorId]
+                                                            if not behavior.components[actorId] then
+                                                                return 'behavior was removed'
+                                                            end
+                                                            self:send('removeComponent', self.clientId, actorId, behaviorId)
+                                                            self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                        end)
+                                                    end,
+                                                })
+                                            end,
                                         })
                                     end,
                                 })
                             end
-                        end,
-                    }, function()
-                        behavior:callHandler('uiComponent', component, {})
-                    end)
-
-                    -- Track open section
-                    if newOpen then
-                        self.openComponentBehaviorId = component.behaviorId
-                    elseif self.openComponentBehaviorId == component.behaviorId then
-                        self.openComponentBehaviorId = nil
+                        end)
                     end
-                end
+                end)
 
-                -- Add component
-                ui.box('spacer', { height = 16 }, function() end)
-                ui.button('add behavior', {
-                    flex = 1,
-                    icon = 'plus',
-                    iconFamily = 'FontAwesome5',
-                    popoverAllowed = true,
-                    popoverStyle = { width = 300, height = 300 },
-                    popover = function(closePopover)
-                        self:uiLibrary({
-                            id = 'add behavior',
-                            filterType = 'behavior',
-                            filterBehavior = function(behavior)
-                                -- Skip behaviors we already have, skip tools
-                                return not (actor.components[behavior.behaviorId] or behavior.tool)
-                            end,
-                            emptyText = 'No other behaviors to add!',
-                            buttons = function(entry)
-                                ui.button('add to actor', {
-                                    flex = 1,
-                                    icon = 'plus',
-                                    iconFamily = 'FontAwesome5',
-                                    onClick = function()
-                                        closePopover()
+                -- Open component
+                local component = actor.components[self.openComponentBehaviorId]
+                if component then
+                    local behavior = self.behaviors[component.behaviorId]
+                    local uiName = behavior:getUiName()
 
-                                        local behaviorId = entry.behaviorId
-                                        local behavior = self.behaviors[behaviorId]
-                                        self:command('add ' .. behavior:getUiName(), {
-                                            params = { 'behaviorId' },
-                                        }, function()
-                                            local behavior = self.behaviors[behaviorId]
-                                            if behavior.components[actorId] then
-                                                return 'behavior was added'
-                                            end
-                                            self:send('addComponent', self.clientId, actorId, behaviorId, {})
-                                            self.openComponentBehaviorId = behaviorId
-                                            self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                        end, function()
-                                            local behavior = self.behaviors[behaviorId]
-                                            if not behavior.components[actorId] then
-                                                return 'behavior was removed'
-                                            end
-                                            self:send('removeComponent', self.clientId, actorId, behaviorId)
-                                            self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                        end)
-                                    end,
-                                })
+                    -- Spacer
+                    ui.box('spacer', { height = 24 }, function() end)
+
+                    -- Header
+                    ui.box('header', {
+                        flexDirection = 'row',
+                    }, function()
+                        ui.box('title', {
+                            flex = 1,
+                        }, function()
+                            ui.markdown('## ' .. uiName)
+                        end)
+                        ui.button('description', {
+                            margin = 0,
+                            marginLeft = 6,
+                            icon = 'question',
+                            iconFamily = 'FontAwesome5',
+                            hideLabel = true,
+                            popoverAllowed = true,
+                            popoverStyle = { width = 300 },
+                            popover = function()
+                                ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
                             end,
                         })
-                    end,
-                })
+                        if behavior.name ~= 'Body' then
+                            ui.button('remove', {
+                                margin = 0,
+                                marginLeft = 6,
+                                icon = 'close',
+                                iconFamily = 'FontAwesome',
+                                hideLabel = true,
+                                onClick = function()
+                                    castle.system.alert({
+                                        title = 'Remove behavior?',
+                                        message = "Remove '" .. uiName .. "' from this actor?",
+                                        okLabel = 'Yes',
+                                        onOk = function()
+                                            local behaviorId = component.behaviorId
+                                            local componentBp = {}
+                                            behavior:callHandler('blueprintComponent', component, componentBp)
+                                            self:command('remove ' .. uiName, {
+                                                params = { 'behaviorId', 'componentBp' },
+                                            }, function()
+                                                local behavior = self.behaviors[behaviorId]
+                                                if not behavior.components[actorId] then
+                                                    return 'behavior was removed'
+                                                end
+                                                self:send('removeComponent', self.clientId, actorId, behaviorId)
+                                                self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                            end, function()
+                                                local behavior = self.behaviors[behaviorId]
+                                                if behavior.components[actorId] then
+                                                    return 'behavior was added'
+                                                end
+                                                self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
+                                                self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                            end)
+                                        end,
+                                        cancelLabel = 'No',
+                                    })
+                                end,
+                            })
+                        end
+                    end)
+
+                    -- Component's UI
+                    behavior:callHandler('uiComponent', component, {})
+                end
+
+                -- Spacer
+                ui.box('spacer-2', { height = 24 }, function() end)
 
                 -- Save blueprint
                 ui.button('save blueprint', {
