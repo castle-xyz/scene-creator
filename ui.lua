@@ -7,8 +7,8 @@ function Client:startUi()
 
     self.saveBlueprintDatas = setmetatable({}, { __mode = 'k' }) -- `actor` -> data for "save blueprint" popover
 
-    self.blueprintsSnap = { count = 1, point = 3 }
-    self.inspectorSnap = { count = 1, point = 2 }
+    self.blueprintsSnap = { count = 1, point = 1 }
+    self.inspectorSnap = { count = 1, point = 1 }
 end
 
 
@@ -701,6 +701,8 @@ function Client:uiupdate()
     -- Refresh tools first to make sure selections and applicable tool set are valid
     self:applySelections() 
 
+    local selectionEmpty = next(self.selectedActorIds) == nil
+
     -- Global actions
     ui.pane('sceneCreatorGlobalActions', function()
         self:uiGlobalActions()
@@ -710,6 +712,7 @@ function Client:uiupdate()
     ui.pane('sceneCreatorBlueprints', {
         snapCount = self.blueprintsSnap.count,
         snapPoint = self.blueprintsSnap.point,
+        visible = not self.performing and selectionEmpty,
     }, function()
         self:uiBlueprints()
     end)
@@ -721,6 +724,7 @@ function Client:uiupdate()
     ui.pane('sceneCreatorInspector', {
         snapCount = self.inspectorSnap.count,
         snapPoint = self.inspectorSnap.point,
+        visible = not self.performing and not selectionEmpty,
     }, function()
         self:uiInspector()
     end)

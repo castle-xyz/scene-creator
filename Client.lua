@@ -322,23 +322,10 @@ function Client.receivers:setPerforming(time, performing)
             width = self.viewWidth,
         }
         self:resetView()
-
-        -- Close blueprints and inspector
-        self:snapBlueprintsPane(3)
-        self:snapInspectorPane(2)
     end
 
     -- Exiting perform?
     if self.performing and not performing then
-        -- Open inspector or blueprints
-        if next (self.selectedActorIds) then
-            self:snapBlueprintsPane(2)
-            self:snapInspectorPane(1)
-        else
-            self:snapBlueprintsPane(1)
-            self:snapInspectorPane(2)
-        end
-
         if self._pausedView then
             -- Load paused view state
             self.viewX, self.viewY = self._pausedView.x, self._pausedView.y
