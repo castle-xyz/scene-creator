@@ -27,6 +27,11 @@ function BodyBehavior.handlers:addBehavior(opts)
         reliableChannel = self.game.channels.mainReliable,
     })
 
+    -- Collision callbacks
+    self._physics.onContact = function(...)
+        self:onContact(...)
+    end
+
     if self.game.server then
         -- If server, create a new world
         self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, UNIT * 9.8, true))
@@ -247,6 +252,15 @@ function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
             self._physics:setOwner(bodyId, self.game.clientId, true, finalInterpolationDelay)
         end
     end
+
+    -- Track callbacks
+    if addedBehavior.handlers.bodyContactComponent then
+        local component = self.components[addedComponent.actorId]
+        if not component._contactListeners then
+            component._contactListeners = {}
+        end
+        component._contactListeners[addedComponent.behaviorId] = true
+    end
 end
 
 function BodyBehavior.handlers:removeDependentComponent(removedComponent, opts)
@@ -302,6 +316,17 @@ function BodyBehavior.handlers:removeDependentComponent(removedComponent, opts)
                 finalBodyOwnership, finalBodyOwnership and finalInterpolationDelay or nil)
         end
     end
+
+    -- Untrack callbacks
+    if removedBehavior.handlers.bodyContactComponent then
+        local component = self.components[removedComponent.actorId]
+        if component._contactListeners then
+            component._contactListeners[removedComponent.behaviorId] = nil
+            if not next(component._contactListeners) then
+                component._contactListeners = nil
+            end
+        end
+    end
 end
 
 
@@ -318,6 +343,12 @@ function BodyBehavior.handlers:postUpdate(dt)
     if self.game.performing then
         self._physics:sendSyncs(self.globals.worldId)
     end
+end
+
+
+-- Collisions
+
+function BodyBehavior:onContact(type, fixture1, fixture2, contact)
 end
 
 
