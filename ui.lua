@@ -164,6 +164,40 @@ function Client:uiGlobalActions()
                     end,
                 })
             end
+
+            -- Cycle selections button for nikki and irondavy
+            local username = castle.user.getMe().username 
+            if username == 'nikki' or username == 'irondavy' then
+                ui.button('next selection', {
+                    icon = 'arrow-right',
+                    iconFamily = 'FontAwesome',
+                    hideLabel = true,
+                    onClick = function()
+                        if next(self.actorsByDrawOrder) then
+                            -- Draw order of currently selected actor, or 0 if none
+                            local i = 0
+                            local selectedActor = self.actors[next(self.selectedActorIds)]
+                            if selectedActor then
+                                i = selectedActor.drawOrder
+                            end
+
+                            -- Pick the next occupied draw order, wrapping around if at highest
+                            local highestDrawOrder = table.maxn(self.actorsByDrawOrder)
+                            i = (i == highestDrawOrder) and 1 or (i + 1)
+                            while i < highestDrawOrder and not self.actorsByDrawOrder[i] do
+                                i = i + 1
+                            end
+
+                            -- Select the actor with this draw order
+                            local actor = self.actorsByDrawOrder[i]
+                            if actor then
+                                self:deselectAllActors()
+                                self:selectActor(actor.actorId)
+                            end
+                        end
+                    end
+                })
+            end
         end)
     end)
 
