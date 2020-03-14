@@ -139,11 +139,22 @@ function Client:uiLibrary(opts)
     if not opts.filterType or opts.filterType == 'behavior' then
         for behaviorId, behavior in pairs(self.behaviors) do
             if not opts.filterBehavior or opts.filterBehavior(behavior) then
+                local dependencyNames = {}
+                for name, dependency in pairs(behavior.dependencies) do
+                    if name ~= 'Body' then
+                        table.insert(dependencyNames, '**' .. dependency:getUiName() .. '**')
+                    end
+                end
+                local requiresLine = ''
+                if next(dependencyNames) then
+                    requiresLine = 'Needs ' .. table.concat(dependencyNames, ', ') .. '.\n\n'
+                end
+                local shortDescription = (behavior.description and behavior.description:match('^[\n ]*[^\n]*')) or ''
                 table.insert(order, {
                     entryId = tostring(behaviorId),
                     entryType = 'behavior',
                     title = behavior:getUiName(),
-                    description = behavior.description,
+                    description = requiresLine .. shortDescription,
                     behaviorId = behaviorId,
                 })
             end
@@ -266,8 +277,7 @@ function Client:uiLibrary(opts)
 
                 ui.box('text buttons', { flex = 1 }, function()
                     -- Title, short description
-                    local shortDescription = (entry.description and entry.description:match('^[\n ]*[^\n]*')) or ''
-                    ui.markdown('## ' .. entry.title .. '\n' .. shortDescription)
+                    ui.markdown('## ' .. entry.title .. '\n' .. (entry.description or ''))
 
                     -- Buttons
                     if opts.buttons then
