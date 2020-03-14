@@ -610,10 +610,10 @@ function Client:uiInspector()
                                                                 end
                                                                 list = list .. "'" .. self.behaviors[order[i]]:getUiName() .. "'"
                                                             end
-                                                            local message = ("'" .. behavior:getUiName() .. "' also requires " .. list ..
-                                                                '. Add ' .. (#order == 2 and 'it' or 'them') .. ' and continue?')
+                                                            local message = ("'" .. behavior:getUiName() .. "' needs " .. list ..
+                                                                '. Add ' .. (#order == 2 and 'it' or 'them') .. ' also?')
                                                             castle.system.alert({
-                                                                title = 'Add required behaviors?',
+                                                                title = 'Add needed behaviors?',
                                                                 message = message,
                                                                 okLabel = 'Yes',
                                                                 cancelLabel = 'No',
@@ -693,7 +693,7 @@ function Client:uiInspector()
                                             end
                                             list = list .. "'" .. names[i] .. "'"
                                         end
-                                        local message = (list .. ' require' .. (#names > 1 and '' or 's') .. " '" ..
+                                        local message = (list .. ' need' .. (#names > 1 and '' or 's') .. " '" ..
                                             uiName .. "'.")
                                         castle.system.alert("Cannot remove '" .. uiName .. "'", message)
                                     else
