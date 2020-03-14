@@ -1,6 +1,6 @@
 local CircleShapeBehavior = {
     name = 'CircleShape',
-    displayName = 'circle shape',
+    displayName = 'circle',
     propertyNames = {
     },
     dependencies = {

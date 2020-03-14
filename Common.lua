@@ -42,11 +42,11 @@ require 'behaviors.circle_shape'
 
 require 'behaviors.solid'
 require 'behaviors.bouncy'
-require 'behaviors.friction'
 
---require 'behaviors.moving'
---require 'behaviors.constant_rotation'
---require 'behaviors.sling'
+require 'behaviors.moving'
+require 'behaviors.falling'
+require 'behaviors.rotating_motion'
+require 'behaviors.sling'
 
 require 'tools.grab'
 require 'tools.draw'

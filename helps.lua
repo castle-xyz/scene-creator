@@ -5,15 +5,17 @@ local helps = {
     behaviors = {
         Body = {
             description = [[
-Gives the actor a **position** in the scene, along with an **angle** and a **shape**. An actor **always has** this behavior and it cannot be removed.
+Gives the actor a **position** and **angle** in the scene.
 
-By default, the actor is rectangle-shaped and doesn't move, but other behaviors can be used to change the shape or motion.
+The actor is rectangle-shaped and doesn't move by default. Other behaviors can be used to change the shape or add motion.
             ]],
         },
 
+
+
         Image = {
             description = [[
-Represents the actor visually with an **image**.
+Represents the actor **visually** with an **image**.
 
 The source image can be **cropped** to only use a part of it.
             ]],
@@ -21,15 +23,47 @@ The source image can be **cropped** to only use a part of it.
 
         Drawing = {
             description = [[
-Represents the actor visually with a **drawing**.
+Represents the actor **visually** with a drawing. You can make your own drawing or edit the current one with the **draw tool** (the pencil icon).
             ]],
         },
 
-        Grab = {
+
+
+        CircleShape = {
             description = [[
-A tool that allows moving and rotating actors using touch.
+Gives the actor a **circular collision** shape instead of the default rectangular one.
             ]],
         },
+
+
+
+        Solid = {
+            description = [[
+When a moving solid runs into another solid, it's **stopped from passing through**.
+            ]],
+        },
+
+        Bouncy = {
+            description = [[
+When a moving solid runs into another solid, it **bounces away** if either is bouncy.
+            ]],
+        },
+
+
+
+        Moving = {
+            description = [[
+Let's the actor move around. Other behaviors such as **falling**, **solid** and **bouncy** affect its motion.
+            ]],
+        },
+
+        Falling = {
+            description = [[
+Makes the actor **fall down** due to **gravity**.
+            ]],
+        },
+
+
 
         RotatingMotion = {
             description = [[
@@ -39,33 +73,17 @@ A tool that allows moving and rotating actors using touch.
 
         Sling = {
             description = [[
-Allows the actor to be slung with **user input** when the scene is being played. You can use the **free motion** behavior to adjust various properties of the actor's motion such as gravity and density.
+Allows the actor to be **slung by the user** when playing the scene.
             ]],
         },
 
-        FreeMotion = {
-            description = [[
-Makes the actor **move freely** and (optionally) fall due to **gravity**. If the actor has the "solid" behavior it will be prevented from passing through other solid actors.
 
-A higher **density** makes the actor feel heavier: it will be pushed by other actors less and push away other actors more.
+        Grab = {
+            description = [[
+A tool that allows moving and rotating actors using touch.
             ]],
         },
 
-        Solid = {
-            description = [[
-Makes the actor have a **solid surface** with **bounciness** and **friction**. This can affect motion behaviors--eg. the "free motion" behavior will prevent solid actors from passing through other solid actors.
-
-A higher **bounciness** makes actors bounce away more when a collision occurs.
-
-A higher **friction** makes it harder for actors to slide against each other.
-            ]],
-        },
-
-        CircleShape = {
-            description = [[
-Gives the actor a **circular** collision shape instead of the default rectangular one.
-            ]],
-        }
     },
 }
 

@@ -4,13 +4,9 @@ local CORE_LIBRARY = {
     {
         entryType = 'actorBlueprint',
         title = 'wall',
-        description = "A rectangular actor that doesn't move.",
+        description = "A rectangular solid that doesn't move.",
         actorBlueprint = {
             components = {
-                --Image = {
-                --    url = 'assets/rectangle.png',
-                --    color = { 0.596, 0.631, 0.659, 1 },
-                --},
                 Drawing = {
                     url = 'assets/rectangle.svg',
                 },
@@ -22,22 +18,17 @@ local CORE_LIBRARY = {
     {
         entryType = 'actorBlueprint',
         title = 'ball',
-        description = "A circular actor that falls and bounces.",
+        description = "A circular solid that falls and bounces.",
         actorBlueprint = {
             components = {
-                --Image = {
-                --    url = 'assets/circle.png',
-                --    color = { 0.706, 0.557, 0.91, 1 },
-                --},
                 Drawing = {
                     url = 'assets/circle.svg',
                 },
-                Body = {
-                    gravityScale = 1,
-                },
-                Solid = {},
-                FreeMotion = {},
+                Body = { gravityScale = 1 },
                 CircleShape = {},
+                Solid = {},
+                Bouncy = {},
+                Falling = {},
             },
         },
     },

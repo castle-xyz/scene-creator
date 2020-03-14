@@ -70,6 +70,8 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         end
         if bp.fixedRotation ~= nil then
             self._physics:setFixedRotation(bodyId, bp.fixedRotation)
+        else
+            self._physics:setFixedRotation(bodyId, true)
         end
         if bp.angle ~= nil then
             self._physics:setAngle(bodyId, bp.angle)
@@ -118,6 +120,8 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
                 local fixtureId = self._physics:newFixture(bodyId, shapeId, fixtureBp.density or 1)
                 if fixtureBp.friction ~= nil then
                     self._physics:setFriction(fixtureId, fixtureBp.friction)
+                else
+                    self._physics:setFriction(fixtureId, 0)
                 end
                 if fixtureBp.restitution ~= nil then
                     self._physics:setRestitution(fixtureId, fixtureBp.restitution)

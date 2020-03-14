@@ -5,6 +5,7 @@ local SlingBehavior = {
         'speed',
     },
     dependencies = {
+        'Moving',
         'Body',
     },
     handlers = {},
