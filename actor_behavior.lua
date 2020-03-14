@@ -446,6 +446,7 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
     component.actorId = actorId
     component.behaviorId = behaviorId
     component.properties = {}
+    component.dependents = {}
     if behavior.tool then
         component.clientId = clientId
     end
@@ -454,6 +455,7 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
     behavior.components[actorId] = component
 
     for _, dependency in pairs(behavior.dependencies) do
+        actor.components[dependency.behaviorId].dependents[behaviorId] = true
         dependency:callHandler('addDependentComponent', component, {
             isOrigin = self.clientId == clientId,
         })
@@ -470,6 +472,10 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
 
     local component = actor.components[behaviorId]
 
+    if next(component.dependents) ~= nil then
+        error("removeComponent: cannot remove '" .. behavior.name .. "' because it has dependents in this actor")
+    end
+
     behavior:callHandler('removeComponent', component, {
         isOrigin = self.clientId == clientId,
         removeActor = false,
@@ -479,6 +485,7 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
         dependency:callHandler('removeDependentComponent', component, {
             isOrigin = self.clientId == clientId,
         })
+        actor.components[dependency.behaviorId].dependents[behaviorId] = nil
     end
 
     actor.components[behaviorId] = nil

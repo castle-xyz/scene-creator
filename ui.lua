@@ -551,28 +551,82 @@ function Client:uiInspector()
                                                     icon = 'plus',
                                                     iconFamily = 'FontAwesome5',
                                                     onClick = function()
-                                                        closePopover()
-
                                                         local behaviorId = entry.behaviorId
                                                         local behavior = self.behaviors[behaviorId]
-                                                        self:command('add ' .. behavior:getUiName(), {
-                                                            params = { 'behaviorId' },
-                                                        }, function()
-                                                            local behavior = self.behaviors[behaviorId]
-                                                            if behavior.components[actorId] then
-                                                                return 'behavior was added'
+
+                                                        -- Get full order of adding behaviors in case of non-present dependencies
+                                                        local order = {}
+                                                        local visited = {}
+                                                        local function visit(behavior)
+                                                            if visited[behavior.behaviorId] then
+                                                                return
                                                             end
-                                                            self:send('addComponent', self.clientId, actorId, behaviorId, {})
-                                                            self.openComponentBehaviorId = behaviorId
-                                                            self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                                        end, function()
-                                                            local behavior = self.behaviors[behaviorId]
-                                                            if not behavior.components[actorId] then
-                                                                return 'behavior was removed'
+                                                            visited[behavior.behaviorId] = true
+                                                            if not actor.components[behavior.behaviorId] then
+                                                                for _, dependency in pairs(behavior.dependencies) do
+                                                                    visit(dependency)
+                                                                end
+                                                                table.insert(order, behavior.behaviorId)
                                                             end
-                                                            self:send('removeComponent', self.clientId, actorId, behaviorId)
-                                                            self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                                        end)
+                                                        end
+                                                        visit(behavior)
+
+                                                        -- Prompt if adding more than one behavior, else add immediately
+                                                        local function doIt()
+                                                            closePopover()
+
+                                                            self:command('add ' .. behavior:getUiName(), {
+                                                                params = { 'behaviorId', 'order' },
+                                                            }, function()
+                                                                local behavior = self.behaviors[behaviorId]
+                                                                if behavior.components[actorId] then
+                                                                    return 'behavior was added'
+                                                                end
+                                                                for i = 1, #order do
+                                                                    self:send('addComponent', self.clientId, actorId, order[i], {})
+                                                                end
+                                                                self.openComponentBehaviorId = behaviorId
+                                                                self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                            end, function()
+                                                                local behavior = self.behaviors[behaviorId]
+                                                                if not behavior.components[actorId] then
+                                                                    return 'behavior was removed'
+                                                                end
+                                                                for i = #order, 1, -1 do
+                                                                    self:send('removeComponent', self.clientId, actorId, order[i])
+                                                                end
+                                                                self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                            end)
+                                                        end
+                                                        if #order > 1 then
+                                                            local list = ''
+                                                            for i = 1, #order - 1 do
+                                                                if i > 1 then
+                                                                    if i < #order - 1 then
+                                                                        list = list .. ', '
+                                                                    else
+                                                                        list = list .. ' and '
+                                                                    end
+                                                                end
+                                                                list = list .. "'" .. self.behaviors[order[i]]:getUiName() .. "'"
+                                                            end
+                                                            local message = ("'" .. behavior:getUiName() .. "' also requires " .. list ..
+                                                                '. Add ' .. (#order == 2 and 'it' or 'them') .. ' and continue?')
+                                                            castle.system.alert({
+                                                                title = 'Add required behaviors?',
+                                                                message = message,
+                                                                okLabel = 'Yes',
+                                                                cancelLabel = 'No',
+                                                                onOk = function()
+                                                                    doIt()
+                                                                end,
+                                                                onCancel = function()
+                                                                    closePopover()
+                                                                end
+                                                            })
+                                                        else
+                                                            doIt()
+                                                        end
                                                     end,
                                                 })
                                             end,
@@ -622,34 +676,56 @@ function Client:uiInspector()
                                 iconFamily = 'FontAwesome',
                                 hideLabel = true,
                                 onClick = function()
-                                    castle.system.alert({
-                                        title = 'Remove behavior?',
-                                        message = "Remove '" .. uiName .. "' from this actor?",
-                                        okLabel = 'Yes',
-                                        onOk = function()
-                                            local behaviorId = component.behaviorId
-                                            local componentBp = {}
-                                            behavior:callHandler('blueprintComponent', component, componentBp)
-                                            self:command('remove ' .. uiName, {
-                                                params = { 'behaviorId', 'componentBp' },
-                                            }, function()
-                                                local behavior = self.behaviors[behaviorId]
-                                                if not behavior.components[actorId] then
-                                                    return 'behavior was removed'
+                                    if next(component.dependents) ~= nil then -- Has dependents?
+                                        local names = {}
+                                        for dependentId in pairs(component.dependents) do
+                                            local dependent = self.behaviors[dependentId]
+                                            table.insert(names, dependent:getUiName())
+                                        end
+                                        local list = ''
+                                        for i = 1, #names do
+                                            if i > 1 then
+                                                if i < #names then
+                                                    list = list .. ', '
+                                                else
+                                                    list = list .. ' and '
                                                 end
-                                                self:send('removeComponent', self.clientId, actorId, behaviorId)
-                                                self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                            end, function()
-                                                local behavior = self.behaviors[behaviorId]
-                                                if behavior.components[actorId] then
-                                                    return 'behavior was added'
-                                                end
-                                                self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
-                                                self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                            end)
-                                        end,
-                                        cancelLabel = 'No',
-                                    })
+                                            end
+                                            list = list .. "'" .. names[i] .. "'"
+                                        end
+                                        local message = (list .. ' require' .. (#names > 1 and '' or 's') .. " '" ..
+                                            uiName .. "'.")
+                                        castle.system.alert("Cannot remove '" .. uiName .. "'", message)
+                                    else
+                                        castle.system.alert({
+                                            title = 'Remove behavior?',
+                                            message = "Remove '" .. uiName .. "' from this actor?",
+                                            okLabel = 'Yes',
+                                            cancelLabel = 'No',
+                                            onOk = function()
+                                                local behaviorId = component.behaviorId
+                                                local componentBp = {}
+                                                behavior:callHandler('blueprintComponent', component, componentBp)
+                                                self:command('remove ' .. uiName, {
+                                                    params = { 'behaviorId', 'componentBp' },
+                                                }, function()
+                                                    local behavior = self.behaviors[behaviorId]
+                                                    if not behavior.components[actorId] then
+                                                        return 'behavior was removed'
+                                                    end
+                                                    self:send('removeComponent', self.clientId, actorId, behaviorId)
+                                                    self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                end, function()
+                                                    local behavior = self.behaviors[behaviorId]
+                                                    if behavior.components[actorId] then
+                                                        return 'behavior was added'
+                                                    end
+                                                    self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
+                                                    self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                end)
+                                            end
+                                        })
+                                    end
                                 end,
                             })
                         end
