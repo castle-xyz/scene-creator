@@ -30,18 +30,27 @@ resource_loader = require 'resource_loader'
 util = require 'util'
 helps = require 'helps'
 
+
 require 'actor_behavior'
 
 require 'behaviors.body'
+
 require 'behaviors.image'
 require 'behaviors.drawing'
-require 'behaviors.solid'
+
 require 'behaviors.circle_shape'
-require 'behaviors.free_motion'
-require 'behaviors.rotating_motion'
-require 'behaviors.sling'
+
+require 'behaviors.solid'
+require 'behaviors.bouncy'
+require 'behaviors.friction'
+
+--require 'behaviors.moving'
+--require 'behaviors.constant_rotation'
+--require 'behaviors.sling'
+
 require 'tools.grab'
 require 'tools.draw'
+
 
 require 'library'
 require 'snapshot'

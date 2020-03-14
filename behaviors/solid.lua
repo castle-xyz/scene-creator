@@ -52,24 +52,6 @@ end
 
 function SolidBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
-    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-    if fixture then
-        self:uiValue('numberInput', 'bounciness', fixture:getRestitution(), {
-            props = { step = 0.05 },
-            onChange = function(params)
-                local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-                physics:setRestitution(fixtureId, params.value)
-            end,
-        })
-
-        self:uiValue('numberInput', 'friction', fixture:getFriction(), {
-            props = { step = 0.05 },
-            onChange = function(params)
-                local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-                physics:setFriction(fixtureId, params.value)
-            end,
-        })
-    end
 end
 
 
