@@ -254,6 +254,9 @@ function Client:uiBlueprints()
                         self:deselectActor(newActorId)
                         self:send('removeActor', self.clientId, newActorId)
                     end)
+
+                    -- Snap blueprints pane back to bottom
+                    self:snapBlueprintsPane(2)
                 end
             })
         end,
