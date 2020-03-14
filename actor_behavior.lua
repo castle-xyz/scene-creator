@@ -573,7 +573,8 @@ function Common:sendAddActor(bp, opts)
 
         local behavior = self.behaviorsByName[behaviorName]
         if not behavior then
-            error("addActor: no behavior '" .. behaviorName .. "'")
+            print("addActor: no behavior '" .. behaviorName .. "'")
+            return
         end
 
         for dependencyName in pairs(behavior.dependencies) do
