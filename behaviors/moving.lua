@@ -81,24 +81,25 @@ function MovingBehavior.handlers:uiComponent(component, opts)
     -- Fixed rotation / angular velocity
     local isFixedRotation = body:isFixedRotation()
     local function fixedRotationToggle()
-        self:uiValue('toggle', 'fixed rotation', isFixedRotation, {
+        self:uiValue('toggle', 'allow rotation', not isFixedRotation, {
             onChange = function(params)
                 local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-                physics:setFixedRotation(bodyId, params.value)
+                physics:setFixedRotation(bodyId, not params.value)
             end,
         })
     end
     if isFixedRotation then
         fixedRotationToggle()
     else
-        util.uiRow('rotation speed and fixed rotation', function()
+        util.uiRow('rotation speed and fixed rotation',
+            fixedRotationToggle, function()
             self:uiValue('numberInput', 'rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
                 onChange = function(params)
                     local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
                     physics:setAngularVelocity(bodyId, params.value * math.pi / 180)
                 end,
             })
-        end, fixedRotationToggle)
+        end)
     end
 
     -- Damping
