@@ -247,7 +247,7 @@ function ImageBehavior.handlers:uiComponent(component, opts)
 
     util.uiRow('crop', function()
         local cropEnabled = component.properties.cropEnabled
-        ui.toggle('crop off', 'crop on', cropEnabled, {
+        ui.toggle('crop', 'crop', cropEnabled, {
             onToggle = function(newCropEnabled)
                 local newCropSize, cropSize
                 if not cropEnabled and newCropEnabled and component._imageHolder then

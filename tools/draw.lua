@@ -341,7 +341,7 @@ function DrawTool.handlers:uiPanel()
             flex = 1,
             justifyContent = 'flex-end',
         }, function()
-            ui.toggle('fill off', 'fill on', self._fillEnabled, {
+            ui.toggle('fill', 'fill', self._fillEnabled, {
                 onToggle = function(newFillEnabled)
                     self._fillEnabled = newFillEnabled
                     if not self._fillEnabled then
@@ -364,7 +364,7 @@ function DrawTool.handlers:uiPanel()
 
     ui.box('spacer-1', { height = 24 }, function() end)
 
-    ui.toggle('line off', 'line on', self._lineEnabled, {
+    ui.toggle('line', 'line', self._lineEnabled, {
         onToggle = function(newlineEnabled)
             self._lineEnabled = newlineEnabled
             if not self._fillEnabled then

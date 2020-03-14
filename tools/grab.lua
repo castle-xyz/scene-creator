@@ -450,7 +450,7 @@ end
 function GrabTool.handlers:uiSettings(closeSettings)
     -- Grid
     ui.box('grid box', { flexDirection = 'row' }, function()
-        self._gridEnabled = ui.toggle('grid off', 'grid on', self._gridEnabled)
+        self._gridEnabled = ui.toggle('grid', 'grid', self._gridEnabled)
         if self._gridEnabled then
             ui.box('grid size box', {
                 marginLeft = 16,
@@ -464,7 +464,7 @@ function GrabTool.handlers:uiSettings(closeSettings)
     -- Rotate increment
     ui.box('rotate increment box', { flexDirection = 'row' }, function()
         self._rotateIncrementEnabled = ui.toggle(
-            'rotate snap off', 'rotate snap on', self._rotateIncrementEnabled)
+            'rotate snap', 'rotate snap', self._rotateIncrementEnabled)
         if self._rotateIncrementEnabled then
             ui.box('rotate increment value box', {
                 marginLeft = 16,
