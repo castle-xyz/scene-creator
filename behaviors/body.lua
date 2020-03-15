@@ -264,7 +264,7 @@ function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
         if not component._contactListeners then
             component._contactListeners = {}
         end
-        component._contactListeners[addedComponent.behaviorId] = true
+        component._contactListeners[addedComponent.behaviorId] = addedComponent
     end
 end
 
@@ -351,9 +351,53 @@ function BodyBehavior.handlers:postUpdate(dt)
 end
 
 
--- Collisions
+-- Collision
 
-function BodyBehavior:onContact(type, fixture1, fixture2, contact)
+function BodyBehavior:onContact(event, fixture1, fixture2, contact)
+    local body1 = fixture1:getBody()
+    local body2 = fixture2:getBody()
+
+    local actorId1 = self:getActorForBody(body1)
+    local actorId2 = self:getActorForBody(body2)
+
+    local component1 = actorId1 and self.components[actorId1]
+    local component2 = actorId2 and self.components[actorId2]
+
+    local isBegin = event == 'begin'
+    local isEnd = not isBegin
+
+    local visited = {}
+    if component1 and component1._contactListeners then
+        for listenerBehaviorId, listenerComponent in pairs(component1._contactListeners) do
+            local listenerBehavior = self.game.behaviors[listenerBehaviorId]
+            if listenerBehavior then
+                listenerBehavior:callHandler('bodyContactComponent', listenerComponent, {
+                    isBegin = isBegin,
+                    isEnd = isEnd,
+                    otherActorId = actorId2,
+                    fixture = fixture1,
+                    otherFixture = fixture2,
+                    isRepeat = false,
+                })
+                visited[listenerBehavior] = true
+            end
+        end
+    end
+    if component2 and component2._contactListeners then
+        for listenerBehaviorId, listenerComponent in pairs(component2._contactListeners) do
+            local listenerBehavior = self.game.behaviors[listenerBehaviorId]
+            if listenerBehavior then
+                listenerBehavior:callHandler('bodyContactComponent', listenerComponent, {
+                    isBegin = isBegin,
+                    isEnd = isEnd,
+                    otherActorId = actorId1,
+                    fixture = fixture2,
+                    otherFixture = fixture1,
+                    isRepeat = visited[listenerBehavior] ~= nil,
+                })
+            end
+        end
+    end
 end
 
 

@@ -63,13 +63,19 @@ Makes the actor **fall down** due to **gravity**.
             ]],
         },
 
-
-
         RotatingMotion = {
             description = [[
 **Rotates** the actor continuously.
             ]],
         },
+
+
+        Disappear = {
+            description = [[
+Removes the actor from the scene when something happens. The actor can be removed when it **collides** with another actor.
+            ]],
+        },
+
 
         Sling = {
             description = [[
