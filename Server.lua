@@ -78,5 +78,7 @@ function Server:update(dt)
     self:callHandlers('update', dt)
     self:callHandlers('postUpdate', dt)
 
+    self:fireOnEndOfFrame()
+
     self:forEachActorByDrawOrder() -- Keeps draw order dense
 end

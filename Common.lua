@@ -46,6 +46,9 @@ require 'behaviors.bouncy'
 require 'behaviors.moving'
 require 'behaviors.falling'
 require 'behaviors.rotating_motion'
+
+require 'behaviors.disappear'
+
 require 'behaviors.sling'
 
 require 'tools.grab'
@@ -105,6 +108,9 @@ function Common:define()
         selfSend = false,
         forward = false,
     })
+
+
+    self.onEndOfFrames = {}
 end
 
 
@@ -161,5 +167,16 @@ function Common.receivers:setPaused(time, paused)
         self.paused = paused
         self:callHandlers('setPaused', paused)
     end
+end
+
+
+-- Methods
+
+function Common:fireOnEndOfFrame()
+    local onEndOfFrames = self.onEndOfFrames
+    for _, func in ipairs(onEndOfFrames) do
+        func()
+    end
+    self.onEndOfFrames = {}
 end
 

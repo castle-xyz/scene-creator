@@ -144,6 +144,10 @@ function BaseBehavior:uiProperty(method, label, actorId, propertyName, opts)
     })
 end
 
+function BaseBehavior:onEndOfFrame(func)
+    table.insert(self.game.onEndOfFrames, func)
+end
+
 
 -- Core behavior registration
 

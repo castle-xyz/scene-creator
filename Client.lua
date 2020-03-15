@@ -280,6 +280,8 @@ function Client:update(dt)
     self:callHandlers('update', dt)
     self:callHandlers('postUpdate', dt)
 
+    self:fireOnEndOfFrame()
+
     self:updateNotify(dt)
 
     self:updateAutoSaveScene()
