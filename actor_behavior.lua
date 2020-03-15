@@ -459,7 +459,7 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
     behavior.components[actorId] = component
 
     for _, dependency in pairs(behavior.dependencies) do
-        actor.components[dependency.behaviorId].dependents[behaviorId] = true
+        actor.components[dependency.behaviorId].dependents[behaviorId] = component
         dependency:callHandler('addDependentComponent', component, {
             isOrigin = self.clientId == clientId,
         })
