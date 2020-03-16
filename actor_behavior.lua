@@ -153,12 +153,9 @@ end
 
 local CORE_BEHAVIORS = {}
 
-local nextCoreBehaviorId = 1
-
 function registerCoreBehavior(behaviorSpec)
     behaviorSpec.isCore = true
-    CORE_BEHAVIORS[nextCoreBehaviorId] = behaviorSpec
-    nextCoreBehaviorId = nextCoreBehaviorId + 1
+    table.insert(CORE_BEHAVIORS, behaviorSpec)
 end
 
 
@@ -174,14 +171,32 @@ function Common:startActorBehavior()
     self.behaviorsByHandler = {} -- `handlerName` -> `behaviorId` -> behavior
     self.tools = {} -- `behaviorId` -> behavior, for tool behaviors
 
-    for behaviorId, behaviorSpec in pairs(CORE_BEHAVIORS) do
+    for behaviorId, behaviorSpec in ipairs(CORE_BEHAVIORS) do
         self.receivers.addBehavior(self, 0, self.clientId, behaviorId, behaviorSpec)
     end
 end
 
 function Common:stopActorBehavior()
+    -- Need to visit dependents before dependencies -- collect pre-order traversal along dependency
+    -- links, then use its reverse
+    local order = {}
+    local visited = {}
+    local function visit(behaviorId, behavior)
+        if visited[behaviorId] then
+            return
+        end
+        visited[behaviorId] = true
+        behavior = behavior or self.behaviors[behaviorId]
+        for _, dependency in pairs(behavior.dependencies) do
+            visit(dependency.behaviorId, dependency)
+        end
+        table.insert(order, behaviorId)
+    end
     for behaviorId, behavior in pairs(self.behaviors) do
-        self.receivers.removeBehavior(self, 0, self.clientId, behaviorId)
+        visit(behaviorId, behavior)
+    end
+    for i = #order, 1, -1 do
+        self.receivers.removeBehavior(self, 0, self.clientId, order[i])
     end
 end
 
