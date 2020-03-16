@@ -45,6 +45,7 @@ require 'behaviors.bouncy'
 
 require 'behaviors.moving'
 require 'behaviors.falling'
+require 'behaviors.sliding'
 require 'behaviors.rotating_motion'
 
 require 'behaviors.disappear'
