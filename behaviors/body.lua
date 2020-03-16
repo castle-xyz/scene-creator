@@ -8,6 +8,7 @@ local BodyBehavior = {
     name = 'Body',
     propertyNames = {
         'worldId',
+        'groundBodyId',
         'bodyId',
         'fixtureId',
     },
@@ -33,8 +34,11 @@ function BodyBehavior.handlers:addBehavior(opts)
     end
 
     if self.game.server then
-        -- If server, create a new world
+        -- Create a new world
         self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, UNIT * 9.8, true))
+
+        -- Create the ground body
+        self:sendSetProperties(nil, 'groundBodyId', self._physics:newBody(self.globals.worldId, 0, 0, 'static'))
     end
 end
 
@@ -495,6 +499,10 @@ end
 
 function BodyBehavior:getWorld()
     return self.globals.worldId, self._physics:objectForId(self.globals.worldId)
+end
+
+function BodyBehavior:getGroundBody()
+    return self.globals.groundBodyId, self._physics:objectForId(self.globals.groundBodyId)
 end
 
 function BodyBehavior:getBody(componentOrActorId)
