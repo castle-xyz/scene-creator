@@ -53,7 +53,7 @@ When a moving solid runs into another solid, it **bounces away** if either is bo
 
         Moving = {
             description = [[
-Let's the actor move around. Other behaviors such as **falling**, **solid** and **bouncy** affect its motion.
+Let's the actor **move** around. **Rotation** can toggled. The actor can be given an **initial velocity** and an **initial rotation speed**.
             ]],
         },
 
