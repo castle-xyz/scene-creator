@@ -370,6 +370,18 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
     local isBegin = event == 'begin'
     local isEnd = not isBegin
 
+    local ownerId1, strongOwned1 = self._physics:getOwner(body1)
+    local ownerId2, strongOwned2 = self._physics:getOwner(body2)
+    local ownerId
+    if strongOwned1 then
+        ownerId = ownerId1
+    elseif strongOwned2 then
+        ownerId = ownerId2
+    else
+        ownerId = ownerId1 or ownerId2
+    end
+    local isOwner = self.game.clientId == ownerId
+
     local visited = {}
     if component1 and component1._contactListeners then
         for listenerBehaviorId, listenerComponent in pairs(component1._contactListeners) do
@@ -381,6 +393,7 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
                     otherActorId = actorId2,
                     fixture = fixture1,
                     otherFixture = fixture2,
+                    isOwner = isOwner,
                     isRepeat = false,
                 })
                 visited[listenerBehavior] = true
@@ -397,6 +410,7 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
                     otherActorId = actorId1,
                     fixture = fixture2,
                     otherFixture = fixture1,
+                    isOwner = isOwner,
                     isRepeat = visited[listenerBehavior] ~= nil,
                 })
             end
