@@ -289,8 +289,16 @@ function Common.receivers:addActor(time, clientId, actorId, parentEntryId)
     self.actorsByDrawOrder[actor.drawOrder] = actor
 end
 
-function Common.receivers:removeActor(time, clientId, actorId)
-    local actor = assert(self.actors[actorId], 'removeActor: no such actor')
+function Common.receivers:removeActor(time, clientId, actorId, opts)
+    opts = opts or {}
+
+    local actor = self.actors[actorId]
+    if not actor then
+        if not opts.soft then
+            error('removeActor: no such actor')
+        end
+        return
+    end
 
     -- Need to visit dependents before dependencies -- collect pre-order traversal along dependency
     -- links, then use its reverse
