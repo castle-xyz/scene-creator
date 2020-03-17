@@ -3,7 +3,6 @@ local SlidingBehavior = {
     displayName = 'sliding',
     propertyNames = {
         'direction',
-        'distance',
     },
     dependencies = {
         'Moving',
@@ -35,8 +34,8 @@ function SlidingBehavior:updateJoint(component)
         local groundBodyId, groundBody = self.dependencies.Body:getGroundBody()
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         local x, y = body:getPosition()
-        component._joint = love.physics.newPrismaticJoint(groundBody, body, x, y, ax, ay)
-        component._joint:setLimits(-component.properties.distance, component.properties.distance)
+        component._joint = love.physics.newWheelJoint(groundBody, body, x, y, ax, ay)
+        component._joint:setSpringFrequency(0)
     end
 end
 
@@ -50,19 +49,11 @@ function SlidingBehavior.setters:direction(component, newLimitType)
     end
 end
 
-function SlidingBehavior.setters:distance(component, newDistance)
-    if component.properties.distance ~= newDistance then
-        component.properties.distance = newDistance
-        self:updateJoint(component)
-    end
-end
-
 
 -- Component management
 
 function SlidingBehavior.handlers:addComponent(component, bp, opts)
     component.properties.direction = bp.direction or 'horizontal'
-    component.properties.distance = bp.distance or 2
     self:updateJoint(component)
 end
 
@@ -76,7 +67,6 @@ end
 
 function SlidingBehavior.handlers:blueprintComponent(component, bp)
     bp.direction = component.properties.direction
-    bp.distance = component.properties.distance
 end
 
 
@@ -103,13 +93,6 @@ function SlidingBehavior.handlers:uiComponent(component, opts)
             if params.value then
                 self:sendSetProperties(actorId, 'direction', params.value)
             end
-        end,
-    })
-
-    self:uiValue('numberInput', 'maximum distance', component.properties.distance, {
-        props = { min = 0, max = 20 },
-        onChange = function(params)
-            self:sendSetProperties(actorId, 'distance', params.value)
         end,
     })
 end

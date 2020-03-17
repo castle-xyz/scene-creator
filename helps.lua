@@ -71,7 +71,7 @@ Makes the actor **fall down** due to **gravity**.
 
         Sliding = {
             description = [[
-Limits an actor to sliding along a **fixed direction** and up to a **maximum distance** from the starting position.
+Limits an actor to moving along a **fixed direction**.
             ]],
         },
 
