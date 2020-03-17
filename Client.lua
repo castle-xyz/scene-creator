@@ -501,6 +501,39 @@ function Client:draw()
         self:callHandlers('drawOverlay')
     end
 
+    if false then -- Physics bodies
+        local physics = self.behaviorsByName.Body:getPhysics()
+        local worldId, world = physics:getWorld()
+        if world then
+            love.graphics.setLineWidth(5 * self:getPixelScale())
+            for _, body in ipairs(world:getBodies()) do
+                local bodyId = physics:idForObject(body)
+                local ownerId = physics:getOwner(bodyId)
+                if ownerId then
+                    local c = ownerId + 1
+                    love.graphics.setColor(c % 2, math.floor(c / 2) % 2, math.floor(c / 4) % 2)
+                else
+                    love.graphics.setColor(1, 1, 1)
+                end
+
+                -- Draw shapes
+                for _, fixture in ipairs(body:getFixtures()) do
+                    local shape = fixture:getShape()
+                    local ty = shape:getType()
+                    if ty == 'circle' then
+                        love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
+                    elseif ty == 'polygon' then
+                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                    elseif ty == 'edge' then
+                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                    elseif ty == 'chain' then
+                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                    end
+                end
+            end
+        end
+    end
+
     love.graphics.pop()
 
     do -- Screen-space overlay
