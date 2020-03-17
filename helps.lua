@@ -63,15 +63,21 @@ Makes the actor **fall down** due to **gravity**.
             ]],
         },
 
-        RotatingMotion = {
-            description = [[
-**Rotates** the actor continuously.
-            ]],
-        },
-
         Sliding = {
             description = [[
 Limits an actor to moving along a **fixed direction**.
+            ]],
+        },
+
+        SpeedLimit = {
+            description = [[
+Sets the **maximum speed** at which the actor can move.
+            ]],
+        },
+
+        RotatingMotion = {
+            description = [[
+**Rotates** the actor continuously.
             ]],
         },
 
