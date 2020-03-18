@@ -88,6 +88,12 @@ Removes the actor from the scene when something happens. The actor can be remove
             ]],
         },
 
+        Restart = {
+            description = [[
+Restarts the scene when something happens. The scene can be restarted when the actor **collides** with another actor.
+            ]],
+        },
+
 
         Sling = {
             description = [[
