@@ -97,7 +97,13 @@ Restarts the scene when something happens. The scene can be restarted when the a
 
         Sling = {
             description = [[
-Allows the actor to be **slung by the user** when playing the scene.
+Allows the actor to be **slung by the user** when playing the scene. The user can **touch anywhere and pull** to define the sling direction and force.
+            ]],
+        },
+
+        Drag = {
+            description = [[
+Allows the user to **grab the actor** and **move it directly** when playing the scene.
             ]],
         },
 

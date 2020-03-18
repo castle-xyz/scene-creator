@@ -53,6 +53,7 @@ require 'behaviors.disappear'
 require 'behaviors.restart'
 
 require 'behaviors.sling'
+require 'behaviors.drag'
 
 require 'tools.grab'
 require 'tools.draw'

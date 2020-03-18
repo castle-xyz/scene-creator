@@ -23,13 +23,6 @@ local TRIANGLE_LENGTH = 25 * UNIT
 local TRIANGLE_WIDTH = 10 * UNIT
 
 
--- Body type
-
-function SlingBehavior.handlers:bodyTypeComponent(component)
-    return 'dynamic'
-end
-
-
 -- Component management
 
 function SlingBehavior.handlers:addComponent(component, bp, opts)
@@ -44,6 +37,7 @@ end
 -- Perform
 
 function SlingBehavior.handlers:perform(dt)
+    -- Client-only
     if not self.game.clientId then
         return
     end
@@ -61,20 +55,21 @@ function SlingBehavior.handlers:perform(dt)
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 and touchData.allTouchesReleased then
         local touchId, touch = next(touchData.touches)
+        if not touch.behaviorId then
+            local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
+            local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+            if dragLen > MAX_DRAG_LENGTH then
+                dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
+                dragLen = MAX_DRAG_LENGTH
+            end
 
-        local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
-        local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
-        if dragLen > MAX_DRAG_LENGTH then
-            dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
-            dragLen = MAX_DRAG_LENGTH
-        end
-
-        for actorId, component in pairs(self.components) do
-            -- We own the body, so just set velocity locally and the physics system will sync it
-            local bodyId, body = self.dependencies.Body:getBody(actorId)
-            body:setLinearVelocity(
-                component.properties.speed * dragX, 
-                component.properties.speed * dragY)
+            for actorId, component in pairs(self.components) do
+                -- We own the body, so just set velocity locally and the physics system will sync it
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                body:setLinearVelocity(
+                    component.properties.speed * dragX, 
+                    component.properties.speed * dragY)
+            end
         end
     end
 end
@@ -91,39 +86,40 @@ function SlingBehavior.handlers:drawOverlay()
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
+        if not touch.behaviorId then
+            local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
+            local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+            if dragLen > 0 then
+                if dragLen > MAX_DRAG_LENGTH then
+                    dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
+                    dragLen = MAX_DRAG_LENGTH
+                end
 
-        local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
-        local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
-        if dragLen > 0 then
-            if dragLen > MAX_DRAG_LENGTH then
-                dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
-                dragLen = MAX_DRAG_LENGTH
+                love.graphics.setColor(1, 1, 1, 0.8)
+                love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
+
+                local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
+                local triangleLength = TRIANGLE_LENGTH * self.game:getPixelScale()
+                local triangleWidth = TRIANGLE_WIDTH * self.game:getPixelScale()
+
+                -- Circle with solid outline and transparent fill
+                love.graphics.circle('line', touch.initialX, touch.initialY, circleRadius)
+                love.graphics.setColor(1, 1, 1, 0.3)
+                love.graphics.circle('fill', touch.initialX, touch.initialY, circleRadius)
+                love.graphics.setColor(1, 1, 1, 0.8)
+
+                -- Line and triangle
+                local endX, endY = touch.initialX + DRAW_MULTIPLIER * dragX, touch.initialY + DRAW_MULTIPLIER * dragY
+                love.graphics.line(
+                    touch.initialX, touch.initialY,
+                    endX - triangleLength * dragX / dragLen, endY - triangleLength * dragY / dragLen)
+                love.graphics.polygon('fill',
+                    endX, endY,
+                    endX - triangleLength * dragX / dragLen - triangleWidth * dragY / dragLen,
+                    endY - triangleLength * dragY / dragLen + triangleWidth * dragX / dragLen,
+                    endX - triangleLength * dragX / dragLen + triangleWidth * dragY / dragLen,
+                    endY - triangleLength * dragY / dragLen - triangleWidth * dragX / dragLen)
             end
-
-            love.graphics.setColor(1, 1, 1, 0.8)
-            love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
-
-            local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
-            local triangleLength = TRIANGLE_LENGTH * self.game:getPixelScale()
-            local triangleWidth = TRIANGLE_WIDTH * self.game:getPixelScale()
-
-            -- Circle with solid outline and transparent fill
-            love.graphics.circle('line', touch.initialX, touch.initialY, circleRadius)
-            love.graphics.setColor(1, 1, 1, 0.3)
-            love.graphics.circle('fill', touch.initialX, touch.initialY, circleRadius)
-            love.graphics.setColor(1, 1, 1, 0.8)
-
-            -- Line and triangle
-            local endX, endY = touch.initialX + DRAW_MULTIPLIER * dragX, touch.initialY + DRAW_MULTIPLIER * dragY
-            love.graphics.line(
-                touch.initialX, touch.initialY,
-                endX - triangleLength * dragX / dragLen, endY - triangleLength * dragY / dragLen)
-            love.graphics.polygon('fill',
-                endX, endY,
-                endX - triangleLength * dragX / dragLen - triangleWidth * dragY / dragLen,
-                endY - triangleLength * dragY / dragLen + triangleWidth * dragX / dragLen,
-                endX - triangleLength * dragX / dragLen + triangleWidth * dragY / dragLen,
-                endY - triangleLength * dragY / dragLen - triangleWidth * dragX / dragLen)
         end
     end
 end
