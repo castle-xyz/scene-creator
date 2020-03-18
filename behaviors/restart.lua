@@ -32,13 +32,13 @@ end
 
 function RestartBehavior.handlers:bodyContactComponent(component, opts)
     if component.properties.restartOnCollision then
-        if self.game.server then
+        if opts.isOwner then
             self:onEndOfFrame(function()
                 if self.game.rewindSnapshotId then
                     self.game:send('setPaused', true)
 
                     self.game:send({
-                        selfSendOnly = true,
+                        selfSendOnly = not not self.game.server,
                         kind = 'restoreSnapshot',
                     }, self.game.rewindSnapshotId, { stopPerforming = false })
 

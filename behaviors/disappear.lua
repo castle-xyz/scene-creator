@@ -32,12 +32,14 @@ end
 
 function DisappearBehavior.handlers:bodyContactComponent(component, opts)
     if component.properties.disappearOnCollision then
-        local actorId = component.actorId
-        self:onEndOfFrame(function()
-            if self.game.actors[actorId] then
-                self.game:send('removeActor', self.clientId, actorId, { soft = true })
-            end
-        end)
+        if opts.isOwner then
+            local actorId = component.actorId
+            self:onEndOfFrame(function()
+                if self.game.actors[actorId] then
+                    self.game:send('removeActor', self.clientId, actorId, { soft = true })
+                end
+            end)
+        end
     end
 end
 
