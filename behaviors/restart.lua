@@ -35,10 +35,17 @@ function RestartBehavior.handlers:bodyContactComponent(component, opts)
         if self.game.server then
             self:onEndOfFrame(function()
                 if self.game.rewindSnapshotId then
+                    self.game:send('setPaused', true)
+
                     self.game:send({
                         selfSendOnly = true,
                         kind = 'restoreSnapshot',
                     }, self.game.rewindSnapshotId, { stopPerforming = false })
+
+                    network.async(function()
+                        copas.sleep(0.4)
+                        self.game:send('setPaused', false)
+                    end)
                 end
             end)
         end
