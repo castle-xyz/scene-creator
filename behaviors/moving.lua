@@ -58,10 +58,12 @@ function MovingBehavior.handlers:uiComponent(component, opts)
     --    })
     --end)
 
+    local initialPrefix = not self.performing and 'initial ' or ''
+
     -- Linear velocity
     local vx, vy = body:getLinearVelocity()
     util.uiRow('linear velocity', function()
-        self:uiValue('numberInput', 'velocity x', vx, {
+        self:uiValue('numberInput', initialPrefix .. 'velocity x', vx, {
             onChange = function(params)
                 local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
                 local vx, vy = body:getLinearVelocity()
@@ -69,7 +71,7 @@ function MovingBehavior.handlers:uiComponent(component, opts)
             end,
         })
     end, function()
-        self:uiValue('numberInput', 'velocity y', vy, {
+        self:uiValue('numberInput', initialPrefix .. 'velocity y', vy, {
             onChange = function(params)
                 local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
                 local vx, vy = body:getLinearVelocity()
@@ -93,7 +95,9 @@ function MovingBehavior.handlers:uiComponent(component, opts)
     else
         util.uiRow('rotation speed and fixed rotation',
             fixedRotationToggle, function()
-            self:uiValue('numberInput', 'rotation speed (degrees)', body:getAngularVelocity() * 180 / math.pi, {
+            self:uiValue('numberInput',
+                initialPrefix .. 'rotation speed (degrees)',
+                body:getAngularVelocity() * 180 / math.pi, {
                 onChange = function(params)
                     local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
                     physics:setAngularVelocity(bodyId, params.value * math.pi / 180)
