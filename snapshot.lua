@@ -63,27 +63,15 @@ function Common:saveScene(snapshot)
     if not self.performing then
         self.lastSaveAttemptTime = love.timer.getTime()
 
-        local data = cjson.encode({ snapshot = snapshot or self:createSnapshot() })
+        local data = cjson.encode({
+            snapshot = snapshot or self:createSnapshot(),
+        })
         if data ~= self.lastSuccessfulSaveData then
-            network.async(function()
-                local result = jsBridge.js.gqlMutate {
-                    mutation = [[
-                        mutation UpdateScene($sceneId: ID!, $data: Json!) {
-                          updateScene(sceneId: $sceneId, data: $data) {
-                            sceneId
-                          }
-                        }
-                    ]],
-                    variables = {
-                        sceneId = self.sceneId,
-                        data = data,
-                    },
-                    fetchPolicy = 'no-cache',
-                }
-                if result and result.data and result.data.updateScene and result.data.updateScene.sceneId then
-                    self.lastSuccessfulSaveData = data
-                end
-            end)
+            jsEvents.send('GHOST_MESSAGE', {
+                messageType = 'SAVE_SCENE',
+                data = data,
+            })
+            self.lastSuccessfulSaveData = data
         end
     end
 end
