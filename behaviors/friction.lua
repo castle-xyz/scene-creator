@@ -6,7 +6,6 @@ local FrictionBehavior = {
         'rotatingFriction',
     },
     dependencies = {
-        'Moving',
         'Body',
     },
     handlers = {},
