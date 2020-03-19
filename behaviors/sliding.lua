@@ -1,4 +1,4 @@
-local SlidingBehavior = {
+local SlidingBehavior = defineCoreBehavior {
     name = 'Sliding',
     displayName = 'sliding',
     propertyNames = {
@@ -8,11 +8,7 @@ local SlidingBehavior = {
         'Moving',
         'Body',
     },
-    handlers = {},
-    setters = {},
 }
-
-registerCoreBehavior(SlidingBehavior)
 
 
 -- Methods

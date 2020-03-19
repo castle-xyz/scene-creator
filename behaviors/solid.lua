@@ -1,4 +1,4 @@
-local SolidBehavior = {
+local SolidBehavior = defineCoreBehavior {
     name = 'Solid',
     displayName = 'solid',
     propertyNames = {
@@ -6,10 +6,7 @@ local SolidBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(SolidBehavior)
 
 
 -- Utilities

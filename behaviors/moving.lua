@@ -1,4 +1,4 @@
-local MovingBehavior = {
+local MovingBehavior = defineCoreBehavior {
     name = 'Moving',
     displayName = 'moving',
     propertyNames = {
@@ -6,10 +6,7 @@ local MovingBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(MovingBehavior)
 
 
 -- Body type

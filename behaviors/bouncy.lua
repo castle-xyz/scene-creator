@@ -1,4 +1,4 @@
-local BouncyBehavior = {
+local BouncyBehavior = defineCoreBehavior {
     name = 'Bouncy',
     displayName = 'bouncy',
     propertyNames = {
@@ -7,10 +7,7 @@ local BouncyBehavior = {
         'Solid',
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(BouncyBehavior)
 
 
 -- Component management

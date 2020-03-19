@@ -1,4 +1,4 @@
-local FallingBehavior = {
+local FallingBehavior = defineCoreBehavior {
     name = 'Falling',
     displayName = 'falling',
     propertyNames = {
@@ -7,10 +7,7 @@ local FallingBehavior = {
         'Moving',
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(FallingBehavior)
 
 
 -- Body type

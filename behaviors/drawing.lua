@@ -1,4 +1,4 @@
-local DrawingBehavior = {
+local DrawingBehavior = defineCoreBehavior {
     name = 'Drawing',
     propertyNames = {
         'url',
@@ -7,10 +7,7 @@ local DrawingBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(DrawingBehavior)
 
 
 local ffi = require 'ffi'

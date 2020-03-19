@@ -1,4 +1,4 @@
-local DisappearBehavior = {
+local DisappearBehavior = defineCoreBehavior {
     name = 'Disappear',
     displayName = 'disappear',
     propertyNames = {
@@ -7,10 +7,7 @@ local DisappearBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(DisappearBehavior)
 
 
 -- Component management

@@ -1,4 +1,4 @@
-local RotatingMotionBehavior = {
+local RotatingMotionBehavior = defineCoreBehavior {
     name = 'RotatingMotion',
     displayName = 'rotating motion',
     propertyNames = {
@@ -7,10 +7,7 @@ local RotatingMotionBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(RotatingMotionBehavior)
 
 
 -- Body type

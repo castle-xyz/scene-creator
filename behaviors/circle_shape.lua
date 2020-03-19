@@ -1,4 +1,4 @@
-local CircleShapeBehavior = {
+local CircleShapeBehavior = defineCoreBehavior {
     name = 'CircleShape',
     displayName = 'circle',
     propertyNames = {
@@ -6,10 +6,7 @@ local CircleShapeBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(CircleShapeBehavior)
 
 
 -- Component management

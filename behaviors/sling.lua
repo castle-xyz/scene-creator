@@ -1,4 +1,4 @@
-local SlingBehavior = {
+local SlingBehavior = defineCoreBehavior {
     name = 'Sling',
     displayName = 'sling',
     propertyNames = {
@@ -8,10 +8,7 @@ local SlingBehavior = {
         'Moving',
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(SlingBehavior)
 
 
 local MAX_DRAG_LENGTH = 3 * UNIT

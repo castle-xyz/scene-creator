@@ -1,4 +1,4 @@
-local RestartBehavior = {
+local RestartBehavior = defineCoreBehavior {
     name = 'Restart',
     displayName = 'restart',
     propertyNames = {
@@ -7,10 +7,7 @@ local RestartBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(RestartBehavior)
 
 
 -- Component management

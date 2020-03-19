@@ -1,11 +1,10 @@
-local GrabTool = {
+local GrabTool = defineCoreBehavior {
     name = 'Grab',
     propertyNames = {
     },
     dependencies = {
         'Body',
     },
-    handlers = {},
     tool = {
         icon = 'mouse-pointer',
         iconFamily = 'FontAwesome5',
@@ -13,8 +12,6 @@ local GrabTool = {
         emptySelect = true,
     },
 }
-
-registerCoreBehavior(GrabTool)
 
 
 local HANDLE_TOUCH_RADIUS = 18

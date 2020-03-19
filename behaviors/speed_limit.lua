@@ -1,4 +1,4 @@
-local SpeedLimitBehavior = {
+local SpeedLimitBehavior = defineCoreBehavior {
     name = 'SpeedLimit',
     displayName = 'speed limit',
     propertyNames = {
@@ -7,10 +7,7 @@ local SpeedLimitBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(SpeedLimitBehavior)
 
 
 -- Component management

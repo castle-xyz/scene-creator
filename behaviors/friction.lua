@@ -1,4 +1,4 @@
-local FrictionBehavior = {
+local FrictionBehavior = defineCoreBehavior {
     name = 'Friction',
     displayName = 'friction',
     propertyNames = {
@@ -8,11 +8,8 @@ local FrictionBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
     setters = {},
 }
-
-registerCoreBehavior(FrictionBehavior)
 
 
 -- Methods

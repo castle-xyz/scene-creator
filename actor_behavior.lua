@@ -149,13 +149,20 @@ function BaseBehavior:onEndOfFrame(func)
 end
 
 
--- Core behavior registration
+-- Core behavior definition
 
 local CORE_BEHAVIORS = {}
 
-function registerCoreBehavior(behaviorSpec)
+function defineCoreBehavior(behaviorSpec)
     behaviorSpec.isCore = true
+    behaviorSpec.propertyNames = behaviorSpec.propertyNames or {}
+    behaviorSpec.handlers = behaviorSpec.handlers or {}
+    behaviorSpec.setters = behaviorSpec.setters or {}
+    behaviorSpec.dependencies = behaviorSpec.dependencies or {}
+    behaviorSpec.triggers = behaviorSpec.triggers or {}
+    behaviorSpec.responses = behaviorSpec.responses or {}
     table.insert(CORE_BEHAVIORS, behaviorSpec)
+    return behaviorSpec
 end
 
 
@@ -390,18 +397,18 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
 
     -- Copy handlers and setters
     behavior.handlers = {}
-    for handlerName, handler in pairs(behaviorSpec.handlers or {}) do
+    for handlerName, handler in pairs(behaviorSpec.handlers) do
         behavior.handlers[handlerName] = handler
     end
     behavior.setters = {}
-    for setterName, setter in pairs(behaviorSpec.setters or {}) do
+    for setterName, setter in pairs(behaviorSpec.setters) do
         behavior.setters[setterName] = setter
     end
 
     -- Reference dependencies
     behavior.dependents = {}
     behavior.dependencies = {}
-    for _, dependencyName in pairs(behaviorSpec.dependencies or {}) do
+    for _, dependencyName in pairs(behaviorSpec.dependencies) do
         local dependency = assert(self.behaviorsByName[dependencyName],
             "dependency '" .. dependencyName .. "' not resolved")
         behavior.dependencies[dependencyName] = dependency

@@ -1,4 +1,4 @@
-local DrawTool = {
+local DrawTool = defineCoreBehavior {
     name = 'Draw',
     propertyNames = {
     },
@@ -6,15 +6,12 @@ local DrawTool = {
         'Body',
         'Drawing',
     },
-    handlers = {},
     tool = {
         icon = 'pencil-alt',
         iconFamily = 'FontAwesome5',
         needsPerformingOff = true,
     },
 }
-
-registerCoreBehavior(DrawTool)
 
 
 local DEFAULT_PALETTE = {

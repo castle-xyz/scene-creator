@@ -1,4 +1,4 @@
-local DragBehavior = {
+local DragBehavior = defineCoreBehavior {
     name = 'Drag',
     displayName = 'drag',
     propertyNames = {
@@ -7,10 +7,7 @@ local DragBehavior = {
         'Moving',
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(DragBehavior)
 
 
 local CIRCLE_RADIUS = 18 * UNIT

@@ -1,4 +1,4 @@
-local ImageBehavior = {
+local ImageBehavior = defineCoreBehavior {
     name = 'Image',
     propertyNames = {
         'url',
@@ -13,10 +13,7 @@ local ImageBehavior = {
     dependencies = {
         'Body',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(ImageBehavior)
 
 
 -- Component management

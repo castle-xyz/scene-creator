@@ -4,7 +4,7 @@ local Physics = require 'multi.physics'
 love.physics.setMeter(UNIT)
 
 
-local BodyBehavior = {
+local BodyBehavior = defineCoreBehavior {
     name = 'Body',
     propertyNames = {
         'worldId',
@@ -12,10 +12,7 @@ local BodyBehavior = {
         'bodyId',
         'fixtureId',
     },
-    handlers = {},
 }
-
-registerCoreBehavior(BodyBehavior)
 
 
 -- Behavior management
