@@ -28,7 +28,6 @@ function Client:drawNotify()
 
     local dpiScale = love.graphics.getDPIScale()
     if dpiScale ~= lastDpiScale then
-        print('dpiScale', dpiScale)
         font = love.graphics.newFont(dpiScale * FONT_SIZE)
         lastDpiScale = dpiScale
     end
