@@ -55,7 +55,9 @@ end
 function SpeedLimitBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    self:uiProperty('numberInput', 'maximum speed (units per second)', actorId, 'maximumSpeed')
+    self:uiProperty('numberInput', 'maximum speed (units per second)', actorId, 'maximumSpeed', {
+        props = { min = 0.1 },
+    })
 end
 
 
