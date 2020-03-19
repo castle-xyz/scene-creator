@@ -71,7 +71,7 @@ Limits an actor to moving along a **fixed direction**.
 
         Friction = {
             description = [[
-**Slows down** the actor's motion and rotation over time. Additional friction can also be applied when a solid rubs against another solid.
+**Moving and rotating friction** slow down an actor's motion and rotation over time. When a moving solid rubs against another solid, it slows down if both have **rubbing friction**.
             ]],
         },
 
