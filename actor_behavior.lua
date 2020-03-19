@@ -450,7 +450,15 @@ function Common.receivers:removeBehavior(time, clientId, behaviorId)
     -- Unset in maps
     self.tools[behaviorId] = nil
     for actorId in pairs(behavior.components) do
-        self.actors[actorId].components[behaviorId] = nil
+        local actor = self.actors[actorId]
+        local component = actor.components[behaviorId]
+        for _, dependency in pairs(behavior.dependencies) do
+            dependency:callHandler('removeDependentComponent', component, {
+                isOrigin = self.clientId == clientId,
+            })
+            actor.components[dependency.behaviorId].dependents[behaviorId] = nil
+        end
+        actor.components[behaviorId] = nil
     end
     for handlerName in pairs(behavior.handlers) do
         self.behaviorsByHandler[handlerName][behaviorId] = nil
