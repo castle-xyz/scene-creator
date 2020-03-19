@@ -69,6 +69,12 @@ Limits an actor to moving along a **fixed direction**.
             ]],
         },
 
+        Friction = {
+            description = [[
+**Slows down** the actor's motion and rotation over time. Additional friction can also be applied when a solid rubs against another solid.
+            ]],
+        },
+
         SpeedLimit = {
             description = [[
 Sets the **maximum speed** at which the actor can move.
