@@ -34,7 +34,6 @@ helps = require 'helps'
 require 'actor_behavior'
 
 require 'behaviors.body'
-
 require 'behaviors.image'
 require 'behaviors.drawing'
 
@@ -55,6 +54,8 @@ require 'behaviors.restart'
 
 require 'behaviors.sling'
 require 'behaviors.drag'
+
+require 'behaviors.rules'
 
 require 'tools.grab'
 require 'tools.draw'
