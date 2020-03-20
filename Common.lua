@@ -33,8 +33,6 @@ helps = require 'helps'
 
 require 'actor_behavior'
 
-require 'rules'
-
 require 'behaviors.body'
 
 require 'behaviors.image'

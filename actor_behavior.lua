@@ -25,14 +25,6 @@ function BaseBehavior:callHandler(handlerName, ...)
     end
 end
 
-function BaseBehavior:fireTrigger(triggerName, actorId, params)
-    self.game:callHandlers('trigger', triggerName, {
-        actorId = actorId,
-        triggerBehaviorId = self.behaviorId,
-        params = params,
-    })
-end
-
 function BaseBehavior:sendSetProperties(opts, ...)
     local actorId, sendOpts
     if type(opts) == 'table' then
@@ -161,30 +153,16 @@ end
 
 local CORE_BEHAVIORS = {}
 
-function initBehaviorSpec(behaviorSpec)
+function defineCoreBehavior(behaviorSpec)
+    behaviorSpec.isCore = true
     behaviorSpec.propertyNames = behaviorSpec.propertyNames or {}
     behaviorSpec.handlers = behaviorSpec.handlers or {}
     behaviorSpec.setters = behaviorSpec.setters or {}
     behaviorSpec.dependencies = behaviorSpec.dependencies or {}
     behaviorSpec.triggers = behaviorSpec.triggers or {}
     behaviorSpec.responses = behaviorSpec.responses or {}
-end
-
-function defineCoreBehavior(behaviorSpec)
-    behaviorSpec.isCore = true
-    initBehaviorSpec(behaviorSpec)
     table.insert(CORE_BEHAVIORS, behaviorSpec)
     return behaviorSpec
-end
-
-function compareBehaviorId(behaviorId1, behaviorId2)
-    local type1, type2 = type(behaviorId1), type(behaviorId2)
-    if type1 == 'string' and type2 == 'number' then
-        return false
-    elseif type1 == 'number' and type2 == 'string' then
-        return true
-    end
-    return behaviorId1 < behaviorId2
 end
 
 
@@ -390,19 +368,12 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     assert(not self.behaviors[behaviorId], 'addBehavior: this `behaviorId` is already used')
     assert(behaviorSpec, 'addBehavior: need a `behaviorSpec`')
 
-    -- Rules-based behavior?
-    for key, value in pairs(BaseRulesBehavior) do
-        if not behaviorSpec[key] then
-            behaviorSpec[key] = value
-        end
-    end
-
     -- Basics
     local behavior = setmetatable({}, { __index = BaseBehavior })
     behavior.behaviorId = behaviorId
     behavior.behaviorSpec = behaviorSpec
     behavior.isCore = behaviorSpec.isCore
-    behavior.name = assert(behaviorSpec.name, 'addBehavior: need `behaviorSpec.name`')
+    behavior.name = behaviorSpec.name
     behavior.displayName = behaviorSpec.displayName
     behavior.description = helps.behaviors[behavior.name] and helps.behaviors[behavior.name].description
     behavior.game = self
@@ -432,16 +403,6 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     behavior.setters = {}
     for setterName, setter in pairs(behaviorSpec.setters) do
         behavior.setters[setterName] = setter
-    end
-
-    -- Copy triggers and responses
-    behavior.triggers = {}
-    for triggerName, trigger in pairs(behaviorSpec.triggers) do
-        behavior.triggers[triggerName] = trigger
-    end
-    behavior.responses = {}
-    for responseName, response in pairs(behaviorSpec.responses) do
-        behavior.responses[responseName] = response
     end
 
     -- Reference dependencies
@@ -599,7 +560,7 @@ function Common.receivers:setProperties(time, clientId, actorId, behaviorId, ...
             end
         else
             if setter then
-                setter(behavior, nil, value, {
+                setter(behavior, value, {
                     isOrigin = self.clientId == clientId,
                 })
             else

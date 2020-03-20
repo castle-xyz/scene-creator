@@ -475,7 +475,6 @@ function Client:uiInspectorActions()
 end
 
 function Client:uiInspector()
-    -- Does the active tool have a panel?
     local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
     if activeTool and activeTool.handlers.uiPanel then
         local uiName = activeTool:getUiName()
@@ -488,11 +487,6 @@ function Client:uiInspector()
             ui.box('bottom space', { height = 350 }, function() end)
         end)
         return
-    end
-
-    -- Make sure `self.openComponentBehaviorId` is valid
-    if not self.behaviors[self.openComponentBehaviorId] then
-        self.openComponentBehaviorId = nil
     end
 
     ui.scrollBox('inspector-properties', {
@@ -514,7 +508,7 @@ function Client:uiInspector()
                     end
                 end
                 table.sort(order, function (component1, component2)
-                    return compareBehaviorId(component1.behaviorId, component2.behaviorId)
+                    return component1.behaviorId < component2.behaviorId
                 end)
 
                 -- Component header buttons
@@ -541,8 +535,8 @@ function Client:uiInspector()
                             if i == #order then
                                 ui.button('add behavior', {
                                     icon = 'plus',
-                                    iconFamily = 'FontAwesome5',
                                     hideLabel = true,
+                                    iconFamily = 'FontAwesome5',
                                     popoverAllowed = true,
                                     popoverStyle = { width = 300, height = 300 },
                                     popover = function(closePopover)
@@ -555,7 +549,7 @@ function Client:uiInspector()
                                             end,
                                             emptyText = 'No other behaviors to add!',
                                             buttons = function(entry)
-                                                ui.button('use behavior', {
+                                                ui.button('add to actor', {
                                                     flex = 1,
                                                     icon = 'plus',
                                                     iconFamily = 'FontAwesome5',
@@ -638,28 +632,6 @@ function Client:uiInspector()
                                                         end
                                                     end,
                                                 })
-                                            end,
-                                        })
-
-                                        ui.button('create new behavior', {
-                                            icon = 'file',
-                                            iconFamily = 'FontAwesome5',
-                                            onClick = function()
-                                                local behaviorId = self:generateId()
-                                                local behaviorName = 'Behavior-' .. util.uuid()
-                                                self:command('create new behavior', {
-                                                    params = { 'behaviorId', 'behaviorName' }
-                                                }, function()
-                                                    self:send('addBehavior', self.clientId, behaviorId, {
-                                                        isRulesBased = true,
-                                                        name = behaviorName,
-                                                        displayName = 'new behavior',
-                                                    })
-                                                    self:send('addComponent', self.clientId, actorId, behaviorId, {})
-                                                    self.openComponentBehaviorId = behaviorId
-                                                end, function()
-                                                    self:send('removeBehavior', self.clientId, behaviorId)
-                                                end)
                                             end,
                                         })
                                     end,
