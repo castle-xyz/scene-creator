@@ -25,6 +25,14 @@ function BaseBehavior:callHandler(handlerName, ...)
     end
 end
 
+function BaseBehavior:fireTrigger(triggerName, actorId, params)
+    self.game:callHandlers('trigger', triggerName, {
+        actorId = actorId,
+        triggerBehaviorId = self.behaviorId,
+        params = params,
+    })
+end
+
 function BaseBehavior:sendSetProperties(opts, ...)
     local actorId, sendOpts
     if type(opts) == 'table' then
@@ -403,6 +411,16 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     behavior.setters = {}
     for setterName, setter in pairs(behaviorSpec.setters) do
         behavior.setters[setterName] = setter
+    end
+
+    -- Copy triggers and responses
+    behavior.triggers = {}
+    for triggerName, trigger in pairs(behaviorSpec.triggers) do
+        behavior.triggers[triggerName] = trigger
+    end
+    behavior.responses = {}
+    for responseName, response in pairs(behaviorSpec.responses) do
+        behavior.responses[responseName] = response
     end
 
     -- Reference dependencies
