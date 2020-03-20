@@ -475,6 +475,7 @@ function Client:uiInspectorActions()
 end
 
 function Client:uiInspector()
+    -- Does the active tool have a panel?
     local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
     if activeTool and activeTool.handlers.uiPanel then
         local uiName = activeTool:getUiName()
@@ -487,6 +488,11 @@ function Client:uiInspector()
             ui.box('bottom space', { height = 350 }, function() end)
         end)
         return
+    end
+
+    -- Make sure `self.openComponentBehaviorId` is valid
+    if not self.behaviors[self.openComponentBehaviorId] then
+        self.openComponentBehaviorId = nil
     end
 
     ui.scrollBox('inspector-properties', {
@@ -535,8 +541,8 @@ function Client:uiInspector()
                             if i == #order then
                                 ui.button('add behavior', {
                                     icon = 'plus',
-                                    hideLabel = true,
                                     iconFamily = 'FontAwesome5',
+                                    hideLabel = true,
                                     popoverAllowed = true,
                                     popoverStyle = { width = 300, height = 300 },
                                     popover = function(closePopover)
