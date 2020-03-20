@@ -21,7 +21,7 @@ local ImageBehavior = defineCoreBehavior {
 function ImageBehavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.url = bp.url or CHECKERBOARD_IMAGE_URL
-    component.properties.color = bp.color or { 1, 1, 1, 1 }
+    component.properties.color = util.deepCopyTable(bp.color) or { 1, 1, 1, 1 }
     component.properties.filter = bp.filter or 'nearest'
     if bp.cropEnabled ~= nil then
         component.properties.cropEnabled = bp.cropEnabled
