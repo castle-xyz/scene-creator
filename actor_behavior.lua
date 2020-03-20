@@ -560,7 +560,7 @@ function Common.receivers:setProperties(time, clientId, actorId, behaviorId, ...
             end
         else
             if setter then
-                setter(behavior, value, {
+                setter(behavior, nil, value, {
                     isOrigin = self.clientId == clientId,
                 })
             else
