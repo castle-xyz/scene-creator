@@ -11,12 +11,6 @@ The actor is rectangle-shaped and doesn't move by default. Other behaviors can b
             ]],
         },
 
-        Rules = {
-            description = [[
-A behavior that lets you **define your own rules** that tie the other behaviors of the actor together. Each rule has a **trigger** (when the rule should run) and a **response** (what the rule should do).
-            ]],
-        },
-
 
 
         Image = {
@@ -126,6 +120,12 @@ A tool that allows moving and rotating actors using touch.
             ]],
         },
 
+
+        Rules = {
+            description = [[
+A behavior that lets you **define your own rules** that tie the other behaviors of the actor together. Each rule has a **trigger** (when the rule should run) and a **response** (what the rule should do).
+            ]],
+        },
     },
 }
 
