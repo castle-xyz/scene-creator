@@ -155,7 +155,7 @@ function Client:uiLibrary(opts)
     -- Sort
     table.sort(order, function(entry1, entry2)
         if entry1.behaviorId and entry2.behaviorId then
-            return entry1.behaviorId < entry2.behaviorId
+            return compareBehaviorId(entry1.behaviorId, entry2.behaviorId)
         end
         return entry1.title:upper() < entry2.title:upper()
     end)

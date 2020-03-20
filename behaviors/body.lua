@@ -380,39 +380,73 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
     local isOwner = self.game.clientId == ownerId
 
     local visited = {}
-    if component1 and component1._contactListeners then
-        for listenerBehaviorId, listenerComponent in pairs(component1._contactListeners) do
-            local listenerBehavior = self.game.behaviors[listenerBehaviorId]
-            if listenerBehavior then
-                listenerBehavior:callHandler('bodyContactComponent', listenerComponent, {
-                    isBegin = isBegin,
-                    isEnd = isEnd,
-                    otherActorId = actorId2,
-                    fixture = fixture1,
-                    otherFixture = fixture2,
-                    isOwner = isOwner,
-                    isRepeat = false,
-                })
-                visited[listenerBehavior] = true
+    if component1 then
+        local opts = {
+            isBegin = isBegin,
+            isEnd = isEnd,
+            otherActorId = actorId2,
+            fixture = fixture1,
+            otherFixture = fixture2,
+            isOwner = isOwner,
+        }
+        if isBegin then
+            self:fireTrigger('collide', actorId1, opts)
+        end
+        if component1._contactListeners then
+            for listenerBehaviorId, listenerComponent in pairs(component1._contactListeners) do
+                local listenerBehavior = self.game.behaviors[listenerBehaviorId]
+                if listenerBehavior then
+                    opts.isRepeat = false
+                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, opts)
+                    visited[listenerBehavior] = true
+                end
             end
         end
     end
-    if component2 and component2._contactListeners then
-        for listenerBehaviorId, listenerComponent in pairs(component2._contactListeners) do
-            local listenerBehavior = self.game.behaviors[listenerBehaviorId]
-            if listenerBehavior then
-                listenerBehavior:callHandler('bodyContactComponent', listenerComponent, {
-                    isBegin = isBegin,
-                    isEnd = isEnd,
-                    otherActorId = actorId1,
-                    fixture = fixture2,
-                    otherFixture = fixture1,
-                    isOwner = isOwner,
-                    isRepeat = visited[listenerBehavior] ~= nil,
-                })
+    if component2 then
+        local opts = {
+            isBegin = isBegin,
+            isEnd = isEnd,
+            otherActorId = actorId1,
+            fixture = fixture2,
+            otherFixture = fixture1,
+            isOwner = isOwner,
+        }
+        if isBegin then
+            self:fireTrigger('collide', actorId2, opts)
+        end
+        if component2._contactListeners then
+            for listenerBehaviorId, listenerComponent in pairs(component2._contactListeners) do
+                local listenerBehavior = self.game.behaviors[listenerBehaviorId]
+                if listenerBehavior then
+                    opts.isRepeat = visited[listenerBehavior] ~= nil,
+                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, opts)
+                end
             end
         end
     end
+end
+
+
+-- Triggers
+
+BodyBehavior.triggers.collide = {
+    description = [[
+Triggered when the actor **comes into contact** with another actor.
+    ]],
+}
+
+
+-- Responses
+
+BodyBehavior.responses.jump = {
+    description = [[
+Makes the actor **jump up** a small amount.
+    ]],
+}
+function BodyBehavior.responses.jump:call(component, params)
+    local bodyId, body = self:getBody(component)
+    body:applyLinearImpulse(0, -15)
 end
 
 
