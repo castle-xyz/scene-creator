@@ -25,11 +25,8 @@ function BaseBehavior:callHandler(handlerName, ...)
     end
 end
 
-function BaseBehavior:fireTrigger(triggerName, actorId, params)
-    self.game:callHandlers('trigger', triggerName, {
-        actorId = actorId,
-        params = params,
-    })
+function BaseBehavior:fireTrigger(triggerName, actorId, context)
+    self.game:callHandlers('trigger', triggerName, actorId, context)
 end
 
 function BaseBehavior:sendSetProperties(opts, ...)

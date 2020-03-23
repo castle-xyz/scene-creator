@@ -25,6 +25,7 @@ local EMPTY_RULE = {
 
 function RulesBehavior.handlers:addComponent(component, bp, opts)
     component.properties.rules = util.deepCopyTable(bp.rules or { EMPTY_RULE })
+    component._rulesByTriggerName = {}
 end
 
 function RulesBehavior.handlers:blueprintComponent(component, bp)
@@ -51,19 +52,18 @@ end
 
 -- Trigger / response
 
-function RulesBehavior.handlers:trigger(triggerName, opts)
-    local actorId = opts.actorId
+function RulesBehavior.handlers:trigger(triggerName, actorId, context)
     local component = self.components[actorId]
     if not component then -- No rules on this actor?
         return
     end
 
-    local params = opts.params or {}
+    context = context or {}
 
     local rulesToRun = component._rulesByTriggerName[triggerName]
     if rulesToRun then
         for _, ruleToRun in ipairs(rulesToRun) do
-            self:runResponse(ruleToRun.response, actorId)
+            self:runResponse(ruleToRun.response, actorId, context)
         end
     end
 end
@@ -71,7 +71,7 @@ end
 
 -- Methods
 
-function RulesBehavior:runResponse(response, actorId)
+function RulesBehavior:runResponse(response, actorId, context)
     if response and response.behaviorId and response.name ~= 'none' then
         local behavior = self.game.behaviors[response.behaviorId]
         if behavior then
@@ -79,7 +79,7 @@ function RulesBehavior:runResponse(response, actorId)
             if component then
                 local responseEntry = behavior.responses[response.name]
                 if responseEntry then
-                    responseEntry.runComponent(behavior, component, params)
+                    responseEntry.runComponent(behavior, component, response.params, context)
                 end
             end
         end
@@ -146,6 +146,7 @@ function RulesBehavior:uiRulePart(component, rule, part, label)
                                                         closePopover()
                                                         rule[part].behaviorId = behaviorId
                                                         rule[part].name = entryName
+                                                        rule[part].params = util.deepCopyTable(entry.initialParams)
                                                         self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
                                                     end,
                                                 })

@@ -381,7 +381,7 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
 
     local visited = {}
     if component1 then
-        local opts = {
+        local params = {
             isBegin = isBegin,
             isEnd = isEnd,
             otherActorId = actorId2,
@@ -390,21 +390,21 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
             isOwner = isOwner,
         }
         if isBegin then
-            self:fireTrigger('collide', actorId1, opts)
+            self:fireTrigger('collide', actorId1, params)
         end
         if component1._contactListeners then
             for listenerBehaviorId, listenerComponent in pairs(component1._contactListeners) do
                 local listenerBehavior = self.game.behaviors[listenerBehaviorId]
                 if listenerBehavior then
-                    opts.isRepeat = false
-                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, opts)
+                    params.isRepeat = false
+                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, params)
                     visited[listenerBehavior] = true
                 end
             end
         end
     end
     if component2 then
-        local opts = {
+        local params = {
             isBegin = isBegin,
             isEnd = isEnd,
             otherActorId = actorId1,
@@ -413,14 +413,14 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
             isOwner = isOwner,
         }
         if isBegin then
-            self:fireTrigger('collide', actorId2, opts)
+            self:fireTrigger('collide', actorId2, params)
         end
         if component2._contactListeners then
             for listenerBehaviorId, listenerComponent in pairs(component2._contactListeners) do
                 local listenerBehavior = self.game.behaviors[listenerBehaviorId]
                 if listenerBehavior then
-                    opts.isRepeat = visited[listenerBehavior] ~= nil,
-                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, opts)
+                    params.isRepeat = visited[listenerBehavior] ~= nil,
+                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, params)
                 end
             end
         end
@@ -443,10 +443,13 @@ BodyBehavior.responses.jump = {
     description = [[
 Makes the actor **jump up** a small amount.
     ]],
+    initialParams = {
+        speed = 15,
+    },
 }
-function BodyBehavior.responses.jump:runComponent(component, params)
+function BodyBehavior.responses.jump:runComponent(component, params, context)
     local bodyId, body = self:getBody(component)
-    body:applyLinearImpulse(0, -15)
+    body:applyLinearImpulse(0, -params.speed)
 end
 
 
