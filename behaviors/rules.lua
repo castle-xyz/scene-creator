@@ -63,14 +63,23 @@ function RulesBehavior.handlers:trigger(triggerName, opts)
     local rulesToRun = component._rulesByTriggerName[triggerName]
     if rulesToRun then
         for _, ruleToRun in ipairs(rulesToRun) do
-            local responseBehavior = self.game.behaviors[ruleToRun.response.behaviorId]
-            if responseBehavior then
-                local responseComponent = responseBehavior.components[actorId]
-                if responseComponent then
-                    local response = responseBehavior.responses[ruleToRun.response.name]
-                    if response then
-                        response.call(responseBehavior, responseComponent, params)
-                    end
+            self:runResponse(ruleToRun.response, actorId)
+        end
+    end
+end
+
+
+-- Methods
+
+function RulesBehavior:runResponse(response, actorId)
+    if response and response.behaviorId and response.name ~= 'none' then
+        local behavior = self.game.behaviors[response.behaviorId]
+        if behavior then
+            local component = behavior.components[actorId]
+            if component then
+                local responseEntry = behavior.responses[response.name]
+                if responseEntry then
+                    responseEntry.runComponent(behavior, component, params)
                 end
             end
         end
@@ -97,7 +106,7 @@ function RulesBehavior:uiRulePart(component, rule, part, label)
         ui.box(part .. ' label', {
             flex = 1,
         }, function()
-            ui.markdown('## ' .. label)
+            ui.markdown('### ' .. label)
         end)
         ui.box(part .. ' chooser', {
             flex = 3,

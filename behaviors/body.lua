@@ -444,7 +444,7 @@ BodyBehavior.responses.jump = {
 Makes the actor **jump up** a small amount.
     ]],
 }
-function BodyBehavior.responses.jump:call(component, params)
+function BodyBehavior.responses.jump:runComponent(component, params)
     local bodyId, body = self:getBody(component)
     body:applyLinearImpulse(0, -15)
 end
