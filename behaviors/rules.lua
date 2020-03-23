@@ -89,41 +89,45 @@ end
 
 -- UI
 
-function RulesBehavior:uiRulePart(component, rule, part, label)
-    local actor = self.game.actors[component.actorId]
-
-    local buttonLabel
-    if rule[part].behaviorId then
-        local behavior = self.game.behaviors[rule[part].behaviorId]
-        buttonLabel = behavior:getUiName() .. ': ' .. rule[part].name
-    else
-        buttonLabel = 'select ' .. part .. '...'
-    end
-
-    ui.box(part .. ' part', {
+function RulesBehavior:uiPart(actorId, part, props)
+    local actor = self.game.actors[actorId]
+    ui.box(part.name .. ' box', {
+        flex = 1,
+        borderRadius = 6,
+        borderLeftWidth = part.name == 'none' and 0 or 2,
+        borderColor = '#eee',
+        margin = 3,
         flexDirection = 'row',
     }, function()
-        ui.box(part .. ' label', {
-            flex = 1,
-        }, function()
-            ui.markdown('### ' .. label)
-        end)
-        ui.box(part .. ' chooser', {
-            flex = 3,
-        }, function()
-            ui.button(buttonLabel, {
+        if part.name ~= 'none' then
+            ui.box('name', {
                 flex = 1,
+                paddingLeft = 4,
+            }, function()
+                local behavior = self.game.behaviors[part.behaviorId]
+                ui.markdown('### ' .. part.name)
+            end)
+        end
+        ui.box('selector', {
+            flex = part.name == 'none' and 1 or nil,
+        }, function()
+            ui.button('select ' .. props.kind, {
+                flex = part.name == 'none' and 1 or nil,
+                margin = 0,
+                icon = 'ellipsis-v',
+                iconFamily = 'FontAwesome5',
+                hideLabel = part.name ~= 'none',
                 popoverAllowed = true,
                 popoverStyle = { width = 300, height = 300 },
                 popover = function(closePopover)
-                    ui.scrollBox('scrollBox-' .. part, {
+                    ui.scrollBox('scroll box', {
                         padding = 2,
                         margin = 2,
                         flex = 1,
                     }, function()
                         for behaviorId in pairs(actor.components) do
                             local behavior = self.game.behaviors[behaviorId]
-                            local behaviorParts = behavior[part .. 's']
+                            local behaviorParts = behavior[props.kind .. 's']
                             if next(behaviorParts) then
                                 ui.section(behavior:getUiName(), { defaultOpen = true }, function()
                                     for entryName, entry in pairs(behaviorParts) do
@@ -144,10 +148,13 @@ function RulesBehavior:uiRulePart(component, rule, part, label)
                                                     iconFamily = 'FontAwesome5',
                                                     onClick = function()
                                                         closePopover()
-                                                        rule[part].behaviorId = behaviorId
-                                                        rule[part].name = entryName
-                                                        rule[part].params = util.deepCopyTable(entry.initialParams)
-                                                        self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
+                                                        if props.onChange then
+                                                            props.onChange({
+                                                                behaviorId = behaviorId,
+                                                                name = entryName,
+                                                                params = util.deepCopyTable(entry.initialParams),
+                                                            })
+                                                        end
                                                     end,
                                                 })
                                             end)
@@ -175,8 +182,25 @@ function RulesBehavior.handlers:uiComponent(component, opts)
             margin = 4,
             marginBottom = 8,
         }, function()
-            self:uiRulePart(component, rule, 'trigger', 'when')
-            self:uiRulePart(component, rule, 'response', 'do')
+            ui.box('trigger box', { flexDirection = 'row' }, function()
+                ui.box('when box', { margin = 3 }, function()
+                    ui.markdown('### when')
+                end)
+                self:uiPart(actorId, rule.trigger, {
+                    kind = 'trigger',
+                    onChange = function(newTrigger)
+                        rule.trigger = newTrigger
+                        self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
+                    end,
+                })
+            end)
+            self:uiPart(actorId, rule.response, {
+                kind = 'response',
+                onChange = function(newResponse)
+                    rule.response = newResponse
+                    self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
+                end,
+            })
         end)
     end
 
