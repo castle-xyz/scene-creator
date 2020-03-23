@@ -28,7 +28,6 @@ end
 function BaseBehavior:fireTrigger(triggerName, actorId, params)
     self.game:callHandlers('trigger', triggerName, {
         actorId = actorId,
-        triggerBehaviorId = self.behaviorId,
         params = params,
     })
 end

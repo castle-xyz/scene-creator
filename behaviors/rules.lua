@@ -10,10 +10,14 @@ local RulesBehavior = defineCoreBehavior {
 
 
 local EMPTY_RULE = {
-    triggerBehaviorId = nil,
-    triggerName = 'none',
-    responseBehaviorId = nil,
-    responseName = 'none',
+    trigger = {
+        name = 'none',
+        behaviorId = nil,
+    },
+    response = {
+        name = 'none',
+        behaviorId = nil,
+    }
 }
 
 
@@ -35,11 +39,11 @@ function RulesBehavior.setters:rules(component, newRules)
 
     component._rulesByTriggerName = {}
     for _, rule in ipairs(component.properties.rules) do
-        if rule.triggerName ~= 'none' then
-            if not component._rulesByTriggerName[rule.triggerName] then
-                component._rulesByTriggerName[rule.triggerName] = {}
+        if rule.trigger.name ~= 'none' then
+            if not component._rulesByTriggerName[rule.trigger.name] then
+                component._rulesByTriggerName[rule.trigger.name] = {}
             end
-            table.insert(component._rulesByTriggerName[rule.triggerName], rule)
+            table.insert(component._rulesByTriggerName[rule.trigger.name], rule)
         end
     end
 end
@@ -59,11 +63,11 @@ function RulesBehavior.handlers:trigger(triggerName, opts)
     local rulesToRun = component._rulesByTriggerName[triggerName]
     if rulesToRun then
         for _, ruleToRun in ipairs(rulesToRun) do
-            local responseBehavior = self.game.behaviors[ruleToRun.responseBehaviorId]
+            local responseBehavior = self.game.behaviors[ruleToRun.response.behaviorId]
             if responseBehavior then
                 local responseComponent = responseBehavior.components[actorId]
                 if responseComponent then
-                    local response = responseBehavior.responses[ruleToRun.responseName]
+                    local response = responseBehavior.responses[ruleToRun.response.name]
                     if response then
                         response.call(responseBehavior, responseComponent, params)
                     end
@@ -80,11 +84,11 @@ function RulesBehavior:uiRulePart(component, rule, part, label)
     local actor = self.game.actors[component.actorId]
 
     local buttonLabel
-    if rule[part .. 'BehaviorId'] then
-        local behavior = self.game.behaviors[rule[part .. 'BehaviorId']]
-        buttonLabel = behavior:getUiName() .. ': ' .. rule[part .. 'Name']
+    if rule[part].behaviorId then
+        local behavior = self.game.behaviors[rule[part].behaviorId]
+        buttonLabel = behavior:getUiName() .. ': ' .. rule[part].name
     else
-        buttonLabel = 'no ' .. part
+        buttonLabel = 'select ' .. part .. '...'
     end
 
     ui.box(part .. ' part', {
@@ -131,8 +135,8 @@ function RulesBehavior:uiRulePart(component, rule, part, label)
                                                     iconFamily = 'FontAwesome5',
                                                     onClick = function()
                                                         closePopover()
-                                                        rule[part .. 'BehaviorId'] = behaviorId
-                                                        rule[part .. 'Name'] = entryName
+                                                        rule[part].behaviorId = behaviorId
+                                                        rule[part].name = entryName
                                                         self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
                                                     end,
                                                 })
