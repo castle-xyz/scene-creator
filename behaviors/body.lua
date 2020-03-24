@@ -437,33 +437,6 @@ Triggered when the actor **comes into contact** with another actor.
 }
 
 
--- Responses
-
-BodyBehavior.responses.jump = {
-    description = [[
-Makes the actor **jump up**.
-    ]],
-
-    initialParams = {
-        speed = 15,
-    },
-}
-
-function BodyBehavior.responses.jump:ui(params, onChangeParam)
-    ui.numberInput('speed', params.speed, {
-        min = 0,
-        onChange = function(newSpeed)
-            onChangeParam('speed', newSpeed)
-        end,
-    })
-end
-
-function BodyBehavior.responses.jump:runComponent(component, params, context)
-    local bodyId, body = self:getBody(component)
-    body:applyLinearImpulse(0, -params.speed)
-end
-
-
 -- UI
 
 function BodyBehavior.handlers:uiComponent(component, opts)

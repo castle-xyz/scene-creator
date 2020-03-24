@@ -27,6 +27,41 @@ function MovingBehavior.handlers:removeComponent(component, opts)
 end
 
 
+-- Responses
+
+MovingBehavior.responses.nudge = {
+    description = [[
+Nudges the actor by the given velocity.
+    ]],
+
+    initialParams = {
+        x = 3,
+        y = 0,
+    },
+
+    ui = function(self, params, onChangeParam)
+        util.uiRow('velocity', function()
+            ui.numberInput('velocity x', params.x, {
+                onChange = function(newX)
+                    onChangeParam('x', newX)
+                end,
+            })
+        end, function()
+            ui.numberInput('velocity y', params.y, {
+                onChange = function(newY)
+                    onChangeParam('y', newY)
+                end,
+            })
+        end)
+    end,
+
+    runComponent = function(self, component, params, context)
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        body:applyLinearImpulse(params.x, params.y)
+    end,
+}
+
+
 -- UI
 
 function MovingBehavior.handlers:uiComponent(component, opts)

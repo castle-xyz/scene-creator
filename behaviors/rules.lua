@@ -25,7 +25,7 @@ local EMPTY_RULE = {
 
 function RulesBehavior.handlers:addComponent(component, bp, opts)
     component.properties.rules = util.deepCopyTable(bp.rules or { EMPTY_RULE })
-    component._rulesByTriggerName = {}
+    self.setters.rules(self, component, component.properties.rules)
 end
 
 function RulesBehavior.handlers:blueprintComponent(component, bp)
@@ -60,11 +60,19 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context)
 
     context = context or {}
 
-    local rulesToRun = component._rulesByTriggerName[triggerName]
-    if rulesToRun then
-        for _, ruleToRun in ipairs(rulesToRun) do
-            self:runResponse(ruleToRun.response, actorId, context)
+    local function doIt()
+        local rulesToRun = component._rulesByTriggerName[triggerName]
+        if rulesToRun then
+            for _, ruleToRun in ipairs(rulesToRun) do
+                self:runResponse(ruleToRun.response, actorId, context)
+            end
         end
+    end
+
+    if triggerName == 'collide' then
+        self:onEndOfFrame(doIt) -- Wait till end of frame for collide trigger
+    else
+        doIt()
     end
 end
 
@@ -82,6 +90,9 @@ function RulesBehavior:runResponse(response, actorId, context)
                     responseEntry.runComponent(behavior, component, response.params, context, function(childName)
                         self:runResponse(response.params[childName], actorId, context)
                     end)
+                    if responseEntry.autoNext ~= false then
+                        self:runResponse(response.params.nextResponse, actorId, context)
+                    end
                 end
             end
         end
@@ -96,32 +107,32 @@ RulesBehavior.responses.wait = {
 **Wait some time** then perform another response.
     ]],
 
+    autoNext = false,
+
     initialParams = {
-        time = 15,
+        time = 1,
         nextResponse = {
             name = 'none',
             behaviorId = nil,
         },
     },
+
+    ui = function(self, params, onChangeParam)
+        ui.numberInput('time (seconds)', params.time, {
+            min = 0,
+            onChange = function(newTime)
+                onChangeParam('time', newTime)
+            end,
+        })
+    end,
+
+    runComponent = function(self, component, params, context, runChild)
+        network.async(function()
+            copas.sleep(params.time)
+            runChild('nextResponse')
+        end)
+    end,
 }
-
-function RulesBehavior.responses.wait:ui(params, onChangeParam, uiChild)
-    ui.numberInput('time (seconds)', params.time, {
-        min = 0,
-        onChange = function(newTime)
-            onChangeParam('time', newTime)
-        end,
-    })
-
-    uiChild('nextResponse')
-end
-
-function RulesBehavior.responses.wait:runComponent(component, params, context, runChild)
-    network.async(function()
-        copas.sleep(params.time)
-        runChild('nextResponse')
-    end)
-end
 
 
 -- UI
@@ -141,17 +152,18 @@ function RulesBehavior:uiPart(actorId, part, props)
         borderLeftWidth = part.name == 'none' and 0 or 2,
         borderColor = '#eee',
         margin = 3,
+        paddingLeft = 6,
+        marginLeft = 10,
     }, function()
         ui.box('header', { flexDirection = 'row' }, function()
             if part.name ~= 'none' then
                 ui.box('name', {
                     flex = 1,
-                    paddingLeft = 4,
                 }, function()
                     ui.markdown('## ' .. part.name)
                 end)
             end
-            if part.name ~= 'none' then
+            if false and part.name ~= 'none' then
                 ui.button('description', {
                     margin = 0,
                     marginRight = 6,
@@ -168,10 +180,10 @@ function RulesBehavior:uiPart(actorId, part, props)
             ui.box('selector', {
                 flex = part.name == 'none' and 1 or nil,
             }, function()
-                ui.button('select ' .. props.kind, {
+                ui.button('add ' .. props.kind, {
                     flex = part.name == 'none' and 1 or nil,
                     margin = 0,
-                    icon = 'ellipsis-v',
+                    icon = part.name == 'none' and 'plus' or 'ellipsis-v',
                     iconFamily = 'FontAwesome5',
                     hideLabel = part.name ~= 'none',
                     popoverAllowed = true,
@@ -209,7 +221,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                                                                 props.onChange({
                                                                     behaviorId = behaviorId,
                                                                     name = entryName,
-                                                                    params = util.deepCopyTable(entry.initialParams),
+                                                                    params = util.deepCopyTable(entry.initialParams) or {},
                                                                 })
                                                             end
                                                         end,
@@ -251,6 +263,20 @@ function RulesBehavior:uiPart(actorId, part, props)
                 end)
         end
     end)
+    if props.kind == 'response' and part.name ~= 'none' then
+        self:uiPart(actorId, part.params.nextResponse or EMPTY_RULE.response, {
+            kind = 'response',
+            onChange = function(newNextResponse)
+                local newParams = util.deepCopyTable(part.params)
+                newParams.nextResponse = newNextResponse
+                props.onChange({
+                    behaviorId = part.behaviorId,
+                    name = part.name,
+                    params = newParams,
+                })
+            end
+        })
+    end
 end
 
 function RulesBehavior.handlers:uiComponent(component, opts)
@@ -261,7 +287,7 @@ function RulesBehavior.handlers:uiComponent(component, opts)
             borderRadius = 6,
             borderLeftWidth = 2,
             borderColor = '#eee',
-            marginBottom = 8,
+            margin = 4,
         }, function()
             ui.box('trigger box', { flexDirection = 'row' }, function()
                 ui.box('when box', { margin = 3 }, function()
