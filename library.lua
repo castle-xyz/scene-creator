@@ -18,7 +18,7 @@ local CORE_LIBRARY = {
     {
         entryType = 'actorBlueprint',
         title = 'ball',
-        description = "A circular solid that falls and bounces.",
+        description = "A circular solid that falls.",
         actorBlueprint = {
             components = {
                 Drawing = {
@@ -27,7 +27,6 @@ local CORE_LIBRARY = {
                 Body = { gravityScale = 1 },
                 CircleShape = {},
                 Solid = {},
-                Bouncy = {},
                 Falling = {},
             },
         },
