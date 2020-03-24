@@ -9,6 +9,8 @@ local RulesBehavior = defineCoreBehavior {
 }
 
 
+local MAX_COROUTINES_PER_ACTOR = 20
+
 local EMPTY_RULE = {
     trigger = {
         name = 'none',
@@ -30,7 +32,7 @@ end
 -- Behavior management
 
 function RulesBehavior.handlers:addBehavior(opts)
-    self._pendingWaits = {}
+    self._coroutines = {}
 end
 
 
@@ -42,7 +44,7 @@ function RulesBehavior.handlers:addComponent(component, bp, opts)
 end
 
 function RulesBehavior.handlers:removeComponent(component, opts)
-    self._pendingWaits[component.actorId] = nil
+    self._coroutines[component.actorId] = nil
 end
 
 function RulesBehavior.handlers:blueprintComponent(component, bp)
@@ -77,19 +79,18 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context)
 
     context = context or {}
 
-    local function doIt()
-        local rulesToRun = component._rulesByTriggerName[triggerName]
-        if rulesToRun then
-            for _, ruleToRun in ipairs(rulesToRun) do
-                self:runResponse(ruleToRun.response, actorId, context)
+    local rulesToRun = component._rulesByTriggerName[triggerName]
+    if rulesToRun then
+        for _, ruleToRun in ipairs(rulesToRun) do
+            if not self._coroutines[actorId] then
+                self._coroutines[actorId] = {}
+            end
+            if #self._coroutines[actorId] < MAX_COROUTINES_PER_ACTOR then
+                table.insert(self._coroutines[actorId], coroutine.create(function()
+                    self:runResponse(ruleToRun.response, actorId, context)
+                end))
             end
         end
-    end
-
-    if triggerName == 'collide' then
-        self:onEndOfFrame(doIt) -- Wait till end of frame for collide trigger
-    else
-        doIt()
     end
 end
 
@@ -109,8 +110,7 @@ function RulesBehavior:runResponse(response, actorId, context)
                     end)
                     if responseEntry.returnType ~= nil then
                         return result
-                    end
-                    if responseEntry.autoNext ~= false then
+                    else
                         self:runResponse(response.params.nextResponse, actorId, context)
                     end
                 end
@@ -146,16 +146,10 @@ RulesBehavior.responses.wait = {
     end,
 
     run = function(self, component, params, context, runChild)
-        if not self._pendingWaits[component.actorId] then
-            self._pendingWaits[component.actorId] = {}
+        local timeLeft = params.duration
+        while timeLeft > 0 do
+            timeLeft = timeLeft - coroutine.yield()
         end
-        table.insert(self._pendingWaits[component.actorId], {
-            actorId = component.actorId,
-            timeLeft = params.duration,
-            run = function()
-                runChild('nextResponse')
-            end,
-        })
     end,
 }
 
@@ -222,21 +216,22 @@ Is true if a coin flip comes up heads. The coin can be biased with a given proba
 
 -- Perform
 
-function RulesBehavior.handlers:perform(dt)
-    for actorId, pendingWaits in pairs(self._pendingWaits) do
-        local newPendingWaits = {}
-        for _, wait in ipairs(pendingWaits) do
-            wait.timeLeft = wait.timeLeft - dt
-            if wait.timeLeft <= 0 then
-                wait.run()
-            else
-                table.insert(newPendingWaits, wait)
+function RulesBehavior.handlers:postPerform(dt)
+    for actorId, coroutines in pairs(self._coroutines) do
+        local newCoroutines = {}
+        for _, coro in ipairs(coroutines) do
+            local succeeded, err = coroutine.resume(coro, dt)
+            if not succeeded then
+                error(err, 0)
+            end
+            if coroutine.status(coro) ~= 'dead' then
+                table.insert(newCoroutines, coro)
             end
         end
-        if next(newPendingWaits) then
-            self._pendingWaits[actorId] = newPendingWaits
+        if next(newCoroutines) then
+            self._coroutines[actorId] = newCoroutines
         else
-            self._pendingWaits[actorId] = nil
+            self._coroutines[actorId] = nil
         end
     end
 end
