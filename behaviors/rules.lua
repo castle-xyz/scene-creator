@@ -87,9 +87,12 @@ function RulesBehavior:runResponse(response, actorId, context)
             if component then
                 local responseEntry = behavior.responses[response.name]
                 if responseEntry then
-                    responseEntry.runComponent(behavior, component, response.params, context, function(childName)
+                    local result = responseEntry.run(behavior, component, response.params, context, function(childName)
                         self:runResponse(response.params[childName], actorId, context)
                     end)
+                    if responseEntry.returnType ~= nil then
+                        return result
+                    end
                     if responseEntry.autoNext ~= false then
                         self:runResponse(response.params.nextResponse, actorId, context)
                     end
@@ -126,7 +129,7 @@ RulesBehavior.responses.wait = {
         })
     end,
 
-    runComponent = function(self, component, params, context, runChild)
+    run = function(self, component, params, context, runChild)
         network.async(function()
             copas.sleep(params.time)
             runChild('nextResponse')
@@ -149,7 +152,7 @@ function RulesBehavior:uiPart(actorId, part, props)
     ui.box(part.name .. ' box', {
         flex = 1,
         borderRadius = 6,
-        borderLeftWidth = part.name == 'none' and 0 or 2,
+        borderLeftWidth = part.name == 'none' and 0 or 3,
         borderColor = '#eee',
         margin = 3,
         paddingLeft = 6,
@@ -196,10 +199,16 @@ function RulesBehavior:uiPart(actorId, part, props)
                         }, function()
                             for behaviorId in pairs(actor.components) do
                                 local behavior = self.game.behaviors[behaviorId]
-                                local behaviorParts = behavior[props.kind .. 's']
-                                if next(behaviorParts) then
+                                local behaviorEntries = behavior[props.kind .. 's']
+                                local filteredEntries = {}
+                                for entryName, entry in pairs(behaviorEntries) do
+                                    if entry.returnType == props.returnType then
+                                        filteredEntries[entryName] = entry
+                                    end
+                                end
+                                if next(filteredEntries) then
                                     ui.section(behavior:getUiName(), { defaultOpen = true }, function()
-                                        for entryName, entry in pairs(behaviorParts) do
+                                        for entryName, entry in pairs(filteredEntries) do
                                             ui.box(entryName, {
                                                 borderWidth = 1,
                                                 borderColor = '#292929',
@@ -247,9 +256,10 @@ function RulesBehavior:uiPart(actorId, part, props)
                         name = part.name,
                         params = newParams,
                     })
-                end, function(childName)
+                end, function(childName, childReturnType)
                     self:uiPart(actorId, part.params[childName], {
                         kind = 'response',
+                        returnType = childReturnType,
                         onChange = function(newChild)
                             local newParams = util.deepCopyTable(part.params)
                             newParams[childName] = newChild
@@ -263,7 +273,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                 end)
         end
     end)
-    if props.kind == 'response' and part.name ~= 'none' then
+    if props.kind == 'response' and part.name ~= 'none' and entry.returnType == nil then
         self:uiPart(actorId, part.params.nextResponse or EMPTY_RULE.response, {
             kind = 'response',
             onChange = function(newNextResponse)
@@ -285,7 +295,7 @@ function RulesBehavior.handlers:uiComponent(component, opts)
     for ruleIndex, rule in ipairs(component.properties.rules) do
         ui.box('rule-' .. ruleIndex, {
             borderRadius = 6,
-            borderLeftWidth = 2,
+            borderLeftWidth = 3,
             borderColor = '#eee',
             margin = 4,
         }, function()

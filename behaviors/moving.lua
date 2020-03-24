@@ -55,7 +55,7 @@ Nudges the actor by the given velocity.
         end)
     end,
 
-    runComponent = function(self, component, params, context)
+    run = function(self, component, params, context)
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         body:applyLinearImpulse(params.x, params.y)
     end,
