@@ -21,6 +21,20 @@ local EMPTY_RULE = {
 }
 
 
+-- UI utilities
+
+local function labelledRow(label, contents)
+    ui.box(label .. ' row', { flexDirection = 'row' }, function()
+        ui.box(label .. ' box', { marginRight = 6 }, function()
+            ui.markdown('## ' .. label)
+        end)
+        if contents then
+            contents()
+        end
+    end)
+end
+
+
 -- Behavior management
 
 function RulesBehavior.handlers:addBehavior(opts)
@@ -114,7 +128,7 @@ function RulesBehavior:runResponse(response, actorId, context)
 end
 
 
--- Responses
+-- Timing responses
 
 RulesBehavior.responses.wait = {
     description = [[
@@ -153,6 +167,39 @@ RulesBehavior.responses.wait = {
 }
 
 
+-- Logic responses
+
+RulesBehavior.responses['if'] = {
+    description = [[
+Perform a response **only if** a given condition is true.
+    ]],
+
+    autoNext = false,
+
+    category = 'logic',
+
+    initialParams = {
+        duration = 1,
+    },
+
+    ui = function(self, params, onChangeParam, uiChild)
+        labelledRow('condition', function()
+            uiChild('condition', {
+                label = 'condition',
+                returnType = 'boolean',
+            })
+        end)
+        uiChild('then')
+    end,
+
+    run = function(self, component, params, context, runChild)
+        if runChild('condition') then
+            runChild('then')
+        end
+    end,
+}
+
+
 -- Perform
 
 function RulesBehavior.handlers:perform(dt)
@@ -178,6 +225,8 @@ end
 -- UI
 
 function RulesBehavior:uiPart(actorId, part, props)
+    part = part or EMPTY_RULE.response
+
     local actor = self.game.actors[actorId]
 
     local behavior, entry
@@ -186,159 +235,170 @@ function RulesBehavior:uiPart(actorId, part, props)
         entry = behavior[props.kind .. 's'][part.name]
     end
 
-    ui.box(part.name .. ' box', {
+    ui.box('header', {
         flex = 1,
-        borderRadius = 6,
-        borderLeftWidth = part.name == 'none' and 0 or 3,
-        borderColor = '#eee',
-        margin = 3,
-        paddingLeft = 6,
-        marginLeft = 10,
+        flexDirection = 'row',
+        marginLeft = 6,
     }, function()
-        ui.box('header', { flexDirection = 'row' }, function()
-            if part.name ~= 'none' then
-                ui.box('name', {
-                    flex = 1,
-                }, function()
-                    ui.markdown('## ' .. part.name)
-                end)
-            end
-            ui.box('selector', {
+        ui.box('selector', {
+            flex = part.name == 'none' and 1 or nil,
+        }, function()
+            local prefix = props.kind == 'response' and props.returnType == nil and 'add ' or 'select '
+            local label = props.label or props.kind
+            ui.button(prefix .. label, {
                 flex = part.name == 'none' and 1 or nil,
-            }, function()
-                ui.button('add ' .. props.kind, {
-                    flex = part.name == 'none' and 1 or nil,
-                    margin = 0,
-                    icon = part.name == 'none' and 'plus' or 'ellipsis-v',
-                    iconFamily = 'FontAwesome5',
-                    hideLabel = part.name ~= 'none',
-                    onClick = function()
-                        self._picking = nil
-                    end,
-                    popoverAllowed = true,
-                    popoverStyle = { width = 300, maxHeight = 300 },
-                    popover = function(closePopover)
-                        ui.scrollBox('scroll box', {
-                            padding = 2,
-                            margin = 2,
-                            flexGrow = 0,
-                            alwaysBounceVertical = false,
-                        }, function()
-                            if part.name ~= 'none' and not self._picking then
-                                ui.markdown('## ' .. part.name .. '\n' .. (entry.description or ''))
-                                if props.kind == 'response' and entry.returnType == nil then
-                                    util.uiRow('insert move', function()
-                                        ui.button('insert before', {
-                                            icon = 'plus',
-                                            iconFamily = 'FontAwesome5',
-                                            onClick = function()
-                                                self._picking = 'insertBefore'
-                                            end,
-                                        })
-                                    end, function()
-                                        if part.params.nextResponse and part.params.nextResponse.name ~= 'none' then
-                                            ui.button('move down', {
-                                                icon = 'arrow-bold-down',
-                                                iconFamily = 'Entypo',
-                                                onClick = function()
-                                                    closePopover()
-                                                    local clone = util.deepCopyTable(part)
-                                                    local newHead = clone.params.nextResponse
-                                                    clone.params.nextResponse = newHead.params.nextResponse
-                                                    newHead.params.nextResponse = clone
-                                                    props.onChange(newHead)
-                                                end,
-                                            })
-                                        end
-                                    end)
-                                end
-                                util.uiRow('replace remove', function()
-                                    ui.button('replace', {
-                                        icon = 'exchange-alt',
+                margin = 0,
+                icon = part.name == 'none' and 'plus' or 'ellipsis-v',
+                iconFamily = 'FontAwesome5',
+                hideLabel = part.name ~= 'none',
+                onClick = function()
+                    self._picking = nil
+                end,
+                popoverAllowed = true,
+                popoverStyle = { width = 300, maxHeight = 300 },
+                popover = function(closePopover)
+                    ui.scrollBox('scroll box', {
+                        padding = 2,
+                        margin = 2,
+                        flexGrow = 0,
+                        alwaysBounceVertical = false,
+                    }, function()
+                        if part.name ~= 'none' and not self._picking then
+                            ui.markdown('## ' .. part.name .. '\n' .. (entry.description or ''))
+                            if props.kind == 'response' and entry.returnType == nil then
+                                util.uiRow('insert move', function()
+                                    ui.button('insert before', {
+                                        icon = 'plus',
                                         iconFamily = 'FontAwesome5',
                                         onClick = function()
-                                            self._picking = 'replace'
+                                            self._picking = 'insertBefore'
                                         end,
                                     })
                                 end, function()
-                                    ui.button('remove', {
-                                        icon = 'trash-alt',
-                                        iconFamily = 'FontAwesome5',
-                                        onClick = function()
-                                            closePopover()
-                                            props.onChange(part.params.nextResponse)
-                                        end,
-                                    })
+                                    if part.params.nextResponse and part.params.nextResponse.name ~= 'none' then
+                                        ui.button('move down', {
+                                            icon = 'arrow-bold-down',
+                                            iconFamily = 'Entypo',
+                                            onClick = function()
+                                                closePopover()
+                                                local clone = util.deepCopyTable(part)
+                                                local newHead = clone.params.nextResponse
+                                                clone.params.nextResponse = newHead.params.nextResponse
+                                                newHead.params.nextResponse = clone
+                                                props.onChange(newHead)
+                                            end,
+                                        })
+                                    end
                                 end)
-                            else
-                                local categories = {}
-                                for behaviorId in pairs(actor.components) do
-                                    local behavior = self.game.behaviors[behaviorId]
-                                    local behaviorUiName = behavior:getUiName()
-                                    for name, entry in pairs(behavior[props.kind .. 's']) do
-                                        if entry.returnType == props.returnType then
-                                            local categoryName = entry.category or behaviorUiName
-                                            if not categories[categoryName] then
-                                                categories[categoryName] = {}
-                                            end
-                                            table.insert(categories[categoryName], {
-                                                name = name,
-                                                behaviorId = behaviorId,
-                                                entry = entry,
-                                            })
+                            end
+                            util.uiRow('replace remove', function()
+                                ui.button('replace', {
+                                    icon = 'exchange-alt',
+                                    iconFamily = 'FontAwesome5',
+                                    onClick = function()
+                                        self._picking = 'replace'
+                                    end,
+                                })
+                            end, function()
+                                ui.button('remove', {
+                                    icon = 'trash-alt',
+                                    iconFamily = 'FontAwesome5',
+                                    onClick = function()
+                                        closePopover()
+                                        props.onChange(part.params.nextResponse)
+                                    end,
+                                })
+                            end)
+                        else
+                            local categories = {}
+                            for behaviorId in pairs(actor.components) do
+                                local behavior = self.game.behaviors[behaviorId]
+                                local behaviorUiName = behavior:getUiName()
+                                for name, entry in pairs(behavior[props.kind .. 's']) do
+                                    if entry.returnType == props.returnType then
+                                        local categoryName = entry.category or behaviorUiName
+                                        if not categories[categoryName] then
+                                            categories[categoryName] = {}
                                         end
+                                        table.insert(categories[categoryName], {
+                                            name = name,
+                                            behaviorId = behaviorId,
+                                            entry = entry,
+                                        })
                                     end
                                 end
-                                for categoryName, rows in pairs(categories) do
-                                    ui.section(categoryName, { defaultOpen = true }, function()
-                                        for _, row in ipairs(rows) do
-                                            ui.box(row.name, {
-                                                borderWidth = 1,
-                                                borderColor = '#292929',
-                                                borderRadius = 4,
-                                                padding = 4,
-                                                margin = 4,
-                                                marginBottom = 8,
-                                            }, function()
-                                                ui.markdown('## ' .. row.name .. '\n' .. (row.entry.description or ''))
-
-                                                ui.box('buttons', { flexDirection = 'row' }, function()
-                                                    ui.button('use', {
-                                                        flex = 1,
-                                                        icon = 'plus',
-                                                        iconFamily = 'FontAwesome5',
-                                                        onClick = function()
-                                                            closePopover()
-                                                            if props.onChange then
-                                                                local newParams = util.deepCopyTable(row.entry.initialParams) or {}
-                                                                if self._picking == 'replace' then
-                                                                    if part.params and part.params.nextResponse then
-                                                                        newParams.nextResponse = part.params.nextResponse
-                                                                    end
-                                                                elseif self._picking == 'insertBefore' then
-                                                                    newParams.nextResponse = part
-                                                                end
-                                                                props.onChange({
-                                                                    behaviorId = row.behaviorId,
-                                                                    name = row.name,
-                                                                    params = newParams,
-                                                                })
-                                                            end
-                                                            self._picking = nil
-                                                        end,
-                                                    })
-                                                end)
-                                            end)
-                                        end
-                                    end)
-                                end
                             end
-                        end)
-                    end
-                })
-            end)
+                            for categoryName, rows in pairs(categories) do
+                                ui.section(categoryName, { defaultOpen = true }, function()
+                                    for _, row in ipairs(rows) do
+                                        ui.box(row.name, {
+                                            borderWidth = 1,
+                                            borderColor = '#292929',
+                                            borderRadius = 4,
+                                            padding = 4,
+                                            margin = 4,
+                                            marginBottom = 8,
+                                        }, function()
+                                            ui.markdown('## ' .. row.name .. '\n' .. (row.entry.description or ''))
+
+                                            ui.box('buttons', { flexDirection = 'row' }, function()
+                                                ui.button('use', {
+                                                    flex = 1,
+                                                    icon = 'plus',
+                                                    iconFamily = 'FontAwesome5',
+                                                    onClick = function()
+                                                        closePopover()
+                                                        if props.onChange then
+                                                            local newParams = util.deepCopyTable(row.entry.initialParams) or {}
+                                                            if self._picking == 'replace' then
+                                                                if part.params and part.params.nextResponse then
+                                                                    newParams.nextResponse = part.params.nextResponse
+                                                                end
+                                                            elseif self._picking == 'insertBefore' then
+                                                                newParams.nextResponse = part
+                                                            end
+                                                            props.onChange({
+                                                                behaviorId = row.behaviorId,
+                                                                name = row.name,
+                                                                params = newParams,
+                                                            })
+                                                        end
+                                                        self._picking = nil
+                                                    end,
+                                                })
+                                            end)
+                                        end)
+                                    end
+                                end)
+                            end
+                        end
+                    end)
+                end
+            })
         end)
-        if part.name ~= 'none' and entry.ui then
+        if part.name ~= 'none' then
+            ui.box('name', {
+                flex = 1,
+                marginRight = 6,
+                marginLeft = 4,
+            }, function()
+                ui.markdown('## ' .. part.name)
+            end)
+        end
+    end)
+
+    if part.name ~= 'none' and entry.ui then
+        ui.box(part.name .. ' box', {
+            flex = 1,
+            borderBottomLeftRadius = 6,
+            borderLeftWidth = part.name == 'none' and 0 or 3,
+            borderColor = '#eee',
+            marginTop = -8,
+            marginBottom = 6,
+            paddingTop = 8,
+            paddingLeft = 6,
+            marginLeft = 6,
+        }, function()
             entry.ui(behavior, part.params,
                 function(paramName, newValue)
                     local newParams = util.deepCopyTable(part.params)
@@ -348,23 +408,23 @@ function RulesBehavior:uiPart(actorId, part, props)
                         name = part.name,
                         params = newParams,
                     })
-                end, function(childName, childReturnType)
-                    self:uiPart(actorId, part.params[childName], {
-                        kind = 'response',
-                        returnType = childReturnType,
-                        onChange = function(newChild)
-                            local newParams = util.deepCopyTable(part.params)
-                            newParams[childName] = newChild
-                            props.onChange({
-                                behaviorId = part.behaviorId,
-                                name = part.name,
-                                params = newParams,
-                            })
-                        end,
-                    })
+                end, function(childName, props)
+                    local newProps = util.deepCopyTable(props) or {}
+                    newProps.kind = 'response'
+                    newProps.onChange = function(newChild)
+                        local newParams = util.deepCopyTable(part.params)
+                        newParams[childName] = newChild
+                        props.onChange({
+                            behaviorId = part.behaviorId,
+                            name = part.name,
+                            params = newParams,
+                        })
+                    end
+                    self:uiPart(actorId, part.params[childName], newProps)
                 end)
-        end
-    end)
+        end)
+    end
+
     if props.kind == 'response' and part.name ~= 'none' and entry.returnType == nil then
         self:uiPart(actorId, part.params.nextResponse or EMPTY_RULE.response, {
             kind = 'response',
@@ -391,11 +451,9 @@ function RulesBehavior.handlers:uiComponent(component, opts)
             borderColor = '#eee',
             margin = 4,
             marginVertical = 8,
+            paddingLeft = 6,
         }, function()
-            ui.box('trigger box', { flexDirection = 'row' }, function()
-                ui.box('when box', { margin = 3 }, function()
-                    ui.markdown('## when')
-                end)
+            labelledRow('when', function()
                 self:uiPart(actorId, rule.trigger, {
                     kind = 'trigger',
                     onChange = function(newTrigger)
