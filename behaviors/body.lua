@@ -237,28 +237,6 @@ function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
         end
     end
 
-    -- Promote ownership
-    if opts.isOrigin and self.game.client then
-        local addedBodyOwnership, interpolationDelay = addedBehavior:callHandler('bodyOwnershipComponent', addedComponent)
-        if addedBodyOwnership then
-            local actor = self:getActor(addedComponent.actorId)
-
-            local finalInterpolationDelay = interpolationDelay
-            for otherBehaviorId, otherComponent in pairs(actor.components) do
-                if otherBehaviorId ~= addedComponent.behaviorId then
-                    local otherBehavior = self:getOtherBehavior(otherBehaviorId)
-                    local otherBodyOwnership, otherInterpolationDelay = otherBehavior:callHandler('bodyOwnershipComponent', otherComponent)
-                    if otherBodyOwnership then
-                        finalInterpolationDelay = math.max(finalInterpolationDelay, otherInterpolationDelay)
-                    end
-                end
-            end
-
-            local bodyId, body = self:getBody(addedComponent.actorId)
-            self._physics:setOwner(bodyId, self.game.clientId, true, finalInterpolationDelay)
-        end
-    end
-
     -- Track callbacks
     if addedBehavior.handlers.bodyContactComponent then
         local component = self.components[addedComponent.actorId]
@@ -296,30 +274,6 @@ function BodyBehavior.handlers:removeDependentComponent(removedComponent, opts)
         local bodyId, body = self:getBody(removedComponent.actorId)
         if body:getType() ~= finalBodyType then
             self._physics:setType(bodyId, finalBodyType)
-        end
-    end
-
-    -- Demote ownership
-    if opts.isOrigin and self.game.client then
-        local removedBodyOwnership, interpolationDelay = removedBehavior:callHandler('bodyOwnershipComponent', removedComponent)
-        if removedBodyOwnership then
-            local actor = self:getActor(removedComponent.actorId)
-
-            local finalBodyOwnership, finalInterpolationDelay = false, 0
-            for otherBehaviorId, otherComponent in pairs(actor.components) do
-                if otherBehaviorId ~= removedComponent.behaviorId then
-                    local otherBehavior = self:getOtherBehavior(otherBehaviorId)
-                    local otherBodyOwnership, otherInterpolationDelay = otherBehavior:callHandler('bodyOwnershipComponent', otherComponent)
-                    if otherBodyOwnership then
-                        finalBodyOwnership = true
-                        finalInterpolationDelay = math.max(finalInterpolationDelay, otherInterpolationDelay)
-                    end
-                end
-            end
-
-            local bodyId, body = self:getBody(removedComponent.actorId)
-            self._physics:setOwner(bodyId, self.game.clientId,
-                finalBodyOwnership, finalBodyOwnership and finalInterpolationDelay or nil)
         end
     end
 
