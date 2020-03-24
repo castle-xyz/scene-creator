@@ -70,6 +70,10 @@ end
 -- Update
 
 function Server:update(dt)
+    if DUMB_SERVER then
+        return -- Don't run updates if we're dumb
+    end
+
     -- Server doesn't have tools so this is simple...
 
     self:updatePerformance(dt)

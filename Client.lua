@@ -25,7 +25,8 @@ end
 
 
 -- 'multi' boilerplate
-LOCAL_SERVER = true -- Enable to force a local server and never use a remote one
+DUMB_SERVER = true -- Make the server just forward messages and never run updates or sync physics
+LOCAL_SERVER = true -- Force a local server and never use a remote one
 function GET_SERVER_MODULE_NAME()
     return 'Server'
 end

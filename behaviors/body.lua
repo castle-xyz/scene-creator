@@ -377,7 +377,7 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
     else
         ownerId = ownerId1 or ownerId2
     end
-    local isOwner = self.game.clientId == ownerId
+    local isOwner = DUMB_SERVER or self.game.clientId == ownerId
 
     local visited = {}
     if component1 then
