@@ -21,11 +21,22 @@ local EMPTY_RULE = {
 }
 
 
+-- Behavior management
+
+function RulesBehavior.handlers:addBehavior(opts)
+    self._pendingWaits = {}
+end
+
+
 -- Component management
 
 function RulesBehavior.handlers:addComponent(component, bp, opts)
     component.properties.rules = util.deepCopyTable(bp.rules or { EMPTY_RULE })
     self.setters.rules(self, component, component.properties.rules)
+end
+
+function RulesBehavior.handlers:removeComponent(component, opts)
+    self._pendingWaits[component.actorId] = nil
 end
 
 function RulesBehavior.handlers:blueprintComponent(component, bp)
@@ -115,25 +126,53 @@ RulesBehavior.responses.wait = {
     category = 'timing',
 
     initialParams = {
-        time = 1,
+        duration = 1,
     },
 
     ui = function(self, params, onChangeParam)
-        ui.numberInput('time (seconds)', params.time, {
+        ui.numberInput('duration (seconds)', params.duration, {
             min = 0,
-            onChange = function(newTime)
-                onChangeParam('time', newTime)
+            onChange = function(newDuration)
+                onChangeParam('duration', newDuration)
             end,
         })
     end,
 
     run = function(self, component, params, context, runChild)
-        network.async(function()
-            copas.sleep(params.time)
-            runChild('nextResponse')
-        end)
+        if not self._pendingWaits[component.actorId] then
+            self._pendingWaits[component.actorId] = {}
+        end
+        table.insert(self._pendingWaits[component.actorId], {
+            actorId = component.actorId,
+            timeLeft = params.duration,
+            run = function()
+                runChild('nextResponse')
+            end,
+        })
     end,
 }
+
+
+-- Perform
+
+function RulesBehavior.handlers:perform(dt)
+    for actorId, pendingWaits in pairs(self._pendingWaits) do
+        local newPendingWaits = {}
+        for _, wait in ipairs(pendingWaits) do
+            wait.timeLeft = wait.timeLeft - dt
+            if wait.timeLeft <= 0 then
+                wait.run()
+            else
+                table.insert(newPendingWaits, wait)
+            end
+        end
+        if next(newPendingWaits) then
+            self._pendingWaits[actorId] = newPendingWaits
+        else
+            self._pendingWaits[actorId] = nil
+        end
+    end
+end
 
 
 -- UI
