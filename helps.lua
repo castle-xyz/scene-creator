@@ -123,7 +123,7 @@ A tool that allows moving and rotating actors using touch.
 
         Rules = {
             description = [[
-A behavior that lets you **define your own rules** that tie the other behaviors of the actor together. Each rule has a **trigger** (when the rule should run) and a **response** (what the rule should do).
+A behavior that lets you **define your own rules** that tie the other behaviors of the actor together. Each rule has a **trigger** (**when** the rule should run) and a chain of **responses** (**what** the rule should do).
             ]],
         },
     },

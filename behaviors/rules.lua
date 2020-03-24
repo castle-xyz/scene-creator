@@ -99,9 +99,7 @@ function RulesBehavior:runResponse(response, actorId, context)
             if component then
                 local responseEntry = behavior.responses[response.name]
                 if responseEntry then
-                    local result = responseEntry.run(behavior, component, response.params, context, function(childName)
-                        return self:runResponse(response.params[childName], actorId, context)
-                    end)
+                    local result = responseEntry.run(behavior, component, response.params, context)
                     if responseEntry.returnType ~= nil then
                         return result
                     else
@@ -139,7 +137,7 @@ RulesBehavior.responses.wait = {
         })
     end,
 
-    run = function(self, component, params, context, runChild)
+    run = function(self, component, params, context)
         local timeLeft = params.duration
         while timeLeft > 0 do
             timeLeft = timeLeft - coroutine.yield()
@@ -168,9 +166,9 @@ Perform a response **only if** a given condition is true.
         uiChild('then')
     end,
 
-    run = function(self, component, params, context, runChild)
-        if runChild('condition') then
-            runChild('then')
+    run = function(self, component, params, context)
+        if self:runResponse(params['condition'], component.actorId, context) then
+            self:runResponse(params['then'], component.actorId, context)
         end
     end,
 }
@@ -202,7 +200,7 @@ Is true if a coin flip comes up heads. The coin can be biased with a given proba
         })
     end,
 
-    run = function(self, component, params, context, runChild)
+    run = function(self, component, params, context)
         return math.random() < params.probability
     end,
 }
@@ -277,6 +275,7 @@ function RulesBehavior:uiPart(actorId, part, props)
             flex = 1,
             flexDirection = 'row',
             marginLeft = 6,
+            zIndex = 1,
         }, function()
             if part.name ~= 'none' and entry.uiBody then
                 ui.box('border', {
@@ -292,14 +291,16 @@ function RulesBehavior:uiPart(actorId, part, props)
             ui.box('selector', {
                 flex = part.name == 'none' and 1 or nil,
             }, function()
-                local prefix = props.kind == 'response' and props.returnType == nil and 'add ' or 'select '
-                local label = props.label or props.kind
-                ui.button(prefix .. label, {
-                    flex = part.name == 'none' and 1 or nil,
+                local label
+                if part.name == 'none' then
+                    label = (props.kind == 'response' and props.returnType == nil and 'add ' or 'select ') .. (props.label or props.kind)
+                else
+                    label = part.name
+                end
+                ui.button(label, {
                     margin = 0,
                     icon = part.name == 'none' and 'plus' or 'ellipsis-v',
                     iconFamily = 'FontAwesome5',
-                    hideLabel = part.name ~= 'none',
                     onClick = function()
                         self._picking = nil
                     end,
@@ -426,12 +427,6 @@ function RulesBehavior:uiPart(actorId, part, props)
                 })
             end)
             if part.name ~= 'none' then
-                ui.box('name', {
-                    marginRight = 6,
-                    marginLeft = 4,
-                }, function()
-                    ui.markdown('## ' .. part.name)
-                end)
                 callEntryUi('uiHeader')
             end
         end)
