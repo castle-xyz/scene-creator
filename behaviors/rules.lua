@@ -50,7 +50,7 @@ function RulesBehavior.setters:rules(component, newRules)
 end
 
 
--- Trigger / response
+-- Trigger handler
 
 function RulesBehavior.handlers:trigger(triggerName, actorId, context)
     local component = self.components[actorId]
@@ -79,11 +79,48 @@ function RulesBehavior:runResponse(response, actorId, context)
             if component then
                 local responseEntry = behavior.responses[response.name]
                 if responseEntry then
-                    responseEntry.runComponent(behavior, component, response.params, context)
+                    responseEntry.runComponent(behavior, component, response.params, context, function(childName)
+                        self:runResponse(response.params[childName], actorId, context)
+                    end)
                 end
             end
         end
     end
+end
+
+
+-- Responses
+
+RulesBehavior.responses.wait = {
+    description = [[
+**Wait some time** then perform another response.
+    ]],
+
+    initialParams = {
+        time = 15,
+        nextResponse = {
+            name = 'none',
+            behaviorId = nil,
+        },
+    },
+}
+
+function RulesBehavior.responses.wait:ui(params, onChangeParam, uiChild)
+    ui.numberInput('time (seconds)', params.time, {
+        min = 0,
+        onChange = function(newTime)
+            onChangeParam('time', newTime)
+        end,
+    })
+
+    uiChild('nextResponse')
+end
+
+function RulesBehavior.responses.wait:runComponent(component, params, context, runChild)
+    network.async(function()
+        copas.sleep(params.time)
+        runChild('nextResponse')
+    end)
 end
 
 
@@ -189,15 +226,29 @@ function RulesBehavior:uiPart(actorId, part, props)
             end)
         end)
         if part.name ~= 'none' and entry.ui then
-            entry.ui(behavior, part.params, function(paramName, newValue)
-                local newParams = util.deepCopyTable(part.params)
-                newParams[paramName] = newValue
-                props.onChange({
-                    behaviorId = part.behaviorId,
-                    name = part.name,
-                    params = newParams,
-                })
-            end)
+            entry.ui(behavior, part.params,
+                function(paramName, newValue)
+                    local newParams = util.deepCopyTable(part.params)
+                    newParams[paramName] = newValue
+                    props.onChange({
+                        behaviorId = part.behaviorId,
+                        name = part.name,
+                        params = newParams,
+                    })
+                end, function(childName)
+                    self:uiPart(actorId, part.params[childName], {
+                        kind = 'response',
+                        onChange = function(newChild)
+                            local newParams = util.deepCopyTable(part.params)
+                            newParams[childName] = newChild
+                            props.onChange({
+                                behaviorId = part.behaviorId,
+                                name = part.name,
+                                params = newParams,
+                            })
+                        end,
+                    })
+                end)
         end
     end)
 end
@@ -207,11 +258,9 @@ function RulesBehavior.handlers:uiComponent(component, opts)
 
     for ruleIndex, rule in ipairs(component.properties.rules) do
         ui.box('rule-' .. ruleIndex, {
-            borderWidth = 1,
-            borderColor = '#292929',
-            borderRadius = 4,
-            padding = 4,
-            margin = 4,
+            borderRadius = 6,
+            borderLeftWidth = 2,
+            borderColor = '#eee',
             marginBottom = 8,
         }, function()
             ui.box('trigger box', { flexDirection = 'row' }, function()
