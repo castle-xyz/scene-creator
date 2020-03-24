@@ -174,7 +174,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                     iconFamily = 'FontAwesome5',
                     hideLabel = part.name ~= 'none',
                     onClick = function()
-                        self._replacing = nil
+                        self._picking = nil
                     end,
                     popoverAllowed = true,
                     popoverStyle = { width = 300, maxHeight = 300 },
@@ -185,23 +185,52 @@ function RulesBehavior:uiPart(actorId, part, props)
                             flexGrow = 0,
                             alwaysBounceVertical = false,
                         }, function()
-                            if part.name ~= 'none' and not self._replacing then
+                            if part.name ~= 'none' and not self._picking then
                                 ui.markdown('## ' .. part.name .. '\n' .. (entry.description or ''))
-                                ui.button('replace', {
-                                    icon = 'exchange-alt',
-                                    iconFamily = 'FontAwesome5',
-                                    onClick = function()
-                                        self._replacing = true
-                                    end,
-                                })
-                                ui.button('remove', {
-                                    icon = 'trash-alt',
-                                    iconFamily = 'FontAwesome5',
-                                    onClick = function()
-                                        closePopover()
-                                        props.onChange(part.params.nextResponse)
-                                    end,
-                                })
+                                if props.kind == 'response' and entry.returnType == nil then
+                                    util.uiRow('insert move', function()
+                                        ui.button('insert before', {
+                                            icon = 'plus',
+                                            iconFamily = 'FontAwesome5',
+                                            onClick = function()
+                                                self._picking = 'insertBefore'
+                                            end,
+                                        })
+                                    end, function()
+                                        if part.params.nextResponse and part.params.nextResponse.name ~= 'none' then
+                                            ui.button('move down', {
+                                                icon = 'arrow-bold-down',
+                                                iconFamily = 'Entypo',
+                                                onClick = function()
+                                                    closePopover()
+                                                    local clone = util.deepCopyTable(part)
+                                                    local newHead = clone.params.nextResponse
+                                                    clone.params.nextResponse = newHead.params.nextResponse
+                                                    newHead.params.nextResponse = clone
+                                                    props.onChange(newHead)
+                                                end,
+                                            })
+                                        end
+                                    end)
+                                end
+                                util.uiRow('replace remove', function()
+                                    ui.button('replace', {
+                                        icon = 'exchange-alt',
+                                        iconFamily = 'FontAwesome5',
+                                        onClick = function()
+                                            self._picking = 'replace'
+                                        end,
+                                    })
+                                end, function()
+                                    ui.button('remove', {
+                                        icon = 'trash-alt',
+                                        iconFamily = 'FontAwesome5',
+                                        onClick = function()
+                                            closePopover()
+                                            props.onChange(part.params.nextResponse)
+                                        end,
+                                    })
+                                end)
                             else
                                 local categories = {}
                                 for behaviorId in pairs(actor.components) do
@@ -240,12 +269,15 @@ function RulesBehavior:uiPart(actorId, part, props)
                                                         icon = 'plus',
                                                         iconFamily = 'FontAwesome5',
                                                         onClick = function()
-                                                            self._replacing = nil
                                                             closePopover()
                                                             if props.onChange then
                                                                 local newParams = util.deepCopyTable(row.entry.initialParams) or {}
-                                                                if part.params and part.params.nextResponse then
-                                                                    newParams.nextResponse = part.params.nextResponse
+                                                                if self._picking == 'replace' then
+                                                                    if part.params and part.params.nextResponse then
+                                                                        newParams.nextResponse = part.params.nextResponse
+                                                                    end
+                                                                elseif self._picking == 'insertBefore' then
+                                                                    newParams.nextResponse = part
                                                                 end
                                                                 props.onChange({
                                                                     behaviorId = row.behaviorId,
@@ -253,6 +285,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                                                                     params = newParams,
                                                                 })
                                                             end
+                                                            self._picking = nil
                                                         end,
                                                     })
                                                 end)
@@ -318,6 +351,7 @@ function RulesBehavior.handlers:uiComponent(component, opts)
             borderLeftWidth = 3,
             borderColor = '#eee',
             margin = 4,
+            marginVertical = 8,
         }, function()
             ui.box('trigger box', { flexDirection = 'row' }, function()
                 ui.box('when box', { margin = 3 }, function()
