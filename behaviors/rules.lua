@@ -299,6 +299,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                 end
                 ui.button(label, {
                     margin = 0,
+                    textStyle = part.name ~= 'none' and { fontSize = 18 } or nil,
                     icon = part.name == 'none' and 'plus' or 'ellipsis-v',
                     iconFamily = 'FontAwesome5',
                     onClick = function()
@@ -477,8 +478,8 @@ function RulesBehavior.handlers:uiComponent(component, opts)
             paddingLeft = 6,
         }, function()
             ui.box('when row', { flexDirection = 'row' }, function()
-                ui.box('when box', { marginRight = 6, marginBottom = 4 }, function()
-                    ui.markdown('## when')
+                ui.box('when box', { marginRight = 6, marginBottom = 8, marginTop = 2 }, function()
+                    ui.markdown('### when')
                 end)
                 self:uiPart(actorId, rule.trigger, {
                     kind = 'trigger',
