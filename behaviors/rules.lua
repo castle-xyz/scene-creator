@@ -170,6 +170,7 @@ Perform a response **only if** a given condition is true. Optionally can have an
     uiHeader = function(self, params, onChangeParam, uiChild)
         uiChild('condition', {
             label = 'condition',
+            noMarginTop = true,
             returnType = 'boolean',
         })
     end,
@@ -181,7 +182,8 @@ Perform a response **only if** a given condition is true. Optionally can have an
                 flexDirection = 'row',
             }, function()
                 ui.box('else backgrond', {
-                    marginVertical = 6,
+                    marginTop = 12,
+                    marginBottom = 6,
                     marginLeft = -9,
                     borderWidth = 2,
                     borderColor = '#eee',
@@ -302,11 +304,14 @@ function RulesBehavior:uiPart(actorId, part, props)
         end
     end
 
-    ui.box(part.name .. ' container', { flex = 1 }, function()
+    ui.box(part.name .. ' container', {
+        flex = 1, 
+        marginTop = not props.noMarginTop and 6 or nil
+    }, function()
         ui.box('header', {
             flex = 1,
             flexDirection = 'row',
-            marginLeft = 6,
+            marginLeft = 12,
             zIndex = 1,
         }, function()
             if part.name ~= 'none' and entry.uiBody then
@@ -475,10 +480,10 @@ function RulesBehavior:uiPart(actorId, part, props)
                 borderLeftWidth = part.name == 'none' and 0 or 3,
                 borderColor = '#eee',
                 marginTop = -8,
-                marginBottom = 6,
+                marginBottom = 4,
                 paddingTop = 12,
                 paddingLeft = 6,
-                marginLeft = 6,
+                marginLeft = 12,
             }, function()
                 callEntryUi('uiBody')
             end)
@@ -519,6 +524,7 @@ function RulesBehavior.handlers:uiComponent(component, opts)
                 end)
                 self:uiPart(actorId, rule.trigger, {
                     kind = 'trigger',
+                    noMarginTop = true,
                     onChange = function(newTrigger)
                         rule.trigger = newTrigger or util.deepCopyTable(EMPTY_RULE.trigger)
                         self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
