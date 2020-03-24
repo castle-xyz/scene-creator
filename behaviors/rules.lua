@@ -107,7 +107,7 @@ end
 
 RulesBehavior.responses.wait = {
     description = [[
-**Wait some time** then perform another response.
+**Wait some time** before performing the next response.
     ]],
 
     autoNext = false,

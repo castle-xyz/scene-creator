@@ -31,7 +31,7 @@ end
 
 MovingBehavior.responses.nudge = {
     description = [[
-Nudges the actor by the given velocity.
+Changes the actor's velocity by the given amount.
     ]],
 
     initialParams = {
