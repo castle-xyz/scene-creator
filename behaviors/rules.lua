@@ -164,20 +164,6 @@ function RulesBehavior:uiPart(actorId, part, props)
                     ui.markdown('## ' .. part.name)
                 end)
             end
-            if false and part.name ~= 'none' then
-                ui.button('description', {
-                    margin = 0,
-                    marginRight = 6,
-                    icon = 'question',
-                    iconFamily = 'FontAwesome5',
-                    hideLabel = true,
-                    popoverAllowed = true,
-                    popoverStyle = { width = 300 },
-                    popover = function()
-                        ui.markdown('## ' .. part.name .. '\n' .. (entry.description or ''))
-                    end,
-                })
-            end
             ui.box('selector', {
                 flex = part.name == 'none' and 1 or nil,
             }, function()
@@ -187,65 +173,93 @@ function RulesBehavior:uiPart(actorId, part, props)
                     icon = part.name == 'none' and 'plus' or 'ellipsis-v',
                     iconFamily = 'FontAwesome5',
                     hideLabel = part.name ~= 'none',
+                    onClick = function()
+                        self._replacing = nil
+                    end,
                     popoverAllowed = true,
-                    popoverStyle = { width = 300, height = 300 },
+                    popoverStyle = { width = 300, maxHeight = 300 },
                     popover = function(closePopover)
                         ui.scrollBox('scroll box', {
                             padding = 2,
                             margin = 2,
-                            flex = 1,
+                            flexGrow = 0,
+                            alwaysBounceVertical = false,
                         }, function()
-                            local categories = {}
-                            for behaviorId in pairs(actor.components) do
-                                local behavior = self.game.behaviors[behaviorId]
-                                local behaviorUiName = behavior:getUiName()
-                                for name, entry in pairs(behavior[props.kind .. 's']) do
-                                    if entry.returnType == props.returnType then
-                                        local categoryName = entry.category or behaviorUiName
-                                        if not categories[categoryName] then
-                                            categories[categoryName] = {}
+                            if part.name ~= 'none' and not self._replacing then
+                                ui.markdown('## ' .. part.name .. '\n' .. (entry.description or ''))
+                                ui.button('replace', {
+                                    icon = 'exchange-alt',
+                                    iconFamily = 'FontAwesome5',
+                                    onClick = function()
+                                        self._replacing = true
+                                    end,
+                                })
+                                ui.button('remove', {
+                                    icon = 'trash-alt',
+                                    iconFamily = 'FontAwesome5',
+                                    onClick = function()
+                                        closePopover()
+                                        props.onChange(part.params.nextResponse)
+                                    end,
+                                })
+                            else
+                                local categories = {}
+                                for behaviorId in pairs(actor.components) do
+                                    local behavior = self.game.behaviors[behaviorId]
+                                    local behaviorUiName = behavior:getUiName()
+                                    for name, entry in pairs(behavior[props.kind .. 's']) do
+                                        if entry.returnType == props.returnType then
+                                            local categoryName = entry.category or behaviorUiName
+                                            if not categories[categoryName] then
+                                                categories[categoryName] = {}
+                                            end
+                                            table.insert(categories[categoryName], {
+                                                name = name,
+                                                behaviorId = behaviorId,
+                                                entry = entry,
+                                            })
                                         end
-                                        table.insert(categories[categoryName], {
-                                            name = name,
-                                            behaviorId = behaviorId,
-                                            entry = entry,
-                                        })
                                     end
                                 end
-                            end
-                            for categoryName, rows in pairs(categories) do
-                                ui.section(categoryName, { defaultOpen = true }, function()
-                                    for _, row in ipairs(rows) do
-                                        ui.box(row.name, {
-                                            borderWidth = 1,
-                                            borderColor = '#292929',
-                                            borderRadius = 4,
-                                            padding = 4,
-                                            margin = 4,
-                                            marginBottom = 8,
-                                        }, function()
-                                            ui.markdown('## ' .. row.name .. '\n' .. (row.entry.description or ''))
+                                for categoryName, rows in pairs(categories) do
+                                    ui.section(categoryName, { defaultOpen = true }, function()
+                                        for _, row in ipairs(rows) do
+                                            ui.box(row.name, {
+                                                borderWidth = 1,
+                                                borderColor = '#292929',
+                                                borderRadius = 4,
+                                                padding = 4,
+                                                margin = 4,
+                                                marginBottom = 8,
+                                            }, function()
+                                                ui.markdown('## ' .. row.name .. '\n' .. (row.entry.description or ''))
 
-                                            ui.box('buttons', { flexDirection = 'row' }, function()
-                                                ui.button('use', {
-                                                    flex = 1,
-                                                    icon = 'plus',
-                                                    iconFamily = 'FontAwesome5',
-                                                    onClick = function()
-                                                        closePopover()
-                                                        if props.onChange then
-                                                            props.onChange({
-                                                                behaviorId = row.behaviorId,
-                                                                name = row.name,
-                                                                params = util.deepCopyTable(row.entry.initialParams) or {},
-                                                            })
-                                                        end
-                                                    end,
-                                                })
+                                                ui.box('buttons', { flexDirection = 'row' }, function()
+                                                    ui.button('use', {
+                                                        flex = 1,
+                                                        icon = 'plus',
+                                                        iconFamily = 'FontAwesome5',
+                                                        onClick = function()
+                                                            self._replacing = nil
+                                                            closePopover()
+                                                            if props.onChange then
+                                                                local newParams = util.deepCopyTable(row.entry.initialParams) or {}
+                                                                if part.params and part.params.nextResponse then
+                                                                    newParams.nextResponse = part.params.nextResponse
+                                                                end
+                                                                props.onChange({
+                                                                    behaviorId = row.behaviorId,
+                                                                    name = row.name,
+                                                                    params = newParams,
+                                                                })
+                                                            end
+                                                        end,
+                                                    })
+                                                end)
                                             end)
-                                        end)
-                                    end
-                                end)
+                                        end
+                                    end)
+                                end
                             end
                         end)
                     end
@@ -312,7 +326,7 @@ function RulesBehavior.handlers:uiComponent(component, opts)
                 self:uiPart(actorId, rule.trigger, {
                     kind = 'trigger',
                     onChange = function(newTrigger)
-                        rule.trigger = newTrigger
+                        rule.trigger = newTrigger or util.deepCopyTable(EMPTY_RULE.trigger)
                         self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
                     end,
                 })
@@ -320,7 +334,7 @@ function RulesBehavior.handlers:uiComponent(component, opts)
             self:uiPart(actorId, rule.response, {
                 kind = 'response',
                 onChange = function(newResponse)
-                    rule.response = newResponse
+                    rule.response = newResponse or util.deepCopyTable(EMPTY_RULE.response)
                     self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
                 end,
             })
