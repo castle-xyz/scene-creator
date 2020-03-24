@@ -39,7 +39,7 @@ Changes the actor's velocity by the given amount.
         y = 0,
     },
 
-    ui = function(self, params, onChangeParam)
+    uiBody = function(self, params, onChangeParam)
         util.uiRow('velocity', function()
             ui.numberInput('velocity x', params.x, {
                 onChange = function(newX)
