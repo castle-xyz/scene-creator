@@ -112,12 +112,10 @@ RulesBehavior.responses.wait = {
 
     autoNext = false,
 
+    category = 'timing',
+
     initialParams = {
         time = 1,
-        nextResponse = {
-            name = 'none',
-            behaviorId = nil,
-        },
     },
 
     ui = function(self, params, onChangeParam)
@@ -197,49 +195,57 @@ function RulesBehavior:uiPart(actorId, part, props)
                             margin = 2,
                             flex = 1,
                         }, function()
+                            local categories = {}
                             for behaviorId in pairs(actor.components) do
                                 local behavior = self.game.behaviors[behaviorId]
-                                local behaviorEntries = behavior[props.kind .. 's']
-                                local filteredEntries = {}
-                                for entryName, entry in pairs(behaviorEntries) do
+                                local behaviorUiName = behavior:getUiName()
+                                for name, entry in pairs(behavior[props.kind .. 's']) do
                                     if entry.returnType == props.returnType then
-                                        filteredEntries[entryName] = entry
+                                        local categoryName = entry.category or behaviorUiName
+                                        if not categories[categoryName] then
+                                            categories[categoryName] = {}
+                                        end
+                                        table.insert(categories[categoryName], {
+                                            name = name,
+                                            behaviorId = behaviorId,
+                                            entry = entry,
+                                        })
                                     end
                                 end
-                                if next(filteredEntries) then
-                                    ui.section(behavior:getUiName(), { defaultOpen = true }, function()
-                                        for entryName, entry in pairs(filteredEntries) do
-                                            ui.box(entryName, {
-                                                borderWidth = 1,
-                                                borderColor = '#292929',
-                                                borderRadius = 4,
-                                                padding = 4,
-                                                margin = 4,
-                                                marginBottom = 8,
-                                            }, function()
-                                                ui.markdown('## ' .. entryName .. '\n' .. (entry.description or ''))
+                            end
+                            for categoryName, rows in pairs(categories) do
+                                ui.section(categoryName, { defaultOpen = true }, function()
+                                    for _, row in ipairs(rows) do
+                                        ui.box(row.name, {
+                                            borderWidth = 1,
+                                            borderColor = '#292929',
+                                            borderRadius = 4,
+                                            padding = 4,
+                                            margin = 4,
+                                            marginBottom = 8,
+                                        }, function()
+                                            ui.markdown('## ' .. row.name .. '\n' .. (row.entry.description or ''))
 
-                                                ui.box('buttons', { flexDirection = 'row' }, function()
-                                                    ui.button('use', {
-                                                        flex = 1,
-                                                        icon = 'plus',
-                                                        iconFamily = 'FontAwesome5',
-                                                        onClick = function()
-                                                            closePopover()
-                                                            if props.onChange then
-                                                                props.onChange({
-                                                                    behaviorId = behaviorId,
-                                                                    name = entryName,
-                                                                    params = util.deepCopyTable(entry.initialParams) or {},
-                                                                })
-                                                            end
-                                                        end,
-                                                    })
-                                                end)
+                                            ui.box('buttons', { flexDirection = 'row' }, function()
+                                                ui.button('use', {
+                                                    flex = 1,
+                                                    icon = 'plus',
+                                                    iconFamily = 'FontAwesome5',
+                                                    onClick = function()
+                                                        closePopover()
+                                                        if props.onChange then
+                                                            props.onChange({
+                                                                behaviorId = row.behaviorId,
+                                                                name = row.name,
+                                                                params = util.deepCopyTable(row.entry.initialParams) or {},
+                                                            })
+                                                        end
+                                                    end,
+                                                })
                                             end)
-                                        end
-                                    end)
-                                end
+                                        end)
+                                    end
+                                end)
                             end
                         end)
                     end
