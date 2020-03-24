@@ -23,12 +23,6 @@ local EMPTY_RULE = {
 }
 
 
--- UI utilities
-
-local function labelledRow(label, contents)
-end
-
-
 -- Behavior management
 
 function RulesBehavior.handlers:addBehavior(opts)
