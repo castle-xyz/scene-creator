@@ -150,10 +150,22 @@ RulesBehavior.responses.wait = {
 
 RulesBehavior.responses['if'] = {
     description = [[
-Perform a response **only if** a given condition is true.
+Perform a response **only if** a given condition is true. Optionally can have an 'else' branch for when the condition is false.
     ]],
 
     category = 'logic',
+
+    uiMenu = function(self, params, onChangeParam, uiChild)
+        ui.toggle("use 'else' branch", "use 'else' branch", params['else'] ~= nil, {
+            onToggle = function(newElseEnabled)
+                if newElseEnabled then
+                    onChangeParam('else', util.deepCopyTable(EMPTY_RULE.response))
+                else
+                    onChangeParam('else', nil)
+                end
+            end,
+        })
+    end,
 
     uiHeader = function(self, params, onChangeParam, uiChild)
         uiChild('condition', {
@@ -164,11 +176,31 @@ Perform a response **only if** a given condition is true.
 
     uiBody = function(self, params, onChangeParam, uiChild)
         uiChild('then')
+        if params['else'] then
+            ui.box('else container', {
+                flexDirection = 'row',
+            }, function()
+                ui.box('else backgrond', {
+                    marginVertical = 6,
+                    marginLeft = -9,
+                    borderWidth = 2,
+                    borderColor = '#eee',
+                    backgroundColor = '#eee',
+                    borderTopRightRadius = 6,
+                    borderBottomRightRadius = 6,
+                }, function()
+                    ui.markdown('### else')
+                end)
+            end)
+            uiChild('else')
+        end
     end,
 
     run = function(self, component, params, context)
         if self:runResponse(params['condition'], component.actorId, context) then
             self:runResponse(params['then'], component.actorId, context)
+        else
+            self:runResponse(params['else'], component.actorId, context)
         end
     end,
 }
@@ -316,6 +348,10 @@ function RulesBehavior:uiPart(actorId, part, props)
                         }, function()
                             if part.name ~= 'none' and not self._picking then
                                 ui.markdown('## ' .. part.name .. '\n' .. (entry.description or ''))
+                                if entry.uiMenu then
+                                    callEntryUi('uiMenu')
+                                    ui.box('spacer', { height = 18 }, function() end)
+                                end
                                 if props.kind == 'response' and entry.returnType == nil then
                                     util.uiRow('insert move', function()
                                         ui.button('insert before', {
