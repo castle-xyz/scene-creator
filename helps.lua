@@ -88,19 +88,6 @@ Sets the **maximum speed** at which the actor can move.
         },
 
 
-        Disappear = {
-            description = [[
-Removes the actor from the scene when something happens. The actor can be removed when it **collides** with another actor.
-            ]],
-        },
-
-        Restart = {
-            description = [[
-Restarts the scene when something happens. The scene can be restarted when the actor **collides** with another actor.
-            ]],
-        },
-
-
         Sling = {
             description = [[
 Allows the actor to be **slung by the user** when playing the scene. The user can **touch anywhere and pull** to define the sling direction and force.

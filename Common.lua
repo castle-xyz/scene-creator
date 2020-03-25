@@ -49,9 +49,6 @@ require 'behaviors.friction'
 require 'behaviors.speed_limit'
 require 'behaviors.rotating_motion'
 
-require 'behaviors.disappear'
-require 'behaviors.restart'
-
 require 'behaviors.sling'
 require 'behaviors.drag'
 
