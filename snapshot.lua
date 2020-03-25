@@ -122,6 +122,7 @@ function Server.receivers:restoreSnapshot(time, snapshotId, opts)
 
         -- Clear existing
         if opts.clear ~= false then
+            self:send('clearScene')
             for actorId in pairs(self.actors) do
                 self:send('removeActor', self.clientId, actorId)
             end

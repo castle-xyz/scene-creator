@@ -106,6 +106,7 @@ function Common:define()
 
     self:defineMessageKind('setPerforming', self.sendOpts.reliableToAll)
     self:defineMessageKind('setPaused', self.sendOpts.reliableToAll)
+    self:defineMessageKind('clearScene', self.sendOpts.reliableToAll)
 
     self:defineMessageKind('ready', {
         from = 'server',
@@ -175,6 +176,10 @@ function Common.receivers:setPaused(time, paused)
     end
 end
 
+function Common.receivers:clearScene(time)
+    self:callHandlers('clearScene', paused)
+end
+
 
 -- Methods
 
@@ -186,3 +191,18 @@ function Common:fireOnEndOfFrame()
     self.onEndOfFrames = {}
 end
 
+function Common:restartScene()
+    if self.rewindSnapshotId then
+        self:send('setPaused', true)
+
+        self:send({
+            selfSendOnly = not not self.server,
+            kind = 'restoreSnapshot',
+        }, self.rewindSnapshotId, { stopPerforming = false })
+
+        network.async(function()
+            copas.sleep(0.4)
+            self:send('setPaused', false)
+        end)
+    end
+end

@@ -9,8 +9,6 @@ local RulesBehavior = defineCoreBehavior {
 }
 
 
-local MAX_COROUTINES_PER_ACTOR = 20
-
 local EMPTY_RULE = {
     trigger = {
         name = 'none',
@@ -26,7 +24,7 @@ local EMPTY_RULE = {
 -- Behavior management
 
 function RulesBehavior.handlers:addBehavior(opts)
-    self._coroutines = {}
+    self._coroutines = {} -- `actorId` -> `rule` -> current coroutine for that rule
 end
 
 
@@ -38,11 +36,9 @@ function RulesBehavior.handlers:addComponent(component, bp, opts)
 end
 
 function RulesBehavior.handlers:preRemoveComponent(component, opts)
-    -- TODO(nikki): Fire 'destroy' trigger
-end
-
-function RulesBehavior.handlers:removeComponent(component, opts)
-    self._coroutines[component.actorId] = nil
+    if opts.removeActor then
+        self:fireTrigger('destroy', component.actorId)
+    end
 end
 
 function RulesBehavior.handlers:blueprintComponent(component, bp)
@@ -55,6 +51,10 @@ end
 function RulesBehavior.setters:rules(component, newRules)
     component.properties.rules = newRules
 
+    -- Rules changed, so clear coroutines
+    self._coroutines[component.actorId] = nil
+
+    -- Update rules index
     component._rulesByTriggerName = {}
     for _, rule in ipairs(component.properties.rules) do
         if rule.trigger.name ~= 'none' then
@@ -81,13 +81,11 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context)
     if rulesToRun then
         for _, ruleToRun in ipairs(rulesToRun) do
             if not self._coroutines[actorId] then
-                self._coroutines[actorId] = {}
+                self._coroutines[actorId] = setmetatable({}, { __mode = 'k' })
             end
-            if #self._coroutines[actorId] < MAX_COROUTINES_PER_ACTOR then
-                table.insert(self._coroutines[actorId], coroutine.create(function()
-                    self:runResponse(ruleToRun.response, actorId, context)
-                end))
-            end
+            self._coroutines[actorId][ruleToRun] = coroutine.create(function()
+                self:runResponse(ruleToRun.response, actorId, context)
+            end)
         end
     end
 end
@@ -99,16 +97,13 @@ function RulesBehavior:runResponse(response, actorId, context)
     if response and response.behaviorId and response.name ~= 'none' then
         local behavior = self.game.behaviors[response.behaviorId]
         if behavior then
-            local component = behavior.components[actorId]
-            if component then
-                local responseEntry = behavior.responses[response.name]
-                if responseEntry then
-                    local result = responseEntry.run(behavior, component, response.params, context)
-                    if responseEntry.returnType ~= nil then
-                        return result
-                    else
-                        self:runResponse(response.params.nextResponse, actorId, context)
-                    end
+            local responseEntry = behavior.responses[response.name]
+            if responseEntry then
+                local result = responseEntry.run(behavior, actorId, response.params, context)
+                if responseEntry.returnType ~= nil then
+                    return result
+                else
+                    self:runResponse(response.params.nextResponse, actorId, context)
                 end
             end
         end
@@ -124,11 +119,26 @@ Triggered when the actor is created. If the actor is already present when the sc
     ]],
 }
 
---RulesBehavior.triggers.destroy = {
---    description = [[
---Triggered when the actor is removed from the scene.
---    ]],
---}
+RulesBehavior.triggers.destroy = {
+    description = [[
+Triggered when the actor is removed from the scene.
+    ]],
+}
+
+
+-- Scene responses
+
+RulesBehavior.responses['restart scene'] = {
+    description = [[
+Restores the scene back to the start state.
+    ]],
+
+    category = 'scene',
+
+    run = function(self, actorId, params, context)
+        self.game:restartScene()
+    end,
+}
 
 
 -- Timing responses
@@ -157,7 +167,7 @@ RulesBehavior.responses.wait = {
         })
     end,
 
-    run = function(self, component, params, context)
+    run = function(self, actorId, params, context)
         local timeLeft = params.duration
         while timeLeft > 0 do
             timeLeft = timeLeft - coroutine.yield()
@@ -218,11 +228,11 @@ Perform a response **only if** a given condition is true. Optionally can have an
         end
     end,
 
-    run = function(self, component, params, context)
-        if self:runResponse(params['condition'], component.actorId, context) then
-            self:runResponse(params['then'], component.actorId, context)
+    run = function(self, actorId, params, context)
+        if self:runResponse(params['condition'], actorId, context) then
+            self:runResponse(params['then'], actorId, context)
         else
-            self:runResponse(params['else'], component.actorId, context)
+            self:runResponse(params['else'], actorId, context)
         end
     end,
 }
@@ -250,9 +260,9 @@ Repeat a response a certain number of times.
         uiChild('body')
     end,
 
-    run = function(self, component, params, context)
+    run = function(self, actorId, params, context)
         for i = 1, params.count do
-            self:runResponse(params['body'], component.actorId, context)
+            self:runResponse(params['body'], actorId, context)
         end
     end,
 }
@@ -284,13 +294,13 @@ Is true if a coin flip comes up heads. The coin can be biased with a given proba
         })
     end,
 
-    run = function(self, component, params, context)
+    run = function(self, actorId, params, context)
         return math.random() < params.probability
     end,
 }
 
 
--- Perform
+-- Performance
 
 function RulesBehavior.handlers:postPerform(dt)
     -- Lazily fire 'create' triggers
@@ -302,23 +312,30 @@ function RulesBehavior.handlers:postPerform(dt)
     end
 
     -- Resume coroutines
-    for actorId, coroutines in pairs(self._coroutines) do
-        local newCoroutines = {}
-        for _, coro in ipairs(coroutines) do
+    for actorId, coros in pairs(self._coroutines) do
+        for rule, coro in pairs(coros) do
             local succeeded, err = coroutine.resume(coro, dt)
             if not succeeded then
                 print('rule error: ', err)
             end
-            if coroutine.status(coro) ~= 'dead' then
-                table.insert(newCoroutines, coro)
+            if coroutine.status(coro) == 'dead' then
+                coros[rule] = nil
             end
         end
-        if next(newCoroutines) then
-            self._coroutines[actorId] = newCoroutines
-        else
+        if not next(coros) then
             self._coroutines[actorId] = nil
         end
     end
+end
+
+function RulesBehavior.handlers:setPerforming(newPerforming)
+    -- Clear coroutines when performance mode changes
+    self._coroutines = {}
+end
+
+function RulesBehavior.handlers:clearScene()
+    -- Clear coroutines when scene is cleared
+    self._coroutines = {}
 end
 
 
@@ -365,7 +382,7 @@ function RulesBehavior:uiPart(actorId, part, props)
 
     ui.box(part.name .. ' container', {
         flex = 1, 
-        marginTop = not props.noMarginTop and 6 or nil
+        marginTop = not props.noMarginTop and 6 or nil,
     }, function()
         ui.box('header', {
             flex = 1,

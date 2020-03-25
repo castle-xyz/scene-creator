@@ -55,10 +55,12 @@ Changes the actor's velocity by the given amount.
         end)
     end,
 
-    run = function(self, component, params, context)
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        local m = body:getMass()
-        body:applyLinearImpulse(m * params.x, m * params.y)
+    run = function(self, actorId, params, context)
+        local bodyId, body = self.dependencies.Body:getBody(actorId)
+        if body then
+            local m = body:getMass()
+            body:applyLinearImpulse(m * params.x, m * params.y)
+        end
     end,
 }
 
@@ -80,10 +82,12 @@ Changes the actor's rotation speed by the given amount.
         })
     end,
 
-    run = function(self, component, params, context)
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        local I = body:getInertia()
-        body:applyAngularImpulse(I * params.speed * math.pi / 180)
+    run = function(self, actorId, params, context)
+        local bodyId, body = self.dependencies.Body:getBody(actorId)
+        if body then
+            local I = body:getInertia()
+            body:applyAngularImpulse(I * params.speed * math.pi / 180)
+        end
     end,
 }
 
@@ -113,9 +117,11 @@ Sets the actor's velocity to the given value.
         end)
     end,
 
-    run = function(self, component, params, context)
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        body:setLinearVelocity(params.x, params.y)
+    run = function(self, actorId, params, context)
+        local bodyId, body = self.dependencies.Body:getBody(actorId)
+        if body then
+            body:setLinearVelocity(params.x, params.y)
+        end
     end,
 }
 
@@ -137,9 +143,11 @@ Sets the actor's rotation speed to the given value.
         })
     end,
 
-    run = function(self, component, params, context)
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        body:setAngularVelocity(params.speed * math.pi / 180)
+    run = function(self, actorId, params, context)
+        local bodyId, body = self.dependencies.Body:getBody(actorId)
+        if body then
+            body:setAngularVelocity(params.speed * math.pi / 180)
+        end
     end,
 }
 
