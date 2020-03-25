@@ -35,8 +35,8 @@ Changes the actor's velocity by the given amount.
     ]],
 
     initialParams = {
-        x = 3,
-        y = 0,
+        x = 0,
+        y = -3,
     },
 
     uiBody = function(self, params, onChangeParam)
@@ -68,11 +68,12 @@ Changes the actor's rotation speed by the given amount.
     ]],
 
     initialParams = {
-        speed = 0,
+        speed = 20,
     },
 
     uiBody = function(self, params, onChangeParam)
-        ui.numberInput('added rotation speed (degrees per second)', params.x, {
+        ui.numberInput('added rotation speed (degrees per second)', params.speed, {
+            step = 20,
             onChange = function(newSpeed)
                 onChangeParam('speed', newSpeed)
             end,
@@ -81,8 +82,8 @@ Changes the actor's rotation speed by the given amount.
 
     run = function(self, component, params, context)
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        local m = body:getMass()
-        body:applyAngularImpulse(m * params.speed * math.pi / 180)
+        local I = body:getInertia()
+        body:applyAngularImpulse(I * params.speed * math.pi / 180)
     end,
 }
 
@@ -92,8 +93,8 @@ Sets the actor's velocity to the given value.
     ]],
 
     initialParams = {
-        x = 3,
-        y = 0,
+        x = 0,
+        y = -3,
     },
 
     uiBody = function(self, params, onChangeParam)
@@ -124,11 +125,12 @@ Sets the actor's rotation speed to the given value.
     ]],
 
     initialParams = {
-        speed = 0,
+        speed = 20,
     },
 
     uiBody = function(self, params, onChangeParam)
-        ui.numberInput('rotation speed (degrees per second)', params.x, {
+        ui.numberInput('rotation speed (degrees per second)', params.speed, {
+            step = 20,
             onChange = function(newSpeed)
                 onChangeParam('speed', newSpeed)
             end,
