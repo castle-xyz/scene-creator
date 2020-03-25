@@ -126,6 +126,23 @@ Triggered when the actor is removed from the scene.
 }
 
 
+-- Actor responses
+
+RulesBehavior.responses.destroy = {
+    description = [[
+Removes the actor from the scene.
+    ]],
+
+    category = 'actor',
+
+    run = function(self, actorId, params, context)
+        if self.game.actors[actorId] then
+            self.game:send('removeActor', self.clientId, actorId, { soft = true })
+        end
+    end,
+}
+
+
 -- Scene responses
 
 RulesBehavior.responses['restart scene'] = {
@@ -382,7 +399,7 @@ function RulesBehavior:uiPart(actorId, part, props)
 
     ui.box(part.name .. ' container', {
         flex = 1, 
-        marginTop = not props.noMarginTop and 6 or nil,
+        marginTop = not props.noMarginTop and 8 or nil,
     }, function()
         ui.box('header', {
             flex = 1,
@@ -556,7 +573,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                 borderLeftWidth = part.name == 'none' and 0 or 3,
                 borderColor = '#eee',
                 marginTop = -8,
-                marginBottom = 4,
+                marginBottom = 2,
                 paddingTop = 12,
                 paddingLeft = 6,
                 marginLeft = 12,
@@ -595,7 +612,7 @@ function RulesBehavior.handlers:uiComponent(component, opts)
             paddingLeft = 6,
         }, function()
             ui.box('when row', { flexDirection = 'row' }, function()
-                ui.box('when box', { marginRight = 6, marginBottom = 8, marginTop = 2 }, function()
+                ui.box('when box', { marginRight = 6, marginBottom = 6, marginTop = 2 }, function()
                     ui.markdown('### when')
                 end)
                 self:uiPart(actorId, rule.trigger, {
