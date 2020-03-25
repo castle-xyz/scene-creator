@@ -29,9 +29,66 @@ end
 
 -- Responses
 
-MovingBehavior.responses.nudge = {
+MovingBehavior.responses['add velocity'] = {
     description = [[
 Changes the actor's velocity by the given amount.
+    ]],
+
+    initialParams = {
+        x = 3,
+        y = 0,
+    },
+
+    uiBody = function(self, params, onChangeParam)
+        util.uiRow('velocity', function()
+            ui.numberInput('added velocity x', params.x, {
+                onChange = function(newX)
+                    onChangeParam('x', newX)
+                end,
+            })
+        end, function()
+            ui.numberInput('added velocity y', params.y, {
+                onChange = function(newY)
+                    onChangeParam('y', newY)
+                end,
+            })
+        end)
+    end,
+
+    run = function(self, component, params, context)
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        local m = body:getMass()
+        body:applyLinearImpulse(m * params.x, m * params.y)
+    end,
+}
+
+MovingBehavior.responses['add rotation speed'] = {
+    description = [[
+Changes the actor's rotation speed by the given amount.
+    ]],
+
+    initialParams = {
+        speed = 0,
+    },
+
+    uiBody = function(self, params, onChangeParam)
+        ui.numberInput('added rotation speed (degrees per second)', params.x, {
+            onChange = function(newSpeed)
+                onChangeParam('speed', newSpeed)
+            end,
+        })
+    end,
+
+    run = function(self, component, params, context)
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        local m = body:getMass()
+        body:applyAngularImpulse(m * params.speed * math.pi / 180)
+    end,
+}
+
+MovingBehavior.responses['set velocity'] = {
+    description = [[
+Sets the actor's velocity to the given value.
     ]],
 
     initialParams = {
@@ -57,7 +114,30 @@ Changes the actor's velocity by the given amount.
 
     run = function(self, component, params, context)
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        body:applyLinearImpulse(params.x, params.y)
+        body:setLinearVelocity(params.x, params.y)
+    end,
+}
+
+MovingBehavior.responses['set rotation speed'] = {
+    description = [[
+Sets the actor's rotation speed to the given value.
+    ]],
+
+    initialParams = {
+        speed = 0,
+    },
+
+    uiBody = function(self, params, onChangeParam)
+        ui.numberInput('rotation speed (degrees per second)', params.x, {
+            onChange = function(newSpeed)
+                onChangeParam('speed', newSpeed)
+            end,
+        })
+    end,
+
+    run = function(self, component, params, context)
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+        body:setAngularVelocity(params.speed * math.pi / 180)
     end,
 }
 
