@@ -227,6 +227,36 @@ Perform a response **only if** a given condition is true. Optionally can have an
     end,
 }
 
+RulesBehavior.responses['repeat'] = {
+    description = [[
+Repeat a response a certain number of times.
+    ]],
+
+    category = 'logic',
+
+    initialParams = {
+        count = 3,
+    },
+
+    uiBody = function(self, params, onChangeParam, uiChild)
+        ui.numberInput('repetitions', params.count, {
+            min = 0,
+            max = 100,
+            step = 1,
+            onChange = function(newCount)
+                onChangeParam('count', math.floor(newCount))
+            end,
+        })
+        uiChild('body')
+    end,
+
+    run = function(self, component, params, context)
+        for i = 1, params.count do
+            self:runResponse(params['body'], component.actorId, context)
+        end
+    end,
+}
+
 
 -- Random responses
 
