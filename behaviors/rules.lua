@@ -37,6 +37,10 @@ function RulesBehavior.handlers:addComponent(component, bp, opts)
     self.setters.rules(self, component, component.properties.rules)
 end
 
+function RulesBehavior.handlers:preRemoveComponent(component, opts)
+    -- TODO(nikki): Fire 'destroy' trigger
+end
+
 function RulesBehavior.handlers:removeComponent(component, opts)
     self._coroutines[component.actorId] = nil
 end
@@ -112,6 +116,21 @@ function RulesBehavior:runResponse(response, actorId, context)
 end
 
 
+-- Actor triggers
+
+RulesBehavior.triggers.create = {
+    description = [[
+Triggered when the actor is created. If the actor is already present when the scene starts, this is triggered when the scene starts.
+    ]],
+}
+
+--RulesBehavior.triggers.destroy = {
+--    description = [[
+--Triggered when the actor is removed from the scene.
+--    ]],
+--}
+
+
 -- Timing responses
 
 RulesBehavior.responses.wait = {
@@ -130,6 +149,7 @@ RulesBehavior.responses.wait = {
     uiBody = function(self, params, onChangeParam)
         ui.numberInput('duration (seconds)', params.duration, {
             min = 0,
+            max = 30,
             step = 0.2,
             onChange = function(newDuration)
                 onChangeParam('duration', newDuration)
@@ -243,12 +263,21 @@ Is true if a coin flip comes up heads. The coin can be biased with a given proba
 -- Perform
 
 function RulesBehavior.handlers:postPerform(dt)
+    -- Lazily fire 'create' triggers
+    for actorId, component in pairs(self.components) do
+        if not component._triggeredCreate then
+            component._triggeredCreate = true
+            self:fireTrigger('create', component.actorId)
+        end
+    end
+
+    -- Resume coroutines
     for actorId, coroutines in pairs(self._coroutines) do
         local newCoroutines = {}
         for _, coro in ipairs(coroutines) do
             local succeeded, err = coroutine.resume(coro, dt)
             if not succeeded then
-                error(err, 0)
+                print('rule error: ', err)
             end
             if coroutine.status(coro) ~= 'dead' then
                 table.insert(newCoroutines, coro)

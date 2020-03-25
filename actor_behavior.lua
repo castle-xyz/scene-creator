@@ -331,6 +331,13 @@ function Common.receivers:removeActor(time, clientId, actorId, opts)
     end
     for i = #order, 1, -1 do
         local behavior = order[i]
+        behavior:callHandler('preRemoveComponent', behavior.components[actorId], {
+            isOrigin = self.clientId == clientId,
+            removeActor = true,
+        })
+    end
+    for i = #order, 1, -1 do
+        local behavior = order[i]
         behavior:callHandler('removeComponent', behavior.components[actorId], {
             isOrigin = self.clientId == clientId,
             removeActor = true,
