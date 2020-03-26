@@ -32,12 +32,13 @@ function DragBehavior.handlers:prePerform(dt)
     local touchData = self:getTouchData()
     for touchId, touch in pairs(touchData.touches) do
         -- Mark touch presses on our bodies
-        if not touch.behaviorId and touch.pressed then
+        if touch.pressed then
             local hits = self.dependencies.Body:getActorsAtPoint(touch.x, touch.y)
             for actorId in pairs(hits) do
                 local component = self.components[actorId]
                 if component then
-                    touch.behaviorId = self.behaviorId
+                    touch.used = true
+                    touch.dragging = true
                     touch.actorId = actorId
 
                     local bodyId, body = self.dependencies.Body:getBody(actorId)
@@ -71,7 +72,7 @@ function DragBehavior.handlers:perform(dt)
 
     local touchData = self:getTouchData()
     for touchId, touch in pairs(touchData.touches) do
-        if touch.behaviorId == self.behaviorId then
+        if touch.dragging then
             if touch.released then
                 -- Released, unmark
                 local component = self.components[touch.actorId]
@@ -100,7 +101,7 @@ function DragBehavior.handlers:drawOverlay()
 
     local touchData = self:getTouchData()
     for touchId, touch in pairs(touchData.touches) do
-        if touch.behaviorId == self.behaviorId and not touch.released then
+        if touch.dragging and not touch.released then
             local bodyId, body = self.dependencies.Body:getBody(touch.actorId)
             local worldX, worldY = body:getWorldPoint(touch._localX, touch._localY)
 

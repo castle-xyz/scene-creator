@@ -33,7 +33,9 @@ end
 
 -- Perform
 
-function SlingBehavior.handlers:perform(dt)
+function SlingBehavior.handlers:postPerform(dt)
+    -- Do this in `postPerform` to allow other behaviors to steal the touch
+
     -- Client-only
     if not self.game.clientId then
         return
@@ -52,7 +54,7 @@ function SlingBehavior.handlers:perform(dt)
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 and touchData.allTouchesReleased then
         local touchId, touch = next(touchData.touches)
-        if not touch.behaviorId then
+        if not touch.used and touch.moved then
             local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > MAX_DRAG_LENGTH then
@@ -83,7 +85,7 @@ function SlingBehavior.handlers:drawOverlay()
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
-        if not touch.behaviorId then
+        if not touch.used then
             local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then

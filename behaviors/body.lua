@@ -296,6 +296,22 @@ function BodyBehavior.handlers:prePerform(dt)
     -- Update the world at the very start of the performance to allow other behaviors to make
     -- changes after
     self._physics:updateWorld(self.globals.worldId, dt)
+
+    -- If client, check for taps
+    if self.game.clientId then
+        local touchData = self:getTouchData()
+        for touchId, touch in pairs(touchData.touches) do
+            if (touch.released and not touch.moved and
+                    love.timer.getTime() - touch.pressTime < 0.2) then
+                local hits = self:getActorsAtPoint(touch.x, touch.y)
+                for actorId in pairs(hits) do
+                    if self:fireTrigger('tap', actorId) then
+                        touch.used = true
+                    end
+                end
+            end
+        end
+    end
 end
 
 function BodyBehavior.handlers:postUpdate(dt)
@@ -388,6 +404,16 @@ BodyBehavior.triggers.collide = {
     description = [[
 Triggered when the actor **comes into contact** with another actor.
     ]],
+
+    category = 'collision',
+}
+
+BodyBehavior.triggers.tap = {
+    description = [[
+Triggered when the user taps (a quick **touch and release**) on the actor.
+]],
+
+    category = 'input',
 }
 
 

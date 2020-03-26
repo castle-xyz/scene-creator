@@ -70,24 +70,27 @@ end
 -- Trigger handler
 
 function RulesBehavior.handlers:trigger(triggerName, actorId, context)
+    local applies = false
+
     local component = self.components[actorId]
-    if not component then -- No rules on this actor?
-        return
-    end
+    if component then
+        context = context or {}
 
-    context = context or {}
-
-    local rulesToRun = component._rulesByTriggerName[triggerName]
-    if rulesToRun then
-        for _, ruleToRun in ipairs(rulesToRun) do
-            if not self._coroutines[actorId] then
-                self._coroutines[actorId] = setmetatable({}, { __mode = 'k' })
+        local rulesToRun = component._rulesByTriggerName[triggerName]
+        if rulesToRun then
+            for _, ruleToRun in ipairs(rulesToRun) do
+                applies = true
+                if not self._coroutines[actorId] then
+                    self._coroutines[actorId] = setmetatable({}, { __mode = 'k' })
+                end
+                self._coroutines[actorId][ruleToRun] = coroutine.create(function()
+                    self:runResponse(ruleToRun.response, actorId, context)
+                end)
             end
-            self._coroutines[actorId][ruleToRun] = coroutine.create(function()
-                self:runResponse(ruleToRun.response, actorId, context)
-            end)
         end
     end
+
+    return applies
 end
 
 
@@ -111,29 +114,33 @@ function RulesBehavior:runResponse(response, actorId, context)
 end
 
 
--- Actor triggers
+-- Lifetime triggers
 
 RulesBehavior.triggers.create = {
     description = [[
 Triggered when the actor is created. If the actor is already present when the scene starts, this is triggered when the scene starts.
     ]],
+
+    category = 'lifetime',
 }
 
 RulesBehavior.triggers.destroy = {
     description = [[
 Triggered when the actor is removed from the scene.
     ]],
+
+    category = 'lifetime',
 }
 
 
--- Actor responses
+-- Lifetime responses
 
 RulesBehavior.responses.destroy = {
     description = [[
 Removes the actor from the scene.
     ]],
 
-    category = 'actor',
+    category = 'lifetime',
 
     run = function(self, actorId, params, context)
         if self.game.actors[actorId] then
