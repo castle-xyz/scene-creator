@@ -1,7 +1,9 @@
 local Physics = require 'multi.physics'
 
 
-love.physics.setMeter(UNIT)
+-- To account for `b2_polygonRadius` (see 'b2Settings.h')
+BODY_RECTANGLE_SLOP = 0.02 
+love.physics.setMeter(0.5 * UNIT)
 
 
 local BodyBehavior = defineCoreBehavior {
@@ -136,7 +138,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
                 self._physics:destroyObject(shapeId)
             end
         else -- Default shape
-            local shapeId = self._physics:newRectangleShape(UNIT, UNIT)
+            local shapeId = self._physics:newRectangleShape(UNIT - BODY_RECTANGLE_SLOP, UNIT - BODY_RECTANGLE_SLOP)
             local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
             self._physics:setFriction(fixtureId, 0)
             self._physics:setSensor(fixtureId, true) -- Sensor by default
@@ -451,7 +453,7 @@ function BodyBehavior.handlers:uiComponent(component, opts)
     if rectangleWidth and rectangleHeight then
         util.uiRow('rectangle size', function()
             self:uiValue('numberInput', 'width', rectangleWidth, {
-                props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE },
+                props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
                 onChange = function(params)
                     local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
                     self:setRectangleShape(actorId, params.value, rectangleHeight)
@@ -459,7 +461,7 @@ function BodyBehavior.handlers:uiComponent(component, opts)
             })
         end, function()
             self:uiValue('numberInput', 'height', rectangleHeight, {
-                props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE },
+                props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
                 onChange = function(params)
                     local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
                     self:setRectangleShape(actorId, rectangleWidth, params.value)
@@ -494,7 +496,7 @@ end
 function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
     newWidth = math.max(MIN_BODY_SIZE, math.min(newWidth, MAX_BODY_SIZE))
     newHeight = math.max(MIN_BODY_SIZE, math.min(newHeight, MAX_BODY_SIZE))
-    self:setShape(componentOrActorId, self._physics:newRectangleShape(newWidth, newHeight))
+    self:setShape(componentOrActorId, self._physics:newRectangleShape(newWidth - BODY_RECTANGLE_SLOP, newHeight - BODY_RECTANGLE_SLOP))
 end
 
 function BodyBehavior:resetShape(actorId)
@@ -535,6 +537,32 @@ end
 
 local sizeCache = setmetatable({}, { __mode = 'k' })
 
+local function getRectangleSizeFromFixture(fixture)
+    local cached = sizeCache[fixture]
+    if cached then
+        if cached.isRectangle then
+            return cached.width, cached.height
+        else
+            return nil
+        end
+    end
+    local shape = fixture:getShape()
+    if shape:getType() == 'polygon' then
+        local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()
+        if p4y ~= nil and p5x == nil then
+            if (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
+                (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x) then
+                print('new')
+                cached = {}
+                sizeCache[fixture] = cached
+                cached.isRectangle = true
+                cached.width, cached.height = 2 * math.abs(p1x) + BODY_RECTANGLE_SLOP, 2 * math.abs(p1y) + BODY_RECTANGLE_SLOP
+                return cached.width, cached.height
+            end
+        end
+    end
+end
+
 function BodyBehavior:getSize(actorId)
     -- Get bounding box size, whatever the shape of the body
 
@@ -542,10 +570,14 @@ function BodyBehavior:getSize(actorId)
     local bodyId, body = self:getBody(component)
     local fixture = body:getFixtures()[1]
     if fixture then
-        -- Cache the size so we don't recompute it every time. This is made easier by the fact that
-        -- fixtures are immutable -- we can use them as a cache key.
         local cached = sizeCache[fixture]
         if not cached then
+            local rectangleWidth, rectangleHeight = getRectangleSizeFromFixture(fixture)
+            if rectangleHeight and rectangleHeight then
+                return rectangleWidth, rectangleHeight
+            end
+
+                print('new')
             cached = {}
             sizeCache[fixture] = cached
 
@@ -575,17 +607,7 @@ function BodyBehavior:getRectangleSize(componentOrActorId)
     local bodyId, body = self:getBody(componentOrActorId)
     local fixture = body:getFixtures()[1]
     if fixture then
-        local shape = fixture:getShape()
-        local shapeType = shape:getType()
-        if shapeType == 'polygon' then
-            local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()
-            if p4y ~= nil and p5x == nil then
-                if (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
-                    (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x) then
-                    return 2 * math.abs(p1x), 2 * math.abs(p1y)
-                end
-            end
-        end
+        return getRectangleSizeFromFixture(fixture)
     end
 end
 
@@ -647,16 +669,24 @@ function BodyBehavior:drawBodyOutline(componentOrActorId)
     local bodyId, body = self:getBody(componentOrActorId)
     if body then
         for _, fixture in ipairs(body:getFixtures()) do
-            local shape = fixture:getShape()
-            local ty = shape:getType()
-            if ty == 'circle' then
-                love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
-            elseif ty == 'polygon' then
-                love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-            elseif ty == 'edge' then
-                love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-            elseif ty == 'chain' then
-                love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+            local rectangleWidth, rectangleHeight = getRectangleSizeFromFixture(fixture)
+            if rectangleHeight and rectangleHeight then
+                -- Draw rectangles directly to account for slop
+                local hh = 0.5 * rectangleHeight
+                local hw = 0.5 * rectangleWidth
+                love.graphics.polygon('line', body:getWorldPoints(-hw, -hh, -hw, hh, hw, hh, hw, -hh))
+            else
+                local shape = fixture:getShape()
+                local ty = shape:getType()
+                if ty == 'circle' then
+                    love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
+                elseif ty == 'polygon' then
+                    love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                elseif ty == 'edge' then
+                    love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                elseif ty == 'chain' then
+                    love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                end
             end
         end
     end
