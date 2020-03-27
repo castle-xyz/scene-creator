@@ -592,7 +592,9 @@ function Client:uiInspector()
                                                                     return 'behavior was added'
                                                                 end
                                                                 for i = 1, #order do
-                                                                    self:send('addComponent', self.clientId, actorId, order[i], {})
+                                                                    self:send('addComponent', self.clientId, actorId, order[i], {}, {
+                                                                        interactive = true,
+                                                                    })
                                                                 end
                                                                 self.openComponentBehaviorId = behaviorId
                                                                 self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1

@@ -491,7 +491,9 @@ function Common.receivers:removeBehavior(time, clientId, behaviorId)
     self.behaviors[behaviorId] = nil
 end
 
-function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
+function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp, opts)
+    opts = opts or {}
+
     local actor = assert(self.actors[actorId], 'addComponent: no such actor')
     local behavior = assert(self.behaviors[behaviorId], 'addComponent: no such behavior')
 
@@ -521,11 +523,13 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp)
         actor.components[dependency.behaviorId].dependents[behaviorId] = component
         dependency:callHandler('addDependentComponent', component, {
             isOrigin = self.clientId == clientId,
+            interactive = opts.interactive,
         })
     end
 
     behavior:callHandler('addComponent', component, bp or {}, {
         isOrigin = self.clientId == clientId,
+        interactive = opts.interactive,
     })
 end
 

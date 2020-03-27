@@ -19,9 +19,9 @@ end
 
 -- Component management
 
-function FallingBehavior.handlers:removeComponent(component, opts)
-    local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-    if body:getGravityScale() == 0 then
+function FallingBehavior.handlers:addComponent(component, bp, opts)
+    if opts.interactive then
+        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         body:setGravityScale(1)
     end
 end
@@ -41,6 +41,7 @@ function FallingBehavior.handlers:uiComponent(component, opts)
     local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
 
     self:uiValue('numberInput', 'gravity', body:getGravityScale(), {
+        props = { step = 0.5, min = 0 },
         onChange = function(params)
             local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
             physics:setGravityScale(bodyId, params.value)
