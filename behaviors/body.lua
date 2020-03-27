@@ -552,7 +552,6 @@ local function getRectangleSizeFromFixture(fixture)
         if p4y ~= nil and p5x == nil then
             if (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
                 (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x) then
-                print('new')
                 cached = {}
                 sizeCache[fixture] = cached
                 cached.isRectangle = true
@@ -577,7 +576,6 @@ function BodyBehavior:getSize(actorId)
                 return rectangleWidth, rectangleHeight
             end
 
-                print('new')
             cached = {}
             sizeCache[fixture] = cached
 
