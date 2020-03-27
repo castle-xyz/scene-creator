@@ -69,9 +69,15 @@ Limits an actor to moving along a **fixed direction**.
             ]],
         },
 
+        Slowdown = {
+            description = [[
+Slows down an actor's motion and rotation over time. The slowdown for motion and rotation can be adjusted separately. Higher values slow down the actor faster.
+            ]],
+        },
+
         Friction = {
             description = [[
-**Moving and rotating friction** slow down an actor's motion and rotation over time. When a moving solid rubs against another solid, it slows down if both have **rubbing friction**.
+Makes solids **less slippery** when rubbing against each other. Both solids need to have friction for this effect. Higher friction values lead to less slipperiness.
             ]],
         },
 
