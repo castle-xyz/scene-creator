@@ -2,8 +2,9 @@ local Physics = require 'multi.physics'
 
 
 -- To account for `b2_polygonRadius` (see 'b2Settings.h')
-BODY_RECTANGLE_SLOP = 0.02 
 love.physics.setMeter(0.5 * UNIT)
+BODY_POLYGON_SKIN = love.physics.newRectangleShape(UNIT, UNIT):getRadius()
+BODY_RECTANGLE_SLOP = 2.005 * BODY_POLYGON_SKIN
 
 
 local BodyBehavior = defineCoreBehavior {
