@@ -358,7 +358,7 @@ function Client:drawScene(opts)
             love.graphics.setColor(0.82, 0.749, 0.639)
             love.graphics.rectangle('fill',
                 -0.5 * DEFAULT_VIEW_WIDTH, -0.5 * DEFAULT_VIEW_WIDTH,
-                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * 16 / 9)
+                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO)
             love.graphics.pop()
         else
             love.graphics.clear(0.82, 0.749, 0.639)
@@ -472,7 +472,7 @@ function Client:draw()
             love.graphics.setColor(0.596, 0.631, 0.659)
             love.graphics.rectangle('line',
                 -0.5 * DEFAULT_VIEW_WIDTH, -0.5 * DEFAULT_VIEW_WIDTH,
-                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * 16 / 9)
+                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO)
         end
 
         -- All body outlines
