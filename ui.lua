@@ -849,29 +849,4 @@ function Client:uiupdate()
     }, function()
         self:uiInspector()
     end)
-
-    -- Panel
-    do return end
-    ui.pane('default', {
-        visible = not self.performing,
-        customLayout = true,
-    }, function()
-        ui.box('default-panel', {
-            flex = 1,
-        }, function()
-            ui.tabs('tabs', {
-                containerStyle = { flex = 1, margin = 0 },
-                contentStyle = { flex = 1 },
-            }, function()
-                -- Blueprints tab
-                ui.tab('blueprints', function()
-                end)
-
-                -- Properties tab
-                ui.tab('properties', function()
-                    self:uiProperties()
-                end)
-            end)
-        end)
-    end)
 end
