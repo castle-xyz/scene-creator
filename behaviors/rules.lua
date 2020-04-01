@@ -197,12 +197,12 @@ RulesBehavior.responses.create = {
 
                 ui.box('text buttons', { flex = 1 }, function()
                     -- Title, short description
-                    ui.markdown('## ' .. entry.title)
+                    ui.markdown('## ' .. entry.title .. '\n' .. (entry.description or ''))
                 end)
             end)
         end
 
-        ui.button('choose blueprint', {
+        ui.button((entry and 'change' or 'choose') .. ' blueprint', {
             icon = 'book',
             iconFamily = 'FontAwesome',
             popoverAllowed = true,
