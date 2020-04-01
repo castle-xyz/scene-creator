@@ -120,7 +120,7 @@ end
 
 RulesBehavior.triggers.create = {
     description = [[
-Triggered when the actor is created. If the actor is already present when the scene starts, this is triggered when the scene starts.
+Triggered when the **actor is created**. If the actor is already present when the scene starts, this is triggered when the scene starts.
     ]],
 
     category = 'lifetime',
@@ -128,7 +128,7 @@ Triggered when the actor is created. If the actor is already present when the sc
 
 RulesBehavior.triggers.destroy = {
     description = [[
-Triggered when the actor is removed from the scene.
+Triggered when the actor is **removed from the scene**.
     ]],
 
     category = 'lifetime',
@@ -137,9 +137,138 @@ Triggered when the actor is removed from the scene.
 
 -- Lifetime responses
 
+RulesBehavior.responses.create = {
+    description = [[
+**Adds a new actor** to the scene, based on a selected **blueprint**. The new actor can be placed at an offset position from the actor creating it.
+    ]],
+
+    category = 'lifetime',
+
+    initialParams = {
+        xOffset = 0,
+        yOffset = 0,
+        entryId = nil,
+    },
+
+    uiBody = function(self, params, onChangeParam)
+        -- Entry box
+        local entry = self.game.library[params.entryId]
+        if entry then
+            ui.box('blueprint preview', {
+                borderWidth = 1,
+                borderColor = '#292929',
+                borderRadius = 4,
+                padding = 4,
+                margin = 4,
+                marginBottom = 8,
+                flexDirection = 'row',
+                alignItems = 'center',
+            }, function()
+                -- Figure out image based on type
+                local imageUrl
+                if entry.entryType == 'actorBlueprint' then
+                    local actorBp = entry.actorBlueprint
+                    if actorBp.components.Image and actorBp.components.Image.url then
+                        imageUrl = actorBp.components.Image.url
+                    end
+                    if actorBp.components.Drawing and actorBp.components.Drawing.url then
+                        imageUrl = actorBp.components.Drawing.url
+                    end
+                end
+                if imageUrl then
+                    ui.box('image container', {
+                        width = '28%',
+                        aspectRatio = 1,
+                        margin = 4,
+                        marginLeft = 8,
+                        backgroundColor = 'white',
+                    }, function()
+                        ui.image(CHECKERBOARD_IMAGE_URL, { flex = 1, margin = 0 })
+
+                        ui.image(imageUrl, {
+                            position = 'absolute',
+                            left = 0, top = 0, bottom = 0, right = 0,
+                            margin = 0,
+                        })
+                    end)
+
+                    ui.box('spacer', { width = 8 }, function() end)
+                end
+
+                ui.box('text buttons', { flex = 1 }, function()
+                    -- Title, short description
+                    ui.markdown('## ' .. entry.title)
+                end)
+            end)
+        end
+
+        ui.button('choose blueprint', {
+            icon = 'book',
+            iconFamily = 'FontAwesome',
+            popoverAllowed = true,
+            popoverStyle = { width = 300, height = 300 },
+            popover = function(closePopover)
+                self.game:uiLibrary({
+                    id = 'create actor response',
+                    filterType = 'actorBlueprint',
+                    buttons = function(entry)
+                        ui.button('use', {
+                            flex = 1,
+                            icon = 'plus',
+                            iconFamily = 'FontAwesome5',
+                            onClick = function()
+                                closePopover()
+
+                                onChangeParam('entryId', entry.entryId)
+                            end,
+                        })
+                    end,
+                })
+            end,
+        })
+
+        util.uiRow('offset', function()
+            ui.numberInput('offset x', params.xOffset, {
+                onChange = function(newX)
+                    onChangeParam('xOffset', newX)
+                end,
+            })
+        end, function()
+            ui.numberInput('offset y', params.yOffset, {
+                onChange = function(newY)
+                    onChangeParam('yOffset', newY)
+                end,
+            })
+        end)
+    end,
+
+    run = function(self, actorId, params, context)
+        local entry = self.game.library[params.entryId]
+        if entry then
+            local physics, bodyId, body = self.game.behaviorsByName.Body:getMembers(actorId)
+            if bodyId and body then
+                -- Only do the creation at the owning host
+                if DUMB_SERVER or self.game.clientId == physics:getOwner(bodyId) then
+                    local x, y = body:getPosition()
+                    local bp = util.deepCopyTable(entry.actorBlueprint)
+                    if bp.components.Body then
+                        bp.components.Body.x = x + params.xOffset
+                        bp.components.Body.y = y + params.yOffset
+                    end
+                    local newActorId = self.game:generateActorId()
+                    self.game:sendAddActor(bp, {
+                        actorId = self.game:generateActorId(),
+                        parentEntryId = entry.entryId,
+                    })
+                end
+            end
+        end
+    end,
+}
+
 RulesBehavior.responses.destroy = {
     description = [[
-Removes the actor from the scene.
+**Removes the actor** from the scene.
     ]],
 
     category = 'lifetime',
