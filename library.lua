@@ -63,6 +63,7 @@ function Server:startLibrary()
         local entryId = self:generateId()
         local entry = util.deepCopyTable(entrySpec)
         entry.entryId = entryId
+        entry.isCore = true
         self.library[entryId] = entry
     end
 end
@@ -72,6 +73,7 @@ end
 
 function Common:defineLibraryMessageKinds()
     self:defineMessageKind('addLibraryEntry', self.sendOpts.reliableToAll)
+    self:defineMessageKind('removeLibraryEntry', self.sendOpts.reliableToAll)
 end
 
 
@@ -90,6 +92,10 @@ function Common.receivers:addLibraryEntry(time, entryId, entry)
     local entryCopy = util.deepCopyTable(entry)
     entryCopy.entryId = entryId
     self.library[entryId] = entryCopy
+end
+
+function Common.receivers:removeLibraryEntry(time, entryId)
+    self.library[entryId] = nil
 end
 
 

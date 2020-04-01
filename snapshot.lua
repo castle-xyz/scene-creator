@@ -41,6 +41,14 @@ end
 function Common:createSnapshot(opts)
     snapshot = {}
 
+    -- Snapshot non-core library entries
+    snapshot.library = {}
+    for entryId, entry in pairs(self.library) do
+        if not entry.isCore then
+            snapshot.library[entryId] = entry
+        end
+    end
+
     -- Snapshot actors in draw order
     snapshot.actors = {}
     self:forEachActorByDrawOrder(function(actor)
@@ -120,16 +128,29 @@ function Server.receivers:restoreSnapshot(time, snapshotId, opts)
             self:send('setPerforming', false)
         end
 
-        -- Clear existing
         if opts.clear ~= false then
             self:send('clearScene')
+
+            -- Clear existing library entries
+            for entryId, entry in pairs(self.library) do
+                if not entry.isCore then
+                    self:send('removeLibraryEntry', entryId)
+                end
+            end
+
+            -- Clear existing actors
             for actorId in pairs(self.actors) do
                 self:send('removeActor', self.clientId, actorId)
             end
         end
 
-        -- Add new
-        for _, actorSp in pairs(snapshot.actors) do
+        -- Add new library entries
+        for entryId, entry in pairs(snapshot.library or {}) do
+            self:send('addLibraryEntry', entryId, entry)
+        end
+
+        -- Add new actors
+        for _, actorSp in pairs(snapshot.actors or {}) do
             self:sendAddActor(actorSp.bp, {
                 actorId = actorSp.actorId,
                 parentEntryId = actorSp.parentEntryId,
