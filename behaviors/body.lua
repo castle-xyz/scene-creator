@@ -359,7 +359,8 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
 
     local visited = {}
     if component1 then
-        local params = {
+        local context = {
+            contact = contact,
             isBegin = isBegin,
             isEnd = isEnd,
             otherActorId = actorId2,
@@ -368,21 +369,28 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
             isOwner = isOwner,
         }
         if isBegin then
-            self:fireTrigger('collide', actorId1, params)
+            self:fireTrigger('collide', actorId1, context, function(params)
+                if params.tag == nil then
+                    return true
+                else
+                    return self.game.behaviorsByName.Tags:actorHasTag(actorId2, params.tag)
+                end
+            end)
         end
         if component1._contactListeners then
             for listenerBehaviorId, listenerComponent in pairs(component1._contactListeners) do
                 local listenerBehavior = self.game.behaviors[listenerBehaviorId]
                 if listenerBehavior then
-                    params.isRepeat = false
-                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, params)
+                    context.isRepeat = false
+                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, context)
                     visited[listenerBehavior] = true
                 end
             end
         end
     end
     if component2 then
-        local params = {
+        local context = {
+            contact = contact,
             isBegin = isBegin,
             isEnd = isEnd,
             otherActorId = actorId1,
@@ -391,14 +399,20 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
             isOwner = isOwner,
         }
         if isBegin then
-            self:fireTrigger('collide', actorId2, params)
+            self:fireTrigger('collide', actorId2, context, function(params)
+                if params.tag == nil then
+                    return true
+                else
+                    return self.game.behaviorsByName.Tags:actorHasTag(actorId1, params.tag)
+                end
+            end)
         end
         if component2._contactListeners then
             for listenerBehaviorId, listenerComponent in pairs(component2._contactListeners) do
                 local listenerBehavior = self.game.behaviors[listenerBehaviorId]
                 if listenerBehavior then
-                    params.isRepeat = visited[listenerBehavior] ~= nil,
-                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, params)
+                    context.isRepeat = visited[listenerBehavior] ~= nil,
+                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, context)
                 end
             end
         end
@@ -410,10 +424,22 @@ end
 
 BodyBehavior.triggers.collide = {
     description = [[
-Triggered when the actor **comes into contact** with another actor.
+Triggered when the actor **comes into contact** with another actor. If a **tag** is specified, the trigger is only fired when the other actor has the given tag.
     ]],
 
     category = 'collision',
+
+    uiBody = function(self, params, onChangeParam)
+        ui.textInput('with tag', params.tag or '', {
+            onChange = function(newTag)
+                newTag = newTag:gsub(' ', '')
+                if newTag == '' then
+                    newTag = nil
+                end
+                onChangeParam('tag', newTag)
+            end,
+        })
+    end,
 }
 
 BodyBehavior.triggers.tap = {

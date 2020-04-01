@@ -35,6 +35,7 @@ helps = require 'helps'
 require 'actor_behavior'
 
 require 'behaviors.body'
+require 'behaviors.tags'
 require 'behaviors.image'
 require 'behaviors.drawing'
 

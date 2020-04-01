@@ -11,6 +11,12 @@ The actor is rectangle-shaped and doesn't move by default. Other behaviors can b
             ]],
         },
 
+        Tags = {
+            description = [[
+Tags are used to **categorize** actors. Each tag is a word that you are free to choose. Tags can be checked in eg. the 'collide' trigger under **rules**.
+            ]],
+        },
+
 
 
         Image = {

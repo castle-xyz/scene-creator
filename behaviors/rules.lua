@@ -69,7 +69,7 @@ end
 
 -- Trigger handler
 
-function RulesBehavior.handlers:trigger(triggerName, actorId, context)
+function RulesBehavior.handlers:trigger(triggerName, actorId, context, filter)
     local applies = false
 
     local component = self.components[actorId]
@@ -79,13 +79,15 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context)
         local rulesToRun = component._rulesByTriggerName[triggerName]
         if rulesToRun then
             for _, ruleToRun in ipairs(rulesToRun) do
-                applies = true
-                if not self._coroutines[actorId] then
-                    self._coroutines[actorId] = setmetatable({}, { __mode = 'k' })
+                if not filter or filter(ruleToRun.trigger.params) then
+                    applies = true
+                    if not self._coroutines[actorId] then
+                        self._coroutines[actorId] = setmetatable({}, { __mode = 'k' })
+                    end
+                    self._coroutines[actorId][ruleToRun] = coroutine.create(function()
+                        self:runResponse(ruleToRun.response, actorId, context)
+                    end)
                 end
-                self._coroutines[actorId][ruleToRun] = coroutine.create(function()
-                    self:runResponse(ruleToRun.response, actorId, context)
-                end)
             end
         end
     end
