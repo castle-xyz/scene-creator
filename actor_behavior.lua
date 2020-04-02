@@ -218,7 +218,7 @@ function Common:defineActorBehaviorMessageKinds()
     self:defineMessageKind('addActor', self.sendOpts.reliableToAll)
     self:defineMessageKind('removeActor', self.sendOpts.reliableToAll)
     self:defineMessageKind('setActorDrawOrder', self.sendOpts.reliableToAll)
-    self:defineMessageKind('setActorParentId', self.sendOpts.reliableToAll)
+    self:defineMessageKind('setActorParentEntryId', self.sendOpts.reliableToAll)
     self:defineMessageKind('addBehavior', self.sendOpts.reliableToAll)
     self:defineMessageKind('removeBehavior', self.sendOpts.reliableToAll)
     self:defineMessageKind('addComponent', self.sendOpts.reliableToAll)
@@ -371,7 +371,7 @@ function Common.receivers:setActorDrawOrder(time, actorId, newDrawOrder)
 end
 
 function Common.receivers:setActorParentEntryId(time, actorId, newParentEntryId)
-    local actor = assert(self.actors[actorId], 'setActorParentId: no such actor')
+    local actor = assert(self.actors[actorId], 'setActorParentEntryId: no such actor')
     actor.parentEntryId = newParentEntryId
 end
 
