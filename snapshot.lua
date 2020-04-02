@@ -117,12 +117,7 @@ function Server.receivers:restoreSnapshot(time, snapshotId, opts)
 
     local snapshot = assert(self.snapshots[snapshotId], 'restoreSnapshot: no such snapshot')
 
-    self:transact({
-        to = 'all',
-        reliable = true,
-        selfSend = true,
-        channel = self.channels.mainReliable,
-    }, function()
+    self:transact(self.sendOpts.reliableToAll, function()
         -- Stop performance
         if opts.stopPerforming ~= false and self.performing then
             self:send('setPerforming', false)
