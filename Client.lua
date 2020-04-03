@@ -40,6 +40,7 @@ INITIAL_PARAMS = castle.game.getInitialParams()
 -- Developing or loading a scene
 DUMB_SERVER = true -- Make the server just forward messages and never run updates or sync physics
 LOCAL_SERVER = true -- Force a local server and never use a remote one
+LOCAL_SERVER_PORT = "22122"
 --end
 function GET_SERVER_MODULE_NAME()
     return "Server"
@@ -47,6 +48,11 @@ end
 Game = require("multi.client", {root = true})
 Common, Server, Client = Game.Common, Game.Server, Game.Client
 require "Common"
+
+local clientServer = require "multi.cs"
+function castle.onQuit()
+    clientServer.server.closePort()
+end
 
 -- Client modules
 
@@ -146,6 +152,33 @@ function Client:endEditing()
 end
 
 -- Ready
+
+-- unused for now. right now we're reloading using BASE_RELOAD until RELOAD_SCENE_CREATOR works consistently
+local cjson = require "cjson"
+jsEvents.listen(
+    "RELOAD_SCENE_CREATOR",
+    function(params)
+        local self = instance
+        --print('in RELOAD_SCENE_CREATOR')
+
+        local decodedParams = cjson.decode(params.obj)
+        local scene = cjson.decode(decodedParams.initialParams).scene
+        local snapshot = scene.data.snapshot
+
+        --local decodedParams = cjson.decode(params)
+        --local scene = decodedParams.scene
+
+        self.sceneId = scene and scene.sceneId
+        self:send("addSnapshot", util.uuid(), scene.data.snapshot, {isRewind = true})
+        self:send(
+            "restoreSnapshot",
+            self.rewindSnapshotId,
+            {
+                stopPerforming = false
+            }
+        )
+    end
+)
 
 function Client.receivers:ready(time)
     if not self.initialParamsRead and INITIAL_PARAMS then

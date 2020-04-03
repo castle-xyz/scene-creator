@@ -233,6 +233,7 @@ function Common.receivers:removeSnapshot(time, snapshotId)
     self.snapshots[snapshotId] = nil
 end
 
+
 function Server.receivers:restoreSnapshot(time, snapshotId, opts)
     opts = opts or {}
 
