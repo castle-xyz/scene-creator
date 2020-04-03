@@ -24,7 +24,7 @@ copas = require 'copas'
 -- Modules
 
 if not castle.system.isRemoteServer() then
-    tove = require 'lib.tove'
+    tove = require 'vendor.tove'
 end
 
 resource_loader = require 'resource_loader'
