@@ -245,22 +245,24 @@ RulesBehavior.responses.create = {
     run = function(self, actorId, params, context)
         local entry = self.game.library[params.entryId]
         if entry then
+            local x, y
             local physics, bodyId, body = self.game.behaviorsByName.Body:getMembers(actorId)
-            if bodyId and body then
-                -- Only do the creation at the owning host
-                if DUMB_SERVER or self.game.clientId == physics:getOwner(bodyId) then
-                    local x, y = body:getPosition()
-                    local bp = util.deepCopyTable(entry.actorBlueprint)
-                    if bp.components.Body then
-                        bp.components.Body.x = x + params.xOffset
-                        bp.components.Body.y = y + params.yOffset
-                    end
-                    local newActorId = self.game:generateActorId()
-                    self.game:sendAddActor(bp, {
-                        actorId = self.game:generateActorId(),
-                        parentEntryId = entry.entryId,
-                    })
+            if bodyId and body and (DUMB_SERVER or self.game.clientId == physics:getOwner(bodyId)) then
+                x, y = body:getPosition()
+            elseif context.x and context.y and (DUMB_SERVER or self.game.clientId == context.clientId) then
+                x, y = context.x, context.y -- Actor was destroyed but left a position in `context`
+            end
+            if x and y then
+                local bp = util.deepCopyTable(entry.actorBlueprint)
+                if bp.components.Body then
+                    bp.components.Body.x = x + params.xOffset
+                    bp.components.Body.y = y + params.yOffset
                 end
+                local newActorId = self.game:generateActorId()
+                self.game:sendAddActor(bp, {
+                    actorId = self.game:generateActorId(),
+                    parentEntryId = entry.entryId,
+                })
             end
         end
     end,
@@ -275,7 +277,15 @@ RulesBehavior.responses.destroy = {
 
     run = function(self, actorId, params, context)
         if self.game.actors[actorId] then
-            self.game:send('removeActor', self.clientId, actorId, { soft = true })
+            local physics, bodyId, body = self.game.behaviorsByName.Body:getMembers(actorId)
+            if bodyId and body then
+                -- Save a few things in `context` for use in responses after 'wait's
+                context.x, context.y = body:getPosition()
+                context.ownerId = physics:getOwner(bodyId)
+            end
+            self:onEndOfFrame(function()
+                self.game:send('removeActor', self.clientId, actorId, { soft = true })
+            end)
         end
     end,
 }
