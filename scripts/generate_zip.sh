@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd ..
+
 cp -R . ../scene-creator-tmp
 pushd ../scene-creator-tmp
 
@@ -13,12 +15,12 @@ rm .castleid
 rm -rf .git
 rm .gitmodules
 rm .npmignore
-rm generate_zip.sh
+rm -rf scripts
 rm cover.png
 rm project.castle
 rm -rf multi/Example*
 rm multi/README.md
-rm scene_creator.zip
+rm scene_creator.love
 
 zip -r ../scene_creator.zip .
 
