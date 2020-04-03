@@ -43,13 +43,13 @@ Changes the actor's velocity by the given amount.
         util.uiRow('velocity', function()
             ui.numberInput('added velocity x', params.x, {
                 onChange = function(newX)
-                    onChangeParam('x', newX)
+                    onChangeParam('change add velocity x', 'x', newX)
                 end,
             })
         end, function()
             ui.numberInput('added velocity y', params.y, {
                 onChange = function(newY)
-                    onChangeParam('y', newY)
+                    onChangeParam('change add velocity y', 'y', newY)
                 end,
             })
         end)
@@ -77,7 +77,7 @@ Changes the actor's rotation speed by the given amount.
         ui.numberInput('added rotation speed (degrees per second)', params.speed, {
             step = 20,
             onChange = function(newSpeed)
-                onChangeParam('speed', newSpeed)
+                onChangeParam('change add rotation speed', 'speed', newSpeed)
             end,
         })
     end,
@@ -105,13 +105,13 @@ Sets the actor's velocity to the given value.
         util.uiRow('velocity', function()
             ui.numberInput('velocity x', params.x, {
                 onChange = function(newX)
-                    onChangeParam('x', newX)
+                    onChangeParam('change set velocity x', 'x', newX)
                 end,
             })
         end, function()
             ui.numberInput('velocity y', params.y, {
                 onChange = function(newY)
-                    onChangeParam('y', newY)
+                    onChangeParam('change set velocity y', 'y', newY)
                 end,
             })
         end)
@@ -138,7 +138,7 @@ Sets the actor's rotation speed to the given value.
         ui.numberInput('rotation speed (degrees per second)', params.speed, {
             step = 20,
             onChange = function(newSpeed)
-                onChangeParam('speed', newSpeed)
+                onChangeParam('change set rotation speed', 'speed', newSpeed)
             end,
         })
     end,

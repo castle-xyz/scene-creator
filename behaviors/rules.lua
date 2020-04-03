@@ -219,7 +219,7 @@ RulesBehavior.responses.create = {
                             onClick = function()
                                 closePopover()
 
-                                onChangeParam('entryId', entry.entryId)
+                                onChangeParam('change create blueprint', 'entryId', entry.entryId)
                             end,
                         })
                     end,
@@ -230,13 +230,13 @@ RulesBehavior.responses.create = {
         util.uiRow('offset', function()
             ui.numberInput('offset x', params.xOffset, {
                 onChange = function(newX)
-                    onChangeParam('xOffset', newX)
+                    onChangeParam('change create x offset', 'xOffset', newX)
                 end,
             })
         end, function()
             ui.numberInput('offset y', params.yOffset, {
                 onChange = function(newY)
-                    onChangeParam('yOffset', newY)
+                    onChangeParam('change create y offset', 'yOffset', newY)
                 end,
             })
         end)
@@ -317,7 +317,7 @@ RulesBehavior.responses.wait = {
             max = 30,
             step = 0.2,
             onChange = function(newDuration)
-                onChangeParam('duration', newDuration)
+                onChangeParam('change wait duration', 'duration', newDuration)
             end,
         })
     end,
@@ -344,9 +344,9 @@ Perform a response **only if** a given condition is true. Optionally can have an
         ui.toggle("use 'else' branch", "use 'else' branch", params['else'] ~= nil, {
             onToggle = function(newElseEnabled)
                 if newElseEnabled then
-                    onChangeParam('else', util.deepCopyTable(EMPTY_RULE.response))
+                    onChangeParam('add else branch', 'else', util.deepCopyTable(EMPTY_RULE.response))
                 else
-                    onChangeParam('else', nil)
+                    onChangeParam('remove else branch', 'else', nil)
                 end
             end,
         })
@@ -409,7 +409,7 @@ Repeat a response a certain number of times.
             max = 100,
             step = 1,
             onChange = function(newCount)
-                onChangeParam('count', math.floor(newCount))
+                onChangeParam('change repeat count', 'count', math.floor(newCount))
             end,
         })
         uiChild('body')
@@ -444,7 +444,7 @@ Is true if a coin flip comes up heads. The coin can be biased with a given proba
             max = 1,
             step = 0.2,
             onChange = function(newProbability)
-                onChangeParam('probability', newProbability)
+                onChangeParam('change coin flip probability', 'probability', newProbability)
             end,
         })
     end,
@@ -510,25 +510,25 @@ function RulesBehavior:uiPart(actorId, part, props)
     local function callEntryUi(funcName)
         if entry[funcName] then
             entry[funcName](behavior, part.params,
-                function(paramName, newValue)
+                function(description, paramName, newValue)
                     local newParams = util.deepCopyTable(part.params)
                     newParams[paramName] = newValue
                     props.onChange({
                         behaviorId = part.behaviorId,
                         name = part.name,
                         params = newParams,
-                    })
+                    }, description, true)
                 end, function(childName, childProps)
                     local newProps = util.deepCopyTable(childProps) or {}
                     newProps.kind = 'response'
-                    newProps.onChange = function(newChild)
+                    newProps.onChange = function(newChild, description)
                         local newParams = util.deepCopyTable(part.params)
                         newParams[childName] = newChild
                         props.onChange({
                             behaviorId = part.behaviorId,
                             name = part.name,
                             params = newParams,
-                        })
+                        }, description)
                     end
                     self:uiPart(actorId, part.params[childName], newProps)
                 end)
@@ -608,7 +608,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                                                     local newHead = clone.params.nextResponse
                                                     clone.params.nextResponse = newHead.params.nextResponse
                                                     newHead.params.nextResponse = clone
-                                                    props.onChange(newHead)
+                                                    props.onChange(newHead, 'move response down')
                                                 end,
                                             })
                                         end
@@ -628,7 +628,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                                         iconFamily = 'FontAwesome5',
                                         onClick = function()
                                             closePopover()
-                                            props.onChange(part.params.nextResponse)
+                                            props.onChange(part.params.nextResponse, 'remove response')
                                         end,
                                     })
                                 end)
@@ -684,7 +684,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                                                                     behaviorId = row.behaviorId,
                                                                     name = row.name,
                                                                     params = newParams,
-                                                                })
+                                                                }, 'add ' .. row.name .. ' ' .. (props.label or props.kind))
                                                             end
                                                             self._picking = nil
                                                         end,
@@ -730,7 +730,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                         behaviorId = part.behaviorId,
                         name = part.name,
                         params = newParams,
-                    })
+                    }, 'add response')
                 end
             })
         end
@@ -756,17 +756,37 @@ function RulesBehavior.handlers:uiComponent(component, opts)
                 self:uiPart(actorId, rule.trigger, {
                     kind = 'trigger',
                     noMarginTop = true,
-                    onChange = function(newTrigger)
+                    onChange = function(newTrigger, description, shouldCoalesce)
+                        local oldRules = util.deepCopyTable(component.properties.rules)
                         rule.trigger = newTrigger or util.deepCopyTable(EMPTY_RULE.trigger)
-                        self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
+                        local newRules = util.deepCopyTable(component.properties.rules)
+                        self:command(description, {
+                            coalesceLast = false,
+                            params = { 'oldRules', 'newRules' },
+                            coalesceSuffix = shouldCoalesce and description or nil,
+                        }, function()
+                            self:sendSetProperties(actorId, 'rules', newRules)
+                        end, function()
+                            self:sendSetProperties(actorId, 'rules', oldRules)
+                        end)
                     end,
                 })
             end)
             self:uiPart(actorId, rule.response, {
                 kind = 'response',
-                onChange = function(newResponse)
+                onChange = function(newResponse, description, shouldCoalesce)
+                    local oldRules = util.deepCopyTable(component.properties.rules)
                     rule.response = newResponse or util.deepCopyTable(EMPTY_RULE.response)
-                    self:sendSetProperties(component.actorId, 'rules', component.properties.rules)
+                    local newRules = util.deepCopyTable(component.properties.rules)
+                    self:command(description, {
+                        coalesceLast = false,
+                        params = { 'oldRules', 'newRules' },
+                        coalesceSuffix = shouldCoalesce and description or nil,
+                    }, function()
+                        self:sendSetProperties(actorId, 'rules', newRules)
+                    end, function()
+                        self:sendSetProperties(actorId, 'rules', oldRules)
+                    end)
                 end,
             })
         end)
@@ -776,8 +796,16 @@ function RulesBehavior.handlers:uiComponent(component, opts)
         icon = 'plus',
         iconFamily = 'FontAwesome5',
         onClick = function()
+            local oldRules = util.deepCopyTable(component.properties.rules)
             table.insert(component.properties.rules, util.deepCopyTable(EMPTY_RULE))
-            self:sendSetProperties(actorId, 'rules', component.properties.rules)
+            local newRules = util.deepCopyTable(component.properties.rules)
+            self:command(description, {
+                params = { 'oldRules', 'newRules' },
+            }, function()
+                self:sendSetProperties(actorId, 'rules', newRules)
+            end, function()
+                self:sendSetProperties(actorId, 'rules', oldRules)
+            end)
         end,
     })
 end

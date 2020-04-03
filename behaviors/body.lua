@@ -436,7 +436,7 @@ Triggered when the actor **comes into contact** with another actor. If a **tag**
                 if newTag == '' then
                     newTag = nil
                 end
-                onChangeParam('tag', newTag)
+                onChangeParam('change collide tag', 'tag', newTag)
             end,
         })
     end,
@@ -469,7 +469,7 @@ Is true if the actor **is currently in contact** with another actor. If a **tag*
                 if newTag == '' then
                     newTag = nil
                 end
-                onChangeParam('tag', newTag)
+                onChangeParam('change is colliding tag', 'tag', newTag)
             end,
         })
     end,
