@@ -451,6 +451,50 @@ Triggered when the user taps (a quick **touch and release**) on the actor.
 }
 
 
+-- Responses
+
+BodyBehavior.responses['is colliding'] = {
+    description = [[
+Is true if the actor **is currently in contact** with another actor. If a **tag** is specified, is only true when the actor is colliding an actor with the given tag.
+    ]],
+
+    category = 'collision',
+
+    returnType = 'boolean',
+
+    uiBody = function(self, params, onChangeParam, uiChild)
+        ui.textInput('with tag', params.tag or '', {
+            onChange = function(newTag)
+                newTag = newTag:gsub(' ', '')
+                if newTag == '' then
+                    newTag = nil
+                end
+                onChangeParam('tag', newTag)
+            end,
+        })
+    end,
+
+    run = function(self, actorId, params, context)
+    local bodyId, body = self:getBody(actorId)
+        if body then
+            for _, contact in ipairs(body:getContacts()) do
+                if params.tag == nil then
+                    return true
+                end
+                local f1, f2 = contact:getFixtures()
+                local b1, b2 = f1:getBody(), f2:getBody()
+                local otherBody = body == b1 and b2 or b1
+                local otherActorId = self:getActorForBody(otherBody)
+                if otherActorId and self.game.behaviorsByName.Tags:actorHasTag(otherActorId, params.tag) then
+                    return true
+                end
+            end
+        end
+        return false
+    end,
+}
+
+
 -- UI
 
 function BodyBehavior.handlers:uiComponent(component, opts)
