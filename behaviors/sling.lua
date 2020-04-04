@@ -41,15 +41,12 @@ function SlingBehavior.handlers:postPerform(dt)
         return
     end
 
-    local physics = self.dependencies.Body:getPhysics()
-
-    -- Make our bodies owned by us
-    for actorId, component in pairs(self.components) do
-        local bodyId, body = self.dependencies.Body:getBody(actorId)
-        if physics:getOwner(bodyId) ~= self.game.clientId then
-            physics:setOwner(bodyId, self.game.clientId, true, 0)
-        end
+    -- Make sure we have some actors
+    if not next(self.components) then
+        return
     end
+
+    local physics = self.dependencies.Body:getPhysics()
 
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 and touchData.allTouchesReleased then
@@ -63,8 +60,11 @@ function SlingBehavior.handlers:postPerform(dt)
             end
 
             for actorId, component in pairs(self.components) do
-                -- We own the body, so just set velocity locally and the physics system will sync it
+                -- Own the body, then just set velocity locally and the physics system will sync it
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
+                if physics:getOwner(bodyId) ~= self.game.clientId then
+                    physics:setOwner(bodyId, self.game.clientId, true, 0)
+                end
                 body:setLinearVelocity(
                     component.properties.speed * dragX, 
                     component.properties.speed * dragY)
@@ -81,11 +81,16 @@ function SlingBehavior.handlers:drawOverlay()
         return
     end
 
+    -- Make sure we have some actors
+    if not next(self.components) then
+        return
+    end
+
     -- Look for a single-finger drag
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
-        if not touch.used then
+        if not touch.used and touch.moved then
             local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then
