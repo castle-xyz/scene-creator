@@ -122,7 +122,7 @@ A behavior that lets you **define your own rules** that tie the other behaviors 
 
         Tags = {
             description = [[
-Tags are used to **categorize** actors. Each tag is a word that you are free to choose. Tags can be checked in eg. the 'collide' trigger under **rules**.
+Tags are used to **categorize** or **refer** to actors. Each tag is a word that you are free to choose. Tags can be used in eg. the 'collide' trigger or 'act on' responses in **rules**.
             ]],
         },
 
