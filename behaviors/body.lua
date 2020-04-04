@@ -305,7 +305,7 @@ function BodyBehavior.handlers:prePerform(dt)
     -- changes after
     self._physics:updateWorld(self.globals.worldId, dt)
 
-    -- If client, check for taps
+    -- If client, check for touches
     if self.game.clientId then
         local touchData = self:getTouchData()
         for touchId, touch in pairs(touchData.touches) do
@@ -314,6 +314,14 @@ function BodyBehavior.handlers:prePerform(dt)
                 local hits = self:getActorsAtPoint(touch.x, touch.y)
                 for actorId in pairs(hits) do
                     if self:fireTrigger('tap', actorId) then
+                        touch.used = true
+                    end
+                end
+            end
+            if not touch.released then
+                local hits = self:getActorsAtPoint(touch.x, touch.y)
+                for actorId in pairs(hits) do
+                    if self:fireTrigger('press', actorId) then
                         touch.used = true
                     end
                 end
@@ -451,6 +459,14 @@ Triggered when the actor **comes into contact** with another actor. If a **tag**
 BodyBehavior.triggers.tap = {
     description = [[
 Triggered when the user taps (a quick **touch and release**) on the actor.
+]],
+
+    category = 'input',
+}
+
+BodyBehavior.triggers.press = {
+    description = [[
+Triggered repeatedly **while the user is pressing** (touches and holds their touch) on the actor.
 ]],
 
     category = 'input',
