@@ -33,7 +33,7 @@ function CounterBehavior.setters:value(component, newValue, opts)
         math.min(newValue, component.properties.maxValue))
     if component.properties.value ~= newValue then
         component.properties.value = newValue
-        if self.performing and opts.isOrigin then
+        if self.game.performing and opts.isOrigin then
             self:fireTrigger('counter reaches value', component.actorId, {
                 counterValue = newValue,
             }, {
@@ -130,7 +130,7 @@ CounterBehavior.responses['set counter'] = {
     category = 'counter',
 
     initialParams = {
-        setToValue = 1,
+        setToValue = 0,
     },
 
     uiBody = function(self, params, onChangeParam)
