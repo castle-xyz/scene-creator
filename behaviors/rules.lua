@@ -94,7 +94,7 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context, opts)
                 if not filter or filter(ruleToRun.trigger.params) then
                     applies = true
                     if not self._coroutines[actorId] then
-                        self._coroutines[actorId] = setmetatable({}, { __mode = 'k' })
+                        self._coroutines[actorId] = {}
                     end
                     self._coroutines[actorId][threadKey or ruleToRun] = coroutine.create(function()
                         self:runResponse(ruleToRun.response, actorId, context)
