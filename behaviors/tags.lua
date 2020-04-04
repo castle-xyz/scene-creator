@@ -83,6 +83,14 @@ function TagsBehavior:getActorsWithTag(tag)
     return result
 end
 
+function TagsBehavior:forEachActorWithTag(tag, func)
+    if self._tagToActorIds[tag] then
+        for actorId in pairs(self._tagToActorIds[tag]) do
+            func(actorId)
+        end
+    end
+end
+
 
 -- UI
 

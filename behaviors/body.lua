@@ -369,13 +369,16 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
             isOwner = isOwner,
         }
         if isBegin then
-            self:fireTrigger('collide', actorId1, context, function(params)
-                if params.tag == nil then
-                    return true
-                else
-                    return self.game.behaviorsByName.Tags:actorHasTag(actorId2, params.tag)
-                end
-            end)
+            self:fireTrigger('collide', actorId1, context, {
+                threadKey = {},
+                filter = function(params)
+                    if params.tag == nil then
+                        return true
+                    else
+                        return self.game.behaviorsByName.Tags:actorHasTag(actorId2, params.tag)
+                    end
+                end,
+            })
         end
         if component1._contactListeners then
             for listenerBehaviorId, listenerComponent in pairs(component1._contactListeners) do
@@ -399,13 +402,16 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
             isOwner = isOwner,
         }
         if isBegin then
-            self:fireTrigger('collide', actorId2, context, function(params)
-                if params.tag == nil then
-                    return true
-                else
-                    return self.game.behaviorsByName.Tags:actorHasTag(actorId1, params.tag)
-                end
-            end)
+            self:fireTrigger('collide', actorId2, context, {
+                threadKey = {},
+                filter = function(params)
+                    if params.tag == nil then
+                        return true
+                    else
+                        return self.game.behaviorsByName.Tags:actorHasTag(actorId1, params.tag)
+                    end
+                end,
+            })
         end
         if component2._contactListeners then
             for listenerBehaviorId, listenerComponent in pairs(component2._contactListeners) do

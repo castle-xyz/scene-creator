@@ -24,7 +24,9 @@ local EMPTY_RULE = {
 -- Behavior management
 
 function RulesBehavior.handlers:addBehavior(opts)
-    self._coroutines = {} -- `actorId` -> `rule` -> current coroutine for that rule
+    -- By default, there is at most one thread running per actor per rule.
+    -- `threadKey`s can be used customize that per trigger.
+    self._coroutines = {} -- `actorId` -> `threadKey` -> current coroutine for that thread key
 end
 
 
@@ -69,7 +71,12 @@ end
 
 -- Trigger handler
 
-function RulesBehavior.handlers:trigger(triggerName, actorId, context, filter)
+function RulesBehavior.handlers:trigger(triggerName, actorId, context, opts)
+    opts = opts or {}
+
+    local filter = opts.filter
+    local threadKey = opts.threadKey
+
     local applies = false
 
     local component = self.components[actorId]
@@ -84,7 +91,7 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context, filter)
                     if not self._coroutines[actorId] then
                         self._coroutines[actorId] = setmetatable({}, { __mode = 'k' })
                     end
-                    self._coroutines[actorId][ruleToRun] = coroutine.create(function()
+                    self._coroutines[actorId][threadKey or ruleToRun] = coroutine.create(function()
                         self:runResponse(ruleToRun.response, actorId, context)
                     end)
                 end
@@ -345,7 +352,7 @@ RulesBehavior.responses.wait = {
 
 RulesBehavior.responses['if'] = {
     description = [[
-Perform a response **only if** a given condition is true. Optionally can have an 'else' branch for when the condition is false.
+Perform responses **only if** a given condition is true. Optionally can have an 'else' branch for when the condition is false.
     ]],
 
     category = 'logic',
@@ -404,7 +411,7 @@ Perform a response **only if** a given condition is true. Optionally can have an
 
 RulesBehavior.responses['repeat'] = {
     description = [[
-Repeat a response a certain number of times.
+Repeat responses a certain number of times.
     ]],
 
     category = 'logic',
@@ -428,6 +435,55 @@ Repeat a response a certain number of times.
     run = function(self, actorId, params, context)
         for i = 1, params.count do
             self:runResponse(params['body'], actorId, context)
+        end
+    end,
+}
+
+RulesBehavior.responses['act on'] = {
+    description = [[
+Run responses **on each actor** that has the given **tag**.
+    ]],
+
+    category = 'act',
+
+    uiBody = function(self, params, onChangeParam, uiChild)
+        ui.textInput('tag', params.tag or '', {
+            onChange = function(newTag)
+                newTag = newTag:gsub(' ', '')
+                if newTag == '' then
+                    newTag = nil
+                end
+                onChangeParam('change with tag', 'tag', newTag)
+            end,
+        })
+        uiChild('body', { allBehaviors = true })
+    end,
+
+    run = function(self, actorId, params, context)
+        if params.tag then
+            self.game.behaviorsByName.Tags:forEachActorWithTag(params.tag, function(otherActorId)
+                self:runResponse(params['body'], otherActorId, context)
+            end)
+        end
+    end,
+}
+
+RulesBehavior.responses['act on other'] = {
+    description = [[
+Run responses on the **other actor** that an actor **collided** with.
+    ]],
+
+    category = 'act',
+
+    triggerFilter = { collide = true },
+
+    uiBody = function(self, params, onChangeParam, uiChild)
+        uiChild('body', { allBehaviors = true })
+    end,
+
+    run = function(self, actorId, params, context)
+        if context.otherActorId then
+            self:runResponse(params['body'], context.otherActorId, context)
         end
     end,
 }
@@ -478,13 +534,13 @@ function RulesBehavior.handlers:postPerform(dt)
 
     -- Resume coroutines
     for actorId, coros in pairs(self._coroutines) do
-        for rule, coro in pairs(coros) do
+        for threadKey, coro in pairs(coros) do
             local succeeded, err = coroutine.resume(coro, dt)
             if not succeeded then
                 print('rule error: ', err)
             end
             if coroutine.status(coro) == 'dead' then
-                coros[rule] = nil
+                coros[threadKey] = nil
             end
         end
         if not next(coros) then
@@ -530,6 +586,8 @@ function RulesBehavior:uiPart(actorId, part, props)
                     }, description, true)
                 end, function(childName, childProps)
                     local newProps = util.deepCopyTable(childProps) or {}
+                    newProps.triggerName = props.triggerName
+                    newProps.allBehaviors = newProps.allBehaviors or props.allBehaviors
                     newProps.kind = 'response'
                     newProps.onChange = function(newChild, description)
                         local newParams = util.deepCopyTable(part.params)
@@ -644,11 +702,13 @@ function RulesBehavior:uiPart(actorId, part, props)
                                 end)
                             else
                                 local categories = {}
-                                for behaviorId in pairs(actor.components) do
+                                local behaviorIds = props.allBehaviors and self.game.behaviors or actor.components
+                                for behaviorId in pairs(behaviorIds) do
                                     local behavior = self.game.behaviors[behaviorId]
                                     local behaviorUiName = behavior:getUiName()
                                     for name, entry in pairs(behavior[props.kind .. 's']) do
-                                        if entry.returnType == props.returnType then
+                                        if (entry.returnType == props.returnType and
+                                                (not entry.triggerFilter or entry.triggerFilter[props.triggerName])) then
                                             local categoryName = entry.category or behaviorUiName
                                             if not categories[categoryName] then
                                                 categories[categoryName] = {}
@@ -732,6 +792,8 @@ function RulesBehavior:uiPart(actorId, part, props)
 
         if props.kind == 'response' and part.name ~= 'none' and entry.returnType == nil then
             self:uiPart(actorId, part.params.nextResponse or EMPTY_RULE.response, {
+                triggerName = props.triggerName,
+                allBehaviors = props.allBehaviors,
                 kind = 'response',
                 onChange = function(newNextResponse)
                     local newParams = util.deepCopyTable(part.params)
@@ -783,6 +845,7 @@ function RulesBehavior.handlers:uiComponent(component, opts)
                 })
             end)
             self:uiPart(actorId, rule.response, {
+                triggerName = rule.trigger and rule.trigger.name or 'none',
                 kind = 'response',
                 onChange = function(newResponse, description, shouldCoalesce)
                     local oldRules = util.deepCopyTable(component.properties.rules)
