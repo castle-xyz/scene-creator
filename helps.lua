@@ -11,12 +11,6 @@ The actor is rectangle-shaped and doesn't move by default. Other behaviors can b
             ]],
         },
 
-        Tags = {
-            description = [[
-Tags are used to **categorize** actors. Each tag is a word that you are free to choose. Tags can be checked in eg. the 'collide' trigger under **rules**.
-            ]],
-        },
-
 
 
         Image = {
@@ -123,6 +117,18 @@ A tool that allows moving and rotating actors using touch.
         Rules = {
             description = [[
 A behavior that lets you **define your own rules** that tie the other behaviors of the actor together. Each rule has a **trigger** (**when** the rule should run) and a chain of **responses** (**what** the rule should do).
+            ]],
+        },
+
+        Tags = {
+            description = [[
+Tags are used to **categorize** actors. Each tag is a word that you are free to choose. Tags can be checked in eg. the 'collide' trigger under **rules**.
+            ]],
+        },
+
+        Counter = {
+            description = [[
+Keep track of a **number** for this actor. **Rules** can **increase or decrease** and **check** the number. Other behaviors can **display** the number.
             ]],
         },
     },

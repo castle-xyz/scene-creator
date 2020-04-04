@@ -83,6 +83,11 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context, opts)
     if component then
         context = context or {}
 
+        if context.isOwner == nil then
+            -- By default, based on actor's ownership
+            context.isOwner = self.game.behaviorsByName.Body:isOwner(actorId)
+        end
+
         local rulesToRun = component._rulesByTriggerName[triggerName]
         if rulesToRun then
             for _, ruleToRun in ipairs(rulesToRun) do
@@ -254,9 +259,9 @@ RulesBehavior.responses.create = {
         if entry then
             local x, y
             local physics, bodyId, body = self.game.behaviorsByName.Body:getMembers(actorId)
-            if bodyId and body and (DUMB_SERVER or self.game.clientId == physics:getOwner(bodyId)) then
+            if bodyId and body and context.isOwner then
                 x, y = body:getPosition()
-            elseif context.x and context.y and (DUMB_SERVER or self.game.clientId == context.clientId) then
+            elseif context.x and context.y and context.isOwner then
                 x, y = context.x, context.y -- Actor was destroyed but left a position in `context`
             end
             if x and y then
@@ -288,7 +293,6 @@ RulesBehavior.responses.destroy = {
             if bodyId and body then
                 -- Save a few things in `context` for use in responses after 'wait's
                 context.x, context.y = body:getPosition()
-                context.ownerId = physics:getOwner(bodyId)
             end
             self:onEndOfFrame(function()
                 self.game:send('removeActor', self.clientId, actorId, { soft = true })

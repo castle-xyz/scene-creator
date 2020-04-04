@@ -742,6 +742,17 @@ function BodyBehavior:getActorsAtPoint(x, y)
     return hits
 end
 
+function BodyBehavior:isOwner(actorId)
+    if DUMB_SERVER then
+        return true
+    end
+    local bodyId, body = self:getBody(actorId)
+    if not bodyId then
+        return true
+    end
+    return self._physics:getOwner(bodyId) == self.game.clientId
+end
+
 
 -- Draw
 

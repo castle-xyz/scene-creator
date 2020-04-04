@@ -56,6 +56,7 @@ require 'behaviors.drag'
 
 require 'behaviors.rules'
 require 'behaviors.tags'
+require 'behaviors.counter'
 
 require 'tools.grab'
 require 'tools.draw'
