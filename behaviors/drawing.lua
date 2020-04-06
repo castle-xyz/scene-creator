@@ -328,6 +328,7 @@ function DrawingBehavior.handlers:drawComponent(component)
     love.graphics.scale(bodyWidth / graphicsWidth, bodyHeight / graphicsHeight)
 
     -- Draw!
+    love.graphics.setColor(1, 1, 1, 1)
     if flipbook then
         if not component._wobblePhase then
             component._wobblePhase = math.random(0, flipbook._duration - 1)
