@@ -137,10 +137,10 @@ function Client:endEditing()
             self:send('restoreSnapshot', self.rewindSnapshotId, { stopPerforming = false })
         end
     else
-        self:saveScreenshot()
         local snapshot = self:createSnapshot()
         self:saveScene(snapshot)
         self:send('addSnapshot', util.uuid(), snapshot, { isRewind = true })
+        self:saveScreenshot()
         self:send('setPerforming', true)
         self:send('setPaused', false)
     end

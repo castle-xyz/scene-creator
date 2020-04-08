@@ -165,6 +165,26 @@ function Client:uiGlobalActions()
                 })
             end
 
+            -- Settings
+            ui.button('settings', {
+                icon = 'cog',
+                iconFamily = 'FontAwesome5',
+                hideLabel = true,
+                popoverAllowed = true,
+                popoverStyle = { width = 300, height = 300 },
+                popover = function(closePopover)
+                    ui.scrollBox('settings', {
+                        padding = 4,
+                        margin = 4,
+                        flex = 1,
+                    }, function()
+                        ui.section('backups', function()
+                            self:uiBackups(closePopover)
+                        end)
+                    end)
+                end,
+            })
+
             -- Cycle selections button for nikki and irondavy
             local username = castle.user.getMe().username 
             if username == 'nikki' or username == 'irondavy' then
