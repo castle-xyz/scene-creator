@@ -50,6 +50,8 @@ function CounterBehavior.setters:value(component, newValue, opts)
                     return false
                 end,
             })
+
+            self:fireTrigger('counter changes', component.actorId)
         end
     end
 end
@@ -88,6 +90,15 @@ Triggered when the actor's counter reaches a given value.
         end)
     end,
 }
+
+CounterBehavior.triggers['counter changes'] = {
+    description = [[
+Triggered when the actor's counter changes.
+    ]],
+
+    category = 'counter',
+}
+
 
 
 -- Responses
