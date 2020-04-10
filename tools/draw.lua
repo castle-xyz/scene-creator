@@ -18,6 +18,8 @@ local DEFAULT_PALETTE = {
     'a6c439', '586b2e', 'a8a8a8', '6d6d6d', '1a4253', '24233d',
     'e3d0b9', 'f17f3b', '9b6524', 'be4d68', '59284f', '4f2d34',
     '71823c', '708db7', '31314c', 'd1bfa3',
+    -- pico 8 colors
+    '000000', '1D2B53', '7E2553', '008751', 'AB5236', '5F574F', 'C2C3C7', 'FFF1E8', 'FF004D', 'FFA300', 'FFEC27', '00E436', '29ADFF', '83769C', 'FF77A8', 'FFCCAA'
 }
 
 local function rgbToHexString(r, g, b)
