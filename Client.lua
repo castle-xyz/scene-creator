@@ -155,7 +155,6 @@ function Client.receivers:ready(time)
         --if scene then
         --    print('scene', serpent.block(scene))
         --end
-        self.sceneId = scene and scene.sceneId
         if scene and scene.data and scene.data.snapshot then
             self:send('addSnapshot', util.uuid(), scene.data.snapshot, { isRewind = true })
             self:send('restoreSnapshot', self.rewindSnapshotId, {

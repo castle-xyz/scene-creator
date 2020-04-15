@@ -195,12 +195,11 @@ function Common:saveScene(snapshot)
                     writeBackup(data)
                 end)
             end
-            if self.sceneId then
-                jsEvents.send('GHOST_MESSAGE', {
-                    messageType = 'SAVE_SCENE',
-                    data = data,
-                })
-            end
+
+            jsEvents.send('GHOST_MESSAGE', {
+                messageType = 'SAVE_SCENE',
+                data = data,
+            })
             self.lastSuccessfulSaveData = data
         end
     end
