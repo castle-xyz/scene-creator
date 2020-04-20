@@ -1,6 +1,5 @@
 -- Actor / behavior system
 
-
 -- Base behavior
 
 local BaseBehavior = {}
@@ -26,17 +25,18 @@ function BaseBehavior:callHandler(handlerName, ...)
 end
 
 function BaseBehavior:fireTrigger(...)
-    return self.game.behaviorsByName.Rules:callHandler('trigger', ...)
+    -- this calls "RulesBehavior.handlers:trigger" in rules.lua
+    return self.game.behaviorsByName.Rules:callHandler("trigger", ...)
 end
 
 function BaseBehavior:sendSetProperties(opts, ...)
     local actorId, sendOpts
-    if type(opts) == 'table' then
+    if type(opts) == "table" then
         actorId = opts.actorId
-        sendOpts = setmetatable({ kind = 'setProperties' }, { __index = opts })
+        sendOpts = setmetatable({kind = "setProperties"}, {__index = opts})
     else
         actorId = opts
-        sendOpts = 'setProperties'
+        sendOpts = "setProperties"
     end
 
     local function propertyNamesToIds(name, value, ...)
@@ -53,7 +53,7 @@ function BaseBehavior:sendSetProperties(opts, ...)
 end
 
 function BaseBehavior:has(actorId)
-    return not not self.components[actorId]
+    return not (not self.components[actorId])
 end
 
 function BaseBehavior:get(actorId)
@@ -66,7 +66,7 @@ function BaseBehavior:getTouchData()
         numTouches = 0,
         maxNumTouches = 0,
         allTouchesReleased = false,
-        gestureId = nil,
+        gestureId = nil
     }
     if self.game.server then
         return empty
@@ -80,7 +80,7 @@ function BaseBehavior:getTouchData()
             numTouches = self.game.numTouches,
             maxNumTouches = self.game.maxNumTouches,
             allTouchesReleased = self.game.allTouchesReleased,
-            gestureId = self.game.gestureId,
+            gestureId = self.game.gestureId
         }
     end
 end
@@ -94,10 +94,7 @@ function BaseBehavior:getActor(actorId)
 end
 
 function BaseBehavior:command(description, opts, doFunc, undoFunc)
-    self.game:command(
-        description,
-        setmetatable({ behaviorId = self.behaviorId }, { __index = opts }),
-        doFunc, undoFunc)
+    self.game:command(description, setmetatable({behaviorId = self.behaviorId}, {__index = opts}), doFunc, undoFunc)
 end
 
 function BaseBehavior:uiValue(method, label, value, opts)
@@ -107,27 +104,24 @@ function BaseBehavior:uiValue(method, label, value, opts)
         newOpts.coalesceLast = false
         newOpts.coalesceSuffix = newOpts.coalesceSuffix or label
         newOpts.paramOverrides = {
-            ['do'] = { value = newValue },
-            ['undo'] = { value = value },
+            ["do"] = {value = newValue},
+            ["undo"] = {value = value}
         }
         newOpts.params = opts.params
-        self:command(
-            'change ' .. label,
-            newOpts,
-            opts.onChange)
+        self:command("change " .. label, newOpts, opts.onChange)
     end
 
-    if method == 'colorPicker' then
+    if method == "colorPicker" then
         local oldOnChange = newProps.onChange
         newProps.onChange = function(newValue)
-            oldOnChange({ newValue.r, newValue.g, newValue.b, newValue.a })
+            oldOnChange({newValue.r, newValue.g, newValue.b, newValue.a})
         end
         ui.colorPicker(label, value[1], value[2], value[3], value[4], newProps)
-    elseif method == 'slider' then
+    elseif method == "slider" then
         ui.slider(label, value, opts.props.min, opts.props.max, newProps)
-    elseif method == 'dropdown' then
+    elseif method == "dropdown" then
         ui.dropdown(label, value, opts.props.items, newProps)
-    elseif method == 'toggle' then
+    elseif method == "toggle" then
         newProps.onToggle = newProps.onChange
         newProps.onChange = nil
         ui.toggle(label, label, value, newProps)
@@ -139,19 +133,23 @@ end
 function BaseBehavior:uiProperty(method, label, actorId, propertyName, opts)
     opts = opts or {}
     local value = self.components[actorId].properties[propertyName]
-    self:uiValue(method, label, value, {
-        props = opts.props,
-        params = { 'propertyName' },
-        onChange = function(params)
-            self:sendSetProperties(actorId, propertyName, params.value)
-        end,
-    })
+    self:uiValue(
+        method,
+        label,
+        value,
+        {
+            props = opts.props,
+            params = {"propertyName"},
+            onChange = function(params)
+                self:sendSetProperties(actorId, propertyName, params.value)
+            end
+        }
+    )
 end
 
 function BaseBehavior:onEndOfFrame(func)
     table.insert(self.game.onEndOfFrames, func)
 end
-
 
 -- Core behavior definition
 
@@ -168,7 +166,6 @@ function defineCoreBehavior(behaviorSpec)
     table.insert(CORE_BEHAVIORS, behaviorSpec)
     return behaviorSpec
 end
-
 
 -- Start / stop
 
@@ -211,21 +208,19 @@ function Common:stopActorBehavior()
     end
 end
 
-
 -- Message kind definitions
 
 function Common:defineActorBehaviorMessageKinds()
-    self:defineMessageKind('addActor', self.sendOpts.reliableToAll)
-    self:defineMessageKind('removeActor', self.sendOpts.reliableToAll)
-    self:defineMessageKind('setActorDrawOrder', self.sendOpts.reliableToAll)
-    self:defineMessageKind('setActorParentEntryId', self.sendOpts.reliableToAll)
-    self:defineMessageKind('addBehavior', self.sendOpts.reliableToAll)
-    self:defineMessageKind('removeBehavior', self.sendOpts.reliableToAll)
-    self:defineMessageKind('addComponent', self.sendOpts.reliableToAll)
-    self:defineMessageKind('removeComponent', self.sendOpts.reliableToAll)
-    self:defineMessageKind('setProperties', self.sendOpts.reliableToAll)
+    self:defineMessageKind("addActor", self.sendOpts.reliableToAll)
+    self:defineMessageKind("removeActor", self.sendOpts.reliableToAll)
+    self:defineMessageKind("setActorDrawOrder", self.sendOpts.reliableToAll)
+    self:defineMessageKind("setActorParentEntryId", self.sendOpts.reliableToAll)
+    self:defineMessageKind("addBehavior", self.sendOpts.reliableToAll)
+    self:defineMessageKind("removeBehavior", self.sendOpts.reliableToAll)
+    self:defineMessageKind("addComponent", self.sendOpts.reliableToAll)
+    self:defineMessageKind("removeComponent", self.sendOpts.reliableToAll)
+    self:defineMessageKind("setProperties", self.sendOpts.reliableToAll)
 end
-
 
 -- Connect / disconnect
 
@@ -233,41 +228,49 @@ function Server:syncClientActorBehavior(clientId, send)
     -- Send behaviors and their global properties
     for behaviorId, behavior in pairs(self.behaviors) do
         if not behavior.isCore then
-            send('addBehavior', self.clientId, behaviorId, behavior.behaviorSpec)
+            send("addBehavior", self.clientId, behaviorId, behavior.behaviorSpec)
         end
 
-        behavior:sendSetProperties({
-            to = clientId,
-            selfSend = false,
-            channel = self.channels.mainReliable,
-        }, util.unpackPairs(behavior.globals))
+        behavior:sendSetProperties(
+            {
+                to = clientId,
+                selfSend = false,
+                channel = self.channels.mainReliable
+            },
+            util.unpackPairs(behavior.globals)
+        )
     end
 
     -- Notify `preSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
-        behavior:callHandler('preSyncClient', clientId)
+        behavior:callHandler("preSyncClient", clientId)
     end
 
     -- Send actors and components
-    self:forEachActorByDrawOrder(function(actor)
-        send('addActor', self.clientId, actor.actorId, actor.parentEntryId)
+    self:forEachActorByDrawOrder(
+        function(actor)
+            send("addActor", self.clientId, actor.actorId, actor.parentEntryId)
 
-        for behaviorId, component in pairs(actor.components) do
-            send('addComponent', component.clientId or self.clientId, actor.actorId, behaviorId)
+            for behaviorId, component in pairs(actor.components) do
+                send("addComponent", component.clientId or self.clientId, actor.actorId, behaviorId)
 
-            local behavior = self.behaviors[behaviorId]
-            behavior:sendSetProperties({
-                to = clientId,
-                selfSend = false,
-                channel = self.channels.mainReliable,
-                actorId = actor.actorId,
-            }, util.unpackPairs(component.properties))
+                local behavior = self.behaviors[behaviorId]
+                behavior:sendSetProperties(
+                    {
+                        to = clientId,
+                        selfSend = false,
+                        channel = self.channels.mainReliable,
+                        actorId = actor.actorId
+                    },
+                    util.unpackPairs(component.properties)
+                )
+            end
         end
-    end)
+    )
 
     -- Notify `postSyncClient`
     for behaviorId, behavior in pairs(self.behaviors) do
-        behavior:callHandler('postSyncClient', clientId)
+        behavior:callHandler("postSyncClient", clientId)
     end
 end
 
@@ -276,17 +279,16 @@ function Server:disconnectActorBehavior(clientId)
     for behaviorId, tool in pairs(self.tools) do
         for actorId, component in pairs(tool.components) do
             if component.clientId == clientId then
-                self:send('removeComponent', self.clientId, actorId, behaviorId)
+                self:send("removeComponent", self.clientId, actorId, behaviorId)
             end
         end
     end
 end
 
-
 -- Message receivers
 
 function Common.receivers:addActor(time, clientId, actorId, parentEntryId)
-    assert(not self.actors[actorId], 'addActor: this `actorId` is already used')
+    assert(not self.actors[actorId], "addActor: this `actorId` is already used")
 
     local actor = {}
     actor.actorId = actorId
@@ -306,7 +308,7 @@ function Common.receivers:removeActor(time, clientId, actorId, opts)
     local actor = self.actors[actorId]
     if not actor then
         if not opts.soft then
-            error('removeActor: no such actor')
+            error("removeActor: no such actor")
         end
         return
     end
@@ -331,17 +333,25 @@ function Common.receivers:removeActor(time, clientId, actorId, opts)
     end
     for i = #order, 1, -1 do
         local behavior = order[i]
-        behavior:callHandler('preRemoveComponent', behavior.components[actorId], {
-            isOrigin = self.clientId == clientId,
-            removeActor = true,
-        })
+        behavior:callHandler(
+            "preRemoveComponent",
+            behavior.components[actorId],
+            {
+                isOrigin = self.clientId == clientId,
+                removeActor = true
+            }
+        )
     end
     for i = #order, 1, -1 do
         local behavior = order[i]
-        behavior:callHandler('removeComponent', behavior.components[actorId], {
-            isOrigin = self.clientId == clientId,
-            removeActor = true,
-        })
+        behavior:callHandler(
+            "removeComponent",
+            behavior.components[actorId],
+            {
+                isOrigin = self.clientId == clientId,
+                removeActor = true
+            }
+        )
         behavior.components[actorId] = nil
     end
 
@@ -351,7 +361,7 @@ function Common.receivers:removeActor(time, clientId, actorId, opts)
 end
 
 function Common.receivers:setActorDrawOrder(time, actorId, newDrawOrder)
-    local actor = assert(self.actors[actorId], 'setActorDrawOrder: no such actor')
+    local actor = assert(self.actors[actorId], "setActorDrawOrder: no such actor")
 
     if actor.drawOrder == newDrawOrder then
         return
@@ -371,16 +381,16 @@ function Common.receivers:setActorDrawOrder(time, actorId, newDrawOrder)
 end
 
 function Common.receivers:setActorParentEntryId(time, actorId, newParentEntryId)
-    local actor = assert(self.actors[actorId], 'setActorParentEntryId: no such actor')
+    local actor = assert(self.actors[actorId], "setActorParentEntryId: no such actor")
     actor.parentEntryId = newParentEntryId
 end
 
 function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
-    assert(not self.behaviors[behaviorId], 'addBehavior: this `behaviorId` is already used')
-    assert(behaviorSpec, 'addBehavior: need a `behaviorSpec`')
+    assert(not self.behaviors[behaviorId], "addBehavior: this `behaviorId` is already used")
+    assert(behaviorSpec, "addBehavior: need a `behaviorSpec`")
 
     -- Basics
-    local behavior = setmetatable({}, { __index = BaseBehavior })
+    local behavior = setmetatable({}, {__index = BaseBehavior})
     behavior.behaviorId = behaviorId
     behavior.behaviorSpec = behaviorSpec
     behavior.isCore = behaviorSpec.isCore
@@ -401,7 +411,7 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
 
     -- Copy methods
     for methodName, method in pairs(behaviorSpec) do
-        if type(method) == 'function' then
+        if type(method) == "function" then
             behavior[methodName] = method
         end
     end
@@ -430,8 +440,8 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     behavior.dependents = {}
     behavior.dependencies = {}
     for _, dependencyName in pairs(behaviorSpec.dependencies) do
-        local dependency = assert(self.behaviorsByName[dependencyName],
-            "dependency '" .. dependencyName .. "' not resolved")
+        local dependency =
+            assert(self.behaviorsByName[dependencyName], "dependency '" .. dependencyName .. "' not resolved")
         behavior.dependencies[dependencyName] = dependency
         dependency.dependents[behavior.name] = behavior
     end
@@ -455,18 +465,24 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     end
 
     -- Notify `addBehavior`
-    behavior:callHandler('addBehavior', {
-        isOrigin = self.clientId == clientId,
-    })
+    behavior:callHandler(
+        "addBehavior",
+        {
+            isOrigin = self.clientId == clientId
+        }
+    )
 end
 
 function Common.receivers:removeBehavior(time, clientId, behaviorId)
-    local behavior = assert(self.behaviors[behaviorId], 'removeBehavior: no such behavior')
+    local behavior = assert(self.behaviors[behaviorId], "removeBehavior: no such behavior")
 
     -- Notify `removeBehavior`
-    behavior:callHandler('removeBehavior', {
-        isOrigin = self.clientId == clientId,
-    })
+    behavior:callHandler(
+        "removeBehavior",
+        {
+            isOrigin = self.clientId == clientId
+        }
+    )
 
     -- Unset in maps
     self.tools[behaviorId] = nil
@@ -474,9 +490,13 @@ function Common.receivers:removeBehavior(time, clientId, behaviorId)
         local actor = self.actors[actorId]
         local component = actor.components[behaviorId]
         for _, dependency in pairs(behavior.dependencies) do
-            dependency:callHandler('removeDependentComponent', component, {
-                isOrigin = self.clientId == clientId,
-            })
+            dependency:callHandler(
+                "removeDependentComponent",
+                component,
+                {
+                    isOrigin = self.clientId == clientId
+                }
+            )
             actor.components[dependency.behaviorId].dependents[behaviorId] = nil
         end
         actor.components[behaviorId] = nil
@@ -494,11 +514,11 @@ end
 function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp, opts)
     opts = opts or {}
 
-    local actor = assert(self.actors[actorId], 'addComponent: no such actor')
-    local behavior = assert(self.behaviors[behaviorId], 'addComponent: no such behavior')
+    local actor = assert(self.actors[actorId], "addComponent: no such actor")
+    local behavior = assert(self.behaviors[behaviorId], "addComponent: no such behavior")
 
     if actor.components[behaviorId] then
-        error('addComponent: actor already has a component for this behavior')
+        error("addComponent: actor already has a component for this behavior")
     end
 
     for _, dependency in pairs(behavior.dependencies) do
@@ -521,21 +541,30 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp, 
 
     for _, dependency in pairs(behavior.dependencies) do
         actor.components[dependency.behaviorId].dependents[behaviorId] = component
-        dependency:callHandler('addDependentComponent', component, {
-            isOrigin = self.clientId == clientId,
-            interactive = opts.interactive,
-        })
+        dependency:callHandler(
+            "addDependentComponent",
+            component,
+            {
+                isOrigin = self.clientId == clientId,
+                interactive = opts.interactive
+            }
+        )
     end
 
-    behavior:callHandler('addComponent', component, bp or {}, {
-        isOrigin = self.clientId == clientId,
-        interactive = opts.interactive,
-    })
+    behavior:callHandler(
+        "addComponent",
+        component,
+        bp or {},
+        {
+            isOrigin = self.clientId == clientId,
+            interactive = opts.interactive
+        }
+    )
 end
 
 function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
-    local actor = assert(self.actors[actorId], 'removeComponent: no such actor')
-    local behavior = assert(self.behaviors[behaviorId], 'removeComponent: no such behavior')
+    local actor = assert(self.actors[actorId], "removeComponent: no such actor")
+    local behavior = assert(self.behaviors[behaviorId], "removeComponent: no such behavior")
 
     local component = actor.components[behaviorId]
 
@@ -543,15 +572,23 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
         error("removeComponent: cannot remove '" .. behavior.name .. "' because it has dependents in this actor")
     end
 
-    behavior:callHandler('removeComponent', component, {
-        isOrigin = self.clientId == clientId,
-        removeActor = false,
-    })
+    behavior:callHandler(
+        "removeComponent",
+        component,
+        {
+            isOrigin = self.clientId == clientId,
+            removeActor = false
+        }
+    )
 
     for _, dependency in pairs(behavior.dependencies) do
-        dependency:callHandler('removeDependentComponent', component, {
-            isOrigin = self.clientId == clientId,
-        })
+        dependency:callHandler(
+            "removeDependentComponent",
+            component,
+            {
+                isOrigin = self.clientId == clientId
+            }
+        )
         actor.components[dependency.behaviorId].dependents[behaviorId] = nil
     end
 
@@ -560,34 +597,44 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
 end
 
 function Common.receivers:setProperties(time, clientId, actorId, behaviorId, ...)
-    local behavior = assert(self.behaviors[behaviorId], 'setProperties: no such behavior')
+    local behavior = assert(self.behaviors[behaviorId], "setProperties: no such behavior")
 
     local component
     if actorId then
-        local actor = assert(self.actors[actorId], 'setProperties: no such actor')
+        local actor = assert(self.actors[actorId], "setProperties: no such actor")
         component = actor.components[behaviorId]
     end
 
-    for i = 1, select('#', ...), 2 do
+    for i = 1, select("#", ...), 2 do
         local id, value = select(i, ...)
         local name = behavior.propertyNames[id]
         if not name then
-            error('setProperties: bad property id')
+            error("setProperties: bad property id")
         end
         local setter = behavior.setters[name]
         if actorId then
             if setter then
-                setter(behavior, component, value, {
-                    isOrigin = self.clientId == clientId,
-                })
+                setter(
+                    behavior,
+                    component,
+                    value,
+                    {
+                        isOrigin = self.clientId == clientId
+                    }
+                )
             else
                 component.properties[name] = value
             end
         else
             if setter then
-                setter(behavior, nil, value, {
-                    isOrigin = self.clientId == clientId,
-                })
+                setter(
+                    behavior,
+                    nil,
+                    value,
+                    {
+                        isOrigin = self.clientId == clientId
+                    }
+                )
             else
                 behavior.globals[name] = value
             end
@@ -595,20 +642,19 @@ function Common.receivers:setProperties(time, clientId, actorId, behaviorId, ...
     end
 end
 
-
 -- Methods
 
 function Common:generateActorId()
     local prefix
     if self.server then
-        prefix = '0'
+        prefix = "0"
     else
         prefix = tostring(self.clientId)
     end
 
     local newId
     while true do
-        newId = prefix .. ':' .. tostring(self.nextActorIdSuffix)
+        newId = prefix .. ":" .. tostring(self.nextActorIdSuffix)
         self.nextActorIdSuffix = self.nextActorIdSuffix + 1
         if not self.actors[newId] then
             break
@@ -621,11 +667,11 @@ end
 function Common:sendAddActor(bp, opts)
     local actorId = opts.actorId or self:generateActorId()
 
-    self:send('addActor', self.clientId, actorId, opts.parentEntryId)
+    self:send("addActor", self.clientId, actorId, opts.parentEntryId)
 
     -- Set draw order if given
     if opts.drawOrder then
-        self:send('setActorDrawOrder', actorId, opts.drawOrder)
+        self:send("setActorDrawOrder", actorId, opts.drawOrder)
     end
 
     -- Add components in depth-first order through dependency graph
@@ -648,7 +694,7 @@ function Common:sendAddActor(bp, opts)
             visit(dependencyName)
         end
 
-        self:send('addComponent', self.clientId, actorId, behavior.behaviorId, componentBp)
+        self:send("addComponent", self.clientId, actorId, behavior.behaviorId, componentBp)
     end
     for behaviorName, componentBp in pairs(bp.components) do
         visit(behaviorName, componentBp)
@@ -660,7 +706,7 @@ end
 function Common:blueprintActor(actorId)
     local bp = {}
 
-    local actor = assert(self.actors[actorId], 'blueprintActor: no such actor')
+    local actor = assert(self.actors[actorId], "blueprintActor: no such actor")
 
     -- Blueprint each component that isn't a tool
     bp.components = {}
@@ -668,7 +714,7 @@ function Common:blueprintActor(actorId)
         if not self.tools[behaviorId] then
             local behavior = self.behaviors[component.behaviorId]
             local componentBp = {}
-            behavior:callHandler('blueprintComponent', component, componentBp)
+            behavior:callHandler("blueprintComponent", component, componentBp)
             bp.components[behavior.name] = componentBp
         end
     end
@@ -704,4 +750,3 @@ function Common:forEachActorByDrawOrder(func)
         end
     end
 end
-

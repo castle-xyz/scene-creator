@@ -164,6 +164,28 @@ function Client.receivers:ready(time)
             self:beginEditing()
         end
 
+        local variables = INITIAL_PARAMS.variables
+
+        --test
+        variables = {
+            {
+                id = 'var1',
+                type = 'number',
+                value = 0,
+                name = 'variable 1'
+            },
+            {
+                id = 'var2',
+                type = 'number',
+                value = 5,
+                name = 'variable 2'
+            },
+        }
+
+        if variables then
+            self:send('updateVariables', variables)
+        end
+
         self.initialParamsRead = true
     end
 

@@ -65,6 +65,7 @@ require 'tools.draw'
 require 'library'
 require 'snapshot'
 require 'command'
+require 'variables'
 
 
 -- Message kind definition
@@ -103,6 +104,7 @@ function Common:define()
     self:defineActorBehaviorMessageKinds()
     self:defineLibraryMessageKinds()
     self:defineSnapshotMessageKinds()
+    self:defineVariablesMessageKinds()
 
 
     self:defineMessageKind('setPerforming', self.sendOpts.reliableToAll)
@@ -132,6 +134,7 @@ function Common:start()
     self:startLibrary()
     self:startSnapshot()
     self:startCommand()
+    self:startVariables()
 
     self.performing = true
     self.paused = true
