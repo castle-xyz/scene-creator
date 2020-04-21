@@ -14,6 +14,12 @@ end
 -- Message receivers
 
 function Common.receivers:updateVariables(time, variables)
+    for i = 1, #variables do
+        if not variables[i].value then
+            variables[i].value = variables[i].initialValue
+        end
+    end
+
     self.variables = variables
     self._initialVariables = util.deepCopyTable(variables or {})
 end
@@ -55,6 +61,16 @@ function Common:variableIdToName(id)
 end
 
 local function fireVariableTriggers(self, variableId, newValue)
+    jsEvents.send(
+        "GHOST_MESSAGE",
+        {
+            messageType = "CHANGE_DECK_STATE",
+            data = {
+                variables = self.variables
+            }
+        }
+    )
+
     for actorId, actor in pairs(self.actors) do
         self.behaviorsByName.Rules:fireTrigger(
             "variable changes",

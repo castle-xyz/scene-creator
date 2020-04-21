@@ -1,58 +1,59 @@
 -- Prefetch all hosted files
-if (portal.basePath:match('^https?://api%.castle%.games/') and
-        CASTLE_INITIAL_DATA and CASTLE_INITIAL_DATA.hostedFiles and
-        network.findPersistedFetchResult) then
+if
+    (portal.basePath:match("^https?://api%.castle%.games/") and CASTLE_INITIAL_DATA and CASTLE_INITIAL_DATA.hostedFiles and
+        network.findPersistedFetchResult)
+ then
     local ignore = {
-        ['cover.png'] = true,
-        ['.castleid'] = true,
-        ['project.castle'] = true,
+        ["cover.png"] = true,
+        [".castleid"] = true,
+        ["project.castle"] = true
     }
     local filenames = {}
     for filename, target in pairs(CASTLE_INITIAL_DATA.hostedFiles) do
         if not ignore[filename] then
-            local path = portal.basePath .. '/' .. filename
-            if not network.findPersistedFetchResult(target, 'GET') then
-                network.async(function()
-                    network.fetch(path, 'HEAD')
-                end)
-                network.async(function()
-                    network.fetch(path, 'GET')
-                end)
+            local path = portal.basePath .. "/" .. filename
+            if not network.findPersistedFetchResult(target, "GET") then
+                network.async(
+                    function()
+                        network.fetch(path, "HEAD")
+                    end
+                )
+                network.async(
+                    function()
+                        network.fetch(path, "GET")
+                    end
+                )
             end
         end
     end
 end
 
-
 -- Initial params
 
 INITIAL_PARAMS = castle.game.getInitialParams()
 
-
 -- 'multi' boilerplate
 local gameUrl = castle.game.getCurrent().url
-local isFileUrl = gameUrl:match('^file://')
-local isLANUrl = gameUrl:match('^http://192%.') or gameUrl:match('^http://172%.20%.') or gameUrl:match('http://10%.')
+local isFileUrl = gameUrl:match("^file://")
+local isLANUrl = gameUrl:match("^http://192%.") or gameUrl:match("^http://172%.20%.") or gameUrl:match("http://10%.")
 if isFileUrl or isLANUrl or (INITIAL_PARAMS and INITIAL_PARAMS.scene) then
     -- Developing or loading a scene
     DUMB_SERVER = true -- Make the server just forward messages and never run updates or sync physics
     LOCAL_SERVER = true -- Force a local server and never use a remote one
 end
 function GET_SERVER_MODULE_NAME()
-    return 'Server'
+    return "Server"
 end
-Game = require('multi.client', { root = true })
+Game = require("multi.client", {root = true})
 Common, Server, Client = Game.Common, Game.Server, Game.Client
-require 'Common'
-
+require "Common"
 
 -- Client modules
 
-require 'select'
-require 'touch'
-require 'ui'
-require 'notify'
-
+require "select"
+require "touch"
+require "ui"
+require "notify"
 
 -- Start / stop
 
@@ -77,7 +78,6 @@ function Client:start()
     self.viewTransform = love.math.newTransform()
 end
 
-
 -- Connect / reconnect / disconnect
 
 function Client:connect()
@@ -85,14 +85,13 @@ function Client:connect()
 
     -- Send `me`
     local me = castle.user.getMe()
-    self:send('me', self.clientId, me)
+    self:send("me", self.clientId, me)
 end
 
 function Client:reconnect()
     Common.stop(self)
     Common.start(self)
 end
-
 
 -- Debug receive
 
@@ -102,7 +101,6 @@ end
 --    end
 --end
 
-
 -- Users
 
 function Client.receivers:me(time, clientId, me)
@@ -111,22 +109,23 @@ function Client.receivers:me(time, clientId, me)
     -- Also load the photo image
     local photoUrl = self.mes[clientId].photoUrl
     if photoUrl then
-        network.async(function()
-            self.photoImages[clientId] = love.graphics.newImage(photoUrl)
-        end)
+        network.async(
+            function()
+                self.photoImages[clientId] = love.graphics.newImage(photoUrl)
+            end
+        )
     end
 end
-
 
 -- Begin / end editing
 
 function Client:beginEditing()
     if self.performing then
         if self.rewindSnapshotId then
-            self:send('restoreSnapshot', self.rewindSnapshotId)
-            self:send('removeSnapshot', self.rewindSnapshotId)
+            self:send("restoreSnapshot", self.rewindSnapshotId)
+            self:send("removeSnapshot", self.rewindSnapshotId)
         else
-            self:send('setPerforming', false)
+            self:send("setPerforming", false)
         end
     end
 end
@@ -134,18 +133,17 @@ end
 function Client:endEditing()
     if self.performing then
         if self.rewindSnapshotId then
-            self:send('restoreSnapshot', self.rewindSnapshotId, { stopPerforming = false })
+            self:send("restoreSnapshot", self.rewindSnapshotId, {stopPerforming = false})
         end
     else
         local snapshot = self:createSnapshot()
         self:saveScene(snapshot)
-        self:send('addSnapshot', util.uuid(), snapshot, { isRewind = true })
+        self:send("addSnapshot", util.uuid(), snapshot, {isRewind = true})
         self:saveScreenshot()
-        self:send('setPerforming', true)
-        self:send('setPaused', false)
+        self:send("setPerforming", true)
+        self:send("setPaused", false)
     end
 end
-
 
 -- Ready
 
@@ -156,65 +154,66 @@ function Client.receivers:ready(time)
         --    print('scene', serpent.block(scene))
         --end
         if scene and scene.data and scene.data.snapshot then
-            self:send('addSnapshot', util.uuid(), scene.data.snapshot, { isRewind = true })
-            self:send('restoreSnapshot', self.rewindSnapshotId, {
-                stopPerforming = not not INITIAL_PARAMS.isEditing,
-            })
+            self:send("addSnapshot", util.uuid(), scene.data.snapshot, {isRewind = true})
+            self:send(
+                "restoreSnapshot",
+                self.rewindSnapshotId,
+                {
+                    stopPerforming = not (not INITIAL_PARAMS.isEditing)
+                }
+            )
         elseif INITIAL_PARAMS.isEditing then
             self:beginEditing()
         end
 
-        local variables = INITIAL_PARAMS.variables
-
-        --test
-        variables = {
-            {
-                id = 'var1',
-                type = 'number',
-                value = 0,
-                name = 'variable 1'
-            },
-            {
-                id = 'var2',
-                type = 'number',
-                value = 5,
-                name = 'variable 2'
-            },
-        }
-
-        if variables then
-            self:send('updateVariables', variables)
-        end
+        local deckState = scene.deckState or {}
+        local variables = deckState.variables or {}
+        self:send("updateVariables", variables)
 
         self.initialParamsRead = true
     end
 
     -- Do garbage collection cycles soon
-    network.async(function()
-        collectgarbage()
-        collectgarbage()
-        copas.sleep(0.05)
-        collectgarbage()
-        collectgarbage()
-    end)
+    network.async(
+        function()
+            collectgarbage()
+            collectgarbage()
+            copas.sleep(0.05)
+            collectgarbage()
+            collectgarbage()
+        end
+    )
 end
-
 
 -- JS Events
 
-jsEvents.listen('SCENE_CREATOR_EDITING', function(params)
-    local self = instance
-    if self then
-        if params.isEditing ~= nil then
-            if params.isEditing then
-                self:beginEditing()
-            else
-                self:endEditing()
+jsEvents.listen(
+    "SCENE_CREATOR_EDITING",
+    function(params)
+        local self = instance
+        if self then
+            if params.isEditing ~= nil then
+                if params.isEditing then
+                    self:beginEditing()
+                else
+                    self:endEditing()
+                end
             end
         end
     end
-end)
+)
 
+jsEvents.listen(
+    "UPDATE_DECK_STATE",
+    function(params)
+        local self = instance
+        if self then
+            local deckState = params.deckState or {}
+            local variables = deckState.variables or {}
+            self:send("updateVariables", variables)
+        end
+    end
+)
 
 -- Update
 
@@ -240,10 +239,14 @@ function Client:twoFingerPan()
         local px, py = touch1.screenX - touch2.screenX, touch1.screenY - touch2.screenY
         local pl = math.sqrt(px * px + py * py)
         local prevPX, prevPY = touch1PrevSX - touch2PrevSX, touch1PrevSY - touch2PrevSY
-        local initialPX, initialPY = touch1.initialScreenX - touch2.initialScreenX, touch1.initialScreenY - touch2.initialScreenY
+        local initialPX, initialPY =
+            touch1.initialScreenX - touch2.initialScreenX,
+            touch1.initialScreenY - touch2.initialScreenY
         local initialPL = math.sqrt(initialPX * initialPX + initialPY * initialPY)
-        if (touch1.zooming or touch2.zooming or
-                not (self.viewWidth == DEFAULT_VIEW_WIDTH and math.abs(initialPL - pl) <= 0.175 * initialPL)) then
+        if
+            (touch1.zooming or touch2.zooming or
+                not (self.viewWidth == DEFAULT_VIEW_WIDTH and math.abs(initialPL - pl) <= 0.175 * initialPL))
+         then
             -- Don't zoom if close to 1:1
             local prevPL = math.sqrt(prevPX * prevPX + prevPY * prevPY)
             if not (touch1.zooming and touch2.zooming) then
@@ -290,7 +293,7 @@ function Client:update(dt)
     local currTime = love.timer.getTime()
     if not self.lastPingSentTime or currTime - self.lastPingSentTime > 2 then
         self.lastPingSentTime = currTime
-        self:send('ping', self.clientId)
+        self:send("ping", self.clientId)
     end
 
     self:updateTouches()
@@ -298,15 +301,15 @@ function Client:update(dt)
     self:updatePerformance(dt)
     self:applySelections() -- Performance may have added or removed actors or components, so apply changes
 
-    self:callHandlers('preUpdate', dt)
+    self:callHandlers("preUpdate", dt)
 
     if not self.performing then
         self:touchToSelect() -- Do these after `preUpdate` to allow tools to steal touches first
         self:twoFingerPan()
     end
 
-    self:callHandlers('update', dt)
-    self:callHandlers('postUpdate', dt)
+    self:callHandlers("update", dt)
+    self:callHandlers("postUpdate", dt)
 
     self:fireOnEndOfFrame()
 
@@ -314,7 +317,6 @@ function Client:update(dt)
 
     self:updateAutoSaveScene()
 end
-
 
 -- Draw
 
@@ -349,7 +351,7 @@ function Client.receivers:setPerforming(time, performing)
         self._pausedView = {
             x = self.viewX,
             y = self.viewY,
-            width = self.viewWidth,
+            width = self.viewWidth
         }
         self:resetView()
     end
@@ -375,11 +377,15 @@ function Client:drawScene(opts)
     do -- Background
         if opts.boundary then
             love.graphics.clear(0.749, 0.773, 0.788)
-            love.graphics.push('all')
+            love.graphics.push("all")
             love.graphics.setColor(0.82, 0.749, 0.639)
-            love.graphics.rectangle('fill',
-                -0.5 * DEFAULT_VIEW_WIDTH, -0.5 * DEFAULT_VIEW_WIDTH,
-                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO)
+            love.graphics.rectangle(
+                "fill",
+                -0.5 * DEFAULT_VIEW_WIDTH,
+                -0.5 * DEFAULT_VIEW_WIDTH,
+                DEFAULT_VIEW_WIDTH,
+                DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
+            )
             love.graphics.pop()
         else
             love.graphics.clear(0.82, 0.749, 0.639)
@@ -387,40 +393,50 @@ function Client:drawScene(opts)
     end
 
     do -- Behaviors
-        local drawBehaviors = self.behaviorsByHandler['drawComponent'] or {}
-        self:forEachActorByDrawOrder(function(actor)
-            for behaviorId, behavior in pairs(drawBehaviors) do
-                local component = actor.components[behaviorId]
-                if component then
-                    behavior:callHandler('drawComponent', component)
+        local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
+        self:forEachActorByDrawOrder(
+            function(actor)
+                for behaviorId, behavior in pairs(drawBehaviors) do
+                    local component = actor.components[behaviorId]
+                    if component then
+                        behavior:callHandler("drawComponent", component)
+                    end
                 end
             end
-        end)
+        )
     end
 end
 
 local screenshotWidth, screenshotHeight = 1350, 2400
-local screenshotCanvas = love.graphics.newCanvas(screenshotWidth, screenshotHeight, {
-    dpiscale = 1,
-    msaa = 4,
-})
+local screenshotCanvas =
+    love.graphics.newCanvas(
+    screenshotWidth,
+    screenshotHeight,
+    {
+        dpiscale = 1,
+        msaa = 4
+    }
+)
 
 function Client:saveScreenshot()
-    screenshotCanvas:renderTo(function()
-        love.graphics.push('all')
+    screenshotCanvas:renderTo(
+        function()
+            love.graphics.push("all")
 
-        love.graphics.origin()
-        love.graphics.scale(screenshotWidth / DEFAULT_VIEW_WIDTH)
-        love.graphics.translate(0, 0)
-        love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, 0.5 * DEFAULT_VIEW_WIDTH)
+            love.graphics.origin()
+            love.graphics.scale(screenshotWidth / DEFAULT_VIEW_WIDTH)
+            love.graphics.translate(0, 0)
+            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, 0.5 * DEFAULT_VIEW_WIDTH)
 
-        self:drawScene()
+            self:drawScene()
 
-        love.graphics.pop()
-    end)
-    local channel = love.thread.getChannel('SCENE_CREATOR_ENCODE_SCREENSHOT')
+            love.graphics.pop()
+        end
+    )
+    local channel = love.thread.getChannel("SCENE_CREATOR_ENCODE_SCREENSHOT")
     channel:push(screenshotCanvas:newImageData())
-    love.thread.originalNewThread([[
+    love.thread.originalNewThread(
+        [[
         require 'love.system'
         require 'love.image'
         jsEvents = require '__ghost__.jsEvents'
@@ -433,7 +449,8 @@ function Client:saveScreenshot()
                 path = love.filesystem.getSaveDirectory() .. '/' .. filename,
             })
         end
-    ]]):start()
+    ]]
+    ):start()
 end
 
 function Client:draw()
@@ -443,12 +460,12 @@ function Client:draw()
         love.graphics.setFont(debugFont)
         love.graphics.setColor(0, 0, 0)
         local peer = self.client.getENetPeer()
-        local text = peer and ('connection state: ' .. peer:state()) or 'trying to connect...'
+        local text = peer and ("connection state: " .. peer:state()) or "trying to connect..."
         love.graphics.print(text, 16, windowHeight - debugFont:getHeight() - 16)
         return
     end
 
-    love.graphics.push('all')
+    love.graphics.push("all")
 
     do -- View transform
         -- NOTE(nikki): Not doing view-following, will add it back as a behavior...
@@ -482,18 +499,24 @@ function Client:draw()
         love.graphics.applyTransform(self.viewTransform)
     end
 
-    self:drawScene({
-        boundary = not self.performing,
-    })
+    self:drawScene(
+        {
+            boundary = not self.performing
+        }
+    )
 
     do -- Overlays
         -- Boundary
         if not self.performing then
             love.graphics.setLineWidth(1.75 * self:getPixelScale())
             love.graphics.setColor(0.596, 0.631, 0.659)
-            love.graphics.rectangle('line',
-                -0.5 * DEFAULT_VIEW_WIDTH, -0.5 * DEFAULT_VIEW_WIDTH,
-                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO)
+            love.graphics.rectangle(
+                "line",
+                -0.5 * DEFAULT_VIEW_WIDTH,
+                -0.5 * DEFAULT_VIEW_WIDTH,
+                DEFAULT_VIEW_WIDTH,
+                DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
+            )
         end
 
         -- All body outlines
@@ -526,7 +549,7 @@ function Client:draw()
         end
 
         -- Tool
-        self:callHandlers('drawOverlay')
+        self:callHandlers("drawOverlay")
     end
 
     if false then -- Physics bodies
@@ -548,14 +571,14 @@ function Client:draw()
                 for _, fixture in ipairs(body:getFixtures()) do
                     local shape = fixture:getShape()
                     local ty = shape:getType()
-                    if ty == 'circle' then
-                        love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
-                    elseif ty == 'polygon' then
-                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                    elseif ty == 'edge' then
-                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                    elseif ty == 'chain' then
-                        love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                    if ty == "circle" then
+                        love.graphics.circle("line", body:getX(), body:getY(), shape:getRadius())
+                    elseif ty == "polygon" then
+                        love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+                    elseif ty == "edge" then
+                        love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+                    elseif ty == "chain" then
+                        love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
                     end
                 end
             end
@@ -569,15 +592,18 @@ function Client:draw()
     end
 
     if false then -- Debug overlay
-        local networkText = ''
+        local networkText = ""
         if self.connected then
-            networkText = networkText .. '    ping: ' .. self.client.getPing() .. 'ms'
-            networkText = networkText .. '    mem: ' .. math.floor(collectgarbage('count')) .. 'kb'
+            networkText = networkText .. "    ping: " .. self.client.getPing() .. "ms"
+            networkText = networkText .. "    mem: " .. math.floor(collectgarbage("count")) .. "kb"
         end
 
         love.graphics.setFont(debugFont)
         love.graphics.setColor(0, 0, 0)
-        love.graphics.print('fps: ' .. love.timer.getFPS() .. networkText, 16, windowHeight - debugFont:getHeight() - 16)
+        love.graphics.print(
+            "fps: " .. love.timer.getFPS() .. networkText,
+            16,
+            windowHeight - debugFont:getHeight() - 16
+        )
     end
 end
-
