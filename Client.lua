@@ -33,14 +33,14 @@ end
 INITIAL_PARAMS = castle.game.getInitialParams()
 
 -- 'multi' boilerplate
-local gameUrl = castle.game.getCurrent().url
-local isFileUrl = gameUrl:match("^file://")
-local isLANUrl = gameUrl:match("^http://192%.") or gameUrl:match("^http://172%.20%.") or gameUrl:match("http://10%.")
-if isFileUrl or isLANUrl or (INITIAL_PARAMS and INITIAL_PARAMS.scene) then
-    -- Developing or loading a scene
-    DUMB_SERVER = true -- Make the server just forward messages and never run updates or sync physics
-    LOCAL_SERVER = true -- Force a local server and never use a remote one
-end
+--local gameUrl = castle.game.getCurrent().url
+--local isFileUrl = gameUrl:match("^file://")
+--local isLANUrl = gameUrl:match("^http://192%.") or gameUrl:match("^http://172%.20%.") or gameUrl:match("http://10%.")
+--if isFileUrl or isLANUrl or (INITIAL_PARAMS and INITIAL_PARAMS.scene) then
+-- Developing or loading a scene
+DUMB_SERVER = true -- Make the server just forward messages and never run updates or sync physics
+LOCAL_SERVER = true -- Force a local server and never use a remote one
+--end
 function GET_SERVER_MODULE_NAME()
     return "Server"
 end
@@ -210,6 +210,7 @@ jsEvents.listen(
         if self then
             local deckState = params.deckState or {}
             local variables = deckState.variables or {}
+
             self:send("updateVariables", variables)
         end
     end
