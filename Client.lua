@@ -113,6 +113,8 @@ function Client.receivers:me(time, clientId, me)
     Common.receivers.me(self, time, clientId, me)
 
     -- Also load the photo image
+    -- unused for now
+    --[[
     local photoUrl = self.mes[clientId].photoUrl
     if photoUrl then
         network.async(
@@ -121,6 +123,8 @@ function Client.receivers:me(time, clientId, me)
             end
         )
     end
+    ]]
+ --
 end
 
 -- Begin / end editing
