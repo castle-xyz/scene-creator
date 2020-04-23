@@ -49,9 +49,9 @@ Game = require("multi.client", {root = true})
 Common, Server, Client = Game.Common, Game.Server, Game.Client
 require "Common"
 
-local clientServer = require "multi.cs"
+--local clientServer = require "multi.cs"
 function castle.onQuit()
-    clientServer.server.closePort()
+    --clientServer.server.closePort()
 end
 
 -- Client modules
@@ -502,14 +502,14 @@ end
 function Client:draw()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
-    if not self.connected then -- Not connected?
-        love.graphics.setFont(debugFont)
-        love.graphics.setColor(0, 0, 0)
-        local peer = self.client.getENetPeer()
-        local text = peer and ("connection state: " .. peer:state()) or "trying to connect..."
-        love.graphics.print(text, 16, windowHeight - debugFont:getHeight() - 16)
-        return
-    end
+    --if not self.connected then -- Not connected?
+    --    love.graphics.setFont(debugFont)
+    --    love.graphics.setColor(0, 0, 0)
+    --    local peer = self.client.getENetPeer()
+    --    local text = peer and ("connection state: " .. peer:state()) or "trying to connect..."
+    --    love.graphics.print(text, 16, windowHeight - debugFont:getHeight() - 16)
+    --    return
+    --end
 
     love.graphics.push("all")
 

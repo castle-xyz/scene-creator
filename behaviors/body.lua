@@ -1,37 +1,41 @@
-local Physics = require 'multi.physics'
-
+local Physics = require "multi.physics"
 
 -- To account for `b2_polygonRadius` (see 'b2Settings.h')
-local succeeded = pcall(function()
-    love.physics.setMeter(0.5 * UNIT)
-end)
+local succeeded =
+    pcall(
+    function()
+        love.physics.setMeter(0.5 * UNIT)
+    end
+)
 if not succeeded then
     love.physics.setMeter(UNIT)
 end
 BODY_POLYGON_SKIN = love.physics.newRectangleShape(UNIT, UNIT):getRadius()
 BODY_RECTANGLE_SLOP = 2.01 * BODY_POLYGON_SKIN
 
-
-local BodyBehavior = defineCoreBehavior {
-    name = 'Body',
+local BodyBehavior =
+    defineCoreBehavior {
+    name = "Body",
     propertyNames = {
-        'worldId',
-        'groundBodyId',
-        'bodyId',
-        'fixtureId',
-    },
+        "worldId",
+        "groundBodyId",
+        "bodyId",
+        "fixtureId"
+    }
 }
-
 
 -- Behavior management
 
 function BodyBehavior.handlers:addBehavior(opts)
     -- Create a local `Physics` at every host
-    self._physics = Physics.new({
-        game = self.game,
-        updateRate = 120,
-        reliableChannel = self.game.channels.mainReliable,
-    })
+    self._physics =
+        Physics.new(
+        {
+            game = self.game,
+            updateRate = 120,
+            reliableChannel = self.game.channels.mainReliable
+        }
+    )
 
     -- Collision callbacks
     self._physics.onContact = function(...)
@@ -40,10 +44,10 @@ function BodyBehavior.handlers:addBehavior(opts)
 
     if self.game.server then
         -- Create a new world
-        self:sendSetProperties(nil, 'worldId', self._physics:newWorld(0, UNIT * 9.8, true))
+        self:sendSetProperties(nil, "worldId", self._physics:newWorld(0, UNIT * 9.8, true))
 
         -- Create the ground body
-        self:sendSetProperties(nil, 'groundBodyId', self._physics:newBody(self.globals.worldId, 0, 0, 'static'))
+        self:sendSetProperties(nil, "groundBodyId", self._physics:newBody(self.globals.worldId, 0, 0, "static"))
     end
 end
 
@@ -57,12 +61,13 @@ end
 
 function BodyBehavior.handlers:preSyncClient(clientId)
     -- Sync the world to the new client
-    self._physics:syncNewClient({
-        clientId = clientId,
-        channel = self.game.channels.mainReliable,
-    })
+    self._physics:syncNewClient(
+        {
+            clientId = clientId,
+            channel = self.game.channels.mainReliable
+        }
+    )
 end
-
 
 -- Component management
 
@@ -71,9 +76,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         -- At the origin, create the physics body and fixtures and shapes. Other hosts will receive
         -- them through sync
 
-        local bodyId = self._physics:newBody(self.globals.worldId,
-            bp.x or 0, bp.y or 0,
-            bp.bodyType or 'static')
+        local bodyId = self._physics:newBody(self.globals.worldId, bp.x or 0, bp.y or 0, bp.bodyType or "static")
         if bp.massData then
             self._physics:setMassData(bodyId, unpack(bp.massData))
         end
@@ -106,21 +109,22 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
             self._physics:setGravityScale(bodyId, 0)
         end
 
-        local fixtureBps = bp.fixture and { bp.fixture } or bp.fixtures
+        local fixtureBps = bp.fixture and {bp.fixture} or bp.fixtures
         if fixtureBps then
             for _, fixtureBp in ipairs(fixtureBps) do
                 local shapeId
                 local shapeType = fixtureBp.shapeType
 
-                if shapeType == 'circle' then
-                    shapeId = self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0.5 * UNIT)
-                elseif shapeType == 'polygon' then
+                if shapeType == "circle" then
+                    shapeId =
+                        self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0.5 * UNIT)
+                elseif shapeType == "polygon" then
                     shapeId = self._physics:newPolygonShape(unpack(assert(fixtureBp.points)))
-                elseif shapeType == 'edge' then
+                elseif shapeType == "edge" then
                     shapeId = self._physics:newEdgeShape(unpack(assert(fixtureBp.points)))
                     self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
                     self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
-                elseif shapeType == 'chain' then
+                elseif shapeType == "chain" then
                     shapeId = self._physics:newChainShape(unpack(assert(fixtureBp.points)))
                     self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
                     self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
@@ -153,7 +157,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
 
         -- Associate the component with the underlying body
         self._physics:setUserData(bodyId, component.actorId)
-        self:sendSetProperties(component.actorId, 'bodyId', bodyId)
+        self:sendSetProperties(component.actorId, "bodyId", bodyId)
     end
 end
 
@@ -171,10 +175,10 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.x = body:getX()
     bp.y = body:getY()
     bp.bodyType = body:getType()
-    bp.massData = { body:getMassData() }
+    bp.massData = {body:getMassData()}
     bp.fixedRotation = body:isFixedRotation()
     bp.angle = body:getAngle()
-    bp.linearVelocity = { body:getLinearVelocity() }
+    bp.linearVelocity = {body:getLinearVelocity()}
     bp.angularVelocity = body:getAngularVelocity()
     bp.linearDamping = body:getLinearDamping()
     bp.angularDamping = body:getAngularDamping()
@@ -188,19 +192,19 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
         local shape = fixture:getShape()
         local shapeType = shape:getType()
         fixtureBp.shapeType = shapeType
-        if shapeType == 'circle' then
+        if shapeType == "circle" then
             fixtureBp.x, fixtureBp.y = shape:getPoint()
             fixtureBp.radius = shape:getRadius()
-        elseif shapeType == 'polygon' then
-            fixtureBp.points = { shape:getPoints() }
-        elseif shapeType == 'edge' then
-            fixtureBp.points = { shape:getPoints() }
-            fixtureBp.previousVertex = { shape:getPreviousVertex() }
-            fixtureBp.nextVertex = { shape:getNextVertex() }
-        elseif shapeType == 'chain' then
-            fixtureBp.points = { shape:getPoints() }
-            fixtureBp.previousVertex = { shape:getPreviousVertex() }
-            fixtureBp.nextVertex = { shape:getNextVertex() }
+        elseif shapeType == "polygon" then
+            fixtureBp.points = {shape:getPoints()}
+        elseif shapeType == "edge" then
+            fixtureBp.points = {shape:getPoints()}
+            fixtureBp.previousVertex = {shape:getPreviousVertex()}
+            fixtureBp.nextVertex = {shape:getNextVertex()}
+        elseif shapeType == "chain" then
+            fixtureBp.points = {shape:getPoints()}
+            fixtureBp.previousVertex = {shape:getPreviousVertex()}
+            fixtureBp.nextVertex = {shape:getNextVertex()}
         end
 
         fixtureBp.density = fixture:getDensity()
@@ -217,22 +221,22 @@ function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
 
     -- Promote body type. Order is: static, kinematic, dynamic. Bodies are
     -- static by default. A request for a higher type always wins.
-    local addedBodyType = addedBehavior:callHandler('bodyTypeComponent', addedComponent)
+    local addedBodyType = addedBehavior:callHandler("bodyTypeComponent", addedComponent)
     if addedBodyType then
         local actor = self:getActor(addedComponent.actorId)
 
         local finalBodyType = addedBodyType
-        if finalBodyType ~= 'dynamic' then -- Dynamic always wins
+        if finalBodyType ~= "dynamic" then -- Dynamic always wins
             for otherBehaviorId, otherComponent in pairs(actor.components) do
                 if otherBehaviorId ~= addedComponent.behaviorId then
                     local otherBehavior = self:getOtherBehavior(otherBehaviorId)
-                    local otherBodyType = otherBehavior:callHandler('bodyTypeComponent', otherComponent)
+                    local otherBodyType = otherBehavior:callHandler("bodyTypeComponent", otherComponent)
                     if otherBodyType then
-                        if otherBodyType == 'dynamic' then -- Dynamic always wins
-                            finalBodyType = 'dynamic'
+                        if otherBodyType == "dynamic" then -- Dynamic always wins
+                            finalBodyType = "dynamic"
                             return
-                        elseif otherBodyType == 'kinematic' then -- Promote to kinematic from static
-                            finalBodyType = 'kinematic'
+                        elseif otherBodyType == "kinematic" then -- Promote to kinematic from static
+                            finalBodyType = "kinematic"
                         end
                     end
                 end
@@ -259,21 +263,21 @@ function BodyBehavior.handlers:removeDependentComponent(removedComponent, opts)
     local removedBehavior = self:getOtherBehavior(removedComponent.behaviorId)
 
     -- Demote body type
-    local removedBodyType = removedBehavior:callHandler('bodyTypeComponent', removedComponent)
+    local removedBodyType = removedBehavior:callHandler("bodyTypeComponent", removedComponent)
     if removedBodyType then
         local actor = self:getActor(removedComponent.actorId)
 
-        local finalBodyType = 'static'
+        local finalBodyType = "static"
         for otherBehaviorId, otherComponent in pairs(actor.components) do
             if otherBehaviorId ~= removedComponent.behaviorId then
                 local otherBehavior = self:getOtherBehavior(otherBehaviorId)
-                local otherBodyType = otherBehavior:callHandler('bodyTypeComponent', otherComponent)
+                local otherBodyType = otherBehavior:callHandler("bodyTypeComponent", otherComponent)
                 if otherBodyType then
-                    if otherBodyType == 'dynamic' then -- Dynamic always wins
-                        finalBodyType = 'dynamic'
+                    if otherBodyType == "dynamic" then -- Dynamic always wins
+                        finalBodyType = "dynamic"
                         return
-                    elseif otherBodyType == 'kinematic' then -- Promote to kinematic from static
-                        finalBodyType = 'kinematic'
+                    elseif otherBodyType == "kinematic" then -- Promote to kinematic from static
+                        finalBodyType = "kinematic"
                     end
                 end
             end
@@ -297,7 +301,6 @@ function BodyBehavior.handlers:removeDependentComponent(removedComponent, opts)
     end
 end
 
-
 -- Perform / update
 
 function BodyBehavior.handlers:prePerform(dt)
@@ -309,11 +312,10 @@ function BodyBehavior.handlers:prePerform(dt)
     if self.game.clientId then
         local touchData = self:getTouchData()
         for touchId, touch in pairs(touchData.touches) do
-            if (touch.released and not touch.moved and
-                    love.timer.getTime() - touch.pressTime < 0.2) then
+            if (touch.released and not touch.moved and love.timer.getTime() - touch.pressTime < 0.2) then
                 local hits = self:getActorsAtPoint(touch.x, touch.y)
                 for actorId in pairs(hits) do
-                    if self:fireTrigger('tap', actorId) then
+                    if self:fireTrigger("tap", actorId) then
                         touch.used = true
                     end
                 end
@@ -321,7 +323,7 @@ function BodyBehavior.handlers:prePerform(dt)
             if not touch.released then
                 local hits = self:getActorsAtPoint(touch.x, touch.y)
                 for actorId in pairs(hits) do
-                    if self:fireTrigger('press', actorId) then
+                    if self:fireTrigger("press", actorId) then
                         touch.used = true
                     end
                 end
@@ -337,7 +339,6 @@ function BodyBehavior.handlers:postUpdate(dt)
     end
 end
 
-
 -- Collision
 
 function BodyBehavior:onContact(event, fixture1, fixture2, contact)
@@ -350,7 +351,7 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
     local component1 = actorId1 and self.components[actorId1]
     local component2 = actorId2 and self.components[actorId2]
 
-    local isBegin = event == 'begin'
+    local isBegin = event == "begin"
     local isEnd = not isBegin
 
     local ownerId1, strongOwned1 = self._physics:getOwner(body1)
@@ -374,26 +375,31 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
             otherActorId = actorId2,
             fixture = fixture1,
             otherFixture = fixture2,
-            isOwner = isOwner,
+            isOwner = isOwner
         }
         if isBegin then
-            self:fireTrigger('collide', actorId1, context, {
-                threadKey = {},
-                filter = function(params)
-                    if params.tag == nil then
-                        return true
-                    else
-                        return self.game.behaviorsByName.Tags:actorHasTag(actorId2, params.tag)
+            self:fireTrigger(
+                "collide",
+                actorId1,
+                context,
+                {
+                    threadKey = {},
+                    filter = function(params)
+                        if params.tag == nil then
+                            return true
+                        else
+                            return self.game.behaviorsByName.Tags:actorHasTag(actorId2, params.tag)
+                        end
                     end
-                end,
-            })
+                }
+            )
         end
         if component1._contactListeners then
             for listenerBehaviorId, listenerComponent in pairs(component1._contactListeners) do
                 local listenerBehavior = self.game.behaviors[listenerBehaviorId]
                 if listenerBehavior then
                     context.isRepeat = false
-                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, context)
+                    listenerBehavior:callHandler("bodyContactComponent", listenerComponent, context)
                     visited[listenerBehavior] = true
                 end
             end
@@ -407,32 +413,37 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
             otherActorId = actorId1,
             fixture = fixture2,
             otherFixture = fixture1,
-            isOwner = isOwner,
+            isOwner = isOwner
         }
         if isBegin then
-            self:fireTrigger('collide', actorId2, context, {
-                threadKey = {},
-                filter = function(params)
-                    if params.tag == nil then
-                        return true
-                    else
-                        return self.game.behaviorsByName.Tags:actorHasTag(actorId1, params.tag)
+            self:fireTrigger(
+                "collide",
+                actorId2,
+                context,
+                {
+                    threadKey = {},
+                    filter = function(params)
+                        if params.tag == nil then
+                            return true
+                        else
+                            return self.game.behaviorsByName.Tags:actorHasTag(actorId1, params.tag)
+                        end
                     end
-                end,
-            })
+                }
+            )
         end
         if component2._contactListeners then
             for listenerBehaviorId, listenerComponent in pairs(component2._contactListeners) do
                 local listenerBehavior = self.game.behaviors[listenerBehaviorId]
                 if listenerBehavior then
-                    context.isRepeat = visited[listenerBehavior] ~= nil,
-                    listenerBehavior:callHandler('bodyContactComponent', listenerComponent, context)
+                    context.isRepeat =
+                        visited[listenerBehavior] ~= nil,
+                        listenerBehavior:callHandler("bodyContactComponent", listenerComponent, context)
                 end
             end
         end
     end
 end
-
 
 -- Triggers
 
@@ -440,64 +451,63 @@ BodyBehavior.triggers.collide = {
     description = [[
 Triggered when the actor **comes into contact** with another actor. If a **tag** is specified, the trigger is only fired when the other actor has the given tag.
     ]],
-
-    category = 'collision',
-
+    category = "collision",
     uiBody = function(self, params, onChangeParam)
-        ui.textInput('with tag', params.tag or '', {
-            onChange = function(newTag)
-                newTag = newTag:gsub(' ', '')
-                if newTag == '' then
-                    newTag = nil
+        ui.textInput(
+            "with tag",
+            params.tag or "",
+            {
+                onChange = function(newTag)
+                    newTag = newTag:gsub(" ", "")
+                    if newTag == "" then
+                        newTag = nil
+                    end
+                    onChangeParam("change collide tag", "tag", newTag)
                 end
-                onChangeParam('change collide tag', 'tag', newTag)
-            end,
-        })
-    end,
+            }
+        )
+    end
 }
 
 BodyBehavior.triggers.tap = {
     description = [[
 Triggered when the user taps (a quick **touch and release**) on the actor.
 ]],
-
-    category = 'input',
+    category = "input"
 }
 
 BodyBehavior.triggers.press = {
     description = [[
 Triggered repeatedly **while the user is pressing** (touches and holds their touch) on the actor.
 ]],
-
-    category = 'input',
+    category = "input"
 }
-
 
 -- Responses
 
-BodyBehavior.responses['is colliding'] = {
+BodyBehavior.responses["is colliding"] = {
     description = [[
 Is true if the actor **is currently in contact** with another actor. If a **tag** is specified, is only true when the actor is colliding an actor with the given tag.
     ]],
-
-    category = 'collision',
-
-    returnType = 'boolean',
-
+    category = "collision",
+    returnType = "boolean",
     uiBody = function(self, params, onChangeParam, uiChild)
-        ui.textInput('with tag', params.tag or '', {
-            onChange = function(newTag)
-                newTag = newTag:gsub(' ', '')
-                if newTag == '' then
-                    newTag = nil
+        ui.textInput(
+            "with tag",
+            params.tag or "",
+            {
+                onChange = function(newTag)
+                    newTag = newTag:gsub(" ", "")
+                    if newTag == "" then
+                        newTag = nil
+                    end
+                    onChangeParam("change is colliding tag", "tag", newTag)
                 end
-                onChangeParam('change is colliding tag', 'tag', newTag)
-            end,
-        })
+            }
+        )
     end,
-
     run = function(self, actorId, params, context)
-    local bodyId, body = self:getBody(actorId)
+        local bodyId, body = self:getBody(actorId)
         if body then
             for _, contact in ipairs(body:getContacts()) do
                 if params.tag == nil then
@@ -513,9 +523,8 @@ Is true if the actor **is currently in contact** with another actor. If a **tag*
             end
         end
         return false
-    end,
+    end
 }
-
 
 -- UI
 
@@ -524,51 +533,83 @@ function BodyBehavior.handlers:uiComponent(component, opts)
     local physics, bodyId, body = self:getMembers(actorId)
 
     -- Position and angle
-    util.uiRow('position', function()
-        self:uiValue('numberInput', 'x', body:getX(), {
-            onChange = function(params)
-                local physics, bodyId, body = self:getMembers(actorId)
-                physics:setX(bodyId, params.value)
-            end,
-        })
-    end, function()
-        self:uiValue('numberInput', 'y', body:getY(), {
-            onChange = function(params)
-                local physics, bodyId, body = self:getMembers(actorId)
-                physics:setY(bodyId, params.value)
-            end,
-        })
-    end)
-    self:uiValue('numberInput', 'angle (degrees)', body:getAngle() * 180 / math.pi, {
-        onChange = function(params)
-            local physics, bodyId, body = self:getMembers(actorId)
-            physics:setAngle(bodyId, params.value * math.pi / 180)
+    util.uiRow(
+        "position",
+        function()
+            self:uiValue(
+                "numberInput",
+                "x",
+                body:getX(),
+                {
+                    onChange = function(params)
+                        local physics, bodyId, body = self:getMembers(actorId)
+                        physics:setX(bodyId, params.value)
+                    end
+                }
+            )
         end,
-    })
+        function()
+            self:uiValue(
+                "numberInput",
+                "y",
+                body:getY(),
+                {
+                    onChange = function(params)
+                        local physics, bodyId, body = self:getMembers(actorId)
+                        physics:setY(bodyId, params.value)
+                    end
+                }
+            )
+        end
+    )
+    self:uiValue(
+        "numberInput",
+        "angle (degrees)",
+        body:getAngle() * 180 / math.pi,
+        {
+            onChange = function(params)
+                local physics, bodyId, body = self:getMembers(actorId)
+                physics:setAngle(bodyId, params.value * math.pi / 180)
+            end
+        }
+    )
 
     -- Rectangle size if rectangle-shaped
     local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
     if rectangleWidth and rectangleHeight then
-        util.uiRow('rectangle size', function()
-            self:uiValue('numberInput', 'width', rectangleWidth, {
-                props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
-                onChange = function(params)
-                    local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
-                    self:setRectangleShape(actorId, params.value, rectangleHeight)
-                end,
-            })
-        end, function()
-            self:uiValue('numberInput', 'height', rectangleHeight, {
-                props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
-                onChange = function(params)
-                    local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
-                    self:setRectangleShape(actorId, rectangleWidth, params.value)
-                end,
-            })
-        end)
+        util.uiRow(
+            "rectangle size",
+            function()
+                self:uiValue(
+                    "numberInput",
+                    "width",
+                    rectangleWidth,
+                    {
+                        props = {min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1},
+                        onChange = function(params)
+                            local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
+                            self:setRectangleShape(actorId, params.value, rectangleHeight)
+                        end
+                    }
+                )
+            end,
+            function()
+                self:uiValue(
+                    "numberInput",
+                    "height",
+                    rectangleHeight,
+                    {
+                        props = {min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1},
+                        onChange = function(params)
+                            local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
+                            self:setRectangleShape(actorId, rectangleWidth, params.value)
+                        end
+                    }
+                )
+            end
+        )
     end
 end
-
 
 -- Setters
 
@@ -594,14 +635,16 @@ end
 function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
     newWidth = math.max(MIN_BODY_SIZE, math.min(newWidth, MAX_BODY_SIZE))
     newHeight = math.max(MIN_BODY_SIZE, math.min(newHeight, MAX_BODY_SIZE))
-    self:setShape(componentOrActorId, self._physics:newRectangleShape(newWidth - BODY_RECTANGLE_SLOP, newHeight - BODY_RECTANGLE_SLOP))
+    self:setShape(
+        componentOrActorId,
+        self._physics:newRectangleShape(newWidth - BODY_RECTANGLE_SLOP, newHeight - BODY_RECTANGLE_SLOP)
+    )
 end
 
 function BodyBehavior:resetShape(actorId)
     local width, height = self:getSize(actorId)
     self:setRectangleShape(actorId, width or UNIT, height or UNIT)
 end
-
 
 -- Getters
 
@@ -618,7 +661,7 @@ function BodyBehavior:getGroundBody()
 end
 
 function BodyBehavior:getBody(componentOrActorId)
-    local component = type(componentOrActorId) == 'table' and componentOrActorId or self.components[componentOrActorId]
+    local component = type(componentOrActorId) == "table" and componentOrActorId or self.components[componentOrActorId]
     if component then
         local bodyId = component.properties.bodyId
         return bodyId, self._physics:objectForId(bodyId)
@@ -633,7 +676,7 @@ function BodyBehavior:getMembers(componentOrActorId)
     return physics, bodyId, body, fixtureId, fixture
 end
 
-local sizeCache = setmetatable({}, { __mode = 'k' })
+local sizeCache = setmetatable({}, {__mode = "k"})
 
 local function getRectangleSizeFromFixture(fixture)
     local cached = sizeCache[fixture]
@@ -645,15 +688,19 @@ local function getRectangleSizeFromFixture(fixture)
         end
     end
     local shape = fixture:getShape()
-    if shape:getType() == 'polygon' then
+    if shape:getType() == "polygon" then
         local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()
         if p4y ~= nil and p5x == nil then
-            if (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
-                (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x) then
+            if
+                (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
+                    (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x)
+             then
                 cached = {}
                 sizeCache[fixture] = cached
                 cached.isRectangle = true
-                cached.width, cached.height = 2 * math.abs(p1x) + BODY_RECTANGLE_SLOP, 2 * math.abs(p1y) + BODY_RECTANGLE_SLOP
+                cached.width, cached.height =
+                    2 * math.abs(p1x) + BODY_RECTANGLE_SLOP,
+                    2 * math.abs(p1y) + BODY_RECTANGLE_SLOP
                 return cached.width, cached.height
             end
         end
@@ -680,11 +727,11 @@ function BodyBehavior:getSize(actorId)
             local shape = fixture:getShape()
             local shapeType = shape:getType()
 
-            if shapeType == 'circle' then
+            if shapeType == "circle" then
                 local radius = shape:getRadius()
                 cached.width, cached.height = 2 * radius, 2 * radius
-            elseif shapeType == 'polygon' or shapeType == 'edge' or shapeType == 'chain' then
-                local points = { shape:getPoints() }
+            elseif shapeType == "polygon" or shapeType == "edge" or shapeType == "chain" then
+                local points = {shape:getPoints()}
                 local minX, minY, maxX, maxY = points[1], points[2], points[1], points[2]
                 for i = 3, #points - 1, 2 do
                     minX, minY = math.min(minX, points[i]), math.min(minY, points[i + 1])
@@ -727,14 +774,18 @@ function BodyBehavior:getActorsAtBoundingBox(minX, minY, maxX, maxY)
     local worldId, world = self:getWorld()
     if world then
         world:queryBoundingBox(
-            minX, minY, maxX, maxY,
+            minX,
+            minY,
+            maxX,
+            maxY,
             function(fixture)
                 local actorId = self:getActorForBody(fixture:getBody())
                 if actorId then
                     hits[actorId] = true
                 end
                 return true
-            end)
+            end
+        )
     end
     return hits
 end
@@ -744,7 +795,10 @@ function BodyBehavior:getActorsAtPoint(x, y)
     local worldId, world = self:getWorld()
     if world then
         world:queryBoundingBox(
-            x - 1, y - 1, x + 1, y + 1,
+            x - 1,
+            y - 1,
+            x + 1,
+            y + 1,
             function(fixture)
                 if fixture:testPoint(x, y) then
                     local actorId = self:getActorForBody(fixture:getBody())
@@ -753,7 +807,8 @@ function BodyBehavior:getActorsAtPoint(x, y)
                     end
                 end
                 return true
-            end)
+            end
+        )
     end
     return hits
 end
@@ -769,7 +824,6 @@ function BodyBehavior:isOwner(actorId)
     return self._physics:getOwner(bodyId) == self.game.clientId
 end
 
-
 -- Draw
 
 function BodyBehavior:drawBodyOutline(componentOrActorId)
@@ -781,21 +835,20 @@ function BodyBehavior:drawBodyOutline(componentOrActorId)
                 -- Draw rectangles directly to account for slop
                 local hh = 0.5 * rectangleHeight
                 local hw = 0.5 * rectangleWidth
-                love.graphics.polygon('line', body:getWorldPoints(-hw, -hh, -hw, hh, hw, hh, hw, -hh))
+                love.graphics.polygon("line", body:getWorldPoints(-hw, -hh, -hw, hh, hw, hh, hw, -hh))
             else
                 local shape = fixture:getShape()
                 local ty = shape:getType()
-                if ty == 'circle' then
-                    love.graphics.circle('line', body:getX(), body:getY(), shape:getRadius())
-                elseif ty == 'polygon' then
-                    love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                elseif ty == 'edge' then
-                    love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
-                elseif ty == 'chain' then
-                    love.graphics.polygon('line', body:getWorldPoints(shape:getPoints()))
+                if ty == "circle" then
+                    love.graphics.circle("line", body:getX(), body:getY(), shape:getRadius())
+                elseif ty == "polygon" then
+                    love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+                elseif ty == "edge" then
+                    love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+                elseif ty == "chain" then
+                    love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
                 end
             end
         end
     end
 end
-
