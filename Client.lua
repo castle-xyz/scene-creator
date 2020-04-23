@@ -124,7 +124,7 @@ function Client.receivers:me(time, clientId, me)
         )
     end
     ]]
- --
+    --
 end
 
 -- Begin / end editing
@@ -190,6 +190,11 @@ function Client.receivers:ready(time)
         --if scene then
         --    print('scene', serpent.block(scene))
         --end
+        sceneCreatorSceneId = 0
+        if scene and scene.sceneId then
+            sceneCreatorSceneId = scene.sceneId
+        end
+
         if scene and scene.data and scene.data.snapshot then
             self:send("addSnapshot", util.uuid(), scene.data.snapshot, {isRewind = true})
             self:send(
@@ -445,18 +450,18 @@ function Client:drawScene(opts)
     end
 end
 
-local screenshotWidth, screenshotHeight = 1350, 2400
-local screenshotCanvas =
-    love.graphics.newCanvas(
-    screenshotWidth,
-    screenshotHeight,
-    {
-        dpiscale = 1,
-        msaa = 4
-    }
-)
-
 function Client:saveScreenshot()
+    local screenshotWidth, screenshotHeight = 1350, 2400
+    local screenshotCanvas =
+        love.graphics.newCanvas(
+        screenshotWidth,
+        screenshotHeight,
+        {
+            dpiscale = 1,
+            msaa = 4
+        }
+    )
+
     screenshotCanvas:renderTo(
         function()
             love.graphics.push("all")
@@ -489,6 +494,9 @@ function Client:saveScreenshot()
         end
     ]]
     ):start()
+
+    -- todo: we need to clean this up or we run out of memory eventually, but calling release right here is too early
+    -- screenshotCanvas:release()
 end
 
 function Client:draw()
