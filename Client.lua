@@ -215,6 +215,8 @@ function Client.receivers:ready(time)
         self:send("updateVariables", variables)
 
         self.initialParamsRead = true
+
+        jsEvents.send("SCENE_CREATOR_GAME_LOADED", {})
     end
 
     -- Do garbage collection cycles soon
