@@ -41,6 +41,8 @@ INITIAL_PARAMS = castle.game.getInitialParams()
 DUMB_SERVER = true -- Make the server just forward messages and never run updates or sync physics
 LOCAL_SERVER = true -- Force a local server and never use a remote one
 LOCAL_SERVER_PORT = "22122"
+--DEBUG_CS = true
+
 --end
 function GET_SERVER_MODULE_NAME()
     return "Server"
