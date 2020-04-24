@@ -453,11 +453,12 @@ function Client:drawScene(opts)
 end
 
 function Client:saveScreenshot()
-    local screenshotWidth, screenshotHeight = 1350, 2400
+    local screenshotWidth = 1350
+
     local screenshotCanvas =
         love.graphics.newCanvas(
         screenshotWidth,
-        screenshotHeight,
+        screenshotWidth * VIEW_HEIGHT_TO_WIDTH_RATIO,
         {
             dpiscale = 1,
             msaa = 4
