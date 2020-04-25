@@ -215,8 +215,7 @@ function Client.receivers:ready(time)
         self:send("updateVariables", variables)
 
         self.initialParamsRead = true
-
-        jsEvents.send("SCENE_CREATOR_GAME_LOADED", {})
+        self.sentGameLoadedEvent = false
     end
 
     -- Do garbage collection cycles soon
@@ -656,5 +655,11 @@ function Client:draw()
             16,
             windowHeight - debugFont:getHeight() - 16
         )
+    end
+
+    if self.initialParamsRead and not self.sentGameLoadedEvent then
+        self.sentGameLoadedEvent = true
+
+        jsEvents.send("SCENE_CREATOR_GAME_LOADED", {})
     end
 end
