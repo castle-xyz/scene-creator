@@ -1,6 +1,18 @@
 -- Core library
 
 local CORE_LIBRARY = {
+   {
+      entryType = 'actorBlueprint',
+      title = 'text',
+      description = 'A humble block of text, pinned to the bottom of the card.',
+      actorBlueprint = {
+         components = {
+            Text = {
+               content = 'Once upon a time...',
+            },
+         },
+      },
+   },
     {
         entryType = "actorBlueprint",
         title = "wall",

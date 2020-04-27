@@ -34,6 +34,7 @@ require "actor_behavior"
 require "behaviors.body"
 require "behaviors.image"
 require "behaviors.drawing"
+require "behaviors.text"
 
 require "behaviors.circle_shape"
 

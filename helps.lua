@@ -9,6 +9,11 @@ Gives the actor a **position** and **angle** in the scene.
 The actor is rectangle-shaped and doesn't move by default. Other behaviors can be used to change the shape or add motion.
             ]]
         },
+        Text = {
+           description = [[
+It's text behavior bruuh
+           ]],
+        },
         Image = {
             description = [[
 Represents the actor **visually** with an **image**.
