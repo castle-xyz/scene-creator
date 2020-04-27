@@ -1,8 +1,7 @@
 -- 'multi' boilerplate
-Game = require('multi.server', { root = true })
+Game = require("multi.server", {root = true})
 Common, Server, Client = Game.Common, Game.Server, Game.Client
-require 'Common'
-
+require "Common"
 
 -- Start / stop
 
@@ -10,14 +9,15 @@ function Server:start()
     Common.start(self)
 
     -- Unpause scene soon if not editing
-    network.async(function()
-        copas.sleep(0.02)
-        if self.performing then
-            self:send('setPaused', false)
+    network.async(
+        function()
+            copas.sleep(0.02)
+            if self.performing then
+                self:send("setPaused", false)
+            end
         end
-    end)
+    )
 end
-
 
 -- Connect / reconnect / disconnect
 
@@ -28,30 +28,33 @@ function Server:syncClient(clientId)
         self:send(kind, ...)
     end
 
-    self:transact({
-        to = clientId,
-        reliable = true,
-        selfSend = false,
-        channel = self.channels.mainReliable,
-    }, function()
-        for clientId, me in pairs(self.mes) do
-            send('me', clientId, me)
+    self:transact(
+        {
+            to = clientId,
+            reliable = true,
+            selfSend = false,
+            channel = self.channels.mainReliable
+        },
+        function()
+            for clientId, me in pairs(self.mes) do
+                send("me", clientId, me)
+            end
+            for clientId, lastPingTime in pairs(self.lastPingTimes) do
+                send({time = lastPingTime, kind = "ping"}, clientId)
+            end
+
+            self:syncClientLibrary(clientId, send)
+
+            self:syncClientActorBehavior(clientId, send)
+
+            self:syncClientSnapshot(clientId, send)
+
+            send("setPerforming", self.performing)
+            send("setPaused", self.paused)
+
+            send("ready")
         end
-        for clientId, lastPingTime in pairs(self.lastPingTimes) do
-            send({ time = lastPingTime, kind = 'ping' }, clientId)
-        end
-
-        self:syncClientLibrary(clientId, send)
-
-        self:syncClientActorBehavior(clientId, send)
-
-        self:syncClientSnapshot(clientId, send)
-
-        send('setPerforming', self.performing)
-        send('setPaused', self.paused)
-
-        send('ready')
-    end)
+    )
 end
 
 function Server:connect(clientId)
@@ -66,7 +69,6 @@ function Server:disconnect(clientId)
     self:disconnectActorBehavior(clientId)
 end
 
-
 -- Update
 
 function Server:update(dt)
@@ -78,9 +80,9 @@ function Server:update(dt)
 
     self:updatePerformance(dt)
 
-    self:callHandlers('preUpdate', dt)
-    self:callHandlers('update', dt)
-    self:callHandlers('postUpdate', dt)
+    self:callHandlers("preUpdate", dt)
+    self:callHandlers("update", dt)
+    self:callHandlers("postUpdate", dt)
 
     self:fireOnEndOfFrame()
 
