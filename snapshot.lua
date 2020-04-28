@@ -113,20 +113,22 @@ do
         insert into scene_backup (sessionId, data) values ($sessionId, $data);
     ]]
 
-    -- Remove backups other than the newly inserted one in the past 5 minutes (so we don't
+    -- Remove backups other than the newly inserted one in the past 1 minute (so we don't
     -- keep a ton of backups around because we do a backup every 2 seconds)
+    -- But keep the oldest backup among them, so we get 1 evenly spaced out every minute
     local simplifyStmt =
         db:prepare [[
         delete from scene_backup where
             id <> $otherThanId and
-            sessionId = $sessionId and
-            timestamp > datetime(
-              (select timestamp from scene_backup where id = $otherThanId),
-              '-5 minute'
+            id not in (
+              select id from scene_backup
+              where timestamp > datetime('now', '-1 minute')
+              order by timestamp asc limit 1
             ) and
-            length(data) <= $minDataLength;
+            sessionId = $sessionId and
+            timestamp > datetime('now', '-1 minute')
     ]]
-
+    
     -- Remove old backups
     local deleteOldStmt =
         db:prepare [[
@@ -142,7 +144,7 @@ do
         if db:errcode() == 0 then
             local id = db:last_insert_rowid()
 
-            simplifyStmt:bind_names({otherThanId = id, sessionId = sessionId, minDataLength = #data})
+            simplifyStmt:bind_names({otherThanId = id, sessionId = sessionId})
             while simplifyStmt:step() == sqlite.ROW do
             end
             simplifyStmt:reset()
