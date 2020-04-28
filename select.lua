@@ -8,7 +8,6 @@ function Client:startSelect()
     self.applicableTools = {} -- `behaviorId` -> behavior, for tools applicable to selection
 end
 
-
 -- Methods
 
 function Client:removeToolComponents(filter)
@@ -16,7 +15,7 @@ function Client:removeToolComponents(filter)
         local activeTool = self.tools[self.activeToolBehaviorId]
         for actorId, component in pairs(activeTool.components) do
             if self.clientId == component.clientId and filter(component) then
-                self:send('removeComponent', self.clientId, actorId, activeTool.behaviorId)
+                self:send("removeComponent", self.clientId, actorId, activeTool.behaviorId)
             end
         end
     end
@@ -35,12 +34,12 @@ function Client:addToolComponents()
                         local lastPingTime = self.lastPingTimes[component.clientId]
                         if not (lastPingTime and self.time - lastPingTime < 5) then
                             -- No ping from them recently, let's take it from them
-                            self:send('removeComponent', self.clientId, actorId, self.activeToolBehaviorId)
-                            self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
+                            self:send("removeComponent", self.clientId, actorId, self.activeToolBehaviorId)
+                            self:send("addComponent", self.clientId, actorId, self.activeToolBehaviorId)
                         end
                     end
                 else -- No component, just add
-                    self:send('addComponent', self.clientId, actorId, self.activeToolBehaviorId)
+                    self:send("addComponent", self.clientId, actorId, self.activeToolBehaviorId)
                 end
             end
         end
@@ -95,9 +94,10 @@ function Client:applySelections()
             end
 
             -- Check that dependencies are satisfied
-            if (not tool.tool.noSelect and
-                    not (tool.tool.emptySelect and not(next(self.selectedActorIds))) and
-                    applicable) then
+            if
+                (not tool.tool.noSelect and not (tool.tool.emptySelect and not (next(self.selectedActorIds))) and
+                    applicable)
+             then
                 for dependencyName, dependency in pairs(tool.dependencies) do
                     if not commonBehaviorIds[dependency.behaviorId] then
                         applicable = false
@@ -141,9 +141,11 @@ function Client:applySelections()
     end
 
     -- Remove components whose actors aren't selected any more, add components for new selections
-    self:removeToolComponents(function(component)
-        return not self.selectedActorIds[component.actorId]
-    end)
+    self:removeToolComponents(
+        function(component)
+            return not self.selectedActorIds[component.actorId]
+        end
+    )
     self:addToolComponents()
 end
 
@@ -167,14 +169,16 @@ function Client:setActiveTool(toolBehaviorId)
     end
 
     -- Remove all components from old tool, set new tool as active, add components to new tool
-    self:removeToolComponents(function(component)
-        return true
-    end)
+    self:removeToolComponents(
+        function(component)
+            return true
+        end
+    )
     self.activeToolBehaviorId = toolBehaviorId
     self:addToolComponents()
 
     -- Save to history
-    if self.activeToolBehaviorId then 
+    if self.activeToolBehaviorId then
         local activeTool = self.tools[self.activeToolBehaviorId]
         if not activeTool.tool.noHistory then
             for i = #self.activeToolHistory, 1, -1 do -- Dedup
@@ -198,10 +202,13 @@ function Client:selectActorAtPoint(x, y, hits)
         for actorId in pairs(hits) do
             table.insert(order, actorId)
         end
-        table.sort(order, function(actorId1, actorId2)
-            local actor1, actor2 = self.actors[actorId1], self.actors[actorId2]
-            return actor1.drawOrder < actor2.drawOrder
-        end)
+        table.sort(
+            order,
+            function(actorId1, actorId2)
+                local actor1, actor2 = self.actors[actorId1], self.actors[actorId2]
+                return actor1.drawOrder < actor2.drawOrder
+            end
+        )
         for i = #order, 1, -1 do
             local nextI = i == 1 and #order or i - 1 -- Wrap around end of order
             if self.selectedActorIds[order[i]] then
@@ -245,8 +252,7 @@ function Client:touchToSelect()
         end
 
         -- Quick press and release without moving? Select!
-        if (not touch.used and touch.released and not touch.moved and
-                love.timer.getTime() - touch.pressTime < 0.2) then
+        if (not touch.used and touch.released and not touch.moved and love.timer.getTime() - touch.pressTime < 0.2) then
             self:selectActorAtTouch(touch)
         end
     end

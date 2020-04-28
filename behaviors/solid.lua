@@ -1,13 +1,12 @@
-local SolidBehavior = defineCoreBehavior {
-    name = 'Solid',
-    displayName = 'solid',
-    propertyNames = {
-    },
+local SolidBehavior =
+    defineCoreBehavior {
+    name = "Solid",
+    displayName = "solid",
+    propertyNames = {},
     dependencies = {
-        'Body',
-    },
+        "Body"
+    }
 }
-
 
 -- Utilities
 
@@ -20,7 +19,6 @@ local function wakeBodyAndColliders(body)
         otherBody:setAwake(true)
     end
 end
-
 
 -- Component management
 
@@ -44,11 +42,8 @@ function SolidBehavior.handlers:removeComponent(component, opts)
     end
 end
 
-
 -- UI
 
 function SolidBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 end
-
-

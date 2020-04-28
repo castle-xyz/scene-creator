@@ -1,17 +1,17 @@
-local SlowdownBehavior = defineCoreBehavior {
-    name = 'Slowdown',
-    displayName = 'slowdown',
+local SlowdownBehavior =
+    defineCoreBehavior {
+    name = "Slowdown",
+    displayName = "slowdown",
     propertyNames = {
-        'motionSlowdown',
-        'rotationSlowdown',
+        "motionSlowdown",
+        "rotationSlowdown"
     },
     dependencies = {
-        'Moving',
-        'Body',
+        "Moving",
+        "Body"
     },
-    setters = {},
+    setters = {}
 }
-
 
 -- Methods
 
@@ -25,7 +25,6 @@ function SlowdownBehavior:updateJoint(component)
     component._joint:setMaxForce(math.max(0.01, 10 * component.properties.motionSlowdown))
     component._joint:setMaxTorque(math.max(0.01, 8 * component.properties.rotationSlowdown))
 end
-
 
 -- Setters
 
@@ -42,7 +41,6 @@ function SlowdownBehavior.setters:rotationSlowdown(component, newRotationSlowdow
         self:updateJoint(component)
     end
 end
-
 
 -- Component management
 
@@ -65,7 +63,6 @@ function SlowdownBehavior.handlers:blueprintComponent(component, bp)
     bp.rotationSlowdown = component.properties.rotationSlowdown
 end
 
-
 -- Setting performing
 
 function SlowdownBehavior.handlers:setPerforming(newPerforming)
@@ -77,17 +74,28 @@ function SlowdownBehavior.handlers:setPerforming(newPerforming)
     end
 end
 
-
 -- UI
 
 function SlowdownBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    self:uiProperty('numberInput', 'motion slowdown', actorId, 'motionSlowdown', {
-        props = { min = 0 },
-    })
+    self:uiProperty(
+        "numberInput",
+        "motion slowdown",
+        actorId,
+        "motionSlowdown",
+        {
+            props = {min = 0}
+        }
+    )
 
-    self:uiProperty('numberInput', 'rotation slowdown', actorId, 'rotationSlowdown', {
-        props = { min = 0 },
-    })
+    self:uiProperty(
+        "numberInput",
+        "rotation slowdown",
+        actorId,
+        "rotationSlowdown",
+        {
+            props = {min = 0}
+        }
+    )
 end

@@ -1,22 +1,20 @@
-local GrabTool = defineCoreBehavior {
-    name = 'Grab',
-    propertyNames = {
-    },
+local GrabTool =
+    defineCoreBehavior {
+    name = "Grab",
+    propertyNames = {},
     dependencies = {
-        'Body',
+        "Body"
     },
     tool = {
-        icon = 'mouse-pointer',
-        iconFamily = 'FontAwesome5',
+        icon = "mouse-pointer",
+        iconFamily = "FontAwesome5",
         needsPerformingOff = true,
-        emptySelect = true,
-    },
+        emptySelect = true
+    }
 }
-
 
 local HANDLE_TOUCH_RADIUS = 18
 local HANDLE_DRAW_RADIUS = 10
-
 
 -- Behavior management
 
@@ -27,7 +25,6 @@ function GrabTool.handlers:addBehavior(opts)
     self._rotateIncrementEnabled = true
     self._rotateIncrementDegrees = 45
 end
-
 
 -- Methods
 
@@ -57,7 +54,7 @@ function GrabTool:getHandles()
         local shapeType
         local width, height = self.dependencies.Body:getRectangleSize(singleActorId)
         if width and height then
-            shapeType = 'rectangle'
+            shapeType = "rectangle"
         else
             width, height = self.dependencies.Body:getSize(singleActorId)
             local bodyId, body = self.dependencies.Body:getBody(singleActorId)
@@ -83,16 +80,16 @@ function GrabTool:getHandles()
                     width = width,
                     height = height,
                     shapeType = shapeType,
-                    touchRadius = handleTouchRadius,
+                    touchRadius = handleTouchRadius
                 }
-                if shapeType == 'rectangle' and i ~= 0 and j ~= 0 then -- Corner
-                    handle.handleType = 'corner'
+                if shapeType == "rectangle" and i ~= 0 and j ~= 0 then -- Corner
+                    handle.handleType = "corner"
                     table.insert(handles, handle)
                 elseif i ~= 0 and j == 0 then -- Width edge
-                    handle.handleType = 'width'
+                    handle.handleType = "width"
                     table.insert(handles, handle)
                 elseif i == 0 and j ~= 0 then -- Height edge
-                    handle.handleType = 'height'
+                    handle.handleType = "height"
                     table.insert(handles, handle)
                 end
             end
@@ -101,17 +98,20 @@ function GrabTool:getHandles()
         -- Rotation
         local centerX, centerY = body:getWorldPoint(0, 0)
         local x, y = body:getWorldPoint(0, -0.5 * height - 6 * handleDrawRadius)
-        local endX, endY = body:getWorldPoint(0, -0.5 * height) 
-        table.insert(handles, {
-            x = x,
-            y = y,
-            handleType = 'rotate',
-            touchRadius = 1.5 * handleTouchRadius, -- Make rotate handles a bit easier to touch
-            pivotX = centerX,
-            pivotY = centerY,
-            endX = endX,
-            endY = endY,
-        })
+        local endX, endY = body:getWorldPoint(0, -0.5 * height)
+        table.insert(
+            handles,
+            {
+                x = x,
+                y = y,
+                handleType = "rotate",
+                touchRadius = 1.5 * handleTouchRadius, -- Make rotate handles a bit easier to touch
+                pivotX = centerX,
+                pivotY = centerY,
+                endX = endX,
+                endY = endY
+            }
+        )
         return handles
     else -- Multiple selections
         -- TODO(nikki): Multiple selections
@@ -127,7 +127,7 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
     --    return
     --end
 
-    local cosRotation, sinRotation 
+    local cosRotation, sinRotation
     if rotation then
         cosRotation, sinRotation = math.cos(rotation), math.sin(rotation)
     end
@@ -160,46 +160,49 @@ function GrabTool:moveRotate(description, moveX, moveY, rotation, pivotX, pivotY
                 newAngle = angle
             end
 
-            before[actorId] = { x = x, y = y, angle = angle }
-            after[actorId] = { x = newX, y = newY, angle = newAngle }
+            before[actorId] = {x = x, y = y, angle = angle}
+            after[actorId] = {x = newX, y = newY, angle = newAngle}
         end
     end
 
     local touchData = self:getTouchData()
 
-    self:command(description, {
-        coalesceSuffix = touchData.gestureId .. '-' .. table.concat(actorIds, '-'),
-        paramOverrides = {
-            ['do'] = { values = after },
-            ['undo'] = { values = before },
+    self:command(
+        description,
+        {
+            coalesceSuffix = touchData.gestureId .. "-" .. table.concat(actorIds, "-"),
+            paramOverrides = {
+                ["do"] = {values = after},
+                ["undo"] = {values = before}
+            },
+            params = {
+                gestureEnded = touchData.allTouchesReleased
+            }
         },
-        params = { 
-            gestureEnded = touchData.allTouchesReleased,
-        },
-    }, function(params, live)
-        -- Make sure actors still exist
-        for actorId, values in pairs(params.values) do
-            local bodyId, body = self.dependencies.Body:getBody(actorId)
-            if not bodyId then
-                return 'actor was deleted'
+        function(params, live)
+            -- Make sure actors still exist
+            for actorId, values in pairs(params.values) do
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                if not bodyId then
+                    return "actor was deleted"
+                end
+            end
+
+            -- Decide whether messages will be reliable, then send the messages
+            local physics = self.dependencies.Body:getPhysics()
+            local reliable = params.gestureEnded or not live
+            local sendOpts = {
+                reliable = reliable,
+                channel = reliable and physics.reliableChannel or nil
+            }
+            for actorId, values in pairs(params.values) do
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                physics:setPosition(sendOpts, bodyId, values.x, values.y)
+                physics:setAngle(sendOpts, bodyId, values.angle)
             end
         end
-
-        -- Decide whether messages will be reliable, then send the messages
-        local physics = self.dependencies.Body:getPhysics()
-        local reliable = params.gestureEnded or not live
-        local sendOpts = {
-            reliable = reliable,
-            channel = reliable and physics.reliableChannel or nil,
-        }
-        for actorId, values in pairs(params.values) do
-            local bodyId, body = self.dependencies.Body:getBody(actorId)
-            physics:setPosition(sendOpts, bodyId, values.x, values.y)
-            physics:setAngle(sendOpts, bodyId, values.angle)
-        end
-    end)
+    )
 end
-
 
 -- Update
 
@@ -244,7 +247,7 @@ function GrabTool.handlers:update(dt)
 
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
 
-                if handle.shapeType == 'rectangle' then
+                if handle.shapeType == "rectangle" then
                     local desiredWidth, desiredHeight = 2 * math.abs(lx), 2 * math.abs(ly)
                     if self._gridEnabled then
                         desiredWidth = util.quantize(desiredWidth, self._gridSize)
@@ -253,45 +256,53 @@ function GrabTool.handlers:update(dt)
                     desiredWidth = math.max(MIN_BODY_SIZE, math.min(desiredWidth, MAX_BODY_SIZE))
                     desiredHeight = math.max(MIN_BODY_SIZE, math.min(desiredHeight, MAX_BODY_SIZE))
                     local newWidth, newHeight
-                    if handle.handleType == 'corner' then
+                    if handle.handleType == "corner" then
                         local s = math.max(desiredWidth / handle.width, desiredHeight / handle.height)
                         newWidth, newHeight = s * handle.width, s * handle.height
-                    elseif handle.handleType == 'width' then
+                    elseif handle.handleType == "width" then
                         newWidth, newHeight = desiredWidth, handle.height
-                    elseif handle.handleType == 'height' then
+                    elseif handle.handleType == "height" then
                         newWidth, newHeight = handle.width, desiredHeight
                     end
                     if newWidth and newHeight then
-                        self:command('resize', {
-                            coalesceSuffix = touchData.gestureId .. '-' .. actorId,
-                            paramOverrides = {
-                                ['do'] = { width = newWidth, height = newHeight },
-                                ['undo'] = { width = handle.width, height = handle.height },
+                        self:command(
+                            "resize",
+                            {
+                                coalesceSuffix = touchData.gestureId .. "-" .. actorId,
+                                paramOverrides = {
+                                    ["do"] = {width = newWidth, height = newHeight},
+                                    ["undo"] = {width = handle.width, height = handle.height}
+                                }
                             },
-                        }, function(params)
-                            self.dependencies.Body:setRectangleShape(actorId, params.width, params.height)
-                        end)
+                            function(params)
+                                self.dependencies.Body:setRectangleShape(actorId, params.width, params.height)
+                            end
+                        )
                     end
-                elseif handle.shapeType == 'circle' then
+                elseif handle.shapeType == "circle" then
                     local desiredRadius = math.sqrt(lx * lx + ly * ly)
                     if self._gridEnabled then
                         desiredRadius = util.quantize(desiredRadius, 0.5 * self._gridSize)
                     end
                     desiredRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(desiredRadius, 0.5 * MAX_BODY_SIZE))
-                    self:command('resize', {
-                        coalesceSuffix = touchData.gestureId .. '-' .. actorId,
-                        paramOverrides = {
-                            ['do'] = { radius = desiredRadius },
-                            ['undo'] = { radius = 0.5 * handle.width },
+                    self:command(
+                        "resize",
+                        {
+                            coalesceSuffix = touchData.gestureId .. "-" .. actorId,
+                            paramOverrides = {
+                                ["do"] = {radius = desiredRadius},
+                                ["undo"] = {radius = 0.5 * handle.width}
+                            }
                         },
-                    }, function(params)
-                        local physics = self.dependencies.Body:getPhysics()
-                        self.dependencies.Body:setShape(actorId, physics:newCircleShape(params.radius))
-                    end)
+                        function(params)
+                            local physics = self.dependencies.Body:getPhysics()
+                            self.dependencies.Body:setShape(actorId, physics:newCircleShape(params.radius))
+                        end
+                    )
                 end
             end
 
-            if handle.handleType == 'rotate' then
+            if handle.handleType == "rotate" then
                 local angle = math.atan2(touch.y - handle.pivotY, touch.x - handle.pivotX)
                 local prevAngle = math.atan2(touch.y - touch.dy - handle.pivotY, touch.x - touch.dx - handle.pivotX)
                 if self._rotateIncrementEnabled then
@@ -301,7 +312,7 @@ function GrabTool.handlers:update(dt)
                     prevAngle = util.quantize(prevAngle, increment, initialAngle)
                 end
                 rotation = angle - prevAngle
-                self:moveRotate('rotate', 0, 0, rotation, handle.pivotX, handle.pivotY)
+                self:moveRotate("rotate", 0, 0, rotation, handle.pivotX, handle.pivotY)
             end
 
             return -- We processed a handle, skip other gestures
@@ -365,25 +376,25 @@ function GrabTool.handlers:update(dt)
             local prevAngle = math.atan2(touch2PrevY - touch1PrevY, touch2PrevX - touch1PrevX)
             if self._rotateIncrementEnabled then
                 local increment = self._rotateIncrementDegrees * math.pi / 180
-                local initialAngle = math.atan2(
-                    touch2.initialY - touch1.initialY, touch2.initialX - touch1.initialX)
+                local initialAngle = math.atan2(touch2.initialY - touch1.initialY, touch2.initialX - touch1.initialX)
                 angle = util.quantize(angle, increment, initialAngle)
                 prevAngle = util.quantize(prevAngle, increment, initialAngle)
             end
             rotation = angle - prevAngle
         end
 
-        local description = touchData.maxNumTouches > 1 and 'move and rotate' or 'move'
+        local description = touchData.maxNumTouches > 1 and "move and rotate" or "move"
         self:moveRotate(description, moveX, moveY, rotation, centerX, centerY)
     end
 end
-
 
 -- Draw
 
 local gridShader
 if love.graphics then
-    gridShader = love.graphics.newShader([[
+    gridShader =
+        love.graphics.newShader(
+        [[
         uniform float gridSize;
         uniform float dotRadius;
         uniform vec2 offset;
@@ -394,32 +405,37 @@ if love.graphics then
             float s = 1.0 - smoothstep(dotRadius - 1.0, dotRadius + 1.0, l);
             return vec4(color.rgb, s * color.a);
         }
-    ]], [[
+    ]],
+        [[
         vec4 position(mat4 transformProjection, vec4 vertexPosition)
         {
             return transformProjection * vertexPosition;
         }
-    ]])
+    ]]
+    )
 end
 
 function GrabTool:drawGrid()
     if self._gridEnabled and self._gridSize > 0 then
-        love.graphics.push('all')
+        love.graphics.push("all")
 
         local windowWidth, windowHeight = love.graphics.getDimensions()
 
         local dpiScale = love.graphics.getDPIScale()
-        gridShader:send('gridSize', dpiScale * self._gridSize * self.game:getViewScale())
-        gridShader:send('dotRadius', dpiScale * 2)
-        gridShader:send('offset', {
-            dpiScale * (self.game.viewX % self._gridSize - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
-            dpiScale * (self.game.viewY % self._gridSize - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
-        })
+        gridShader:send("gridSize", dpiScale * self._gridSize * self.game:getViewScale())
+        gridShader:send("dotRadius", dpiScale * 2)
+        gridShader:send(
+            "offset",
+            {
+                dpiScale * (self.game.viewX % self._gridSize - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
+                dpiScale * (self.game.viewY % self._gridSize - 0.5 * self.game.viewWidth) * self.game:getViewScale()
+            }
+        )
         love.graphics.setShader(gridShader)
 
         love.graphics.setColor(0, 0, 0, 0.5)
         love.graphics.origin()
-        love.graphics.rectangle('fill', 0, 0, windowWidth, windowHeight)
+        love.graphics.rectangle("fill", 0, 0, windowWidth, windowHeight)
 
         love.graphics.pop()
     end
@@ -434,43 +450,56 @@ function GrabTool.handlers:drawOverlay()
 
     local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
     for _, handle in ipairs(self:getHandles()) do
-        love.graphics.circle('fill', handle.x, handle.y, handleDrawRadius)
+        love.graphics.circle("fill", handle.x, handle.y, handleDrawRadius)
         if handle.endX and handle.endY then
             love.graphics.line(handle.x, handle.y, handle.endX, handle.endY)
         end
     end
 end
 
-
 -- UI
 
 function GrabTool.handlers:uiSettings(closeSettings)
     -- Grid
-    ui.box('grid box', { flexDirection = 'row' }, function()
-        self._gridEnabled = ui.toggle('grid', 'grid', self._gridEnabled)
-        if self._gridEnabled then
-            ui.box('grid size box', {
-                marginLeft = 16,
-                flex = 1,
-            }, function()
-                self._gridSize = ui.numberInput('grid size', self._gridSize, { min = 0, step = 0.5 * UNIT })
-            end)
+    ui.box(
+        "grid box",
+        {flexDirection = "row"},
+        function()
+            self._gridEnabled = ui.toggle("grid", "grid", self._gridEnabled)
+            if self._gridEnabled then
+                ui.box(
+                    "grid size box",
+                    {
+                        marginLeft = 16,
+                        flex = 1
+                    },
+                    function()
+                        self._gridSize = ui.numberInput("grid size", self._gridSize, {min = 0, step = 0.5 * UNIT})
+                    end
+                )
+            end
         end
-    end)
+    )
 
     -- Rotate increment
-    ui.box('rotate increment box', { flexDirection = 'row' }, function()
-        self._rotateIncrementEnabled = ui.toggle(
-            'rotate snap', 'rotate snap', self._rotateIncrementEnabled)
-        if self._rotateIncrementEnabled then
-            ui.box('rotate increment value box', {
-                marginLeft = 16,
-                flex = 1,
-            }, function()
-                self._rotateIncrementDegrees = ui.numberInput(
-                    'increment (degrees)', self._rotateIncrementDegrees, { min = 0, step = 5 })
-            end)
+    ui.box(
+        "rotate increment box",
+        {flexDirection = "row"},
+        function()
+            self._rotateIncrementEnabled = ui.toggle("rotate snap", "rotate snap", self._rotateIncrementEnabled)
+            if self._rotateIncrementEnabled then
+                ui.box(
+                    "rotate increment value box",
+                    {
+                        marginLeft = 16,
+                        flex = 1
+                    },
+                    function()
+                        self._rotateIncrementDegrees =
+                            ui.numberInput("increment (degrees)", self._rotateIncrementDegrees, {min = 0, step = 5})
+                    end
+                )
+            end
         end
-    end)
+    )
 end
-

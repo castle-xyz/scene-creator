@@ -1,15 +1,15 @@
-local SlidingBehavior = defineCoreBehavior {
-    name = 'Sliding',
-    displayName = 'sliding',
+local SlidingBehavior =
+    defineCoreBehavior {
+    name = "Sliding",
+    displayName = "sliding",
     propertyNames = {
-        'direction',
+        "direction"
     },
     dependencies = {
-        'Moving',
-        'Body',
-    },
+        "Moving",
+        "Body"
+    }
 }
-
 
 -- Methods
 
@@ -20,9 +20,9 @@ function SlidingBehavior:updateJoint(component)
 
     local ax, ay
     local direction = component.properties.direction
-    if direction == 'horizontal' then
+    if direction == "horizontal" then
         ax, ay = 1, 0
-    elseif direction == 'vertical' then
+    elseif direction == "vertical" then
         ax, ay = 0, 1
     end
 
@@ -35,7 +35,6 @@ function SlidingBehavior:updateJoint(component)
     end
 end
 
-
 -- Setters
 
 function SlidingBehavior.setters:direction(component, newLimitType)
@@ -45,11 +44,10 @@ function SlidingBehavior.setters:direction(component, newLimitType)
     end
 end
 
-
 -- Component management
 
 function SlidingBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.direction = bp.direction or 'horizontal'
+    component.properties.direction = bp.direction or "horizontal"
     self:updateJoint(component)
 end
 
@@ -65,7 +63,6 @@ function SlidingBehavior.handlers:blueprintComponent(component, bp)
     bp.direction = component.properties.direction
 end
 
-
 -- Setting performing
 
 function SlidingBehavior.handlers:setPerforming(newPerforming)
@@ -77,18 +74,22 @@ function SlidingBehavior.handlers:setPerforming(newPerforming)
     end
 end
 
-
 -- UI
 
 function SlidingBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    self:uiValue('dropdown', 'direction', component.properties.direction, {
-        props = { items = { 'horizontal', 'vertical' } },
-        onChange = function(params)
-            if params.value then
-                self:sendSetProperties(actorId, 'direction', params.value)
+    self:uiValue(
+        "dropdown",
+        "direction",
+        component.properties.direction,
+        {
+            props = {items = {"horizontal", "vertical"}},
+            onChange = function(params)
+                if params.value then
+                    self:sendSetProperties(actorId, "direction", params.value)
+                end
             end
-        end,
-    })
+        }
+    )
 end

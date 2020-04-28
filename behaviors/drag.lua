@@ -1,17 +1,15 @@
-local DragBehavior = defineCoreBehavior {
-    name = 'Drag',
-    displayName = 'drag',
-    propertyNames = {
-    },
+local DragBehavior =
+    defineCoreBehavior {
+    name = "Drag",
+    displayName = "drag",
+    propertyNames = {},
     dependencies = {
-        'Moving',
-        'Body',
-    },
+        "Moving",
+        "Body"
+    }
 }
 
-
 local CIRCLE_RADIUS = 18 * UNIT
-
 
 -- Component management
 
@@ -19,7 +17,6 @@ function DragBehavior.handlers:addComponent(component, bp, opts)
     component._numTouches = 0
     component._clientId = nil
 end
-
 
 -- Perform
 
@@ -91,7 +88,6 @@ function DragBehavior.handlers:perform(dt)
     end
 end
 
-
 -- Draw
 
 function DragBehavior.handlers:drawOverlay()
@@ -110,14 +106,14 @@ function DragBehavior.handlers:drawOverlay()
 
             local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
 
-            love.graphics.circle('line', touch.x, touch.y, circleRadius)
+            love.graphics.circle("line", touch.x, touch.y, circleRadius)
             love.graphics.setColor(1, 1, 1, 0.3)
-            love.graphics.circle('fill', touch.x, touch.y, circleRadius)
+            love.graphics.circle("fill", touch.x, touch.y, circleRadius)
             love.graphics.setColor(1, 1, 1, 0.8)
 
-            love.graphics.circle('line', worldX, worldY, circleRadius)
+            love.graphics.circle("line", worldX, worldY, circleRadius)
             love.graphics.setColor(1, 1, 1, 0.3)
-            love.graphics.circle('fill', worldX, worldY, circleRadius)
+            love.graphics.circle("fill", worldX, worldY, circleRadius)
             love.graphics.setColor(1, 1, 1, 0.8)
 
             love.graphics.line(worldX, worldY, touch.x, touch.y)
@@ -125,10 +121,8 @@ function DragBehavior.handlers:drawOverlay()
     end
 end
 
-
 -- UI
 
 function DragBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 end
-

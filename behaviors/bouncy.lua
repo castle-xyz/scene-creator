@@ -1,14 +1,13 @@
-local BouncyBehavior = defineCoreBehavior {
-    name = 'Bouncy',
-    displayName = 'bouncy',
-    propertyNames = {
-    },
+local BouncyBehavior =
+    defineCoreBehavior {
+    name = "Bouncy",
+    displayName = "bouncy",
+    propertyNames = {},
     dependencies = {
-        'Solid',
-        'Body',
-    },
+        "Solid",
+        "Body"
+    }
 }
-
 
 -- Component management
 
@@ -32,21 +31,23 @@ function BouncyBehavior.handlers:removeComponent(component, opts)
     end
 end
 
-
 -- UI
 
 function BouncyBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
     local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
     if fixture then
-        self:uiValue('numberInput', 'bounciness', fixture:getRestitution(), {
-            props = { step = 0.05, min = 0, max = 2 },
-            onChange = function(params)
-                local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-                physics:setRestitution(fixtureId, params.value)
-            end,
-        })
+        self:uiValue(
+            "numberInput",
+            "bounciness",
+            fixture:getRestitution(),
+            {
+                props = {step = 0.05, min = 0, max = 2},
+                onChange = function(params)
+                    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
+                    physics:setRestitution(fixtureId, params.value)
+                end
+            }
+        )
     end
 end
-
-

@@ -1,13 +1,12 @@
-local TagsBehavior = defineCoreBehavior {
-    name = 'Tags',
-    displayName = 'tags',
+local TagsBehavior =
+    defineCoreBehavior {
+    name = "Tags",
+    displayName = "tags",
     propertyNames = {
-        'tagsString', -- Space-separate tags string
+        "tagsString" -- Space-separate tags string
     },
-    dependencies = {
-    },
+    dependencies = {}
 }
-
 
 -- Behavior management
 
@@ -15,11 +14,10 @@ function TagsBehavior.handlers:addBehavior(opts)
     self._tagToActorIds = {} -- `tag` -> `actorId` -> `true`
 end
 
-
 -- Component management
 
 function TagsBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.tagsString = bp.tagsString or ''
+    component.properties.tagsString = bp.tagsString or ""
     component._tags = {}
     self.setters.tagsString(self, component, component.properties.tagsString)
 end
@@ -37,7 +35,6 @@ function TagsBehavior.handlers:blueprintComponent(component, bp)
     bp.tagsString = component.properties.tagsString
 end
 
-
 -- Setters
 
 function TagsBehavior.setters:tagsString(component, newTagsString)
@@ -51,7 +48,7 @@ function TagsBehavior.setters:tagsString(component, newTagsString)
         end
     end
     component._tags = {}
-    for tag in component.properties.tagsString:gmatch('%S+') do
+    for tag in component.properties.tagsString:gmatch("%S+") do
         component._tags[tag] = true
     end
     for tag in pairs(component._tags) do
@@ -61,7 +58,6 @@ function TagsBehavior.setters:tagsString(component, newTagsString)
         self._tagToActorIds[tag][component.actorId] = true
     end
 end
-
 
 -- Methods
 
@@ -91,13 +87,10 @@ function TagsBehavior:forEachActorWithTag(tag, func)
     end
 end
 
-
 -- UI
 
 function TagsBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    self:uiProperty('textInput', 'tags (separated by spaces)', actorId, 'tagsString')
+    self:uiProperty("textInput", "tags (separated by spaces)", actorId, "tagsString")
 end
-
-

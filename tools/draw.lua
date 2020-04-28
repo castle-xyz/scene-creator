@@ -1,32 +1,59 @@
-local DrawTool = defineCoreBehavior {
-    name = 'Draw',
-    propertyNames = {
-    },
+local DrawTool =
+    defineCoreBehavior {
+    name = "Draw",
+    propertyNames = {},
     dependencies = {
-        'Body',
-        'Drawing',
+        "Body",
+        "Drawing"
     },
     tool = {
-        icon = 'pencil-alt',
-        iconFamily = 'FontAwesome5',
-        needsPerformingOff = true,
-    },
+        icon = "pencil-alt",
+        iconFamily = "FontAwesome5",
+        needsPerformingOff = true
+    }
 }
 
-
 local DEFAULT_PALETTE = {
-    'a6c439', '586b2e', 'a8a8a8', '6d6d6d', '1a4253', '24233d',
-    'e3d0b9', 'f17f3b', '9b6524', 'be4d68', '59284f', '4f2d34',
-    '71823c', '708db7', '31314c', 'd1bfa3',
+    "a6c439",
+    "586b2e",
+    "a8a8a8",
+    "6d6d6d",
+    "1a4253",
+    "24233d",
+    "e3d0b9",
+    "f17f3b",
+    "9b6524",
+    "be4d68",
+    "59284f",
+    "4f2d34",
+    "71823c",
+    "708db7",
+    "31314c",
+    "d1bfa3",
     -- pico 8 colors
-    '000000', '1D2B53', '7E2553', '008751', 'AB5236', '5F574F', 'C2C3C7', 'FFF1E8', 'FF004D', 'FFA300', 'FFEC27', '00E436', '29ADFF', '83769C', 'FF77A8', 'FFCCAA'
+    "000000",
+    "1D2B53",
+    "7E2553",
+    "008751",
+    "AB5236",
+    "5F574F",
+    "C2C3C7",
+    "FFF1E8",
+    "FF004D",
+    "FFA300",
+    "FFEC27",
+    "00E436",
+    "29ADFF",
+    "83769C",
+    "FF77A8",
+    "FFCCAA"
 }
 
 local function rgbToHexString(r, g, b)
     local r255 = math.min(math.floor(255 * r + 0.5), 255)
     local g255 = math.min(math.floor(255 * g + 0.5), 255)
     local b255 = math.min(math.floor(255 * b + 0.5), 255)
-    return string.format('%x', r255 * 0x10000 + g255 * 0x100 + b255)
+    return string.format("%x", r255 * 0x10000 + g255 * 0x100 + b255)
 end
 
 local function hexStringToRgb(str)
@@ -40,37 +67,37 @@ local function hexStringToRgb(str)
     return r255 / 255, g255 / 255, b255 / 255, 1
 end
 
-
 -- Behavior management
 
 function DrawTool.handlers:addBehavior(opts)
     self._lineEnabled = false
 
     self._lineWidth = 20
-    self._lineColor = { hexStringToRgb(DEFAULT_PALETTE[6]) }
+    self._lineColor = {hexStringToRgb(DEFAULT_PALETTE[6])}
 
     self._fillEnabled = true
-    self._fillColor = { hexStringToRgb(DEFAULT_PALETTE[7]) }
+    self._fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])}
 end
-
 
 -- Methods
 
 function DrawTool:saveDrawing(commandDescription, c)
     local actorId = c.actorId
-    local newUrl = 'ser:' .. self.dependencies.Drawing:serialize(
-        c._graphics,
-        c._graphicsWidth,
-        c._graphicsHeight)
+    local newUrl = "ser:" .. self.dependencies.Drawing:serialize(c._graphics, c._graphicsWidth, c._graphicsHeight)
     c._lastUrl = newUrl -- Prevent reloading since we're already in sync
     local oldUrl = self.dependencies.Drawing:get(actorId).properties.url
-    self.dependencies.Drawing:command(commandDescription, {
-        params = { 'oldUrl', 'newUrl' },
-    }, function()
-        self:sendSetProperties(actorId, 'url', newUrl)
-    end, function()
-        self:sendSetProperties(actorId, 'url', oldUrl)
-    end)
+    self.dependencies.Drawing:command(
+        commandDescription,
+        {
+            params = {"oldUrl", "newUrl"}
+        },
+        function()
+            self:sendSetProperties(actorId, "url", newUrl)
+        end,
+        function()
+            self:sendSetProperties(actorId, "url", oldUrl)
+        end
+    )
 end
 
 function DrawTool:getSingleComponent()
@@ -85,7 +112,6 @@ function DrawTool:getSingleComponent()
     end
     return singleComponent
 end
-
 
 -- Update
 
@@ -123,7 +149,7 @@ function DrawTool.handlers:update(dt)
         c._graphics = cacheEntry.graphics:clone()
         c._graphicsWidth = cacheEntry.graphicsWidth
         c._graphicsHeight = cacheEntry.graphicsHeight
-        c._graphics:setDisplay('mesh', 1024)
+        c._graphics:setDisplay("mesh", 1024)
         c._currPath = nil
         c._currSubpath = nil
         c._lastCornerX, c._lastCornerY = nil
@@ -186,7 +212,7 @@ function DrawTool.handlers:update(dt)
             -- Place if at least 30 units from last point
             local lastPoint = c._currSubpath.points[numPoints]
             local dispX, dispY = x - lastPoint.x, y - lastPoint.y
-            local dispSqLen = dispX * dispX + dispY * dispY 
+            local dispSqLen = dispX * dispX + dispY * dispY
             if dispSqLen >= 30 * 30 then
                 place = true
             end
@@ -263,12 +289,11 @@ function DrawTool.handlers:update(dt)
                 c._lastCornerX, c._lastCornerY = nil, nil
 
                 -- Save
-                self:saveDrawing('draw', c)
+                self:saveDrawing("draw", c)
             end
         end
     end
 end
-
 
 -- Draw
 
@@ -278,7 +303,6 @@ function DrawTool.handlers:drawOverlay()
     end
 end
 
-
 -- UI
 
 local function uiPalette(r, g, b, props)
@@ -286,41 +310,51 @@ local function uiPalette(r, g, b, props)
     local onChange = props.onChange
     local palette = props.palette or DEFAULT_PALETTE
 
-    ui.button('     ', {
-        backgroundColor = '#' .. rgbToHexString(r, g, b),
-        borderWidth = 6,
-        popoverAllowed = true,
-        popoverStyle = { width = 200 },
-        popover = function(closePopover)
-            local i = 1
-            while palette[i] do
-                ui.box('row-' .. i, {
-                    flexDirection = 'row',
-                    justifyContent = 'space-between',
-                }, function()
-                    for j = 1, 4 do
-                        local hexString = palette[i]
-                        if not hexString then
-                            break
-                        end
-                        i = i + 1
-                        ui.button('     ', {
-                            flex = 1,
-                            aspectRatio = 1,
-                            backgroundColor = '#' .. hexString,
-                            onClick = function()
-                                closePopover()
-                                r, g, b = hexStringToRgb(hexString)
-                                if onChange then
-                                    onChange(r, g, b)
+    ui.button(
+        "     ",
+        {
+            backgroundColor = "#" .. rgbToHexString(r, g, b),
+            borderWidth = 6,
+            popoverAllowed = true,
+            popoverStyle = {width = 200},
+            popover = function(closePopover)
+                local i = 1
+                while palette[i] do
+                    ui.box(
+                        "row-" .. i,
+                        {
+                            flexDirection = "row",
+                            justifyContent = "space-between"
+                        },
+                        function()
+                            for j = 1, 4 do
+                                local hexString = palette[i]
+                                if not hexString then
+                                    break
                                 end
-                            end,
-                        })
-                    end
-                end)
+                                i = i + 1
+                                ui.button(
+                                    "     ",
+                                    {
+                                        flex = 1,
+                                        aspectRatio = 1,
+                                        backgroundColor = "#" .. hexString,
+                                        onClick = function()
+                                            closePopover()
+                                            r, g, b = hexStringToRgb(hexString)
+                                            if onChange then
+                                                onChange(r, g, b)
+                                            end
+                                        end
+                                    }
+                                )
+                            end
+                        end
+                    )
+                end
             end
-        end,
-    })
+        }
+    )
 
     return r, g, b
 end
@@ -335,119 +369,180 @@ function DrawTool.handlers:uiPanel()
         return
     end
 
-    ui.box('fill row', { flexDirection = 'row' }, function()
-        ui.box('fill enabled box', {
-            flex = 1,
-            justifyContent = 'flex-end',
-        }, function()
-            ui.toggle('fill', 'fill', self._fillEnabled, {
-                onToggle = function(newFillEnabled)
-                    self._fillEnabled = newFillEnabled
-                    if not self._fillEnabled then
-                        self._lineEnabled = true
+    ui.box(
+        "fill row",
+        {flexDirection = "row"},
+        function()
+            ui.box(
+                "fill enabled box",
+                {
+                    flex = 1,
+                    justifyContent = "flex-end"
+                },
+                function()
+                    ui.toggle(
+                        "fill",
+                        "fill",
+                        self._fillEnabled,
+                        {
+                            onToggle = function(newFillEnabled)
+                                self._fillEnabled = newFillEnabled
+                                if not self._fillEnabled then
+                                    self._lineEnabled = true
+                                end
+                            end
+                        }
+                    )
+                end
+            )
+            ui.box(
+                "fill color box",
+                {
+                    flex = 1,
+                    alignItems = "flex-start",
+                    justifyContent = "flex-end"
+                },
+                function()
+                    if self._fillEnabled then
+                        self._fillColor[1], self._fillColor[2], self._fillColor[3] =
+                            uiPalette(self._fillColor[1], self._fillColor[2], self._fillColor[3])
                     end
-                end,
-            })
-        end)
-        ui.box('fill color box', {
-            flex = 1,
-            alignItems = 'flex-start',
-            justifyContent = 'flex-end',
-        }, function()
-            if self._fillEnabled then
-                self._fillColor[1], self._fillColor[2], self._fillColor[3] = uiPalette(
-                    self._fillColor[1], self._fillColor[2], self._fillColor[3])
-            end
-        end)
-    end)
+                end
+            )
+        end
+    )
 
-    ui.box('spacer-1', { height = 24 }, function() end)
+    ui.box(
+        "spacer-1",
+        {height = 24},
+        function()
+        end
+    )
 
-    ui.toggle('line', 'line', self._lineEnabled, {
-        onToggle = function(newlineEnabled)
-            self._lineEnabled = newlineEnabled
-            if not self._fillEnabled then
-                self._fillEnabled = true
+    ui.toggle(
+        "line",
+        "line",
+        self._lineEnabled,
+        {
+            onToggle = function(newlineEnabled)
+                self._lineEnabled = newlineEnabled
+                if not self._fillEnabled then
+                    self._fillEnabled = true
+                end
             end
-        end,
-    })
+        }
+    )
     if self._lineEnabled then
-        ui.box('line row', { flexDirection = 'row' }, function()
-            ui.box('line width box', {
-                flex = 1,
-                justifyContent = 'flex-end',
-            }, function()
-                self._lineWidth = ui.numberInput('line width', self._lineWidth, {
-                    hideLabel = true,
-                    min = 5,
-                    max = 60,
-                    step = 5,
-                })
-            end)
-            ui.box('line color box', {
-                flex = 1,
-                alignItems = 'flex-start',
-                justifyContent = 'flex-end',
-            }, function()
-                self._lineColor[1], self._lineColor[2], self._lineColor[3] = uiPalette(
-                    self._lineColor[1], self._lineColor[2], self._lineColor[3])
-            end)
-        end)
+        ui.box(
+            "line row",
+            {flexDirection = "row"},
+            function()
+                ui.box(
+                    "line width box",
+                    {
+                        flex = 1,
+                        justifyContent = "flex-end"
+                    },
+                    function()
+                        self._lineWidth =
+                            ui.numberInput(
+                            "line width",
+                            self._lineWidth,
+                            {
+                                hideLabel = true,
+                                min = 5,
+                                max = 60,
+                                step = 5
+                            }
+                        )
+                    end
+                )
+                ui.box(
+                    "line color box",
+                    {
+                        flex = 1,
+                        alignItems = "flex-start",
+                        justifyContent = "flex-end"
+                    },
+                    function()
+                        self._lineColor[1], self._lineColor[2], self._lineColor[3] =
+                            uiPalette(self._lineColor[1], self._lineColor[2], self._lineColor[3])
+                    end
+                )
+            end
+        )
     end
 
-    ui.box('spacer-2', { height = 24 }, function() end)
+    ui.box(
+        "spacer-2",
+        {height = 24},
+        function()
+        end
+    )
 
     -- Flip
-    util.uiRow('flip', function()
-        ui.button('flip horizontal', {
-            icon = 'arrows-h',
-            iconFamily = 'FontAwesome',
-            onClick = function()
-                for i = 1, c._graphics.paths.count do
-                    local path = c._graphics.paths[i]
-                    for j = 1, path.subpaths.count do
-                        local subpath = path.subpaths[j]
-                        for k = 1, subpath.points.count do
-                            local point = subpath.points[k]
-                            point.x = -point.x
+    util.uiRow(
+        "flip",
+        function()
+            ui.button(
+                "flip horizontal",
+                {
+                    icon = "arrows-h",
+                    iconFamily = "FontAwesome",
+                    onClick = function()
+                        for i = 1, c._graphics.paths.count do
+                            local path = c._graphics.paths[i]
+                            for j = 1, path.subpaths.count do
+                                local subpath = path.subpaths[j]
+                                for k = 1, subpath.points.count do
+                                    local point = subpath.points[k]
+                                    point.x = -point.x
+                                end
+                            end
                         end
+                        self:saveDrawing("flip drawing horizontally", c)
                     end
-                end
-                self:saveDrawing('flip drawing horizontally', c)
-            end,
-        })
-    end, function()
-        ui.button('flip vertical', {
-            icon = 'arrows-v',
-            iconFamily = 'FontAwesome',
-            onClick = function()
-                for i = 1, c._graphics.paths.count do
-                    local path = c._graphics.paths[i]
-                    for j = 1, path.subpaths.count do
-                        local subpath = path.subpaths[j]
-                        for k = 1, subpath.points.count do
-                            local point = subpath.points[k]
-                            point.y = -point.y
+                }
+            )
+        end,
+        function()
+            ui.button(
+                "flip vertical",
+                {
+                    icon = "arrows-v",
+                    iconFamily = "FontAwesome",
+                    onClick = function()
+                        for i = 1, c._graphics.paths.count do
+                            local path = c._graphics.paths[i]
+                            for j = 1, path.subpaths.count do
+                                local subpath = path.subpaths[j]
+                                for k = 1, subpath.points.count do
+                                    local point = subpath.points[k]
+                                    point.y = -point.y
+                                end
+                            end
                         end
+                        self:saveDrawing("flip drawing vertically", c)
                     end
-                end
-                self:saveDrawing('flip drawing vertically', c)
-            end,
-        })
-    end)
+                }
+            )
+        end
+    )
 
     -- Clear
-    ui.button('clear', {
-        icon = 'page-delete',
-        iconFamily = 'Foundation',
-        onClick = function()
-            c._graphics:clear()
-            c._currPath = nil
-            c._currSubpath = nil
-            c._lastCornerX, c._lastCornerY = nil
+    ui.button(
+        "clear",
+        {
+            icon = "page-delete",
+            iconFamily = "Foundation",
+            onClick = function()
+                c._graphics:clear()
+                c._currPath = nil
+                c._currSubpath = nil
+                c._lastCornerX, c._lastCornerY = nil
 
-            self:saveDrawing('clear drawing', c)
-        end,
-    })
+                self:saveDrawing("clear drawing", c)
+            end
+        }
+    )
 end
-

@@ -9,7 +9,6 @@ function Client:startTouch()
     self.gestureStolen = false
 end
 
-
 -- Update
 
 function Client:updateTouches()
@@ -93,5 +92,3 @@ function Client:updateTouches()
         self.gestureStolen = false
     end
 end
-
-

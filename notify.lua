@@ -4,7 +4,7 @@ local RECTANGLE_BORDER_RADIUS = 10
 local PADDING = 4
 
 function Client:startNotify()
-    self.notifyMessage = ''
+    self.notifyMessage = ""
     self.notifyTime = 0
     self.notifyError = false
 end
@@ -32,7 +32,7 @@ function Client:drawNotify()
         lastDpiScale = dpiScale
     end
 
-    love.graphics.push('all')
+    love.graphics.push("all")
 
     love.graphics.setFont(font)
 
@@ -53,20 +53,22 @@ function Client:drawNotify()
         love.graphics.setColor(0, 0, 0, 0.7)
     end
     love.graphics.rectangle(
-        'fill',
+        "fill",
         0.5 * (windowWidth - textWidth - 2 * rectangleBorderRadius - 2 * padding),
         -rectangleBorderRadius - padding,
         textWidth + 2 * rectangleBorderRadius + 2 * padding,
         textHeight + 2 * rectangleBorderRadius + 2 * padding,
-        rectangleBorderRadius)
+        rectangleBorderRadius
+    )
 
     love.graphics.setColor(1, 1, 1)
     for i = 1, #wrappedText do
-        local stripped = wrappedText[i]:gsub('^ *', ''):gsub(' *$', '')
+        local stripped = wrappedText[i]:gsub("^ *", ""):gsub(" *$", "")
         love.graphics.print(
             stripped,
             0.5 * (windowWidth - font:getWidth(stripped)),
-            padding + (i - 1) * font:getLineHeight() * font:getHeight())
+            padding + (i - 1) * font:getLineHeight() * font:getHeight()
+        )
     end
 
     love.graphics.pop()
@@ -83,7 +85,7 @@ function Client:notify(message, time, isError)
 end
 
 function Client:clearNotify()
-    self.notifyMessage = ''
+    self.notifyMessage = ""
     self.notifyTime = 0
     self.notifyError = false
 end

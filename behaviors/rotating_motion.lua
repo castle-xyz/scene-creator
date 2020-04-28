@@ -1,21 +1,20 @@
-local RotatingMotionBehavior = defineCoreBehavior {
-    name = 'RotatingMotion',
-    displayName = 'rotating motion',
+local RotatingMotionBehavior =
+    defineCoreBehavior {
+    name = "RotatingMotion",
+    displayName = "rotating motion",
     propertyNames = {
-        'rotationsPerSecond',
+        "rotationsPerSecond"
     },
     dependencies = {
-        'Body',
-    },
+        "Body"
+    }
 }
-
 
 -- Body type
 
 function RotatingMotionBehavior.handlers:bodyTypeComponent(component)
-    return 'kinematic'
+    return "kinematic"
 end
-
 
 -- Component management
 
@@ -34,7 +33,6 @@ function RotatingMotionBehavior.handlers:blueprintComponent(component, bp)
     bp.rotationsPerSecond = component.properties.rotationsPerSecond
 end
 
-
 -- Perform
 
 function RotatingMotionBehavior.handlers:perform(dt)
@@ -46,14 +44,10 @@ function RotatingMotionBehavior.handlers:perform(dt)
     end
 end
 
-
 -- UI
 
 function RotatingMotionBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    self:uiProperty('numberInput', 'rotations per second', actorId, 'rotationsPerSecond')
+    self:uiProperty("numberInput", "rotations per second", actorId, "rotationsPerSecond")
 end
-
-
-

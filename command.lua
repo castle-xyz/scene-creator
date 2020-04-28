@@ -5,7 +5,7 @@ function Common:startCommand()
 end
 
 local STANDARD_IMPLICITS = {
-    actorId = true,
+    actorId = true
 }
 
 local DEFAULT_COALESCE_INTERVAL = 2.2
@@ -31,10 +31,10 @@ function Common:command(description, opts, doFunc, undoFunc)
     command.commandId = util.uuid()
     command.description = description
     undoFunc = undoFunc or doFunc
-    command.funcs = { ['do'] = doFunc, ['undo'] = undoFunc }
+    command.funcs = {["do"] = doFunc, ["undo"] = undoFunc}
     command.behaviorId = opts.behaviorId
     command.paramOverrides = opts.paramOverrides
-    command.selections = { ['do'] = {}, ['undo'] = {} }
+    command.selections = {["do"] = {}, ["undo"] = {}}
 
     local params = opts.params or {}
 
@@ -47,21 +47,24 @@ function Common:command(description, opts, doFunc, undoFunc)
     -- Create params table
     command.params = {}
     for name, value in pairs(params) do
-        if type(name) == 'string' then
+        if type(name) == "string" then
             command.params[name] = value
         end
     end
     for _, func in pairs(command.funcs) do
-        forEachUpvalue(func, function(name, value, i)
-            if name ~= 'self' then -- `self` has special handling
-                if not STANDARD_IMPLICITS[name] and not implicits[name] and not params[name] then
-                    error("command: upvalue '" .. name .. "' not allowed")
-                end
-                if not command.params[name] then
-                    command.params[name] = value -- Save implicit param
+        forEachUpvalue(
+            func,
+            function(name, value, i)
+                if name ~= "self" then -- `self` has special handling
+                    if not STANDARD_IMPLICITS[name] and not implicits[name] and not params[name] then
+                        error("command: upvalue '" .. name .. "' not allowed")
+                    end
+                    if not command.params[name] then
+                        command.params[name] = value -- Save implicit param
+                    end
                 end
             end
-        end)
+        )
     end
 
     -- Now that upvalues are read, clone the functions (unjoins upvalues)
@@ -73,10 +76,11 @@ function Common:command(description, opts, doFunc, undoFunc)
     if opts.coalesceId then
         command.coalesceId = opts.coalesceId
     elseif opts.coalesceSuffix then
-        command.coalesceId = love.data.hash('md5',
-            (opts.behaviorId or '*') .. '-' ..
-            (command.params.actorId or '*') .. '-' .. 
-            opts.coalesceSuffix)
+        command.coalesceId =
+            love.data.hash(
+            "md5",
+            (opts.behaviorId or "*") .. "-" .. (command.params.actorId or "*") .. "-" .. opts.coalesceSuffix
+        )
     end
 
     -- Insert into undos, coalescing with an applicable previous command. Limit undo list size.
@@ -84,8 +88,10 @@ function Common:command(description, opts, doFunc, undoFunc)
     if command.coalesceId then
         for i = #self.undos, 1, -1 do
             local prevCommand = self.undos[i]
-            if (command.coalesceId == prevCommand.coalesceId and
-                    command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL)) then
+            if
+                (command.coalesceId == prevCommand.coalesceId and
+                    command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL))
+             then
                 -- Use undo part of `prevCommand`
                 command.funcs.undo = prevCommand.funcs.undo
                 command.paramOverrides = command.paramOverrides or {}
@@ -121,11 +127,11 @@ function Common:command(description, opts, doFunc, undoFunc)
 
     -- Do command, saving selections before and after
     for actorId in pairs(self.selectedActorIds) do
-        table.insert(command.selections['undo'], actorId)
+        table.insert(command.selections["undo"], actorId)
     end
-    self:runCommand('do', command, true)
+    self:runCommand("do", command, true)
     for actorId in pairs(self.selectedActorIds) do
-        table.insert(command.selections['do'], actorId)
+        table.insert(command.selections["do"], actorId)
     end
 end
 
@@ -134,20 +140,20 @@ function Common:undoOrRedo(mode, fromList, toList, presentTense, pastTense)
         local command = table.remove(fromList)
         local err = self:runCommand(mode, command)
         if err then
-            self:notify('skipped ' .. presentTense .. ': ' .. command.description .. ' (' .. err .. ')', nil, true)
+            self:notify("skipped " .. presentTense .. ": " .. command.description .. " (" .. err .. ")", nil, true)
         else
-            self:notify(pastTense .. ': ' .. command.description)
+            self:notify(pastTense .. ": " .. command.description)
             table.insert(toList, command)
         end
     end
 end
 
 function Common:undo()
-    self:undoOrRedo('undo', self.undos, self.redos, 'undo', 'undid')
+    self:undoOrRedo("undo", self.undos, self.redos, "undo", "undid")
 end
 
 function Common:redo()
-    self:undoOrRedo('do', self.redos, self.undos, 'redo', 'redid')
+    self:undoOrRedo("do", self.redos, self.undos, "redo", "redid")
 end
 
 function Common:runCommand(mode, command, live)
@@ -164,33 +170,38 @@ function Common:runCommand(mode, command, live)
     -- Check actor and component existence
     if params.actorId then
         if not self.actors[params.actorId] then
-            return 'actor was deleted'
+            return "actor was deleted"
         end
         if command.behaviorId then
             local behavior = self.behaviors[command.behaviorId]
             if not behavior.tool and not behavior.components[params.actorId] then
-                return 'behavior was removed'
+                return "behavior was removed"
             end
         end
     end
 
     -- Set upvalues, call function, then unset upvalues
-    forEachUpvalue(func, function(name, value, i)
-        assert(value == nil, 'command function upvalue aleady set')
-        if name == 'self' then -- `self` has special handling
-            debug.setupvalue(func, i,
-                command.behaviorId and self.behaviors[command.behaviorId] or self)
-        else
-            debug.setupvalue(func, i, params[name])
+    forEachUpvalue(
+        func,
+        function(name, value, i)
+            assert(value == nil, "command function upvalue aleady set")
+            if name == "self" then -- `self` has special handling
+                debug.setupvalue(func, i, command.behaviorId and self.behaviors[command.behaviorId] or self)
+            else
+                debug.setupvalue(func, i, params[name])
+            end
         end
-    end)
-    local succeeded, err = pcall(func, params, not not live)
-    forEachUpvalue(func, function(name, value, i)
-        debug.setupvalue(func, i, nil)
-    end)
+    )
+    local succeeded, err = pcall(func, params, not (not live))
+    forEachUpvalue(
+        func,
+        function(name, value, i)
+            debug.setupvalue(func, i, nil)
+        end
+    )
     if not succeeded then
-        print('command error: ' .. err)
-        return 'error'
+        print("command error: " .. err)
+        return "error"
     end
     if err then
         return err

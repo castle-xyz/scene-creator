@@ -1,14 +1,13 @@
-local FrictionBehavior = defineCoreBehavior {
-    name = 'Friction',
-    displayName = 'friction',
-    propertyNames = {
-    },
+local FrictionBehavior =
+    defineCoreBehavior {
+    name = "Friction",
+    displayName = "friction",
+    propertyNames = {},
     dependencies = {
-        'Body',
+        "Body"
     },
-    setters = {},
+    setters = {}
 }
-
 
 -- Component management
 
@@ -32,7 +31,6 @@ function FrictionBehavior.handlers:removeComponent(component, opts)
     end
 end
 
-
 -- UI
 
 function FrictionBehavior.handlers:uiComponent(component, opts)
@@ -40,12 +38,17 @@ function FrictionBehavior.handlers:uiComponent(component, opts)
 
     local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
     if fixture then
-        self:uiValue('numberInput', 'friction', fixture:getFriction(), {
-            props = { step = 0.05, min = 0 },
-            onChange = function(params)
-                local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-                physics:setFriction(fixtureId, params.value)
-            end,
-        })
+        self:uiValue(
+            "numberInput",
+            "friction",
+            fixture:getFriction(),
+            {
+                props = {step = 0.05, min = 0},
+                onChange = function(params)
+                    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
+                    physics:setFriction(fixtureId, params.value)
+                end
+            }
+        )
     end
 end

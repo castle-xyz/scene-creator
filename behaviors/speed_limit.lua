@@ -1,14 +1,14 @@
-local SpeedLimitBehavior = defineCoreBehavior {
-    name = 'SpeedLimit',
-    displayName = 'speed limit',
+local SpeedLimitBehavior =
+    defineCoreBehavior {
+    name = "SpeedLimit",
+    displayName = "speed limit",
     propertyNames = {
-        'maximumSpeed',
+        "maximumSpeed"
     },
     dependencies = {
-        'Body',
-    },
+        "Body"
+    }
 }
-
 
 -- Component management
 
@@ -19,7 +19,6 @@ end
 function SpeedLimitBehavior.handlers:blueprintComponent(component, bp)
     bp.maximumSpeed = component.properties.maximumSpeed
 end
-
 
 -- Perform
 
@@ -46,16 +45,18 @@ function SpeedLimitBehavior.handlers:perform(dt)
     end
 end
 
-
 -- UI
 
 function SpeedLimitBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    self:uiProperty('numberInput', 'maximum speed (units per second)', actorId, 'maximumSpeed', {
-        props = { min = 0.1 },
-    })
+    self:uiProperty(
+        "numberInput",
+        "maximum speed (units per second)",
+        actorId,
+        "maximumSpeed",
+        {
+            props = {min = 0.1}
+        }
+    )
 end
-
-
-

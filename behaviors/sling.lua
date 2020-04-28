@@ -1,15 +1,15 @@
-local SlingBehavior = defineCoreBehavior {
-    name = 'Sling',
-    displayName = 'sling',
+local SlingBehavior =
+    defineCoreBehavior {
+    name = "Sling",
+    displayName = "sling",
     propertyNames = {
-        'speed',
+        "speed"
     },
     dependencies = {
-        'Moving',
-        'Body',
-    },
+        "Moving",
+        "Body"
+    }
 }
-
 
 local MAX_DRAG_LENGTH = 3 * UNIT
 
@@ -18,7 +18,6 @@ local DRAW_MULTIPLIER = 0.8
 local CIRCLE_RADIUS = 18 * UNIT
 local TRIANGLE_LENGTH = 25 * UNIT
 local TRIANGLE_WIDTH = 10 * UNIT
-
 
 -- Component management
 
@@ -29,7 +28,6 @@ end
 function SlingBehavior.handlers:blueprintComponent(component, bp)
     bp.speed = component.properties.speed
 end
-
 
 -- Perform
 
@@ -65,14 +63,11 @@ function SlingBehavior.handlers:postPerform(dt)
                 if physics:getOwner(bodyId) ~= self.game.clientId then
                     physics:setOwner(bodyId, self.game.clientId, true, 0)
                 end
-                body:setLinearVelocity(
-                    component.properties.speed * dragX, 
-                    component.properties.speed * dragY)
+                body:setLinearVelocity(component.properties.speed * dragX, component.properties.speed * dragY)
             end
         end
     end
 end
-
 
 -- Draw
 
@@ -107,35 +102,45 @@ function SlingBehavior.handlers:drawOverlay()
                 local triangleWidth = TRIANGLE_WIDTH * self.game:getPixelScale()
 
                 -- Circle with solid outline and transparent fill
-                love.graphics.circle('line', touch.initialX, touch.initialY, circleRadius)
+                love.graphics.circle("line", touch.initialX, touch.initialY, circleRadius)
                 love.graphics.setColor(1, 1, 1, 0.3)
-                love.graphics.circle('fill', touch.initialX, touch.initialY, circleRadius)
+                love.graphics.circle("fill", touch.initialX, touch.initialY, circleRadius)
                 love.graphics.setColor(1, 1, 1, 0.8)
 
                 -- Line and triangle
                 local endX, endY = touch.initialX + DRAW_MULTIPLIER * dragX, touch.initialY + DRAW_MULTIPLIER * dragY
                 love.graphics.line(
-                    touch.initialX, touch.initialY,
-                    endX - triangleLength * dragX / dragLen, endY - triangleLength * dragY / dragLen)
-                love.graphics.polygon('fill',
-                    endX, endY,
+                    touch.initialX,
+                    touch.initialY,
+                    endX - triangleLength * dragX / dragLen,
+                    endY - triangleLength * dragY / dragLen
+                )
+                love.graphics.polygon(
+                    "fill",
+                    endX,
+                    endY,
                     endX - triangleLength * dragX / dragLen - triangleWidth * dragY / dragLen,
                     endY - triangleLength * dragY / dragLen + triangleWidth * dragX / dragLen,
                     endX - triangleLength * dragX / dragLen + triangleWidth * dragY / dragLen,
-                    endY - triangleLength * dragY / dragLen - triangleWidth * dragX / dragLen)
+                    endY - triangleLength * dragY / dragLen - triangleWidth * dragX / dragLen
+                )
             end
         end
     end
 end
-
 
 -- UI
 
 function SlingBehavior.handlers:uiComponent(component, opts)
     local actorId = component.actorId
 
-    self:uiProperty('numberInput', 'speed', actorId, 'speed', {
-        props = { min = 0, max = 10, step = 0.5 },
-    })
+    self:uiProperty(
+        "numberInput",
+        "speed",
+        actorId,
+        "speed",
+        {
+            props = {min = 0, max = 10, step = 0.5}
+        }
+    )
 end
-
