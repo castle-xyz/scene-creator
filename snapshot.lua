@@ -120,7 +120,10 @@ do
         delete from scene_backup where
             id <> $otherThanId and
             sessionId = $sessionId and
-            timestamp > datetime('now', '-5 minute') and
+            timestamp > datetime(
+              (select timestamp from scene_backup where id = $otherThanId),
+              '-5 minute'
+            ) and
             length(data) <= $minDataLength;
     ]]
 
