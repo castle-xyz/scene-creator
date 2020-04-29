@@ -118,9 +118,17 @@ function Client:uiTextActorsData()
          end
       end
       if isTextActor then
+         local isSelected = false
+         for selectedActorId in pairs(self.selectedActorIds) do
+            if actorId == selectedActorId then
+               isSelected = true
+               break
+            end
+         end
          textActors[actorId] = {
             content = content,
             actor = actor,
+            isSelected = isSelected,
          }
       end
    end
