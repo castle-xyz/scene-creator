@@ -31,6 +31,8 @@ end
 -- Initial params
 
 INITIAL_PARAMS = castle.game.getInitialParams()
+IS_REQUESTING_EDIT_LOCK_CLEAR = false
+EDIT_LOCK_CLEAR_FRAME = 0
 
 -- 'multi' boilerplate
 --local gameUrl = castle.game.getCurrent().url
@@ -41,6 +43,9 @@ INITIAL_PARAMS = castle.game.getInitialParams()
 DUMB_SERVER = true -- Make the server just forward messages and never run updates or sync physics
 LOCAL_SERVER = true -- Force a local server and never use a remote one
 LOCAL_SERVER_PORT = "22122"
+
+REQUEST_EDIT_STATUS_CHANGE = nil
+EDIT_LOCK = 2
 --DEBUG_CS = true
 
 --end
@@ -71,6 +76,7 @@ function Client:start()
     instance = self
 
     self.lastPingSentTime = nil
+    self.isClient = true
 
     self.photoImages = {}
 
@@ -131,7 +137,18 @@ end
 
 -- Begin / end editing
 
+function REQUEST_EDIT_LOCK_CLEAR()
+    EDIT_LOCK_CLEAR_FRAME = 100
+    IS_REQUESTING_EDIT_LOCK_CLEAR = true
+end
+
 function Client:beginEditing()
+    REQUEST_EDIT_STATUS_CHANGE = "begin"
+end
+
+function Client:BEGIN_EDITING_WITH_LOCK()
+    EDIT_LOCK = 2
+
     if self.performing then
         if self.rewindSnapshotId then
             self:send("restoreSnapshot", self.rewindSnapshotId)
@@ -140,9 +157,17 @@ function Client:beginEditing()
             self:send("setPerforming", false)
         end
     end
+
+    REQUEST_EDIT_LOCK_CLEAR()
 end
 
 function Client:endEditing()
+    REQUEST_EDIT_STATUS_CHANGE = "end"
+end
+
+function Client:END_EDITING_WITH_LOCK()
+    EDIT_LOCK = 2
+
     if self.performing then
         if self.rewindSnapshotId then
             self:send("restoreSnapshot", self.rewindSnapshotId, {stopPerforming = false})
@@ -155,6 +180,8 @@ function Client:endEditing()
         self:send("setPerforming", true)
         self:send("setPaused", false)
     end
+
+    REQUEST_EDIT_LOCK_CLEAR()
 end
 
 -- Ready
@@ -216,6 +243,10 @@ function Client.receivers:ready(time)
 
         self.initialParamsRead = true
         self.sentGameLoadedEvent = false
+
+        REQUEST_EDIT_LOCK_CLEAR()
+
+    -- DEBUG_REMY_BUG()
     end
 
     -- Do garbage collection cycles soon
@@ -228,6 +259,28 @@ function Client.receivers:ready(time)
             collectgarbage()
         end
     )
+end
+
+function DEBUG_REMY_BUG()
+    for i = 1, 10 do
+        jsEvents.DEBUG_SEND_LUA_EVENT(
+            "SCENE_CREATOR_EDITING",
+            {
+                isEditing = true
+            }
+        )
+
+        copas.sleep(0.01)
+
+        jsEvents.DEBUG_SEND_LUA_EVENT(
+            "SCENE_CREATOR_EDITING",
+            {
+                isEditing = false
+            }
+        )
+
+        copas.sleep(0.01)
+    end
 end
 
 -- JS Events
@@ -362,6 +415,16 @@ function Client:update(dt)
     self:updateNotify(dt)
 
     self:updateAutoSaveScene()
+
+    if REQUEST_EDIT_STATUS_CHANGE and EDIT_LOCK == 0 then
+        if REQUEST_EDIT_STATUS_CHANGE == "begin" then
+            self:BEGIN_EDITING_WITH_LOCK()
+        elseif REQUEST_EDIT_STATUS_CHANGE == "end" then
+            self:END_EDITING_WITH_LOCK()
+        end
+
+        REQUEST_EDIT_STATUS_CHANGE = nil
+    end
 end
 
 -- Draw

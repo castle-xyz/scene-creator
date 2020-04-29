@@ -7,6 +7,7 @@ require "Common"
 
 function Server:start()
     Common.start(self)
+    self.isServer = true
 
     -- Unpause scene soon if not editing
     network.async(

@@ -7,12 +7,14 @@ local decode = bitser.loads
 local server = {}
 local client = {}
 
+local TEST_EDIT_LOCK
+
+local serverPendingMessages = {}
 do
     local clientId = 1
     local serverFrame = 0
     local serverConnectFrame = 2
     local serverHasSentConnect = false
-    local serverPendingMessages = {}
 
     function server.useCastleConfig()
     end
@@ -97,17 +99,19 @@ do
                 end
             end
         end
+
+        TEST_EDIT_LOCK()
     end
 
     function server.postupdate(dt)
     end
 end
 
+local clientPendingMessages = {}
 do
     local clientFrame = 0
     local clientConnectFrame = 2
     local clientHasSentConnect = false
-    local clientPendingMessages = {}
     client.id = 1
 
     function client.useCastleConfig()
@@ -189,6 +193,8 @@ do
                 end
             end
         end
+
+        TEST_EDIT_LOCK()
     end
 
     function client.postupdate(dt)
@@ -291,6 +297,17 @@ function castle.uiupdate(...)
         if client.uiupdate then
             client.uiupdate(...)
         end
+    end
+end
+
+TEST_EDIT_LOCK = function()
+    EDIT_LOCK_CLEAR_FRAME = EDIT_LOCK_CLEAR_FRAME - 1
+    if
+        IS_REQUESTING_EDIT_LOCK_CLEAR and EDIT_LOCK_CLEAR_FRAME <= 0 and #clientPendingMessages == 0 and
+            #serverPendingMessages == 0
+     then
+        EDIT_LOCK = 0
+        IS_REQUESTING_EDIT_LOCK_CLEAR = false
     end
 end
 
