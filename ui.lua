@@ -101,6 +101,32 @@ end
 
 -- UI
 
+function Client:uiTextActorsData()
+   -- TODO: maybe could avoid this iteration by maintaining a separate index
+   -- of text actors
+   
+   local textActors = {}
+   for actorId, actor in pairs(self.actors) do
+      local isTextActor = false
+      local content = nil
+      for behaviorId, component in pairs(actor.components) do
+         local behavior = self.behaviors[behaviorId]
+         if behavior.name == 'Text' then
+            isTextActor = true
+            content = component.properties.content
+            break
+         end
+      end
+      if isTextActor then
+         textActors[actorId] = {
+            content = content,
+            actor = actor,
+         }
+      end
+   end
+   ui.data({ textActors = textActors })
+end
+
 function Client:uiGlobalActions()
     ui.button('back', {
         icon = 'arrow-left',
@@ -913,5 +939,10 @@ function Client:uiupdate()
         visible = not self.performing and not selectionEmpty,
     }, function()
         self:uiInspector()
+    end)
+
+    -- Text actors
+    ui.pane('sceneCreatorTextActors', function()
+        self:uiTextActorsData()
     end)
 end
