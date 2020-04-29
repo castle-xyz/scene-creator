@@ -302,6 +302,20 @@ jsEvents.listen(
 )
 
 jsEvents.listen(
+   "SELECT_ACTOR",
+   function(params)
+      local self = instance
+      if self then
+         self:deselectAllActors()
+         if params.actorId ~= nil then
+            self:selectActor(params.actorId)
+            self:applySelections()
+         end
+      end
+   end
+)
+
+jsEvents.listen(
     "UPDATE_DECK_STATE",
     function(params)
         local self = instance
