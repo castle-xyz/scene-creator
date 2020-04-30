@@ -101,38 +101,25 @@ end
 
 -- UI
 
+function Client:_textActorHasTapTrigger(actor)
+   for behaviorId, component in pairs(actor.components) do
+      local behavior = self.behaviors[behaviorId]
+      if behavior.name == 'Rules' then
+         return behavior.handlers.componentHasTrigger(component, 'tap')
+      end
+   end
+end
+
 function Client:uiTextActorsData()
-   -- TODO: maybe could avoid this iteration by maintaining a separate index
-   -- of text actors
-   
    local textActors = {}
-   for actorId, actor in pairs(self.actors) do
-      local isTextActor, hasTapTrigger = false, false
-      local content = nil
-      for behaviorId, component in pairs(actor.components) do
-         local behavior = self.behaviors[behaviorId]
-         if behavior.name == 'Text' then
-            isTextActor = true
-            content = component.properties.content
-         elseif behavior.name == 'Rules' then
-            hasTapTrigger = behavior.handlers.componentHasTrigger(component, 'tap')
-         end
-      end
-      if isTextActor then
-         local isSelected = false
-         for selectedActorId in pairs(self.selectedActorIds) do
-            if actorId == selectedActorId then
-               isSelected = true
-               break
-            end
-         end
-         textActors[actorId] = {
-            content = content,
-            actor = actor,
-            isSelected = isSelected,
-            hasTapTrigger = hasTapTrigger,
-         }
-      end
+   for actorId, component in pairs(self.behaviorsByName.Text.components) do
+      local actor = self.actors[actorId]
+      textActors[actorId] = {
+         content = component.properties.content,
+         actor = actor,
+         isSelected = self.selectedActorIds[actorId] ~= nil,
+         hasTapTrigger = self:_textActorHasTapTrigger(actor),
+      }
    end
    ui.data({ textActors = textActors })
 end
