@@ -306,10 +306,27 @@ jsEvents.listen(
    function(params)
       local self = instance
       if self then
-         self:deselectAllActors()
-         if params.actorId ~= nil then
-            self:selectActor(params.actorId)
-            self:applySelections()
+         if self.performing then
+            -- playing scene, fire 'tap' if applicable
+            local actor = self.actors[params.actorId]
+            if actor then
+               for behaviorId, component in pairs(actor.components) do
+                  local behavior = self.behaviors[behaviorId]
+                  if behavior.name == 'Text' then
+                     -- NOTE: could also do something like
+                     -- component.jsSelected = true
+                     -- and check inside TextBehavior.handlers:prePerform() on next step.
+                     behavior:fireTrigger('tap', params.actorId)
+                  end
+               end
+            end
+         else
+            -- editing scene, select actor
+            self:deselectAllActors()
+            if params.actorId ~= nil then
+               self:selectActor(params.actorId)
+               self:applySelections()
+            end
          end
       end
    end

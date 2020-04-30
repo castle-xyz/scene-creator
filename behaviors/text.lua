@@ -25,5 +25,11 @@ function TextBehavior.handlers:uiComponent(component, opts)
    self:uiProperty('textArea', 'content', actorId, 'content')
 end
 
+-- Rules and triggers
 
-
+TextBehavior.triggers.tap = {
+    description = [[
+Triggered when the user taps (a quick **touch and release**) on the actor.
+]],
+    category = "input"
+}
