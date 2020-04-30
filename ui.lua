@@ -107,14 +107,15 @@ function Client:uiTextActorsData()
    
    local textActors = {}
    for actorId, actor in pairs(self.actors) do
-      local isTextActor = false
+      local isTextActor, hasTapTrigger = false, false
       local content = nil
       for behaviorId, component in pairs(actor.components) do
          local behavior = self.behaviors[behaviorId]
          if behavior.name == 'Text' then
             isTextActor = true
             content = component.properties.content
-            break
+         elseif behavior.name == 'Rules' then
+            hasTapTrigger = behavior.handlers.componentHasTrigger(component, 'tap')
          end
       end
       if isTextActor then
@@ -129,6 +130,7 @@ function Client:uiTextActorsData()
             content = content,
             actor = actor,
             isSelected = isSelected,
+            hasTapTrigger = hasTapTrigger,
          }
       end
    end

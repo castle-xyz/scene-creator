@@ -44,6 +44,10 @@ function RulesBehavior.handlers:blueprintComponent(component, bp)
     bp.rules = util.deepCopyTable(component.properties.rules)
 end
 
+function RulesBehavior.handlers.componentHasTrigger(component, triggerName)
+   return component._rulesByTriggerName[triggerName] ~= nil
+end
+
 -- Setters
 
 function RulesBehavior.setters:rules(component, newRules)
