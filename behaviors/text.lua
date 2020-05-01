@@ -2,7 +2,8 @@ local TextBehavior = defineCoreBehavior {
     name = 'Text',
     displayName = 'text',
     propertyNames = {
-        'content',
+       'content',
+       'visible',
     },
     dependencies = {},
 }
@@ -11,11 +12,13 @@ local TextBehavior = defineCoreBehavior {
 -- Component management
 
 function TextBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.content = bp.content or ''
+   component.properties.content = bp.content or ''
+   component.properties.visible = bp.visible or true
 end
 
 function TextBehavior.handlers:blueprintComponent(component, bp)
-    bp.content = component.properties.content
+   bp.content = component.properties.content
+   bp.visible = component.properties.visible
 end
 
 -- UI
@@ -23,6 +26,7 @@ end
 function TextBehavior.handlers:uiComponent(component, opts)
    local actorId = component.actorId
    self:uiProperty('textArea', 'content', actorId, 'content')
+   self:uiProperty('checkbox', 'visible', actorId, 'visible')
 end
 
 -- Rules and triggers
@@ -32,4 +36,28 @@ TextBehavior.triggers.tap = {
 Triggered when the user taps (a quick **touch and release**) on the actor.
 ]],
     category = "input"
+}
+
+-- Responses
+
+TextBehavior.responses["show"] = {
+   description = [[
+Shows the text.
+   ]],
+   category = 'visible',
+   run = function(self, actorId, params, context)
+      local component = self.components[actorId]
+      component.properties.visible = true
+   end
+}
+
+TextBehavior.responses["hide"] = {
+   description = [[
+Hides the text.
+   ]],
+   category = 'visible',
+   run = function(self, actorId, params, context)
+      local component = self.components[actorId]
+      component.properties.visible = false
+   end
 }

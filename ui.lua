@@ -114,8 +114,13 @@ function Client:uiTextActorsData()
    local textActors = {}
    for actorId, component in pairs(self.behaviorsByName.Text.components) do
       local actor = self.actors[actorId]
+      local visible = true
+      if self.performing then
+         visible = component.properties.visible or false
+      end
       textActors[actorId] = {
          content = component.properties.content,
+         visible = visible,
          actor = actor,
          isSelected = self.selectedActorIds[actorId] ~= nil,
          hasTapTrigger = self:_textActorHasTapTrigger(actor),
