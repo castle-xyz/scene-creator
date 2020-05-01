@@ -564,7 +564,17 @@ function Client:uiInspector()
                                             id = 'add behavior',
                                             filterType = 'behavior',
                                             filterBehavior = function(behavior)
-                                                -- Skip behaviors we already have, skip tools
+                                               -- if actor has body and this is text, return false
+                                               if (actor.components[self.behaviorsByName.Body.behaviorId] and behavior == self.behaviorsByName.Text) then
+                                                  return false
+                                               end
+
+                                               -- if actor has text and this is not rules, return false
+                                               if (actor.components[self.behaviorsByName.Text.behaviorId] and behavior ~= self.behaviorsByName.Rules) then
+                                                  return false
+                                               end
+
+                                               -- Skip behaviors we already have, skip tools
                                                 return not (actor.components[behavior.behaviorId] or behavior.tool)
                                             end,
                                             emptyText = 'No other behaviors to add!',
