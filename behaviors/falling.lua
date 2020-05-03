@@ -42,7 +42,7 @@ function FallingBehavior.handlers:uiComponent(component, opts)
         "gravity",
         body:getGravityScale(),
         {
-            props = {step = 0.5, min = 0},
+            props = {step = 0.5},
             onChange = function(params)
                 local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
                 physics:setGravityScale(bodyId, params.value)
