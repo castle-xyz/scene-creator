@@ -34,6 +34,8 @@ INITIAL_PARAMS = castle.game.getInitialParams()
 IS_REQUESTING_EDIT_LOCK_CLEAR = false
 EDIT_LOCK_CLEAR_FRAME = 0
 
+SHOW_TEXT_ACTORS = false
+
 -- 'multi' boilerplate
 --local gameUrl = castle.game.getCurrent().url
 --local isFileUrl = gameUrl:match("^file://")

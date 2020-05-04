@@ -1,18 +1,6 @@
 -- Core library
 
 local CORE_LIBRARY = {
-   {
-      entryType = 'actorBlueprint',
-      title = 'text',
-      description = 'A humble block of text, pinned to the bottom of the card.',
-      actorBlueprint = {
-         components = {
-            Text = {
-               content = 'Once upon a time...',
-            },
-         },
-      },
-   },
     {
         entryType = "actorBlueprint",
         title = "wall",
@@ -44,6 +32,24 @@ local CORE_LIBRARY = {
         }
     }
 }
+
+if SHOW_TEXT_ACTORS then
+   table.insert(
+      CORE_LIBRARY,
+      {
+         entryType = 'actorBlueprint',
+         title = 'text',
+         description = 'A humble block of text, pinned to the bottom of the card.',
+         actorBlueprint = {
+            components = {
+               Text = {
+                  content = 'Once upon a time...',
+               },
+            },
+         },
+      }
+   )
+end
 
 local assetNames = require "asset_names"
 for _, assetName in ipairs(assetNames) do
