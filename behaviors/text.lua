@@ -61,3 +61,27 @@ Hides the text.
       component.properties.visible = false
    end
 }
+
+TextBehavior.responses["send player to card"] = {
+   description = [[
+Sends the player to another card in this deck.
+   ]],
+   category = 'navigation',
+   initialParams = {
+      card = nil,
+   },
+   uiBody = function(self, params, onChangeParam)
+      ui.cardPicker(
+            "destination card",
+            params.card,
+            {
+               onChange = function(newCard)
+                  onChangeParam("change card", "card", newCard)
+                end
+            }
+        )
+   end,
+   run = function(self, actorId, params, context)
+      jsEvents.send("NAVIGATE_TO_CARD", { card = params.card })
+   end
+}
