@@ -67,6 +67,7 @@ TextBehavior.responses["send player to card"] = {
 Sends the player to another card in this deck.
    ]],
    category = 'navigation',
+   triggerFilter = { tap = true },
    initialParams = {
       card = nil,
    },
