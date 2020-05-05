@@ -3,6 +3,10 @@
 var fs = require("fs");
 var request = require("request");
 
+// no
+console.error(`master is not deployable until we finish migrating to text actors`);
+process.exit(1);
+
 var token = process.env["TOKEN"];
 
 if (!token) {
