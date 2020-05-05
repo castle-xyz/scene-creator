@@ -130,92 +130,60 @@ function Client:uiTextActorsData()
 end
 
 function Client:uiGlobalActions()
-    ui.button('back', {
-        icon = 'arrow-left',
+   local actionsAvailable = {}
+   local actions = {}
+
+   actionsAvailable['onPlay'] = not self.performing
+   actions['onPlay'] = function()
+      self:endEditing()
+   end
+
+   actionsAvailable['onRewind'] = self.performing
+   actions['onRewind'] = function()
+      self:beginEditing()
+   end
+
+   local hasUndo, hasRedo = #self.undos > 0, #self.redos > 0
+   actionsAvailable['onUndo'] = hasUndo
+   actions['onUndo'] = function()
+      self:undo()
+   end
+   actionsAvailable['onRedo'] = hasRedo
+   actions['onRedo'] = function()
+      self:redo()
+   end
+   
+   ui.data(
+      {
+         performing = self.performing,
+         actionsAvailable = actionsAvailable,
+      },
+      {
+         actions = actions,
+      }
+   )
+   
+   -- TODO: restore backups button
+   --[[
+    ui.button('settings', {
+        icon = 'cog',
         iconFamily = 'FontAwesome5',
-        onClick = function()
-            jsEvents.send('GHOST_BACK', {})
+        hideLabel = true,
+        popoverAllowed = true,
+        popoverStyle = { width = 300, height = 300 },
+        popover = function(closePopover)
+            ui.scrollBox('settings', {
+                padding = 4,
+                margin = 4,
+                flex = 1,
+            }, function()
+                ui.section('backups', function()
+                    self:uiBackups(closePopover)
+                end)
+            end)
         end,
     })
-
-    ui.box('spacer', { flex = 1 }, function() end)
-
-    ui.box('global-actions-performing-' .. tostring(self.performing), {
-        flexDirection = 'row',
-    }, function()
-        ui.box('left', { flexDirection = 'row' }, function()
-            if not self.performing then
-                -- Paused mode
-
-                -- Play
-                ui.button('play', {
-                    icon = 'play',
-                    iconFamily = 'FontAwesome',
-                    hideLabel = true,
-                    onClick = function()
-                        self:endEditing()
-                    end,
-                })
-
-                -- Undo / redo
-                local hasUndo, hasRedo = #self.undos > 0, #self.redos > 0
-                if hasUndo then
-                    ui.button('undo', {
-                        icon = 'ios-undo',
-                        iconFamily = 'Ionicons',
-                        hideLabel = true,
-                        onClick = function()
-                            self:undo()
-                        end,
-                    })
-                end
-                if hasRedo then
-                    ui.button('redo', {
-                        icon = 'ios-redo',
-                        iconFamily = 'Ionicons',
-                        hideLabel = true,
-                        onClick = function()
-                            self:redo()
-                        end,
-                    })
-                end
-            else
-                -- Play mode
-
-                -- Rewind
-                ui.button('rewind', {
-                    icon = 'stop',
-                    iconFamily = 'FontAwesome',
-                    hideLabel = true,
-                    onClick = function()
-                        self:beginEditing()
-                    end,
-                })
-            end
-
-            -- Settings
-            ui.button('settings', {
-                icon = 'cog',
-                iconFamily = 'FontAwesome5',
-                hideLabel = true,
-                popoverAllowed = true,
-                popoverStyle = { width = 300, height = 300 },
-                popover = function(closePopover)
-                    ui.scrollBox('settings', {
-                        padding = 4,
-                        margin = 4,
-                        flex = 1,
-                    }, function()
-                        ui.section('backups', function()
-                            self:uiBackups(closePopover)
-                        end)
-                    end)
-                end,
-            })
-        end)
-    end)
-
-    ui.box('spacer', { flex = 1 }, function() end)
+   --]]
 end
 
 function Client:uiBlueprints()
