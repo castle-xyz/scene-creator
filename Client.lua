@@ -1,67 +1,23 @@
--- Prefetch all hosted files
-if
-    (portal.basePath:match("^https?://api%.castle%.games/") and CASTLE_INITIAL_DATA and CASTLE_INITIAL_DATA.hostedFiles and
-        network.findPersistedFetchResult)
- then
-    local ignore = {
-        ["cover.png"] = true,
-        [".castleid"] = true,
-        ["project.castle"] = true
-    }
-    local filenames = {}
-    for filename, target in pairs(CASTLE_INITIAL_DATA.hostedFiles) do
-        if not ignore[filename] then
-            local path = portal.basePath .. "/" .. filename
-            if not network.findPersistedFetchResult(target, "GET") then
-                network.async(
-                    function()
-                        network.fetch(path, "HEAD")
-                    end
-                )
-                network.async(
-                    function()
-                        network.fetch(path, "GET")
-                    end
-                )
-            end
-        end
-    end
-end
+jsEvents = require "__ghost__.jsEvents"
 
 -- Initial params
 
-INITIAL_PARAMS = castle.game.getInitialParams()
-IS_REQUESTING_EDIT_LOCK_CLEAR = false
-EDIT_LOCK_CLEAR_FRAME = 0
-
 SHOW_TEXT_ACTORS = true
 
--- 'multi' boilerplate
---local gameUrl = castle.game.getCurrent().url
---local isFileUrl = gameUrl:match("^file://")
---local isLANUrl = gameUrl:match("^http://192%.") or gameUrl:match("^http://172%.20%.") or gameUrl:match("http://10%.")
---if isFileUrl or isLANUrl or (INITIAL_PARAMS and INITIAL_PARAMS.scene) then
--- Developing or loading a scene
-DUMB_SERVER = true -- Make the server just forward messages and never run updates or sync physics
-LOCAL_SERVER = true -- Force a local server and never use a remote one
-LOCAL_SERVER_PORT = "22122"
-
-REQUEST_EDIT_STATUS_CHANGE = nil
-EDIT_LOCK = 2
---DEBUG_CS = true
-
---end
-function GET_SERVER_MODULE_NAME()
-    return "Server"
-end
-Game = require("multi.client", {root = true})
-Common, Server, Client = Game.Common, Game.Server, Game.Client
-require "Common"
-
---local clientServer = require "multi.cs"
 function castle.onQuit()
-    --clientServer.server.closePort()
 end
+
+Common = {}
+Common.receivers = {}
+Client =
+    setmetatable(
+    {
+        receivers = setmetatable({}, {__index = Common.receivers})
+    },
+    {__index = Common}
+)
+
+require "Common"
 
 -- Client modules
 
@@ -74,13 +30,19 @@ require "notify"
 
 local instance
 
-function Client:start()
-    instance = self
+function Client:_new()
+    return setmetatable({}, {__index = self})
+end
 
-    self.lastPingSentTime = nil
-    self.isClient = true
+function love.load()
+    instance:load()
+end
 
-    self.photoImages = {}
+function Client:load()
+    self.clientId = 0
+    self:start()
+
+    --self.photoImages = {}
 
     self:startSelect()
 
@@ -92,11 +54,45 @@ function Client:start()
 
     self:resetView()
     self.viewTransform = love.math.newTransform()
+
+    local initialParams = castle.game.getInitialParams()
+    local scene = initialParams.scene
+
+    self.editingSnapshot = scene.data.snapshot
+    self:restoreSnapshot(scene.data.snapshot)
+
+    local deckState = scene.deckState or {}
+    local variables = deckState.variables or {}
+    self:send("updateVariables", variables)
+
+    self.sentGameLoadedEvent = false
 end
+
+function castle.uiupdate(...)
+    instance:uiupdate(...)
+end
+
+-- Begin / end editing
+
+function Client:beginEditing()
+    self:send("setPerforming", false)
+    if self.editingSnapshot then
+        self:restoreSnapshot(self.editingSnapshot)
+    end
+end
+
+function Client:endEditing()
+    self.editingSnapshot = self:createSnapshot()
+    self:saveScene(self.editingSnapshot)
+    self:send("setPerforming", true)
+    self:send("setPaused", false)
+end
+
+-- JS Events
 
 -- Connect / reconnect / disconnect
 
-function Client:connect()
+--[[function Client:connect()
     Common.start(self)
 
     -- Send `me`
@@ -133,160 +129,10 @@ function Client.receivers:me(time, clientId, me)
             end
         )
     end
-    ]]
+    ] ]
     --
 end
-
--- Begin / end editing
-
-function REQUEST_EDIT_LOCK_CLEAR()
-    EDIT_LOCK_CLEAR_FRAME = 100
-    IS_REQUESTING_EDIT_LOCK_CLEAR = true
-end
-
-function Client:beginEditing()
-    REQUEST_EDIT_STATUS_CHANGE = "begin"
-end
-
-function Client:BEGIN_EDITING_WITH_LOCK()
-    EDIT_LOCK = 2
-
-    if self.performing then
-        if self.rewindSnapshotId then
-            self:send("restoreSnapshot", self.rewindSnapshotId)
-            self:send("removeSnapshot", self.rewindSnapshotId)
-        else
-            self:send("setPerforming", false)
-        end
-    end
-
-    REQUEST_EDIT_LOCK_CLEAR()
-end
-
-function Client:endEditing()
-    REQUEST_EDIT_STATUS_CHANGE = "end"
-end
-
-function Client:END_EDITING_WITH_LOCK()
-    EDIT_LOCK = 2
-
-    if self.performing then
-        if self.rewindSnapshotId then
-            self:send("restoreSnapshot", self.rewindSnapshotId, {stopPerforming = false})
-        end
-    else
-        local snapshot = self:createSnapshot()
-        self:saveScene(snapshot)
-        self:send("addSnapshot", util.uuid(), snapshot, {isRewind = true})
-        self:saveScreenshot()
-        self:send("setPerforming", true)
-        self:send("setPaused", false)
-    end
-
-    REQUEST_EDIT_LOCK_CLEAR()
-end
-
--- Ready
-
--- unused for now. right now we're reloading using BASE_RELOAD until RELOAD_SCENE_CREATOR works consistently
-local cjson = require "cjson"
-jsEvents.listen(
-    "RELOAD_SCENE_CREATOR",
-    function(params)
-        local self = instance
-        --print('in RELOAD_SCENE_CREATOR')
-
-        local decodedParams = cjson.decode(params.obj)
-        local scene = cjson.decode(decodedParams.initialParams).scene
-        local snapshot = scene.data.snapshot
-
-        --local decodedParams = cjson.decode(params)
-        --local scene = decodedParams.scene
-
-        self.sceneId = scene and scene.sceneId
-        self:send("addSnapshot", util.uuid(), scene.data.snapshot, {isRewind = true})
-        self:send(
-            "restoreSnapshot",
-            self.rewindSnapshotId,
-            {
-                stopPerforming = false
-            }
-        )
-    end
-)
-
-function Client.receivers:ready(time)
-    if not self.initialParamsRead and INITIAL_PARAMS then
-        local scene = INITIAL_PARAMS.scene
-        --if scene then
-        --    print('scene', serpent.block(scene))
-        --end
-        sceneCreatorSceneId = 0
-        if scene and scene.sceneId then
-            sceneCreatorSceneId = scene.sceneId
-        end
-
-        if scene and scene.data and scene.data.snapshot then
-            self:send("addSnapshot", util.uuid(), scene.data.snapshot, {isRewind = true})
-            self:send(
-                "restoreSnapshot",
-                self.rewindSnapshotId,
-                {
-                    stopPerforming = not (not INITIAL_PARAMS.isEditing)
-                }
-            )
-        elseif INITIAL_PARAMS.isEditing then
-            self:beginEditing()
-        end
-
-        local deckState = scene.deckState or {}
-        local variables = deckState.variables or {}
-        self:send("updateVariables", variables)
-
-        self.initialParamsRead = true
-        self.sentGameLoadedEvent = false
-
-        REQUEST_EDIT_LOCK_CLEAR()
-
-    -- DEBUG_REMY_BUG()
-    end
-
-    -- Do garbage collection cycles soon
-    network.async(
-        function()
-            collectgarbage()
-            collectgarbage()
-            copas.sleep(0.05)
-            collectgarbage()
-            collectgarbage()
-        end
-    )
-end
-
-function DEBUG_REMY_BUG()
-    for i = 1, 10 do
-        jsEvents.DEBUG_SEND_LUA_EVENT(
-            "SCENE_CREATOR_EDITING",
-            {
-                isEditing = true
-            }
-        )
-
-        copas.sleep(0.01)
-
-        jsEvents.DEBUG_SEND_LUA_EVENT(
-            "SCENE_CREATOR_EDITING",
-            {
-                isEditing = false
-            }
-        )
-
-        copas.sleep(0.01)
-    end
-end
-
--- JS Events
-
+]]
 jsEvents.listen(
     "SCENE_CREATOR_EDITING",
     function(params)
@@ -304,29 +150,29 @@ jsEvents.listen(
 )
 
 jsEvents.listen(
-   "SELECT_ACTOR",
-   function(params)
-      local self = instance
-      if self then
-         if self.performing then
-            -- playing scene, fire 'tap' if applicable
-            local textBehavior = self.behaviorsByName.Text
-            if textBehavior:has(params.actorId) then
-               -- NOTE: could also do something like
-               -- component.jsSelected = true
-               -- and check inside TextBehavior.handlers:prePerform() on next step.
-               textBehavior:fireTrigger('tap', params.actorId)
+    "SELECT_ACTOR",
+    function(params)
+        local self = instance
+        if self then
+            if self.performing then
+                -- playing scene, fire 'tap' if applicable
+                local textBehavior = self.behaviorsByName.Text
+                if textBehavior:has(params.actorId) then
+                    -- NOTE: could also do something like
+                    -- component.jsSelected = true
+                    -- and check inside TextBehavior.handlers:prePerform() on next step.
+                    textBehavior:fireTrigger("tap", params.actorId)
+                end
+            else
+                -- editing scene, select actor
+                self:deselectAllActors()
+                if params.actorId ~= nil then
+                    self:selectActor(params.actorId)
+                    self:applySelections()
+                end
             end
-         else
-            -- editing scene, select actor
-            self:deselectAllActors()
-            if params.actorId ~= nil then
-               self:selectActor(params.actorId)
-               self:applySelections()
-            end
-         end
-      end
-   end
+        end
+    end
 )
 
 jsEvents.listen(
@@ -412,16 +258,16 @@ function Client:twoFingerPan()
     end
 end
 
-function Client:update(dt)
-    if not self.connected then
-        return
-    end
+function love.update(dt)
+    instance:update(dt)
+end
 
+function Client:update(dt)
     local currTime = love.timer.getTime()
-    if not self.lastPingSentTime or currTime - self.lastPingSentTime > 2 then
-        self.lastPingSentTime = currTime
-        self:send("ping", self.clientId)
-    end
+    --if not self.lastPingSentTime or currTime - self.lastPingSentTime > 2 then
+    --    self.lastPingSentTime = currTime
+    --    self:send("ping", self.clientId)
+    --end
 
     self:updateTouches()
 
@@ -594,6 +440,10 @@ function Client:saveScreenshot()
     -- screenshotCanvas:release()
 end
 
+function love.draw()
+    instance:draw()
+end
+
 function Client:draw()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
@@ -748,9 +598,11 @@ function Client:draw()
         )
     end
 
-    if self.initialParamsRead and not self.sentGameLoadedEvent then
+    if not self.sentGameLoadedEvent then
         self.sentGameLoadedEvent = true
 
         jsEvents.send("SCENE_CREATOR_GAME_LOADED", {})
     end
 end
+
+instance = Client:_new()

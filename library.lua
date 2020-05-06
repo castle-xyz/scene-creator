@@ -34,21 +34,21 @@ local CORE_LIBRARY = {
 }
 
 if SHOW_TEXT_ACTORS then
-   table.insert(
-      CORE_LIBRARY,
-      {
-         entryType = 'actorBlueprint',
-         title = 'text',
-         description = 'A humble block of text, pinned to the bottom of the card.',
-         actorBlueprint = {
-            components = {
-               Text = {
-                  content = 'Once upon a time...',
-               },
-            },
-         },
-      }
-   )
+    table.insert(
+        CORE_LIBRARY,
+        {
+            entryType = "actorBlueprint",
+            title = "text",
+            description = "A humble block of text, pinned to the bottom of the card.",
+            actorBlueprint = {
+                components = {
+                    Text = {
+                        content = "Once upon a time..."
+                    }
+                }
+            }
+        }
+    )
 end
 
 local assetNames = require "asset_names"
@@ -73,34 +73,13 @@ end
 
 function Common:startLibrary()
     self.library = {} -- `entryId` -> entry
-end
 
-function Server:startLibrary()
-    Common.startLibrary(self)
-
-    -- On server, populate the library with core entries
     for _, entrySpec in pairs(CORE_LIBRARY) do
         local entryId = self:generateId()
         local entry = util.deepCopyTable(entrySpec)
         entry.entryId = entryId
         entry.isCore = true
         self.library[entryId] = entry
-    end
-end
-
--- Message kind definitions
-
-function Common:defineLibraryMessageKinds()
-    self:defineMessageKind("addLibraryEntry", self.sendOpts.reliableToAll)
-    self:defineMessageKind("removeLibraryEntry", self.sendOpts.reliableToAll)
-    self:defineMessageKind("updateLibraryEntry", self.sendOpts.reliableToAll)
-end
-
--- Sync new client
-
-function Server:syncClientLibrary(clientId, send)
-    for entryId, entry in pairs(self.library) do
-        send("addLibraryEntry", entryId, entry)
     end
 end
 

@@ -13,6 +13,7 @@ CHECKERBOARD_IMAGE_URL =
 
 serpent = require "vendor.serpent"
 bitser = require "vendor.bitser"
+inspect = require "vendor.inspect"
 
 jsEvents = require "__ghost__.jsEvents"
 jsBridge = require "__ghost__.bridge"
@@ -29,7 +30,7 @@ resource_loader = require "resource_loader"
 util = require "util"
 helps = require "helps"
 
-require "actor_behavior"
+require "actor_behavior" -- -- -- Message kind definition -- Start / stop
 
 require "behaviors.body"
 require "behaviors.image"
@@ -64,71 +65,10 @@ require "snapshot"
 require "command"
 require "variables"
 
--- Message kind definition
-
-function Common:define()
-    self.channels = {}
-
-    self.channels.mainReliable = 0
-    self.channels.secondaryReliable = 99
-
-    self.sendOpts = {}
-    self.sendOpts.reliableToAll = {
-        to = "all",
-        reliable = true,
-        channel = self.channels.mainReliable,
-        selfSend = true,
-        forward = true,
-        rate = 20 -- In case a `reliable = false` override is used
-    }
-
-    self:defineMessageKind(
-        "me",
-        {
-            reliable = true,
-            channel = self.channels.secondaryReliable,
-            selfSend = true,
-            forward = true
-        }
-    )
-    self:defineMessageKind(
-        "ping",
-        {
-            reliable = true,
-            channel = self.channels.secondaryReliable,
-            selfSend = true,
-            forward = true
-        }
-    )
-
-    self:defineActorBehaviorMessageKinds()
-    self:defineLibraryMessageKinds()
-    self:defineSnapshotMessageKinds()
-    self:defineVariablesMessageKinds()
-
-    self:defineMessageKind("setPerforming", self.sendOpts.reliableToAll)
-    self:defineMessageKind("setPaused", self.sendOpts.reliableToAll)
-    self:defineMessageKind("clearScene", self.sendOpts.reliableToAll)
-
-    self:defineMessageKind(
-        "ready",
-        {
-            from = "server",
-            reliable = true,
-            channel = self.channels.mainReliable,
-            selfSend = false,
-            forward = false
-        }
-    )
-
-    self.onEndOfFrames = {}
-end
-
--- Start / stop
-
 function Common:start()
-    self.mes = {}
-    self.lastPingTimes = {}
+    self.onEndOfFrames = {}
+
+    self._nextIdSuffix = 1
 
     self:startActorBehavior()
     self:startLibrary()
@@ -137,11 +77,33 @@ function Common:start()
     self:startVariables()
 
     self.performing = true
-    self.paused = true
+    self.paused = false
 end
 
 function Common:stop()
     self:stopActorBehavior()
+end
+
+function Common:send(opts, ...)
+    if type(opts) == "string" then -- Shorthand
+        opts = {kind = opts}
+    end
+
+    local kind = opts.kind
+    assert(type(kind) == "string", "send: `kind` needs to be a string")
+
+    print("send calling " .. kind .. "()")
+
+    self.receivers[kind](self, 0, ...)
+end
+
+function Common:generateId()
+    local suffix = tostring(self._nextIdSuffix)
+    self._nextIdSuffix = self._nextIdSuffix + 1
+
+    local prefix = "0"
+
+    return prefix .. "-" .. suffix
 end
 
 -- Users
@@ -149,10 +111,10 @@ end
 function Common.receivers:me(time, clientId, me)
     self.mes[clientId] = me
 end
-
-function Common.receivers:ping(time, clientId)
-    self.lastPingTimes[clientId] = time
-end
+--
+--function Common.receivers:ping(time, clientId)
+--   self.lastPingTimes[clientId] = time
+--end
 
 -- Performance
 
@@ -181,6 +143,7 @@ end
 function Common.receivers:clearScene(time)
     self:callHandlers("clearScene", paused)
 end
+--
 
 -- Methods
 
@@ -196,6 +159,7 @@ function Common:restartScene()
     if self.rewindSnapshotId then
         self:send("setPaused", true)
 
+        -- TODO: jesse
         self:send(
             {
                 selfSendOnly = not (not self.server),

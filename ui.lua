@@ -881,16 +881,6 @@ function Client:uiInspector()
 end
 
 function Client:uiupdate()
-    if not castle.system.isMobile() then
-        ui.markdown('# Hello!\nThis prototype is meant for mobile. :O')
-        return
-    end
-
-    if not self.connected then
-        ui.markdown('connecting...')
-        return
-    end
-
     -- Refresh tools first to make sure selections and applicable tool set are valid
     self:applySelections() 
 

@@ -10,7 +10,7 @@ end
 
 function BaseBehavior:isActive()
     if self.tool then
-        if self.game.server or (self.game.client and self.game.activeToolBehaviorId ~= self.behaviorId) then
+        if self.game.activeToolBehaviorId ~= self.behaviorId then
             return false
         end
     end
@@ -68,21 +68,17 @@ function BaseBehavior:getTouchData()
         allTouchesReleased = false,
         gestureId = nil
     }
-    if self.game.server then
+
+    if self.game.gestureStolen then
         return empty
     end
-    if self.game.client then
-        if self.game.gestureStolen then
-            return empty
-        end
-        return {
-            touches = self.game.touches,
-            numTouches = self.game.numTouches,
-            maxNumTouches = self.game.maxNumTouches,
-            allTouchesReleased = self.game.allTouchesReleased,
-            gestureId = self.game.gestureId
-        }
-    end
+    return {
+        touches = self.game.touches,
+        numTouches = self.game.numTouches,
+        maxNumTouches = self.game.maxNumTouches,
+        allTouchesReleased = self.game.allTouchesReleased,
+        gestureId = self.game.gestureId
+    }
 end
 
 function BaseBehavior:getOtherBehavior(otherBehaviorId)
@@ -205,83 +201,6 @@ function Common:stopActorBehavior()
     end
     for i = #order, 1, -1 do
         self.receivers.removeBehavior(self, 0, self.clientId, order[i])
-    end
-end
-
--- Message kind definitions
-
-function Common:defineActorBehaviorMessageKinds()
-    self:defineMessageKind("addActor", self.sendOpts.reliableToAll)
-    self:defineMessageKind("removeActor", self.sendOpts.reliableToAll)
-    self:defineMessageKind("setActorDrawOrder", self.sendOpts.reliableToAll)
-    self:defineMessageKind("setActorParentEntryId", self.sendOpts.reliableToAll)
-    self:defineMessageKind("addBehavior", self.sendOpts.reliableToAll)
-    self:defineMessageKind("removeBehavior", self.sendOpts.reliableToAll)
-    self:defineMessageKind("addComponent", self.sendOpts.reliableToAll)
-    self:defineMessageKind("removeComponent", self.sendOpts.reliableToAll)
-    self:defineMessageKind("setProperties", self.sendOpts.reliableToAll)
-end
-
--- Connect / disconnect
-
-function Server:syncClientActorBehavior(clientId, send)
-    -- Send behaviors and their global properties
-    for behaviorId, behavior in pairs(self.behaviors) do
-        if not behavior.isCore then
-            send("addBehavior", self.clientId, behaviorId, behavior.behaviorSpec)
-        end
-
-        behavior:sendSetProperties(
-            {
-                to = clientId,
-                selfSend = false,
-                channel = self.channels.mainReliable
-            },
-            util.unpackPairs(behavior.globals)
-        )
-    end
-
-    -- Notify `preSyncClient`
-    for behaviorId, behavior in pairs(self.behaviors) do
-        behavior:callHandler("preSyncClient", clientId)
-    end
-
-    -- Send actors and components
-    self:forEachActorByDrawOrder(
-        function(actor)
-            send("addActor", self.clientId, actor.actorId, actor.parentEntryId)
-
-            for behaviorId, component in pairs(actor.components) do
-                send("addComponent", component.clientId or self.clientId, actor.actorId, behaviorId)
-
-                local behavior = self.behaviors[behaviorId]
-                behavior:sendSetProperties(
-                    {
-                        to = clientId,
-                        selfSend = false,
-                        channel = self.channels.mainReliable,
-                        actorId = actor.actorId
-                    },
-                    util.unpackPairs(component.properties)
-                )
-            end
-        end
-    )
-
-    -- Notify `postSyncClient`
-    for behaviorId, behavior in pairs(self.behaviors) do
-        behavior:callHandler("postSyncClient", clientId)
-    end
-end
-
-function Server:disconnectActorBehavior(clientId)
-    -- Clear tool components for this client
-    for behaviorId, tool in pairs(self.tools) do
-        for actorId, component in pairs(tool.components) do
-            if component.clientId == clientId then
-                self:send("removeComponent", self.clientId, actorId, behaviorId)
-            end
-        end
     end
 end
 
@@ -645,12 +564,7 @@ end
 -- Methods
 
 function Common:generateActorId()
-    local prefix
-    if self.server then
-        prefix = "0"
-    else
-        prefix = tostring(self.clientId)
-    end
+    local prefix = "0"
 
     local newId
     while true do

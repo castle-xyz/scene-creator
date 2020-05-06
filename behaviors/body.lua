@@ -1,4 +1,4 @@
-local Physics = require "multi.physics"
+local Physics = require "physics"
 
 -- To account for `b2_polygonRadius` (see 'b2Settings.h')
 local succeeded =
@@ -32,8 +32,7 @@ function BodyBehavior.handlers:addBehavior(opts)
         Physics.new(
         {
             game = self.game,
-            updateRate = 120,
-            reliableChannel = self.game.channels.mainReliable
+            updateRate = 120
         }
     )
 
@@ -42,13 +41,11 @@ function BodyBehavior.handlers:addBehavior(opts)
         self:onContact(...)
     end
 
-    if self.game.server then
-        -- Create a new world
-        self:sendSetProperties(nil, "worldId", self._physics:newWorld(0, UNIT * 9.8, true))
+    -- Create a new world
+    self:sendSetProperties(nil, "worldId", self._physics:newWorld(0, UNIT * 9.8, true))
 
-        -- Create the ground body
-        self:sendSetProperties(nil, "groundBodyId", self._physics:newBody(self.globals.worldId, 0, 0, "static"))
-    end
+    -- Create the ground body
+    self:sendSetProperties(nil, "groundBodyId", self._physics:newBody(self.globals.worldId, 0, 0, "static"))
 end
 
 function BodyBehavior.handlers:removeBehavior(opts)
@@ -334,9 +331,9 @@ end
 
 function BodyBehavior.handlers:postUpdate(dt)
     -- Send syncs at the end of the frame, after tool updates
-    if self.game.performing then
-        self._physics:sendSyncs(self.globals.worldId)
-    end
+    --if self.game.performing then
+    --    self._physics:sendSyncs(self.globals.worldId)
+    --end
 end
 
 -- Collision
@@ -364,7 +361,7 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
     else
         ownerId = ownerId1 or ownerId2
     end
-    local isOwner = DUMB_SERVER or self.game.clientId == ownerId
+    local isOwner = true
 
     local visited = {}
     if component1 then
@@ -814,14 +811,7 @@ function BodyBehavior:getActorsAtPoint(x, y)
 end
 
 function BodyBehavior:isOwner(actorId)
-    if DUMB_SERVER then
-        return true
-    end
-    local bodyId, body = self:getBody(actorId)
-    if not bodyId then
-        return true
-    end
-    return self._physics:getOwner(bodyId) == self.game.clientId
+    return true
 end
 
 -- Draw

@@ -1,9 +1,0 @@
-owner: nikki
-title: Scene creator!
-description: Prototype of mobile scene creator interface
-coverImage: cover.png
-main: Client.lua
-multiplayer:
-    enabled: true
-    serverMain: Server.lua
-dimensions: 800
