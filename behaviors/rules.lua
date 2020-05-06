@@ -648,7 +648,6 @@ Repeat responses a certain number of times.
             params.count,
             {
                 min = 0,
-                max = 100,
                 step = 1,
                 onChange = function(newCount)
                     onChangeParam("change repeat count", "count", math.floor(newCount))
