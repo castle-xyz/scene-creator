@@ -156,6 +156,7 @@ function Client:uiGlobalActions()
    ui.data(
       {
          performing = self.performing,
+         hasSelection = next(self.selectedActorIds) ~= nil,
          actionsAvailable = actionsAvailable,
       },
       {
@@ -893,8 +894,6 @@ function Client:uiupdate()
     -- Refresh tools first to make sure selections and applicable tool set are valid
     self:applySelections() 
 
-    local selectionEmpty = next(self.selectedActorIds) == nil
-
     -- Global actions
     ui.pane('sceneCreatorGlobalActions', function()
         self:uiGlobalActions()
@@ -904,7 +903,6 @@ function Client:uiupdate()
     ui.pane('sceneCreatorBlueprints', {
         snapCount = self.blueprintsSnap.count,
         snapPoint = self.blueprintsSnap.point,
-        visible = not self.performing and selectionEmpty,
     }, function()
         self:uiBlueprints()
     end)
@@ -916,7 +914,6 @@ function Client:uiupdate()
     ui.pane('sceneCreatorInspector', {
         snapCount = self.inspectorSnap.count,
         snapPoint = self.inspectorSnap.point,
-        visible = not self.performing and not selectionEmpty,
     }, function()
         self:uiInspector()
     end)
