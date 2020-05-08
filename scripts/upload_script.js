@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
+const SCENE_CREATOR_API_VERSION = 1;
+
 var fs = require("fs");
 var request = require("request");
 
 // no
-console.error(`master is not deployable until we finish migrating to text actors`);
+console.error(
+  `master is not deployable until we finish migrating to text actors`
+);
 process.exit(1);
 
 var token = process.env["TOKEN"];
@@ -18,7 +22,8 @@ request.post(
   {
     url: "https://api.castle.games/api/scene-creator/upload",
     headers: {
-      "X-Auth-Token": token
+      "X-Auth-Token": token,
+      "scene-creator-api-version": SCENE_CREATOR_API_VERSION
     },
     formData: {
       file: fs.createReadStream("../scene_creator.love")
