@@ -34,7 +34,6 @@ require "actor_behavior"
 require "behaviors.body"
 require "behaviors.image"
 require "behaviors.drawing"
-require "behaviors.text"
 
 require "behaviors.circle_shape"
 
@@ -55,6 +54,7 @@ require "behaviors.drag"
 require "behaviors.rules"
 require "behaviors.tags"
 require "behaviors.counter"
+require "behaviors.text"
 
 require "tools.grab"
 require "tools.draw"
