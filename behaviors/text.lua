@@ -13,7 +13,7 @@ local TextBehavior = defineCoreBehavior {
 
 function TextBehavior.handlers:addComponent(component, bp, opts)
    component.properties.content = bp.content or ''
-   component.properties.visible = bp.visible or true
+   component.properties.visible = not (not bp.visible)
 end
 
 function TextBehavior.handlers:blueprintComponent(component, bp)
