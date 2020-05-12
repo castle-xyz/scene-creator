@@ -191,7 +191,6 @@ function Client:uiBlueprints()
     self:uiLibrary({
         id = 'add actor',
         filterType = 'actorBlueprint',
-        bottomSpace = 350,
         buttons = function(entry)
             ui.button('add to scene', {
                 flex = 1,
@@ -468,7 +467,6 @@ function Client:uiInspector()
             flex = 1,
         }, function()
             activeTool:callHandler('uiPanel')
-            ui.box('bottom space', { height = 350 }, function() end)
         end)
         return
     end
@@ -875,8 +873,6 @@ function Client:uiInspector()
                 })
             end)
         end
-
-        ui.box('bottom space', { height = 350 }, function() end)
     end)
 end
 
