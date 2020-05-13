@@ -59,6 +59,11 @@ function Client:load()
     local scene = initialParams.scene
 
     self.editingSnapshot = scene.data.snapshot
+
+    if initialParams.isEditing then
+        self:send("setPerforming", false)
+    end
+
     self:restoreSnapshot(scene.data.snapshot)
 
     local deckState = scene.deckState or {}
@@ -84,6 +89,7 @@ end
 function Client:endEditing()
     self.editingSnapshot = self:createSnapshot()
     self:saveScene(self.editingSnapshot)
+    self:saveScreenshot()
     self:send("setPerforming", true)
     self:send("setPaused", false)
 end
