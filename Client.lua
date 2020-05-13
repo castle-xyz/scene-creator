@@ -58,13 +58,14 @@ function Client:load()
     local initialParams = castle.game.getInitialParams()
     local scene = initialParams.scene
 
-    self.editingSnapshot = scene.data.snapshot
-
     if initialParams.isEditing then
         self:send("setPerforming", false)
     end
 
-    self:restoreSnapshot(scene.data.snapshot)
+    if scene and scene.data and scene.data.snapshot then
+        self.editingSnapshot = scene.data.snapshot
+        self:restoreSnapshot(scene.data.snapshot)
+    end
 
     local deckState = scene.deckState or {}
     local variables = deckState.variables or {}
