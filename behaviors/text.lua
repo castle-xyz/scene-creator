@@ -4,6 +4,7 @@ local TextBehavior = defineCoreBehavior {
     propertyNames = {
        'content',
        'visible',
+       'order',
     },
     dependencies = {},
 }
@@ -18,11 +19,18 @@ function TextBehavior.handlers:addComponent(component, bp, opts)
    else
       component.properties.visible = bp.visible
    end
+   if bp.order ~= nil then
+      component.properties.order = bp.order
+   else
+      component.properties.order = 0
+      -- TODO: set order as max(existing) + 1
+   end
 end
 
 function TextBehavior.handlers:blueprintComponent(component, bp)
    bp.content = component.properties.content
    bp.visible = component.properties.visible
+   bp.order = 0 -- don't copy order
 end
 
 -- UI
