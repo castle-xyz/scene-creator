@@ -195,6 +195,24 @@ jsEvents.listen(
     end
 )
 
+jsEvents.listen(
+    "LOAD_SNAPSHOT",
+    function(params)
+        local self = instance
+        if self then
+            local tempSnapshot = self:createSnapshot()
+            self:saveScene(tempSnapshot)
+
+            self:send("setPerforming", false)
+            if params.data and params.data.snapshot then
+                self:restoreSnapshot(params.data.snapshot)
+            else
+                self:restoreSnapshot(nil)
+            end
+        end
+    end
+)
+
 -- Update
 
 function Client:twoFingerPan()

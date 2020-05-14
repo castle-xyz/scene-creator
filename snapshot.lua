@@ -18,20 +18,22 @@ function Common:restoreSnapshot(snapshot)
         self:send("removeActor", self.clientId, actorId)
     end
 
-    -- Add new library entries
-    for entryId, entry in pairs(snapshot.library or {}) do
-        self:send("addLibraryEntry", entryId, entry)
-    end
+    if snapshot then
+        -- Add new library entries
+        for entryId, entry in pairs(snapshot.library or {}) do
+            self:send("addLibraryEntry", entryId, entry)
+        end
 
-    -- Add new actors
-    for _, actorSp in pairs(snapshot.actors or {}) do
-        self:sendAddActor(
-            actorSp.bp,
-            {
-                actorId = actorSp.actorId,
-                parentEntryId = actorSp.parentEntryId
-            }
-        )
+        -- Add new actors
+        for _, actorSp in pairs(snapshot.actors or {}) do
+            self:sendAddActor(
+                actorSp.bp,
+                {
+                    actorId = actorSp.actorId,
+                    parentEntryId = actorSp.parentEntryId
+                }
+            )
+        end
     end
 end
 
