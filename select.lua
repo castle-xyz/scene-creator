@@ -150,7 +150,15 @@ function Client:applySelections()
 end
 
 function Client:selectActor(actorId)
-    self.selectedActorIds[actorId] = true
+   self.selectedActorIds[actorId] = true
+
+   -- auto open either Body or Text component
+   local actor = self.actors[actorId]
+   if self.behaviorsByName.Text.components[actorId] then
+      self.openComponentBehaviorId = self.behaviorsByName.Text.behaviorId
+   elseif self.behaviorsByName.Body.components[actorId] then
+      self.openComponentBehaviorId = self.behaviorsByName.Body.behaviorId
+   end
 end
 
 function Client:deselectActor(actorId)
