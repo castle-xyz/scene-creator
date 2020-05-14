@@ -609,98 +609,100 @@ function Client:uiInspector()
                     local uiName = behavior:getUiName()
 
                     -- Spacer
-                    ui.box('spacer', { height = 24 }, function() end)
+                    ui.box('spacer', { height = 8 }, function() end)
 
                     -- Header
-                    ui.box('header', {
-                        flexDirection = 'row',
-                    }, function()
-                        ui.box('title', {
-                            flex = 1,
+                    if behavior.name ~= 'Text' then
+                        ui.box('header', {
+                            flexDirection = 'row',
                         }, function()
-                            ui.markdown('## ' .. uiName)
-                        end)
-                        ui.button('description', {
-                            margin = 0,
-                            marginLeft = 6,
-                            icon = 'question',
-                            iconFamily = 'FontAwesome5',
-                            hideLabel = true,
-                            popoverAllowed = true,
-                            popoverStyle = { width = 300 },
-                            popover = function()
-                                ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
-                            end,
-                        })
-                        if behavior.name ~= 'Body' then
-                            ui.button('remove', {
+                            ui.box('title', {
+                                flex = 1,
+                            }, function()
+                                ui.markdown('## ' .. uiName)
+                            end)
+                            ui.button('description', {
                                 margin = 0,
                                 marginLeft = 6,
-                                icon = 'close',
-                                iconFamily = 'FontAwesome',
+                                icon = 'question',
+                                iconFamily = 'FontAwesome5',
                                 hideLabel = true,
-                                onClick = function()
-                                    if next(component.dependents) ~= nil then -- Has dependents?
-                                        local names = {}
-                                        for dependentId in pairs(component.dependents) do
-                                            local dependent = self.behaviors[dependentId]
-                                            table.insert(names, dependent:getUiName())
-                                        end
-                                        local list = ''
-                                        for i = 1, #names do
-                                            if i > 1 then
-                                                if i < #names then
-                                                    list = list .. ', '
-                                                else
-                                                    list = list .. ' and '
-                                                end
-                                            end
-                                            list = list .. "'" .. names[i] .. "'"
-                                        end
-                                        local message = (list .. ' need' .. (#names > 1 and '' or 's') .. " '" ..
-                                            uiName .. "'.")
-                                        castle.system.alert("Cannot remove '" .. uiName .. "'", message)
-                                    else
-                                        castle.system.alert({
-                                            title = 'Remove behavior?',
-                                            message = "Remove '" .. uiName .. "' from this actor?",
-                                            okLabel = 'Yes',
-                                            cancelLabel = 'No',
-                                            onOk = function()
-                                                local behaviorId = component.behaviorId
-                                                local componentBp = {}
-                                                behavior:callHandler('blueprintComponent', component, componentBp)
-                                                self:command('remove ' .. uiName, {
-                                                    params = { 'behaviorId', 'componentBp' },
-                                                }, function()
-                                                    local behavior = self.behaviors[behaviorId]
-                                                    if not behavior.components[actorId] then
-                                                        return 'behavior was removed'
-                                                    end
-                                                    self:send('removeComponent', self.clientId, actorId, behaviorId)
-                                                    self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                                end, function()
-                                                    local behavior = self.behaviors[behaviorId]
-                                                    if behavior.components[actorId] then
-                                                        return 'behavior was added'
-                                                    end
-                                                    self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
-                                                    self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
-                                                end)
-                                            end
-                                        })
-                                    end
+                                popoverAllowed = true,
+                                popoverStyle = { width = 300 },
+                                popover = function()
+                                    ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
                                 end,
                             })
-                        end
-                    end)
+                            if behavior.name ~= 'Body' then
+                                ui.button('remove', {
+                                    margin = 0,
+                                    marginLeft = 6,
+                                    icon = 'close',
+                                    iconFamily = 'FontAwesome',
+                                    hideLabel = true,
+                                    onClick = function()
+                                        if next(component.dependents) ~= nil then -- Has dependents?
+                                            local names = {}
+                                            for dependentId in pairs(component.dependents) do
+                                                local dependent = self.behaviors[dependentId]
+                                                table.insert(names, dependent:getUiName())
+                                            end
+                                            local list = ''
+                                            for i = 1, #names do
+                                                if i > 1 then
+                                                    if i < #names then
+                                                        list = list .. ', '
+                                                    else
+                                                        list = list .. ' and '
+                                                    end
+                                                end
+                                                list = list .. "'" .. names[i] .. "'"
+                                            end
+                                            local message = (list .. ' need' .. (#names > 1 and '' or 's') .. " '" ..
+                                                uiName .. "'.")
+                                            castle.system.alert("Cannot remove '" .. uiName .. "'", message)
+                                        else
+                                            castle.system.alert({
+                                                title = 'Remove behavior?',
+                                                message = "Remove '" .. uiName .. "' from this actor?",
+                                                okLabel = 'Yes',
+                                                cancelLabel = 'No',
+                                                onOk = function()
+                                                    local behaviorId = component.behaviorId
+                                                    local componentBp = {}
+                                                    behavior:callHandler('blueprintComponent', component, componentBp)
+                                                    self:command('remove ' .. uiName, {
+                                                        params = { 'behaviorId', 'componentBp' },
+                                                    }, function()
+                                                        local behavior = self.behaviors[behaviorId]
+                                                        if not behavior.components[actorId] then
+                                                            return 'behavior was removed'
+                                                        end
+                                                        self:send('removeComponent', self.clientId, actorId, behaviorId)
+                                                        self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                    end, function()
+                                                        local behavior = self.behaviors[behaviorId]
+                                                        if behavior.components[actorId] then
+                                                            return 'behavior was added'
+                                                        end
+                                                        self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
+                                                        self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+                                                    end)
+                                                end
+                                            })
+                                        end
+                                    end,
+                                })
+                            end
+                        end)
+                    end -- header
 
                     -- Component's UI
                     behavior:callHandler('uiComponent', component, {})
                 end
 
                 -- Spacer
-                ui.box('spacer-2', { height = 24 }, function() end)
+                ui.box('spacer-2', { height = 8 }, function() end)
 
                 -- Save blueprint
                 ui.button('save blueprint', {
