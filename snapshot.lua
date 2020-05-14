@@ -100,7 +100,7 @@ end
 
 function Common:updateAutoSaveScene()
     if not self.performing then
-        if not self.lastSaveAttemptTime or love.timer.getTime() - self.lastSaveAttemptTime > 2 then
+        if not self.lastSaveAttemptTime or love.timer.getTime() - self.lastSaveAttemptTime > 60 * 2 then
             self:saveScene()
         end
     end
