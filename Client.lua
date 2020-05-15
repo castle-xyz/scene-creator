@@ -76,6 +76,10 @@ function Client:load()
     self:send("updateVariables", variables)
 
     self.sentGameLoadedEvent = false
+
+    if self.performing then
+        self:sendPostAddActorsEvents()
+    end
 end
 
 function castle.uiupdate(...)
@@ -97,6 +101,15 @@ function Client:endEditing()
     self:saveScreenshot()
     self:send("setPerforming", true)
     self:send("setPaused", false)
+    self:sendPostAddActorsEvents()
+end
+
+function Client:sendPostAddActorsEvents()
+    self:forEachActorByDrawOrder(
+        function(actor)
+            self:send("postAddActor", actor.actorId)
+        end
+    )
 end
 
 -- JS Events

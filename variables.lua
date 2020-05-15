@@ -11,19 +11,6 @@ function Common:defineVariablesMessageKinds()
     self:defineMessageKind("updateVariables", self.sendOpts.reliableToAll)
 end
 
--- Message receivers
-
-function Common.receivers:updateVariables(time, variables)
-    for i = 1, #variables do
-        if not variables[i].value then
-            variables[i].value = variables[i].initialValue
-        end
-    end
-
-    self.variables = variables
-    self._initialVariables = util.deepCopyTable(variables or {})
-end
-
 -- Utils
 
 function Common:variablesReset()
@@ -60,6 +47,32 @@ function Common:variableIdToName(id)
     return "(none)"
 end
 
+local function variableReachesValueTrigger(self, actorId, variableId, newValue)
+    self.behaviorsByName.Rules:fireTrigger(
+        "variable reaches value",
+        actorId,
+        {},
+        {
+            filter = function(params)
+                if params.variableId ~= variableId then
+                    return false
+                end
+
+                if params.comparison == "equal" and newValue == params.value then
+                    return true
+                end
+                if params.comparison == "less or equal" and newValue <= params.value then
+                    return true
+                end
+                if params.comparison == "greater or equal" and newValue >= params.value then
+                    return true
+                end
+                return false
+            end
+        }
+    )
+end
+
 local function fireVariableTriggers(self, variableId, newValue)
     jsEvents.send(
         "GHOST_MESSAGE",
@@ -83,29 +96,7 @@ local function fireVariableTriggers(self, variableId, newValue)
             }
         )
 
-        self.behaviorsByName.Rules:fireTrigger(
-            "variable reaches value",
-            actorId,
-            {},
-            {
-                filter = function(params)
-                    if params.variableId ~= variableId then
-                        return false
-                    end
-
-                    if params.comparison == "equal" and newValue == params.value then
-                        return true
-                    end
-                    if params.comparison == "less or equal" and newValue <= params.value then
-                        return true
-                    end
-                    if params.comparison == "greater or equal" and newValue >= params.value then
-                        return true
-                    end
-                    return false
-                end
-            }
-        )
+        variableReachesValueTrigger(self, actorId, variableId, newValue)
     end
 end
 
@@ -126,5 +117,25 @@ function Common:variableChangeByValue(variableId, changeBy)
 
             fireVariableTriggers(self, variableId, self.variables[i].value)
         end
+    end
+end
+
+
+-- Message receivers
+
+function Common.receivers:updateVariables(time, variables)
+    for i = 1, #variables do
+        if not variables[i].value then
+            variables[i].value = variables[i].initialValue
+        end
+    end
+
+    self.variables = variables
+    self._initialVariables = util.deepCopyTable(variables or {})
+end
+
+function Common.receivers:postAddActor(time, actorId)
+    for i = 1, #self.variables do
+        variableReachesValueTrigger(self, actorId, self.variables[i].id, self.variables[i].value)
     end
 end

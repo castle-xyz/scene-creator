@@ -614,6 +614,10 @@ function Common:sendAddActor(bp, opts)
         visit(behaviorName, componentBp)
     end
 
+    if self.performing then
+        self:send("postAddActor", actorId)
+    end
+
     return actorId
 end
 
