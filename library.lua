@@ -168,44 +168,39 @@ function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, 
             end
 
             -- Update actors
-            self:transact(
-                self.sendOpts.reliableToAll,
-                function()
-                    for actorId, actor in pairs(self.actors) do
-                        if actorId ~= opts.skipActorId and actor.parentEntryId == entryId then
-                            local bp = self:blueprintActor(actorId) -- Start with old blueprint and merge changes
-                            for _, change in ipairs(changes) do
-                                local changeType, behaviorName, key = change.changeType, change.behaviorName, change.key
-                                if changeType == "value" then
-                                    if bp.components[behaviorName] then
-                                        if
-                                            valueEqual(
-                                                oldBp.components[behaviorName][key],
-                                                bp.components[behaviorName][key]
-                                            )
-                                         then
-                                            -- Only change value if not overridden
-                                            bp.components[behaviorName][key] = change.newValue
-                                        end
-                                    end
-                                elseif changeType == "add component" then
-                                    bp.components[behaviorName] = change.newComponentBp
-                                elseif changeType == "remove component" then
-                                    bp.components[behaviorName] = nil
+                for actorId, actor in pairs(self.actors) do
+                if actorId ~= opts.skipActorId and actor.parentEntryId == entryId then
+                    local bp = self:blueprintActor(actorId) -- Start with old blueprint and merge changes
+                    for _, change in ipairs(changes) do
+                        local changeType, behaviorName, key = change.changeType, change.behaviorName, change.key
+                        if changeType == "value" then
+                            if bp.components[behaviorName] then
+                                if
+                                    valueEqual(
+                                        oldBp.components[behaviorName][key],
+                                        bp.components[behaviorName][key]
+                                    )
+                                 then
+                                    -- Only change value if not overridden
+                                    bp.components[behaviorName][key] = change.newValue
                                 end
                             end
-                            self:send("removeActor", self.clientId, actorId)
-                            self:sendAddActor(
-                                bp,
-                                {
-                                    actorId = actorId,
-                                    parentEntryId = entryId
-                                }
-                            )
+                        elseif changeType == "add component" then
+                            bp.components[behaviorName] = change.newComponentBp
+                        elseif changeType == "remove component" then
+                            bp.components[behaviorName] = nil
                         end
                     end
+                    self:send("removeActor", self.clientId, actorId)
+                    self:sendAddActor(
+                        bp,
+                        {
+                            actorId = actorId,
+                            parentEntryId = entryId
+                        }
+                    )
                 end
-            )
+            end
         end
     end
 
