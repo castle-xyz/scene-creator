@@ -13,8 +13,8 @@ local GrabTool =
     }
 }
 
-local HANDLE_TOUCH_RADIUS = 18
-local HANDLE_DRAW_RADIUS = 10
+local HANDLE_TOUCH_RADIUS = 20
+local HANDLE_DRAW_RADIUS = 12
 
 -- Behavior management
 
