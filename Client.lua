@@ -84,6 +84,12 @@ end
 
 -- Begin / end editing
 
+function Common:restartScene()
+    self:send("setPaused", true)
+    self:restoreSnapshot(self.editingSnapshot)
+    self:send("setPaused", false)
+end
+
 function Client:beginEditing()
     self:send("setPerforming", false)
     if self.editingSnapshot then

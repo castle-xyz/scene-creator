@@ -154,26 +154,3 @@ function Common:fireOnEndOfFrame()
     end
     self.onEndOfFrames = {}
 end
-
-function Common:restartScene()
-    if self.rewindSnapshotId then
-        self:send("setPaused", true)
-
-        -- TODO: jesse
-        self:send(
-            {
-                selfSendOnly = not (not self.server),
-                kind = "restoreSnapshot"
-            },
-            self.rewindSnapshotId,
-            {stopPerforming = false}
-        )
-
-        network.async(
-            function()
-                copas.sleep(0.4)
-                self:send("setPaused", false)
-            end
-        )
-    end
-end
