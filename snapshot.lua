@@ -1,5 +1,4 @@
 function Common:startSnapshot()
-    self.lastSaveAttemptTime = nil
     self.lastSuccessfulSaveData = nil
 end
 
@@ -77,8 +76,6 @@ end
 
 function Common:saveScene(snapshot)
     if not self.performing then
-        self.lastSaveAttemptTime = love.timer.getTime()
-
         local data =
             cjson.encode(
             {
@@ -97,7 +94,7 @@ function Common:saveScene(snapshot)
             jsEvents.send(
                 "GHOST_MESSAGE",
                 {
-                    messageType = "SAVE_SCENE",
+                    messageType = "UPDATE_SCENE",
                     data = data
                 }
             )
@@ -108,8 +105,6 @@ end
 
 function Common:updateAutoSaveScene()
     if not self.performing then
-        if not self.lastSaveAttemptTime or love.timer.getTime() - self.lastSaveAttemptTime > 60 then
-            self:saveScene()
-        end
+        self:saveScene()
     end
 end
