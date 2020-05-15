@@ -35,6 +35,7 @@ function Client:_new()
 end
 
 function love.load()
+    instance = Client:_new()
     instance:load()
 end
 
@@ -65,6 +66,9 @@ function Client:load()
     if scene and scene.data and scene.data.snapshot then
         self.editingSnapshot = scene.data.snapshot
         self:restoreSnapshot(scene.data.snapshot)
+
+        local tempSnapshot = self:createSnapshot()
+        self:setLastSuccessfulSaveSnapshot(tempSnapshot)
     end
 
     local deckState = scene.deckState or {}
@@ -630,4 +634,3 @@ function Client:draw()
     end
 end
 
-instance = Client:_new()

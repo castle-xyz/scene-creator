@@ -3,6 +3,14 @@ function Common:startSnapshot()
     self.lastSuccessfulSaveData = nil
 end
 
+function Common:setLastSuccessfulSaveSnapshot(snapshot)
+    self.lastSuccessfulSaveData = cjson.encode(
+        {
+            snapshot = snapshot
+        }
+    )
+end
+
 function Common:restoreSnapshot(snapshot)
     self:callHandlers("clearScene")
 
@@ -100,7 +108,7 @@ end
 
 function Common:updateAutoSaveScene()
     if not self.performing then
-        if not self.lastSaveAttemptTime or love.timer.getTime() - self.lastSaveAttemptTime > 60 * 2 then
+        if not self.lastSaveAttemptTime or love.timer.getTime() - self.lastSaveAttemptTime > 60 then
             self:saveScene()
         end
     end
