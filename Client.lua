@@ -63,6 +63,10 @@ function Client:load()
         self:send("setPerforming", false)
     end
 
+    local deckState = scene.deckState or {}
+    local variables = deckState.variables or {}
+    self:send("updateVariables", variables)
+
     if scene and scene.data and scene.data.snapshot then
         self.editingSnapshot = scene.data.snapshot
         self:restoreSnapshot(scene.data.snapshot)
@@ -71,15 +75,7 @@ function Client:load()
         self:setLastSuccessfulSaveSnapshot(tempSnapshot)
     end
 
-    local deckState = scene.deckState or {}
-    local variables = deckState.variables or {}
-    self:send("updateVariables", variables)
-
     self.sentGameLoadedEvent = false
-
-    if self.performing then
-        self:sendPostAddActorsEvents()
-    end
 end
 
 function castle.uiupdate(...)
