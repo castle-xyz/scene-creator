@@ -391,7 +391,10 @@ end
 -- Draw
 
 local gridShader
-if love.graphics then
+
+if GRID_SHADER then
+    gridShader = GRID_SHADER
+elseif love.graphics then
     gridShader =
         love.graphics.newShader(
         [[

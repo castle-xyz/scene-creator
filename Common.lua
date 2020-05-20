@@ -92,7 +92,7 @@ function Common:send(opts, ...)
     local kind = opts.kind
     assert(type(kind) == "string", "send: `kind` needs to be a string")
 
-    print("send calling " .. kind .. "()")
+    --print("send calling " .. kind .. "()")
 
     self.receivers[kind](self, 0, ...)
 end
