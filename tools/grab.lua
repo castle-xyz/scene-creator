@@ -468,41 +468,39 @@ function GrabTool.handlers:uiSettings()
         "grid box",
         {flexDirection = "row"},
         function()
-            self._gridEnabled = ui.toggle("grid", "grid", self._gridEnabled)
-            if self._gridEnabled then
-                ui.box(
-                    "grid size box",
-                    {
-                        marginLeft = 16,
-                        flex = 1
-                    },
-                    function()
-                        self._gridSize = ui.numberInput("grid size", self._gridSize, {min = 0, step = 0.5 * UNIT})
-                    end
-                )
-            end
+            self._gridEnabled = ui.toggle("Grid snap", "Grid snap", self._gridEnabled)
         end
     )
+
+    if self._gridEnabled then
+        ui.box(
+            "grid size box",
+            { flex = 1 },
+            function()
+                self._gridSize = ui.numberInput("Grid size", self._gridSize, {min = 0, step = 0.5 * UNIT})
+            end
+        )
+    end
 
     -- Rotate increment
     ui.box(
         "rotate increment box",
         {flexDirection = "row"},
         function()
-            self._rotateIncrementEnabled = ui.toggle("rotate snap", "rotate snap", self._rotateIncrementEnabled)
-            if self._rotateIncrementEnabled then
-                ui.box(
-                    "rotate increment value box",
-                    {
-                        marginLeft = 16,
-                        flex = 1
-                    },
-                    function()
-                        self._rotateIncrementDegrees =
-                            ui.numberInput("increment (degrees)", self._rotateIncrementDegrees, {min = 0, step = 5})
-                    end
-                )
-            end
+            self._rotateIncrementEnabled = ui.toggle("Rotation snap", "Rotation snap", self._rotateIncrementEnabled)
         end
     )
+
+    if self._rotateIncrementEnabled then
+        ui.box(
+            "rotate increment value box",
+            {
+                flex = 1
+            },
+            function()
+                self._rotateIncrementDegrees =
+                    ui.numberInput("Increment (degrees)", self._rotateIncrementDegrees, {min = 0, step = 5})
+            end
+        )
+    end
 end
