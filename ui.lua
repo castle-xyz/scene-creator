@@ -122,12 +122,12 @@ function Client:uiGlobalActions()
 
    actionsAvailable['onPlay'] = not self.performing
    actions['onPlay'] = function()
-      self:endEditing()
+      endEditing()
    end
 
    actionsAvailable['onRewind'] = self.performing
    actions['onRewind'] = function()
-      self:beginEditing()
+      beginEditing()
    end
 
    local hasUndo, hasRedo = #self.undos > 0, #self.redos > 0

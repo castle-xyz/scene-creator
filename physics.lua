@@ -1,7 +1,5 @@
 local Physics = {}
 
-local historyPool = {}
-
 -- A `sync` is a serialization of frequently-varying object state (such as a body's position or velocity)
 
 local function readBodySync(body)
@@ -160,6 +158,8 @@ local RELIABLE_METHOD_NAMES = {
 
 function Physics.new(opts)
     local self = setmetatable({}, {__index = Physics})
+
+    self.historyPool = {}
 
     -- Options
 
@@ -333,7 +333,7 @@ function Physics.new(opts)
                 local history = objectData.history
                 if history then -- Return history entries to pool
                     for _, entry in pairs(history) do
-                        table.insert(historyPool, entry)
+                        table.insert(self.historyPool, entry)
                     end
                 end
                 clearMapEntries(id, obj)
@@ -544,13 +544,13 @@ function Physics:_tickWorld(world, worldData)
 
                 -- Clear old history, returning to pool
                 if history[worldData.tickCount - self.historySize] then
-                    table.insert(historyPool, history[worldData.tickCount - self.historySize])
+                    table.insert(self.historyPool, history[worldData.tickCount - self.historySize])
                     history[worldData.tickCount - self.historySize] = nil
                 end
 
                 -- Write to history if not static or sleeping
                 if body:isAwake() and body:getType() ~= "static" then
-                    local pooled = table.remove(historyPool)
+                    local pooled = table.remove(self.historyPool)
                     if pooled then
                         pooled[1], pooled[2], pooled[3], pooled[4], pooled[5], pooled[6] = readBodySync(body)
                         history[worldData.tickCount] = pooled

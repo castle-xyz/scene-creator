@@ -49,6 +49,7 @@ function GrabTool:getHandles()
             singleActorId = actorId
         end
     end
+
     if singleActorId then
         -- Figure out shape type and dimensions
         local shapeType

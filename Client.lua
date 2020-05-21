@@ -28,18 +28,81 @@ require "notify"
 
 -- Start / stop
 
-local instance
+local isEditing
+local playInstance
+local editInstance
+local currentSnapshot
+local currentVariables
+local sentGameLoadedEvent
 
 function Client:_new()
-    return setmetatable({}, {__index = self})
+    local result = setmetatable({}, {__index = self})
+    result.receivers = setmetatable({}, {__index = Client.receivers})
+    return result
 end
 
 function love.load()
-    instance = Client:_new()
-    instance:load()
+    sentGameLoadedEvent = false
+
+    local initialParams = castle.game.getInitialParams()
+    local scene = initialParams.scene
+    local deckState = scene.deckState or {}
+    local variables = deckState.variables or {}
+    local snapshot = nil
+
+    if scene and scene.data and scene.data.snapshot then
+        snapshot = scene.data.snapshot
+    end
+
+    currentSnapshot = snapshot
+    currentVariables = variables
+
+    if initialParams.isEditing then
+        isEditing = true
+        editInstance = Client:_new()
+        editInstance:load(true, snapshot, variables)
+
+        local tempSnapshot = editInstance:createSnapshot()
+        editInstance:setLastSuccessfulSaveSnapshot(tempSnapshot)
+    else
+        isEditing = false
+        playInstance = Client:_new()
+        playInstance:load(false, snapshot, variables)
+    end
 end
 
-function Client:load()
+function currentInstance()
+    if isEditing then
+        return editInstance
+    else
+        return playInstance
+    end
+end
+
+function beginEditing()
+    if isEditing then
+        return
+    end
+
+    isEditing = true
+    playInstance = nil
+end
+
+function endEditing()
+    if not isEditing then
+        return
+    end
+
+    currentSnapshot = editInstance:createSnapshot()
+    editInstance:saveScene(currentSnapshot)
+    editInstance:saveScreenshot()
+
+    playInstance = Client:_new()
+    playInstance:load(false, currentSnapshot, currentVariables)
+    isEditing = false
+end
+
+function Client:load(isEditing, snapshot, variables)
     self.clientId = 0
     self:start()
 
@@ -56,62 +119,27 @@ function Client:load()
     self:resetView()
     self.viewTransform = love.math.newTransform()
 
-    local initialParams = castle.game.getInitialParams()
-    local scene = initialParams.scene
-
-    if initialParams.isEditing then
+    if isEditing then
         self:send("setPerforming", false)
     end
 
-    local deckState = scene.deckState or {}
-    local variables = deckState.variables or {}
     self:send("updateVariables", variables)
 
-    if scene and scene.data and scene.data.snapshot then
-        self.editingSnapshot = scene.data.snapshot
-        self:restoreSnapshot(scene.data.snapshot)
-
-        local tempSnapshot = self:createSnapshot()
-        self:setLastSuccessfulSaveSnapshot(tempSnapshot)
+    if snapshot then
+        self:restoreSnapshot(snapshot)
     end
-
-    self.sentGameLoadedEvent = false
 end
 
 function castle.uiupdate(...)
-    instance:uiupdate(...)
+    currentInstance():uiupdate(...)
 end
 
 -- Begin / end editing
 
 function Common:restartScene()
     self:send("setPaused", true)
-    self:restoreSnapshot(self.editingSnapshot)
+    self:restoreSnapshot(currentSnapshot)
     self:send("setPaused", false)
-end
-
-function Client:beginEditing()
-    self:send("setPerforming", false)
-    if self.editingSnapshot then
-        self:restoreSnapshot(self.editingSnapshot)
-    end
-end
-
-function Client:endEditing()
-    self.editingSnapshot = self:createSnapshot()
-    self:saveScene(self.editingSnapshot)
-    self:saveScreenshot()
-    self:send("setPerforming", true)
-    self:send("setPaused", false)
-    self:sendPostAddActorsEvents()
-end
-
-function Client:sendPostAddActorsEvents()
-    self:forEachActorByDrawOrder(
-        function(actor)
-            self:send("postAddActor", actor.actorId)
-        end
-    )
 end
 
 -- JS Events
@@ -162,15 +190,10 @@ end
 jsEvents.listen(
     "SCENE_CREATOR_EDITING",
     function(params)
-        local self = instance
-        if self then
-            if params.isEditing ~= nil then
-                if params.isEditing then
-                    self:beginEditing()
-                else
-                    self:endEditing()
-                end
-            end
+        if params.isEditing then
+            beginEditing()
+        else
+            endEditing()
         end
     end
 )
@@ -178,7 +201,7 @@ jsEvents.listen(
 jsEvents.listen(
     "SELECT_ACTOR",
     function(params)
-        local self = instance
+        local self = currentInstance()
         if self then
             if self.performing then
                 -- playing scene, fire 'tap' if applicable
@@ -204,11 +227,12 @@ jsEvents.listen(
 jsEvents.listen(
     "UPDATE_DECK_STATE",
     function(params)
-        local self = instance
-        if self then
-            local deckState = params.deckState or {}
-            local variables = deckState.variables or {}
+        local deckState = params.deckState or {}
+        local variables = deckState.variables or {}
+        currentVariables = variables
 
+        local self = editInstance
+        if self then
             self:send("updateVariables", variables)
         end
     end
@@ -217,12 +241,11 @@ jsEvents.listen(
 jsEvents.listen(
     "LOAD_SNAPSHOT",
     function(params)
-        local self = instance
+        local self = editInstance
         if self then
             local tempSnapshot = self:createSnapshot()
             self:saveScene(tempSnapshot)
 
-            self:send("setPerforming", false)
             if params.data and params.data.snapshot then
                 self:restoreSnapshot(params.data.snapshot)
             else
@@ -303,7 +326,7 @@ function Client:twoFingerPan()
 end
 
 function love.update(dt)
-    instance:update(dt)
+    currentInstance():update(dt)
 end
 
 function Client:update(dt)
@@ -485,7 +508,7 @@ function Client:saveScreenshot()
 end
 
 function love.draw()
-    instance:draw()
+    currentInstance():draw()
 end
 
 function Client:draw()
@@ -642,8 +665,8 @@ function Client:draw()
         )
     end
 
-    if not self.sentGameLoadedEvent then
-        self.sentGameLoadedEvent = true
+    if not sentGameLoadedEvent then
+        sentGameLoadedEvent = true
 
         jsEvents.send("SCENE_CREATOR_GAME_LOADED", {})
     end
