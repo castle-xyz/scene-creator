@@ -214,58 +214,39 @@ function Client:uiInspectorActions()
 
     local actions = {}
 
-    -- TODO: Ordering
-    --[[ function()
-        ui.button('move forward', {
-            icon = 'arrow-bold-up',
-            iconFamily = 'Entypo',
-            onClick = function()
-                self:moveActorForward(next(self.selectedActorIds), true)
-            end,
-        })
-        ui.button('move backward', {
-            icon = 'arrow-bold-down',
-            iconFamily = 'Entypo',
-            onClick = function()
-                self:moveActorBackward(next(self.selectedActorIds), true)
-            end,
-        })
-        ui.button('move to front', {
-            icon = 'align-top',
-            iconFamily = 'Entypo',
-            onClick = function()
-                local actorId = next(self.selectedActorIds)
-                local oldDrawOrder = self.actors[actorId].drawOrder
-                self:command('move to front', {
-                    params = { 'oldDrawOrder' },
-                }, function()
-                    local highestDrawOrder = table.maxn(self.actorsByDrawOrder)
-                    if self.actors[actorId].drawOrder ~= highestDrawOrder then
-                        self:send('setActorDrawOrder', actorId, highestDrawOrder)
-                    end
-                end, function()
-                    self:send('setActorDrawOrder', actorId, oldDrawOrder)
-                end)
-            end,
-        })
-        ui.button('move to back', {
-            icon = 'align-bottom',
-            iconFamily = 'Entypo',
-            onClick = function()
-                local actorId = next(self.selectedActorIds)
-                local oldDrawOrder = self.actors[actorId].drawOrder
-                self:command('move to back', {
-                    params = { 'oldDrawOrder' },
-                }, function()
-                    if self.actors[actorId].drawOrder ~= 1 then
-                        self:send('setActorDrawOrder', actorId, 1)
-                    end
-                end, function()
-                    self:send('setActorDrawOrder', actorId, oldDrawOrder)
-                end)
-            end,
-        })
-       end --]]
+    actions['moveSelectionForward'] = function()
+        self:moveActorForward(next(self.selectedActorIds), true)
+    end
+    actions['moveSelectionBackward'] = function()
+        self:moveActorBackward(next(self.selectedActorIds), true)
+    end
+    actions['moveSelectionToFront'] = function()
+        local actorId = next(self.selectedActorIds)
+        local oldDrawOrder = self.actors[actorId].drawOrder
+        self:command('move to front', {
+            params = { 'oldDrawOrder' },
+        }, function()
+            local highestDrawOrder = table.maxn(self.actorsByDrawOrder)
+            if self.actors[actorId].drawOrder ~= highestDrawOrder then
+                self:send('setActorDrawOrder', actorId, highestDrawOrder)
+            end
+        end, function()
+            self:send('setActorDrawOrder', actorId, oldDrawOrder)
+        end)
+    end
+    actions['moveSelectionToBack'] = function()
+        local actorId = next(self.selectedActorIds)
+        local oldDrawOrder = self.actors[actorId].drawOrder
+        self:command('move to back', {
+            params = { 'oldDrawOrder' },
+        }, function()
+            if self.actors[actorId].drawOrder ~= 1 then
+                self:send('setActorDrawOrder', actorId, 1)
+            end
+        end, function()
+            self:send('setActorDrawOrder', actorId, oldDrawOrder)
+        end)
+    end
 
     -- Duplicate
     actions['duplicateSelection'] = function()
