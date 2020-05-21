@@ -462,7 +462,7 @@ end
 
 -- UI
 
-function GrabTool.handlers:uiSettings(closeSettings)
+function GrabTool.handlers:uiSettings()
     -- Grid
     ui.box(
         "grid box",

@@ -368,44 +368,14 @@ function Client:uiInspectorActions()
           actions = actions,
        }
     )
+end
 
-    -- Tools
-    --[[ local order = {}
-    for _, tool in pairs(self.applicableTools) do
-        table.insert(order, tool)
-    end
-    table.sort(order, function(tool1, tool2)
-        return tool1.behaviorId < tool2.behaviorId
-    end)
-    for _, tool in ipairs(order) do
-        local selected = self.activeToolBehaviorId == tool.behaviorId
-
-        local popoverAllowed, popoverStyle, popover
-
-        if tool.handlers.uiSettings then
-            popoverAllowed = selected
-            popoverStyle = { width = 300 }
-            popover = function(closePopover)
-                tool:callHandler('uiSettings', closePopover)
-            end
-        end
-
-        ui.button(tool.name, {
-            icon = tool.tool.icon,
-            iconFamily = tool.tool.iconFamily,
-            hideLabel = true,
-            selected = selected,
-            onClick = function()
-                self:setActiveTool(tool.behaviorId)
-            end,
-            popoverAllowed = popoverAllowed,
-            popoverStyle = popoverStyle,
-            popover = popover,
-        })
-    end
-
-    ui.box('spacer', { flex = 1 }, function() end)
-    --]]
+function Client:uiSettings()
+   for behaviorId, tool in pairs(self.tools) do
+      if tool.handlers.uiSettings then
+         tool:callHandler('uiSettings')
+      end
+   end
 end
 
 function Client:uiInspector()
@@ -850,6 +820,11 @@ function Client:uiupdate()
     end)
     ui.pane('sceneCreatorInspector', function()
         self:uiInspector()
+    end)
+
+    -- Settings
+    ui.pane('sceneCreatorSettings', function()
+        self:uiSettings()
     end)
 
     -- Text actors
