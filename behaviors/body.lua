@@ -309,7 +309,7 @@ function BodyBehavior.handlers:prePerform(dt)
     if self.game.clientId then
         local touchData = self:getTouchData()
         for touchId, touch in pairs(touchData.touches) do
-            if (touch.released and not touch.moved and love.timer.getTime() - touch.pressTime < 0.2) then
+            if (touch.released and not touch.moved and love.timer.getTime() - touch.pressTime < 0.3) then
                 local hits = self:getActorsAtPoint(touch.x, touch.y)
                 for actorId in pairs(hits) do
                     if self:fireTrigger("tap", actorId) then
