@@ -49,11 +49,31 @@ local DEFAULT_PALETTE = {
     "FFCCAA"
 }
 
+-- https://gist.github.com/marceloCodget/3862929
 local function rgbToHexString(r, g, b)
-    local r255 = math.min(math.floor(255 * r + 0.5), 255)
-    local g255 = math.min(math.floor(255 * g + 0.5), 255)
-    local b255 = math.min(math.floor(255 * b + 0.5), 255)
-    return string.format("%x", r255 * 0x10000 + g255 * 0x100 + b255)
+    local rgb = {r * 255, g * 255, b * 255}
+	local hexadecimal = ''
+
+	for key, value in pairs(rgb) do
+		local hex = ''
+
+		while(value > 0)do
+			local index = math.fmod(value, 16) + 1
+			value = math.floor(value / 16)
+			hex = string.sub('0123456789ABCDEF', index, index) .. hex
+		end
+
+		if(string.len(hex) == 0)then
+			hex = '00'
+
+		elseif(string.len(hex) == 1)then
+			hex = '0' .. hex
+		end
+
+		hexadecimal = hexadecimal .. hex
+	end
+
+	return hexadecimal
 end
 
 local function hexStringToRgb(str)
