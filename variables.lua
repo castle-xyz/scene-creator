@@ -47,6 +47,17 @@ function Common:variableIdToName(id)
     return "(none)"
 end
 
+function Common:variableIdToValue(id)
+    for i = 1, #self.variables do
+        if self.variables[i].id == id then
+            return self.variables[i].value
+        end
+    end
+
+    return 0
+end
+
+
 local function variableReachesValueTrigger(self, actorId, variableId, newValue)
     self.behaviorsByName.Rules:fireTrigger(
         "variable reaches value",

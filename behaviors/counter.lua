@@ -173,6 +173,69 @@ CounterBehavior.responses["set counter"] = {
     end
 }
 
+CounterBehavior.responses["counter meets condition"] = {
+    description = [[
+Returns true if the actor's counter meets the condition.
+    ]],
+    category = "counter",
+    returnType = "boolean",
+    initialParams = {
+        comparison = "equal",
+        value = 0
+    },
+    uiBody = function(self, params, onChangeParam)
+        util.uiRow(
+            "the row",
+            function()
+                ui.dropdown(
+                    "comparison",
+                    params.comparison,
+                    {
+                        "equal",
+                        "less or equal",
+                        "greater or equal"
+                    },
+                    {
+                        onChange = function(newComparison)
+                            onChangeParam("change comparison type", "comparison", newComparison)
+                        end
+                    }
+                )
+            end,
+            function()
+                ui.numberInput(
+                    "value",
+                    params.value,
+                    {
+                        step = 1,
+                        onChange = function(newValue)
+                            onChangeParam("change comparison value", "value", newValue)
+                        end
+                    }
+                )
+            end
+        )
+    end,
+    run = function(self, actorId, params, context)
+        local component = self.components[actorId]
+        if not component then
+            return false
+        end
+        local value = component.properties.value
+
+        if params.comparison == "equal" and value == params.value then
+            return true
+        end
+        if params.comparison == "less or equal" and value <= params.value then
+            return true
+        end
+        if params.comparison == "greater or equal" and value >= params.value then
+            return true
+        end
+        return false
+    end
+}
+
 -- UI
 
 function CounterBehavior.handlers:uiComponent(component, opts)

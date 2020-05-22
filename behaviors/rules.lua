@@ -245,7 +245,7 @@ Changes a variable by the given value. A **positive value increments** the varia
             {
                 step = 1,
                 onChange = function(newChangeBy)
-                    onChangeParam("set counter change by", "changeBy", newChangeBy)
+                    onChangeParam("set variable change by", "changeBy", newChangeBy)
                 end
             }
         )
@@ -254,7 +254,7 @@ Changes a variable by the given value. A **positive value increments** the varia
         -- self.game:send('updateVariables
 
         -- MULTIPLAYER TODO: figure out who should own variables
-        --if context.isOwner then -- Only owning host should fire counter updates
+        --if context.isOwner then -- Only owning host should fire variable updates
         local component = self.components[actorId]
         if component and self.game.performing then
             self.game:variableChangeByValue(params.variableId, params.changeBy)
@@ -289,7 +289,7 @@ RulesBehavior.responses["set variable"] = {
             {
                 step = 1,
                 onChange = function(newSetToValue)
-                    onChangeParam("change set counter value", "setToValue", newSetToValue)
+                    onChangeParam("change set variable value", "setToValue", newSetToValue)
                 end
             }
         )
@@ -302,6 +302,76 @@ RulesBehavior.responses["set variable"] = {
             self.game:variableSetToValue(params.variableId, params.setToValue)
         end
         --end
+    end
+}
+
+RulesBehavior.responses["variable meets condition"] = {
+    description = [[
+Returns true if the variable meets the condition.
+    ]],
+    category = "variable",
+    returnType = "boolean",
+    initialParams = {
+        variableId = "(none)",
+        comparison = "equal",
+        value = 0
+    },
+    uiBody = function(self, params, onChangeParam)
+        ui.dropdown(
+            "variable",
+            self.game:variableIdToName(params.variableId),
+            self.game:variablesNames(),
+            {
+                onChange = function(newVariableName)
+                    onChangeParam("change variable id", "variableId", self.game:variableNameToId(newVariableName))
+                end
+            }
+        )
+
+        util.uiRow(
+            "the row",
+            function()
+                ui.dropdown(
+                    "comparison",
+                    params.comparison,
+                    {
+                        "equal",
+                        "less or equal",
+                        "greater or equal"
+                    },
+                    {
+                        onChange = function(newComparison)
+                            onChangeParam("change comparison type", "comparison", newComparison)
+                        end
+                    }
+                )
+            end,
+            function()
+                ui.numberInput(
+                    "value",
+                    params.value,
+                    {
+                        step = 1,
+                        onChange = function(newValue)
+                            onChangeParam("change comparison value", "value", newValue)
+                        end
+                    }
+                )
+            end
+        )
+    end,
+    run = function(self, actorId, params, context)
+        local value = self.game:variableIdToValue(params.variableId)
+        if params.comparison == "equal" and value == params.value then
+            return true
+        end
+        if params.comparison == "less or equal" and value <= params.value then
+            return true
+        end
+        if params.comparison == "greater or equal" and value >= params.value then
+            return true
+        end
+        return false
     end
 }
 
