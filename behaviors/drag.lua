@@ -99,24 +99,26 @@ function DragBehavior.handlers:drawOverlay()
     for touchId, touch in pairs(touchData.touches) do
         if touch.dragging and not touch.released then
             local bodyId, body = self.dependencies.Body:getBody(touch.actorId)
-            local worldX, worldY = body:getWorldPoint(touch._localX, touch._localY)
+            if body then
+                local worldX, worldY = body:getWorldPoint(touch._localX, touch._localY)
 
-            love.graphics.setColor(1, 1, 1, 0.8)
-            love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
+                love.graphics.setColor(1, 1, 1, 0.8)
+                love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
 
-            local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
+                local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
 
-            love.graphics.circle("line", touch.x, touch.y, circleRadius)
-            love.graphics.setColor(1, 1, 1, 0.3)
-            love.graphics.circle("fill", touch.x, touch.y, circleRadius)
-            love.graphics.setColor(1, 1, 1, 0.8)
+                love.graphics.circle("line", touch.x, touch.y, circleRadius)
+                love.graphics.setColor(1, 1, 1, 0.3)
+                love.graphics.circle("fill", touch.x, touch.y, circleRadius)
+                love.graphics.setColor(1, 1, 1, 0.8)
 
-            love.graphics.circle("line", worldX, worldY, circleRadius)
-            love.graphics.setColor(1, 1, 1, 0.3)
-            love.graphics.circle("fill", worldX, worldY, circleRadius)
-            love.graphics.setColor(1, 1, 1, 0.8)
+                love.graphics.circle("line", worldX, worldY, circleRadius)
+                love.graphics.setColor(1, 1, 1, 0.3)
+                love.graphics.circle("fill", worldX, worldY, circleRadius)
+                love.graphics.setColor(1, 1, 1, 0.8)
 
-            love.graphics.line(worldX, worldY, touch.x, touch.y)
+                love.graphics.line(worldX, worldY, touch.x, touch.y)
+            end
         end
     end
 end
