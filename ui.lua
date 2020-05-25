@@ -107,6 +107,7 @@ function Client:uiTextActorsData()
       end
       textActors[actorId] = {
          content = component.properties.content,
+         order = component.properties.order,
          visible = visible,
          actor = actor,
          isSelected = self.selectedActorIds[actorId] ~= nil,
