@@ -79,10 +79,14 @@ function DragBehavior.handlers:perform(dt)
                         component._clientId = nil
                     end
                 end
-                touch._mouseJoint:destroy()
+                if not touch._mouseJoint:isDestroyed() then
+                    touch._mouseJoint:destroy()
+                end
             else
-                -- Drag, move
-                touch._mouseJoint:setTarget(touch.x, touch.y)
+                if not touch._mouseJoint:isDestroyed() then
+                    -- Drag, move
+                    touch._mouseJoint:setTarget(touch.x, touch.y)
+                end
             end
         end
     end
