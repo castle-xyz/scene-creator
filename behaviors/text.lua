@@ -22,8 +22,13 @@ function TextBehavior.handlers:addComponent(component, bp, opts)
    if bp.order ~= nil then
       component.properties.order = bp.order
    else
-      component.properties.order = 0
-      -- TODO: set order as max(existing) + 1
+      local maxExistingOrder = 0
+      for _, component in pairs(self.components) do
+         if component.properties.order ~= nil and component.properties.order >= maxExistingOrder then
+            maxExistingOrder = component.properties.order
+         end
+      end
+      component.properties.order = maxExistingOrder + 1
    end
 end
 
