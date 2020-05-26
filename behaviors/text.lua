@@ -35,7 +35,7 @@ end
 function TextBehavior.handlers:blueprintComponent(component, bp)
    bp.content = component.properties.content
    bp.visible = component.properties.visible
-   bp.order = 0 -- don't copy order
+   bp.order = component.properties.order
 end
 
 -- order
