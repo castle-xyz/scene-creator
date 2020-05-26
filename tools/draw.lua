@@ -202,7 +202,7 @@ function DrawTool.handlers:update(dt)
                 local readPaths = c._graphics.paths
                 for pathI = readPaths.count, 1, -1 do
                     local readPath = readPaths[pathI]
-                    if readPath:inside(x, y) then
+                    if readPath:inside(x, y) or readPath:nearest(x, y, 100) then
 
                         local graphics = tove.newGraphics()
                         graphics:setDisplay("mesh", 1024)
