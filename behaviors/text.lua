@@ -38,6 +38,145 @@ function TextBehavior.handlers:blueprintComponent(component, bp)
    bp.order = 0 -- don't copy order
 end
 
+-- order
+
+function TextBehavior:getOrdering()
+   local ordering = {}
+   for actorId, component in pairs(self.components) do
+      ordering[actorId] = component.properties.order
+   end
+   return ordering
+end
+
+function TextBehavior.handlers:setOrdering(ordering)
+   for actorId, component in pairs(self.components) do
+      component.properties.order = ordering[actorId]
+   end
+end
+
+function TextBehavior.handlers:moveForward(component)
+   self:_maybeAssignDefaultOrder()
+   
+   local lowerOrder = component.properties.order
+   local upperOrder = 0
+   local tieExists = false
+   local orderedComponents = self:_orderedComponents()
+
+   if #orderedComponents == 1 then
+      -- singleton
+      return
+   end
+   
+   for _, other in ipairs(orderedComponents) do
+      if other.actorId ~= component.actorId then
+         if other.properties.order == lowerOrder then
+            tieExists = true
+         end
+         if other.properties.order > lowerOrder then
+            upperOrder = other.properties.order
+            break
+         end
+      end
+   end
+   if upperOrder > lowerOrder then
+      for _, other in pairs(self.components) do
+         if other.properties.order == upperOrder then
+            other.properties.order = lowerOrder
+         end
+      end
+      component.properties.order = upperOrder
+   elseif tieExists then
+      component.properties.order = component.properties.order + 1
+   end
+end
+
+function TextBehavior.handlers:moveToFront(component)
+   self:_maybeAssignDefaultOrder()
+   
+   local lowerOrder = component.properties.order
+   local orderedComponents = self:_orderedComponents()
+
+   if #orderedComponents == 1 then
+      -- singleton
+      return
+   end
+
+   local upperOrder = orderedComponents[#orderedComponents].properties.order
+   
+   if upperOrder > lowerOrder then
+      for _, other in pairs(self.components) do
+         if other.properties.order <= upperOrder then
+            other.properties.order = other.properties.order - 1
+         end
+      end
+      component.properties.order = upperOrder
+   elseif upperOrder == lowerOrder then
+      component.properties.order = component.properties.order + 1
+   end
+end
+
+function TextBehavior.handlers:moveBackward(component)
+   self:_maybeAssignDefaultOrder()
+   
+   local upperOrder = component.properties.order
+   local lowerOrder = 1
+   local tieExists = false
+   local orderedComponents = self:_orderedComponents()
+
+   if #orderedComponents == 1 then
+      -- singleton
+      return
+   end
+
+   for i = #orderedComponents, 1, -1 do
+      local other = orderedComponents[i]
+      if other.actorId ~= component.actorId then
+         if other.properties.order == upperOrder then
+            tieExists = true
+         end
+         if other.properties.order < upperOrder then
+            lowerOrder = other.properties.order
+            break
+         end
+      end
+   end
+   if lowerOrder < upperOrder then
+      for _, other in pairs(self.components) do
+         if other.properties.order == lowerOrder then
+            other.properties.order = upperOrder
+         end
+      end
+      component.properties.order = lowerOrder
+   elseif tieExists then
+      component.properties.order = component.properties.order - 1
+   end
+end
+
+function TextBehavior.handlers:moveToBack(component)
+   self:_maybeAssignDefaultOrder()
+   
+   local upperOrder = component.properties.order
+   local orderedComponents = self:_orderedComponents()
+
+   if #orderedComponents == 1 then
+      -- singleton
+      return
+   end
+
+   local lowerOrder = orderedComponents[1].properties.order
+   
+   if lowerOrder < upperOrder then
+      for _, other in pairs(self.components) do
+         if other.properties.order >= lowerOrder then
+            other.properties.order = other.properties.order + 1
+         end
+      end
+      component.properties.order = lowerOrder
+   elseif lowerOrder == upperOrder then
+      component.properties.order = component.properties.order - 1
+   end
+end
+
 -- UI
 
 function TextBehavior.handlers:uiComponent(component, opts)
@@ -103,3 +242,27 @@ Sends the player to another card in this deck.
       jsEvents.send("NAVIGATE_TO_CARD", { card = params.card })
    end
 }
+
+-- ordering utilities
+
+function TextBehavior:_orderedComponents()
+   local orderedComponents = {}
+   for _, component in pairs(self.components) do
+      table.insert(orderedComponents, component)
+   end
+   table.sort(orderedComponents, function (a, b) return a.properties.order < b.properties.order end)
+   return orderedComponents
+end
+
+function TextBehavior:_maybeAssignDefaultOrder()
+   -- older versions of the app didn't assign order
+   -- establish an ordering with no zero-ties
+   local numZeroes = 0
+   for _, component in pairs(self.components) do
+      if component.properties.order == nil or component.properties.order == 0 then
+         component.properties.order = 0
+         numZeroes = numZeroes + 1
+      end
+      component.properties.order = component.properties.order + numZeroes
+   end
+end

@@ -12,6 +12,22 @@ end
 -- Methods
 
 function Client:moveActorForward(actorId, command)
+   if self.behaviorsByName.Text.components[actorId] then
+      -- text actors maintain their own order
+      if command then
+         self:command(
+            'move text forward',
+            { params = { 'actorId' } },
+            function(params, live)          
+               self.behaviorsByName.Text:callHandler('moveForward', self.behaviorsByName.Text.components[actorId])
+            end, function()
+               self.behaviorsByName.Text:callHandler('moveBackward', self.behaviorsByName.Text.components[actorId])
+         end)
+      else
+         self.behaviorsByName.Text:callHandler('moveForward', self.behaviorsByName.Text.components[actorId])
+      end
+      return
+   end
     local actor = self.actors[actorId]
     if actor.drawOrder < table.maxn(self.actorsByDrawOrder) then
         local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
@@ -49,6 +65,22 @@ function Client:moveActorForward(actorId, command)
 end
 
 function Client:moveActorBackward(actorId, command)
+   if self.behaviorsByName.Text.components[actorId] then
+      -- text actors maintain their own order
+      if command then
+         self:command(
+            'move text backward',
+            { params = { 'actorId' } },
+            function(params, live)          
+               self.behaviorsByName.Text:callHandler('moveBackward', self.behaviorsByName.Text.components[actorId])
+            end, function()
+               self.behaviorsByName.Text:callHandler('moveForward', self.behaviorsByName.Text.components[actorId])
+         end)
+      else
+         self.behaviorsByName.Text:callHandler('moveBackward', self.behaviorsByName.Text.components[actorId])
+      end
+      return
+   end
     local actor = self.actors[actorId]
     if actor.drawOrder > 1 then
         local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
@@ -83,6 +115,59 @@ function Client:moveActorBackward(actorId, command)
             end
         end
     end
+end
+
+function Client:moveActorToFront(actorId)
+   if self.behaviorsByName.Text.components[actorId] then
+      -- text actors maintain their own order
+      local oldOrdering = self.behaviorsByName.Text:getOrdering()
+      self:command(
+         'move text to front',
+         { params = { 'oldOrdering' } },
+         function(params, live)
+            self.behaviorsByName.Text:callHandler('moveToFront', self.behaviorsByName.Text.components[actorId])
+         end, function()
+            self.behaviorsByName.Text:callHandler('setOrdering', oldOrdering)
+      end)
+      return
+    end
+    local oldDrawOrder = self.actors[actorId].drawOrder
+    self:command('move to front', {
+        params = { 'oldDrawOrder' },
+    }, function()
+        local highestDrawOrder = table.maxn(self.actorsByDrawOrder)
+        if self.actors[actorId].drawOrder ~= highestDrawOrder then
+            self:send('setActorDrawOrder', actorId, highestDrawOrder)
+        end
+    end, function()
+        self:send('setActorDrawOrder', actorId, oldDrawOrder)
+    end)
+end
+
+function Client:moveActorToBack(actorId)
+   if self.behaviorsByName.Text.components[actorId] then
+      -- text actors maintain their own order
+      local oldOrdering = self.behaviorsByName.Text:getOrdering()
+      self:command(
+         'move text to back',
+         { params = { 'oldOrdering' } },
+         function(params, live)
+            self.behaviorsByName.Text:callHandler('moveToBack', self.behaviorsByName.Text.components[actorId])
+         end, function()
+            self.behaviorsByName.Text:callHandler('setOrdering', oldOrdering)
+      end)
+      return
+   end
+    local oldDrawOrder = self.actors[actorId].drawOrder
+    self:command('move to back', {
+        params = { 'oldDrawOrder' },
+    }, function()
+        if self.actors[actorId].drawOrder ~= 1 then
+            self:send('setActorDrawOrder', actorId, 1)
+        end
+    end, function()
+        self:send('setActorDrawOrder', actorId, oldDrawOrder)
+    end)
 end
 
 
@@ -222,31 +307,10 @@ function Client:uiInspectorActions()
         self:moveActorBackward(next(self.selectedActorIds), true)
     end
     actions['moveSelectionToFront'] = function()
-        local actorId = next(self.selectedActorIds)
-        local oldDrawOrder = self.actors[actorId].drawOrder
-        self:command('move to front', {
-            params = { 'oldDrawOrder' },
-        }, function()
-            local highestDrawOrder = table.maxn(self.actorsByDrawOrder)
-            if self.actors[actorId].drawOrder ~= highestDrawOrder then
-                self:send('setActorDrawOrder', actorId, highestDrawOrder)
-            end
-        end, function()
-            self:send('setActorDrawOrder', actorId, oldDrawOrder)
-        end)
+        self:moveActorToFront(next(self.selectedActorIds))
     end
     actions['moveSelectionToBack'] = function()
-        local actorId = next(self.selectedActorIds)
-        local oldDrawOrder = self.actors[actorId].drawOrder
-        self:command('move to back', {
-            params = { 'oldDrawOrder' },
-        }, function()
-            if self.actors[actorId].drawOrder ~= 1 then
-                self:send('setActorDrawOrder', actorId, 1)
-            end
-        end, function()
-            self:send('setActorDrawOrder', actorId, oldDrawOrder)
-        end)
+        self:moveActorToBack(next(self.selectedActorIds))
     end
 
     -- Duplicate
