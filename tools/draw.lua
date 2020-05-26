@@ -90,6 +90,7 @@ end
 -- Behavior management
 
 function DrawTool.handlers:addBehavior(opts)
+    self._eraserEnabled = false
     self._lineEnabled = false
 
     self._lineWidth = 20
@@ -196,120 +197,151 @@ function DrawTool.handlers:update(dt)
         prevX, prevY = prevX / scaleX, prevY / scaleY
         local dx, dy = x - prevX, y - prevY
 
-        -- Non-released motion
-        if not touch.released and (touch.dx ~= 0 or touch.dy ~= 0) then
-            -- Create new subpath for this element if doesn't already exist
-            if not c._currSubpath then
-                c._currSubpath = tove.newSubpath()
+        if self._eraserEnabled then
+            if touch.released then
+                local readPaths = c._graphics.paths
+                for pathI = readPaths.count, 1, -1 do
+                    local readPath = readPaths[pathI]
+                    if readPath:inside(x, y) then
 
-                c._currPath = tove.newPath()
-                c._currPath:addSubpath(c._currSubpath)
-                c._graphics:addPath(c._currPath)
+                        local graphics = tove.newGraphics()
+                        graphics:setDisplay("mesh", 1024)
 
-                -- Line
-                if self._lineEnabled then
-                    c._currPath:setLineColor(unpack(self._lineColor))
-                    c._currPath:setLineWidth(self._lineWidth)
-                    c._currPath:setMiterLimit(1)
-                end
 
-                -- Fill
-                if self._fillEnabled then
-                    c._currPath:setFillColor(unpack(self._fillColor))
-                    c._currSubpath.isClosed = true
-                else
-                    c._currSubpath.isClosed = false
-                end
-
-                c._currSubpath:moveTo(x - dx, y - dy)
-            end
-
-            local numPoints = c._currSubpath.points.count
-
-            -- Always place if fewer than two points
-            local place = numPoints < 12
-
-            -- Place if at least 30 units from last point
-            local lastPoint = c._currSubpath.points[numPoints]
-            local dispX, dispY = x - lastPoint.x, y - lastPoint.y
-            local dispSqLen = dispX * dispX + dispY * dispY
-            if dispSqLen >= 30 * 30 then
-                place = true
-            end
-
-            -- Previous segment
-            local lastCurve = c._currSubpath.points.count > 2 and c._currSubpath.curves[c._currSubpath.curves.count]
-            local lastCurveDX, lastCurveDY
-            if lastCurve then
-                lastCurveDX, lastCurveDY = lastCurve.x - lastCurve.x0, lastCurve.y - lastCurve.y0
-            end
-
-            -- Not already placing and it's a corner? Place at corner
-            local cornerX, cornerY
-            if not place and lastCurve then
-                local lastCurveLen = math.sqrt(lastCurveDX * lastCurveDX + lastCurveDY * lastCurveDY)
-                local dot = (dx * lastCurveDX + dy * lastCurveDY) / (math.sqrt(dx * dx + dy * dy) * lastCurveLen)
-                if dot < 0.55 then
-                    cornerX, cornerY = x - dx, y - dy
-                    if numPoints >= 32 and c._lastCornerX and c._lastCornerY then
-                        local cornerDX, cornerDY = cornerX - c._lastCornerX, cornerY - c._lastCornerY
-                        if cornerDX * cornerDX + cornerDY * cornerDY < 3 * 3 then
-                            cornerX, cornerY = nil, nil
+                        for pathJ = 1, readPaths.count do
+                            if pathI ~= pathJ then
+                                graphics:addPath(readPaths[pathJ])
+                            end
                         end
-                    end
-                    if cornerX and cornerY then
-                        c._lastCornerX, c._lastCornerY = cornerX, cornerY
+
+                        c._graphics = graphics
+
+                        -- Clean up
+                        c._graphics:clean(0.2)
+
+                        -- Save
+                        self:saveDrawing("erase", c)
+                        break
                     end
                 end
             end
+        else
+            -- Non-released motion
+            if not touch.released and (touch.dx ~= 0 or touch.dy ~= 0) then
+                -- Create new subpath for this element if doesn't already exist
+                if not c._currSubpath then
+                    c._currSubpath = tove.newSubpath()
 
-            if cornerX and cornerY then
-                c._currSubpath:lineTo(cornerX, cornerY)
-            elseif place then
-                c._currSubpath:lineTo(x, y)
-            end
-        end
+                    c._currPath = tove.newPath()
+                    c._currPath:addSubpath(c._currSubpath)
+                    c._graphics:addPath(c._currPath)
 
-        -- Released
-        if touch.released then
-            if c._currPath and c._currSubpath then
-                -- Final curve
-                c._currSubpath:lineTo(x, y)
+                    -- Line
+                    if self._lineEnabled then
+                        c._currPath:setLineColor(unpack(self._lineColor))
+                        c._currPath:setLineWidth(self._lineWidth)
+                        c._currPath:setMiterLimit(1)
+                        c._currPath:setLineJoin("round")
+                    end
 
-                -- Curve smoothing
-                local numCurves = c._currSubpath.curves.count
-                if numCurves >= 3 then
-                    for i = 1, numCurves do
-                        local p0 = c._currSubpath.curves[i]
-                        local p1 = c._currSubpath.curves[i == numCurves and 1 or (i + 1)]
+                    -- Fill
+                    if self._fillEnabled then
+                        c._currPath:setFillColor(unpack(self._fillColor))
+                        c._currSubpath.isClosed = true
+                    else
+                        c._currSubpath.isClosed = false
+                    end
 
-                        local v1x, v1y = p0.x - p0.cp2x, p0.y - p0.cp2y
-                        local v1l = math.sqrt(v1x * v1x + v1y * v1y)
-                        v1x, v1y = v1x / v1l, v1y / v1l
-                        local v2x, v2y = p1.cp1x - p1.x0, p1.cp1y - p1.y0
-                        local v2l = math.sqrt(v2x * v2x + v2y * v2y)
-                        v2x, v2y = v2x / v2l, v2y / v2l
+                    c._currSubpath:moveTo(x - dx, y - dy)
+                end
 
-                        if v1x * v2x + v1y * v2y > 0.3 then
-                            local hx, hy = 0.5 * (v1x + v2x), 0.5 * (v1y + v2y)
-                            local hl = math.sqrt(hx * hx + hy * hy)
-                            hx, hy = hx / hl, hy / hl
-                            p0.cp2x, p0.cp2y = p0.x - v1l * hx, p0.y - v1l * hy
-                            p1.cp1x, p1.cp1y = p1.x0 + v2l * hx, p1.y0 + v2l * hy
+                local numPoints = c._currSubpath.points.count
+
+                -- Always place if fewer than two points
+                local place = numPoints < 12
+
+                -- Place if at least 30 units from last point
+                local lastPoint = c._currSubpath.points[numPoints]
+                local dispX, dispY = x - lastPoint.x, y - lastPoint.y
+                local dispSqLen = dispX * dispX + dispY * dispY
+                if dispSqLen >= 30 * 30 then
+                    place = true
+                end
+
+                -- Previous segment
+                local lastCurve = c._currSubpath.points.count > 2 and c._currSubpath.curves[c._currSubpath.curves.count]
+                local lastCurveDX, lastCurveDY
+                if lastCurve then
+                    lastCurveDX, lastCurveDY = lastCurve.x - lastCurve.x0, lastCurve.y - lastCurve.y0
+                end
+
+                -- Not already placing and it's a corner? Place at corner
+                local cornerX, cornerY
+                if not place and lastCurve then
+                    local lastCurveLen = math.sqrt(lastCurveDX * lastCurveDX + lastCurveDY * lastCurveDY)
+                    local dot = (dx * lastCurveDX + dy * lastCurveDY) / (math.sqrt(dx * dx + dy * dy) * lastCurveLen)
+                    if dot < 0.55 then
+                        cornerX, cornerY = x - dx, y - dy
+                        if numPoints >= 32 and c._lastCornerX and c._lastCornerY then
+                            local cornerDX, cornerDY = cornerX - c._lastCornerX, cornerY - c._lastCornerY
+                            if cornerDX * cornerDX + cornerDY * cornerDY < 3 * 3 then
+                                cornerX, cornerY = nil, nil
+                            end
+                        end
+                        if cornerX and cornerY then
+                            c._lastCornerX, c._lastCornerY = cornerX, cornerY
                         end
                     end
                 end
 
-                -- Clean up
-                c._graphics:clean(0.2)
+                if cornerX and cornerY then
+                    c._currSubpath:lineTo(cornerX, cornerY)
+                elseif place then
+                    c._currSubpath:lineTo(x, y)
+                end
+            end
 
-                -- Reset state
-                c._currSubpath = nil
-                c._currPath = nil
-                c._lastCornerX, c._lastCornerY = nil, nil
+            -- Released
+            if touch.released then
+                if c._currPath and c._currSubpath then
+                    -- Final curve
+                    c._currSubpath:lineTo(x, y)
 
-                -- Save
-                self:saveDrawing("draw", c)
+                    -- Curve smoothing
+                    local numCurves = c._currSubpath.curves.count
+                    if numCurves >= 3 then
+                        for i = 1, numCurves do
+                            local p0 = c._currSubpath.curves[i]
+                            local p1 = c._currSubpath.curves[i == numCurves and 1 or (i + 1)]
+
+                            local v1x, v1y = p0.x - p0.cp2x, p0.y - p0.cp2y
+                            local v1l = math.sqrt(v1x * v1x + v1y * v1y)
+                            v1x, v1y = v1x / v1l, v1y / v1l
+                            local v2x, v2y = p1.cp1x - p1.x0, p1.cp1y - p1.y0
+                            local v2l = math.sqrt(v2x * v2x + v2y * v2y)
+                            v2x, v2y = v2x / v2l, v2y / v2l
+
+                            if v1x * v2x + v1y * v2y > 0.3 then
+                                local hx, hy = 0.5 * (v1x + v2x), 0.5 * (v1y + v2y)
+                                local hl = math.sqrt(hx * hx + hy * hy)
+                                hx, hy = hx / hl, hy / hl
+                                p0.cp2x, p0.cp2y = p0.x - v1l * hx, p0.y - v1l * hy
+                                p1.cp1x, p1.cp1y = p1.x0 + v2l * hx, p1.y0 + v2l * hy
+                            end
+                        end
+                    end
+
+                    -- Clean up
+                    c._graphics:clean(0.2)
+
+                    -- Reset state
+                    c._currSubpath = nil
+                    c._currPath = nil
+                    c._lastCornerX, c._lastCornerY = nil, nil
+
+                    -- Save
+                    self:saveDrawing("draw", c)
+                end
             end
         end
     end
@@ -389,108 +421,121 @@ function DrawTool.handlers:uiPanel()
         return
     end
 
-    ui.box(
-        "fill row",
-        {flexDirection = "row"},
-        function()
-            ui.box(
-                "fill enabled box",
-                {
-                    flex = 1,
-                    justifyContent = "flex-end"
-                },
-                function()
-                    ui.toggle(
-                        "fill",
-                        "fill",
-                        self._fillEnabled,
-                        {
-                            onToggle = function(newFillEnabled)
-                                self._fillEnabled = newFillEnabled
-                                if not self._fillEnabled then
-                                    self._lineEnabled = true
-                                end
-                            end
-                        }
-                    )
-                end
-            )
-            ui.box(
-                "fill color box",
-                {
-                    flex = 1,
-                    alignItems = "flex-start",
-                    justifyContent = "flex-end"
-                },
-                function()
-                    if self._fillEnabled then
-                        self._fillColor[1], self._fillColor[2], self._fillColor[3] =
-                            uiPalette(self._fillColor[1], self._fillColor[2], self._fillColor[3])
-                    end
-                end
-            )
-        end
-    )
-
-    ui.box(
-        "spacer-1",
-        {height = 24},
-        function()
-        end
-    )
-
     ui.toggle(
-        "line",
-        "line",
-        self._lineEnabled,
+        "erase",
+        "erase",
+        self._eraserEnabled,
         {
             onToggle = function(newlineEnabled)
-                self._lineEnabled = newlineEnabled
-                if not self._fillEnabled then
-                    self._fillEnabled = true
-                end
+                self._eraserEnabled = newlineEnabled
             end
         }
     )
-    if self._lineEnabled then
+
+    if not self._eraserEnabled then
         ui.box(
-            "line row",
+            "fill row",
             {flexDirection = "row"},
             function()
                 ui.box(
-                    "line width box",
+                    "fill enabled box",
                     {
                         flex = 1,
                         justifyContent = "flex-end"
                     },
                     function()
-                        self._lineWidth =
-                            ui.numberInput(
-                            "line width",
-                            self._lineWidth,
+                        ui.toggle(
+                            "fill",
+                            "fill",
+                            self._fillEnabled,
                             {
-                                hideLabel = true,
-                                min = 5,
-                                max = 60,
-                                step = 5
+                                onToggle = function(newFillEnabled)
+                                    self._fillEnabled = newFillEnabled
+                                    if not self._fillEnabled then
+                                        self._lineEnabled = true
+                                    end
+                                end
                             }
                         )
                     end
                 )
                 ui.box(
-                    "line color box",
+                    "fill color box",
                     {
                         flex = 1,
                         alignItems = "flex-start",
                         justifyContent = "flex-end"
                     },
                     function()
-                        self._lineColor[1], self._lineColor[2], self._lineColor[3] =
-                            uiPalette(self._lineColor[1], self._lineColor[2], self._lineColor[3])
+                        if self._fillEnabled then
+                            self._fillColor[1], self._fillColor[2], self._fillColor[3] =
+                                uiPalette(self._fillColor[1], self._fillColor[2], self._fillColor[3])
+                        end
                     end
                 )
             end
         )
+
+        ui.box(
+            "spacer-1",
+            {height = 24},
+            function()
+            end
+        )
+
+        ui.toggle(
+            "line",
+            "line",
+            self._lineEnabled,
+            {
+                onToggle = function(newlineEnabled)
+                    self._lineEnabled = newlineEnabled
+                    if not self._fillEnabled then
+                        self._fillEnabled = true
+                    end
+                end
+            }
+        )
+        if self._lineEnabled then
+            ui.box(
+                "line row",
+                {flexDirection = "row"},
+                function()
+                    ui.box(
+                        "line width box",
+                        {
+                            flex = 1,
+                            justifyContent = "flex-end"
+                        },
+                        function()
+                            self._lineWidth =
+                                ui.numberInput(
+                                "line width",
+                                self._lineWidth,
+                                {
+                                    hideLabel = true,
+                                    min = 5,
+                                    max = 60,
+                                    step = 5
+                                }
+                            )
+                        end
+                    )
+                    ui.box(
+                        "line color box",
+                        {
+                            flex = 1,
+                            alignItems = "flex-start",
+                            justifyContent = "flex-end"
+                        },
+                        function()
+                            self._lineColor[1], self._lineColor[2], self._lineColor[3] =
+                                uiPalette(self._lineColor[1], self._lineColor[2], self._lineColor[3])
+                        end
+                    )
+                end
+            )
+        end
     end
 
     ui.box(
