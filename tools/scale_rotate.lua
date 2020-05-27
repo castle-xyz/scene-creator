@@ -230,13 +230,31 @@ function ScaleRotateTool.handlers:update(dt)
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
 
                 if handle.shapeType == "rectangle" then
-                    local desiredWidth, desiredHeight = math.abs(touch.x - handle.oppositeX), math.abs(touch.y - handle.oppositeY)
+                    local desiredWidth, desiredHeight = handle.width, handle.height
+                    local angle = body:getAngle()
+
+                    --math.abs(touch.x - handle.oppositeX), math.abs(touch.y - handle.oppositeY)
+                    if handle.handleType == "corner" then
+                        -- rotate touch around handle
+                        local touchOffsetX = touch.x - handle.oppositeX
+                        local touchOffsetY = touch.y - handle.oppositeY
+                        local rotatedTouchOffsetX = math.cos(-angle) * touchOffsetX - math.sin(-angle) * touchOffsetY
+                        local rotatedTouchOffsetY = math.cos(-angle) * touchOffsetY + math.sin(-angle) * touchOffsetX
+
+                        desiredWidth, desiredHeight = math.abs(rotatedTouchOffsetX), math.abs(rotatedTouchOffsetY)
+                    elseif handle.handleType == "width" then
+                        desiredWidth = math.sqrt(math.pow(touch.x - handle.oppositeX, 2.0) + math.pow(touch.y - handle.oppositeY, 2.0))
+                    elseif handle.handleType == "height" then
+                        desiredHeight = math.sqrt(math.pow(touch.x - handle.oppositeX, 2.0) + math.pow(touch.y - handle.oppositeY, 2.0))
+                    end
+
                     if self._gridEnabled then
                         desiredWidth = util.quantize(desiredWidth, self._gridSize)
                         desiredHeight = util.quantize(desiredHeight, self._gridSize)
                     end
                     desiredWidth = math.max(MIN_BODY_SIZE, math.min(desiredWidth, MAX_BODY_SIZE))
                     desiredHeight = math.max(MIN_BODY_SIZE, math.min(desiredHeight, MAX_BODY_SIZE))
+
                     local newWidth, newHeight
                     if handle.handleType == "corner" then
                         local s = math.max(desiredWidth / handle.width, desiredHeight / handle.height)
@@ -247,7 +265,6 @@ function ScaleRotateTool.handlers:update(dt)
                         newWidth, newHeight = handle.width, desiredHeight
                     end
 
-                    local angle = body:getAngle()
                     local offsetX = newWidth * handle.unitVecX * 0.5
                     local offsetY = newHeight * handle.unitVecY * 0.5
 
