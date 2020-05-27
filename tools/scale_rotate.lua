@@ -28,16 +28,6 @@ end
 
 -- Methods
 
-function numberToUnit(n)
-    if n > 0 then
-        return 1
-    elseif n < 0 then
-        return -1
-    else
-        return 0
-    end
-end
-
 function ScaleRotateTool:getHandles()
     if self.game.performing then
         return {}
@@ -85,10 +75,8 @@ function ScaleRotateTool:getHandles()
             for j = -1, 1, 1 do
                 local x, y = body:getWorldPoint(i * 0.5 * width, j * 0.5 * height)
                 local oppositeX, oppositeY = body:getWorldPoint(i * -0.5 * width, j * -0.5 * height)
-                local unitVecX = x - oppositeX
-                local unitVecY = y - oppositeY
-                unitVecX = numberToUnit(unitVecX)
-                unitVecY = numberToUnit(unitVecY)
+                local unitVecX = i
+                local unitVecY = j
 
                 local handle = {
                     x = x,
@@ -259,8 +247,12 @@ function ScaleRotateTool.handlers:update(dt)
                         newWidth, newHeight = handle.width, desiredHeight
                     end
 
-                    local newx = handle.oppositeX + newWidth * handle.unitVecX * 0.5
-                    local newy = handle.oppositeY + newHeight * handle.unitVecY * 0.5
+                    local angle = body:getAngle()
+                    local offsetX = newWidth * handle.unitVecX * 0.5
+                    local offsetY = newHeight * handle.unitVecY * 0.5
+
+                    local newx = handle.oppositeX + math.cos(angle) * offsetX - math.sin(angle) * offsetY
+                    local newy = handle.oppositeY + math.cos(angle) * offsetY + math.sin(angle) * offsetX
 
                     if newWidth and newHeight then
                         self:command(
