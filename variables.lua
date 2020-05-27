@@ -19,6 +19,16 @@ function Common:variablesReset()
     end
 end
 
+function Common:variablesNamesToValues()
+   local variableNameToValue = {}
+   if self.variables ~= nil then
+      for _, variable in ipairs(self.variables) do
+         variableNameToValue[variable.name] = variable.value
+      end
+   end
+   return variableNameToValue
+end
+
 function Common:variablesNames()
     local names = {}
     for i = 1, #self.variables do

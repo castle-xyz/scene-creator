@@ -38,6 +38,43 @@ function TextBehavior.handlers:blueprintComponent(component, bp)
    bp.order = component.properties.order
 end
 
+-- rendering text content
+
+function TextBehavior:parseContent(component, performing, variableNameToValue)
+   if component.properties.content == nil then
+      return nil
+   end
+      
+   if not performing then
+      -- editing, so return content literal
+      return component.properties.content
+   end
+
+   -- parse variables
+   local output = component.properties.content:gsub(
+      "([^%s]+)",
+      function(word)
+         for prefix, maybeVariable in string.gmatch(word, "(.*)(%$%w+)") do
+            local variableName = string.sub(maybeVariable, 2)
+            if variableNameToValue[variableName] ~= nil then
+               return prefix .. variableNameToValue[variableName]
+            end
+         end
+         return word
+      end
+   )
+   return output
+end
+
+function TextBehavior:parseComponentsContent(performing)
+   local contents = {}
+   local variableNameToValue = self.game:variablesNamesToValues()
+   for actorId, component in pairs(self.components) do
+      contents[actorId] = self:parseContent(component, performing, variableNameToValue)
+   end
+   return contents
+end
+
 -- order
 
 function TextBehavior:getOrdering()

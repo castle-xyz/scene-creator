@@ -184,6 +184,7 @@ end
 
 function Client:uiTextActorsData()
    local textActors = {}
+   local textActorsContent = self.behaviorsByName.Text:parseComponentsContent(self.performing)
    for actorId, component in pairs(self.behaviorsByName.Text.components) do
       local actor = self.actors[actorId]
       local visible = true
@@ -191,7 +192,7 @@ function Client:uiTextActorsData()
          visible = component.properties.visible or false
       end
       textActors[actorId] = {
-         content = component.properties.content,
+         content = textActorsContent[actorId],
          order = component.properties.order,
          visible = visible,
          actor = actor,
