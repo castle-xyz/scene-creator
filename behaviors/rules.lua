@@ -540,13 +540,15 @@ RulesBehavior.responses.create = {
     run = function(self, actorId, params, context)
         local entry = self.game.library[params.entryId]
         if entry then
-            local x, y
+            local x = 0
+            local y = 0
             local physics, bodyId, body = self.game.behaviorsByName.Body:getMembers(actorId)
             if bodyId and body and context.isOwner then
                 x, y = body:getPosition()
             elseif context.x and context.y and context.isOwner then
                 x, y = context.x, context.y -- Actor was destroyed but left a position in `context`
             end
+
             if x and y then
                 local bp = util.deepCopyTable(entry.actorBlueprint)
                 if bp.components.Body then
