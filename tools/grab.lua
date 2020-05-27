@@ -74,9 +74,20 @@ function GrabTool:getHandles()
         for i = -1, 1, 1 do
             for j = -1, 1, 1 do
                 local x, y = body:getWorldPoint(i * 0.5 * width, j * 0.5 * height)
+                local oppositeX, oppositeY = body:getWorldPoint(i * -0.5 * width, j * -0.5 * height)
+                local unitVecX = x - oppositeX
+                local unitVecY = y - oppositeY
+                local dist = math.sqrt(math.pow(unitVecX, 2.0) + math.pow(unitVecY, 2.0))
+                unitVecX = unitVecX / dist
+                unitVecY = unitVecY / dist
+
                 local handle = {
                     x = x,
                     y = y,
+                    oppositeX = oppositeX,
+                    oppositeY = oppositeY,
+                    unitVecX = unitVecX,
+                    unitVecY = unitVecY,
                     singleActorId = singleActorId,
                     width = width,
                     height = height,
@@ -246,6 +257,7 @@ function GrabTool.handlers:update(dt)
                 local actorId = handle.singleActorId
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
 
+                local worldx, worldy = body:getPosition()
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
 
                 if handle.shapeType == "rectangle" then
@@ -281,23 +293,38 @@ function GrabTool.handlers:update(dt)
                         )
                     end
                 elseif handle.shapeType == "circle" then
-                    local desiredRadius = math.sqrt(lx * lx + ly * ly)
+                    local desiredRadius = 0.5 * math.sqrt(math.pow(touch.x - handle.oppositeX, 2.0) + math.pow(touch.y - handle.oppositeY, 2.0))
                     if self._gridEnabled then
                         desiredRadius = util.quantize(desiredRadius, 0.5 * self._gridSize)
                     end
                     desiredRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(desiredRadius, 0.5 * MAX_BODY_SIZE))
+
+                    local newx = handle.oppositeX + desiredRadius * handle.unitVecX
+                    local newy = handle.oppositeY + desiredRadius * handle.unitVecY
+
                     self:command(
                         "resize",
                         {
                             coalesceSuffix = touchData.gestureId .. "-" .. actorId,
                             paramOverrides = {
-                                ["do"] = {radius = desiredRadius},
-                                ["undo"] = {radius = 0.5 * handle.width}
+                                ["do"] = {radius = desiredRadius, position = {x = newx, y = newy}},
+                                ["undo"] = {radius = 0.5 * handle.width, position = {x = worldx, y = worldy}}
+                            },
+                            params = {
+                                gestureEnded = touchData.allTouchesReleased
                             }
                         },
                         function(params)
                             local physics = self.dependencies.Body:getPhysics()
                             self.dependencies.Body:setShape(actorId, physics:newCircleShape(params.radius))
+
+                            local reliable = params.gestureEnded or not live
+                            local sendOpts = {
+                                reliable = reliable,
+                                channel = reliable and physics.reliableChannel or nil
+                            }
+                            local bodyId, body = self.dependencies.Body:getBody(actorId)
+                            physics:setPosition(sendOpts, bodyId, params.position.x, params.position.y)
                         end
                     )
                 end
