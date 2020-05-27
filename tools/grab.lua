@@ -23,7 +23,7 @@ function GrabTool.handlers:addBehavior(opts)
     self._gridSize, self._gridSize = 0.5 * UNIT, 0.5 * UNIT
 
     self._rotateIncrementEnabled = true
-    self._rotateIncrementDegrees = 45
+    self._rotateIncrementDegrees = 5
 end
 
 -- Methods
