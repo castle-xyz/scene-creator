@@ -28,6 +28,16 @@ end
 
 -- Methods
 
+function numberToUnit(n)
+    if n > 0 then
+        return 1
+    elseif n < 0 then
+        return -1
+    else
+        return 0
+    end
+end
+
 function GrabTool:getHandles()
     if self.game.performing then
         return {}
@@ -77,9 +87,8 @@ function GrabTool:getHandles()
                 local oppositeX, oppositeY = body:getWorldPoint(i * -0.5 * width, j * -0.5 * height)
                 local unitVecX = x - oppositeX
                 local unitVecY = y - oppositeY
-                local dist = math.sqrt(math.pow(unitVecX, 2.0) + math.pow(unitVecY, 2.0))
-                unitVecX = unitVecX / dist
-                unitVecY = unitVecY / dist
+                unitVecX = numberToUnit(unitVecX)
+                unitVecY = numberToUnit(unitVecY)
 
                 local handle = {
                     x = x,
@@ -261,7 +270,7 @@ function GrabTool.handlers:update(dt)
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
 
                 if handle.shapeType == "rectangle" then
-                    local desiredWidth, desiredHeight = 2 * math.abs(lx), 2 * math.abs(ly)
+                    local desiredWidth, desiredHeight = math.abs(touch.x - handle.oppositeX), math.abs(touch.y - handle.oppositeY)
                     if self._gridEnabled then
                         desiredWidth = util.quantize(desiredWidth, self._gridSize)
                         desiredHeight = util.quantize(desiredHeight, self._gridSize)
@@ -277,18 +286,34 @@ function GrabTool.handlers:update(dt)
                     elseif handle.handleType == "height" then
                         newWidth, newHeight = handle.width, desiredHeight
                     end
+
+                    local newx = handle.oppositeX + newWidth * handle.unitVecX * 0.5
+                    local newy = handle.oppositeY + newHeight * handle.unitVecY * 0.5
+
                     if newWidth and newHeight then
                         self:command(
                             "resize",
                             {
                                 coalesceSuffix = touchData.gestureId .. "-" .. actorId,
                                 paramOverrides = {
-                                    ["do"] = {width = newWidth, height = newHeight},
-                                    ["undo"] = {width = handle.width, height = handle.height}
+                                    ["do"] = {width = newWidth, height = newHeight, position = {x = newx, y = newy}},
+                                    ["undo"] = {width = handle.width, height = handle.height, position = {x = worldx, y = worldy}}
+                                },
+                                params = {
+                                    gestureEnded = touchData.allTouchesReleased
                                 }
                             },
                             function(params)
                                 self.dependencies.Body:setRectangleShape(actorId, params.width, params.height)
+
+                                local physics = self.dependencies.Body:getPhysics()
+                                local reliable = params.gestureEnded or not live
+                                local sendOpts = {
+                                    reliable = reliable,
+                                    channel = reliable and physics.reliableChannel or nil
+                                }
+                                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                                physics:setPosition(sendOpts, bodyId, params.position.x, params.position.y)
                             end
                         )
                     end
