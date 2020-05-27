@@ -52,15 +52,13 @@ function TextBehavior:parseContent(component, performing, variableNameToValue)
 
    -- parse variables
    local output = component.properties.content:gsub(
-      "([^%s]+)",
-      function(word)
-         for prefix, maybeVariable in string.gmatch(word, "(.*)(%$%w+)") do
+      "(%$%w+)",
+      function(maybeVariable)
             local variableName = string.sub(maybeVariable, 2)
             if variableNameToValue[variableName] ~= nil then
-               return prefix .. variableNameToValue[variableName]
+               return variableNameToValue[variableName]
             end
-         end
-         return word
+         return maybeVariable
       end
    )
    return output
