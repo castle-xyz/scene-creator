@@ -21,8 +21,10 @@ function Client:updateTouches()
 
     -- Track active touches
     local activeTouches = {}
+    ui.setUpdatesPaused(false)
     for _, touchId in ipairs(love.touch.getTouches()) do
         activeTouches[touchId] = true
+        ui.setUpdatesPaused(true)
 
         local screenX, screenY = love.touch.getPosition(touchId)
         local x, y = self.viewTransform:inverseTransformPoint(screenX, screenY)
