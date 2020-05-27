@@ -59,6 +59,7 @@ require "behaviors.text"
 
 require "tools.grab"
 require "tools.draw"
+require "tools.scale_rotate"
 
 require "library"
 require "snapshot"
