@@ -228,10 +228,10 @@ function ScaleRotateTool.handlers:update(dt)
 
                 local worldx, worldy = body:getPosition()
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
+                local angle = body:getAngle()
 
                 if handle.shapeType == "rectangle" then
                     local desiredWidth, desiredHeight = handle.width, handle.height
-                    local angle = body:getAngle()
 
                     --math.abs(touch.x - handle.oppositeX), math.abs(touch.y - handle.oppositeY)
                     if handle.handleType == "corner" then
@@ -305,8 +305,11 @@ function ScaleRotateTool.handlers:update(dt)
                     end
                     desiredRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(desiredRadius, 0.5 * MAX_BODY_SIZE))
 
-                    local newx = handle.oppositeX + desiredRadius * handle.unitVecX
-                    local newy = handle.oppositeY + desiredRadius * handle.unitVecY
+                    local offsetX = desiredRadius * handle.unitVecX
+                    local offsetY = desiredRadius * handle.unitVecY
+
+                    local newx = handle.oppositeX + math.cos(angle) * offsetX - math.sin(angle) * offsetY
+                    local newy = handle.oppositeY + math.cos(angle) * offsetY + math.sin(angle) * offsetX
 
                     self:command(
                         "resize",
