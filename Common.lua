@@ -58,7 +58,13 @@ require "behaviors.counter"
 require "behaviors.text"
 
 require "tools.grab"
-require "tools.draw"
+
+if NEW_DRAW_TOOL then
+    require "tools.draw2"
+else
+    require "tools.draw"
+end
+
 require "tools.scale_rotate"
 
 require "library"

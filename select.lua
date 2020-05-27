@@ -204,6 +204,26 @@ function Client:setActiveTool(toolBehaviorId)
     end
 end
 
+function Client:getActiveTool()
+    if self.activeToolBehaviorId == nil then
+        return nil
+    end
+
+    return self.tools[self.activeToolBehaviorId].tool
+end
+
+function Client:isActiveToolFullscreen()
+    local activeTool = self:getActiveTool()
+    if activeTool then
+        --print(activeTool)
+    end
+    if activeTool and activeTool.isFullScreen then
+        return true
+    else
+        return false
+    end
+end
+
 function Client:selectActorAtPoint(x, y, hits)
     local hits = hits or self.behaviorsByName.Body:getActorsAtPoint(x, y)
     local pick

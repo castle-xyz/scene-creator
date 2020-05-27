@@ -2,6 +2,7 @@ jsEvents = require "__ghost__.jsEvents"
 
 -- Initial params
 
+NEW_DRAW_TOOL = true
 SHOW_TEXT_ACTORS = true
 
 function castle.onQuit()
@@ -343,7 +344,7 @@ function Client:update(dt)
 
     self:callHandlers("preUpdate", dt)
 
-    if not self.performing then
+    if not self.performing and not self:isActiveToolFullscreen() then
         self:touchToSelect() -- Do these after `preUpdate` to allow tools to steal touches first
         self:twoFingerPan()
     end
@@ -525,83 +526,93 @@ function Client:draw()
 
     love.graphics.push("all")
 
-    do -- View transform
-        -- NOTE(nikki): Not doing view-following, will add it back as a behavior...
-        --if self.performing and next(self.selectedActorIds) then
-        --    -- In perform mode, make view follow selected actor
-        --    local actorId = next(self.selectedActorIds)
-        --    local bodyId, body = self.behaviorsByName.Body:getBody(actorId)
-        --    if body then
-        --        local GUTTER = 2 * UNIT
-        --        local x, y = body:getPosition()
-        --        local viewHeight = self.viewWidth * windowHeight / windowWidth
-        --        if x < self.viewX - 0.5 * self.viewWidth + GUTTER then
-        --            self.viewX = x + 0.5 * self.viewWidth - GUTTER
-        --        end
-        --        if x > self.viewX + 0.5 * self.viewWidth - GUTTER then
-        --            self.viewX = x - 0.5 * self.viewWidth + GUTTER
-        --        end
-        --        if y < self.viewY - 0.5 * self.viewWidth + GUTTER then
-        --            self.viewY = y + 0.5 * self.viewWidth - GUTTER
-        --        end
-        --        if y > self.viewY + 0.5 * self.viewWidth - GUTTER then
-        --            self.viewY = y - 0.5 * self.viewWidth + GUTTER
-        --        end
-        --    end
-        --end
 
+    if not self:isActiveToolFullscreen() then
+        do -- View transform
+            -- NOTE(nikki): Not doing view-following, will add it back as a behavior...
+            --if self.performing and next(self.selectedActorIds) then
+            --    -- In perform mode, make view follow selected actor
+            --    local actorId = next(self.selectedActorIds)
+            --    local bodyId, body = self.behaviorsByName.Body:getBody(actorId)
+            --    if body then
+            --        local GUTTER = 2 * UNIT
+            --        local x, y = body:getPosition()
+            --        local viewHeight = self.viewWidth * windowHeight / windowWidth
+            --        if x < self.viewX - 0.5 * self.viewWidth + GUTTER then
+            --            self.viewX = x + 0.5 * self.viewWidth - GUTTER
+            --        end
+            --        if x > self.viewX + 0.5 * self.viewWidth - GUTTER then
+            --            self.viewX = x - 0.5 * self.viewWidth + GUTTER
+            --        end
+            --        if y < self.viewY - 0.5 * self.viewWidth + GUTTER then
+            --            self.viewY = y + 0.5 * self.viewWidth - GUTTER
+            --        end
+            --        if y > self.viewY + 0.5 * self.viewWidth - GUTTER then
+            --            self.viewY = y - 0.5 * self.viewWidth + GUTTER
+            --        end
+            --    end
+            --end
+
+            self.viewTransform:reset()
+            self.viewTransform:scale(windowWidth / self.viewWidth)
+            self.viewTransform:translate(-self.viewX, -self.viewY)
+            self.viewTransform:translate(0.5 * self.viewWidth, 0.5 * self.viewWidth)
+            love.graphics.applyTransform(self.viewTransform)
+        end
+
+        self:drawScene(
+            {
+                boundary = not self.performing
+            }
+        )
+    else
         self.viewTransform:reset()
-        self.viewTransform:scale(windowWidth / self.viewWidth)
-        self.viewTransform:translate(-self.viewX, -self.viewY)
-        self.viewTransform:translate(0.5 * self.viewWidth, 0.5 * self.viewWidth)
+        self.viewTransform:scale(windowWidth / 1.0)
         love.graphics.applyTransform(self.viewTransform)
     end
 
-    self:drawScene(
-        {
-            boundary = not self.performing
-        }
-    )
-
     do -- Overlays
-        -- Boundary
-        if not self.performing then
-            love.graphics.setLineWidth(1.75 * self:getPixelScale())
-            love.graphics.setColor(0.596, 0.631, 0.659)
-            love.graphics.rectangle(
-                "line",
-                -0.5 * DEFAULT_VIEW_WIDTH,
-                -0.5 * DEFAULT_VIEW_WIDTH,
-                DEFAULT_VIEW_WIDTH,
-                DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
-            )
-        end
 
-        -- All body outlines
-        if not self.performing then
-            love.graphics.setLineWidth(1.25 * self:getPixelScale())
-            love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
-            for actorId, component in pairs(self.behaviorsByName.Body.components) do
-                self.behaviorsByName.Body:drawBodyOutline(component)
+        if not self:isActiveToolFullscreen() then
+            -- Boundary
+            if not self.performing then
+                love.graphics.setLineWidth(1.75 * self:getPixelScale())
+                love.graphics.setColor(0.596, 0.631, 0.659)
+                love.graphics.rectangle(
+                    "line",
+                    -0.5 * DEFAULT_VIEW_WIDTH,
+                    -0.5 * DEFAULT_VIEW_WIDTH,
+                    DEFAULT_VIEW_WIDTH,
+                    DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
+                )
             end
-        end
 
-        -- Selection outlines
-        if not self.performing then
-            local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
-            love.graphics.setLineWidth(2 * self:getPixelScale())
-            love.graphics.setColor(0, 1, 0, 0.8)
-            for actorId in pairs(self.selectedActorIds) do
-                if self.behaviorsByName.Body:has(actorId) then
-                    if activeTool then
-                        local component = activeTool.components[actorId]
-                        if component and self.clientId ~= component.clientId then
-                            love.graphics.setColor(1, 0, 0, 0.8)
-                        else
-                            love.graphics.setColor(0, 1, 0, 0.8)
+            -- All body outlines
+            if not self.performing then
+                love.graphics.setLineWidth(1.25 * self:getPixelScale())
+                love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
+                for actorId, component in pairs(self.behaviorsByName.Body.components) do
+                    self.behaviorsByName.Body:drawBodyOutline(component)
+                end
+            end
+
+            -- Selection outlines
+            if not self.performing then
+                local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+                love.graphics.setLineWidth(2 * self:getPixelScale())
+                love.graphics.setColor(0, 1, 0, 0.8)
+                for actorId in pairs(self.selectedActorIds) do
+                    if self.behaviorsByName.Body:has(actorId) then
+                        if activeTool then
+                            local component = activeTool.components[actorId]
+                            if component and self.clientId ~= component.clientId then
+                                love.graphics.setColor(1, 0, 0, 0.8)
+                            else
+                                love.graphics.setColor(0, 1, 0, 0.8)
+                            end
                         end
+                        self.behaviorsByName.Body:drawBodyOutline(actorId)
                     end
-                    self.behaviorsByName.Body:drawBodyOutline(actorId)
                 end
             end
         end
