@@ -159,6 +159,8 @@ function Client:selectActor(actorId)
    elseif self.behaviorsByName.Body.components[actorId] then
       self.openComponentBehaviorId = self.behaviorsByName.Body.behaviorId
    end
+
+   self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
 end
 
 function Client:deselectActor(actorId)
