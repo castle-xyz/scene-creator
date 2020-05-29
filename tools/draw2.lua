@@ -26,6 +26,9 @@ local _tempGraphics
 local _subtool
 local _grabbedPaths
 
+local _lineColor
+local _fillColor
+
 function DrawTool.handlers:addBehavior(opts)
     
 end
@@ -489,6 +492,9 @@ function DrawTool.handlers:onSetActive()
     _tempGraphics = nil
     _subtool = 'draw'
 
+    _lineColor = {hexStringToRgb(DEFAULT_PALETTE[6])}
+    _fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])}
+
     resetGraphics()
 
     local windowWidth, windowHeight = love.graphics.getDimensions()
@@ -652,7 +658,7 @@ function DrawTool.handlers:preUpdate(dt)
                 end
             end
         elseif _subtool == 'fill' then
-            floodFill(touch.x, touch.y, {r = 0.6, g = 0.6, b = 0.9})
+            floodFill(touch.x, touch.y, {r = _fillColor[1], g = _fillColor[2], b = _fillColor[3]})
         elseif _subtool == 'erase line' then
             if touch.released then
                 for i = 1, #_paths do
@@ -808,6 +814,19 @@ function DrawTool.handlers:uiPanel()
                     end
                 }
             )
+        end
+    )
+
+    ui.box(
+        "fill color box",
+        {
+            flex = 1,
+            alignItems = "flex-start",
+            justifyContent = "flex-end"
+        },
+        function()
+            _fillColor[1], _fillColor[2], _fillColor[3] =
+                uiPalette(_fillColor[1], _fillColor[2], _fillColor[3])
         end
     )
 end

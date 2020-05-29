@@ -59,6 +59,7 @@ require "behaviors.text"
 
 require "tools.grab"
 
+require "tools.drawUtils"
 if NEW_DRAW_TOOL then
     require "tools.draw2"
 else
