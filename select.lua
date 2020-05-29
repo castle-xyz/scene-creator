@@ -201,6 +201,10 @@ function Client:setActiveTool(toolBehaviorId)
                 table.remove(self.activeToolHistory, 1)
             end
         end
+
+        if activeTool.handlers['onSetActive'] then
+            activeTool.handlers['onSetActive'](self)
+        end
     end
 end
 
