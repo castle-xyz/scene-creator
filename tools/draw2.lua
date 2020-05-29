@@ -35,6 +35,35 @@ local GRID_TOP_PADDING = 0.2 * DEFAULT_VIEW_WIDTH
 local GRID_SIZE = 10
 local GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
 
+local fillCanvas
+
+function floodFill()
+    local windowWidth, windowHeight = love.graphics.getDimensions()
+    fillCanvas =
+    love.graphics.newCanvas(
+        windowWidth,
+        windowHeight,
+        {
+            dpiscale = 1,
+            msaa = 4
+        }
+    )
+
+    fillCanvas:renderTo(
+        function()
+            love.graphics.push("all")
+
+            love.graphics.origin()
+            love.graphics.scale(windowWidth / DEFAULT_VIEW_WIDTH)
+
+            love.graphics.setColor(1, 1, 1, 1)
+            _graphics:draw()
+
+            love.graphics.pop()
+        end
+    )
+end
+
 local function globalToGridCoordinates(x, y)
     local gridX = 1.0 + (GRID_SIZE - 1) * (x - GRID_HORIZONTAL_PADDING) / GRID_WIDTH
     local gridY = 1.0 + (GRID_SIZE - 1) * (y - GRID_TOP_PADDING) / GRID_WIDTH
@@ -87,31 +116,6 @@ local function resetGraphics()
     for i = 1, #_paths do
         _graphics:addPath(_paths[i].path)
     end
-
-    local path = tove.newPath()
-    
-    path:setLineColor(0.0, 0.0, 0.0, 1.0)
-    path:setLineWidth(0.2)
-    path:setMiterLimit(1)
-    path:setLineJoin("round")
-    path:setFillColor(1.0, 0.0, 0.0, 1.0)
-
-    --_graphics:addPath(path)
-
-
-
-    local subpath1 = tove.newSubpath()
-    path:addSubpath(subpath1)
-    subpath1:arc(5, 5, 2, 0, 180)
-
-
-    local subpath2 = tove.newSubpath()
-    path:addSubpath(subpath2)
-    subpath2:moveTo(3, 5)
-    subpath2:lineTo(5, 1)
-    subpath2:lineTo(7, 5)
-
-
 end
 
 local function drawEndOfArc(path, p1x, p1y, p2x, p2y)
@@ -312,6 +316,7 @@ function DrawTool.handlers:preUpdate(dt)
 
         if touch.released then
             if pathData.p1.x == pathData.p2.x and pathData.p1.y == pathData.p2.y then
+                local foundPath = false
                 for i = 1, #_paths do
                     if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
                         local path = tove.newPath()
@@ -329,8 +334,14 @@ function DrawTool.handlers:preUpdate(dt)
                         drawPath(_paths[i])
 
                         resetGraphics()
+
+                        foundPath = true
                         break
                     end
+                end
+
+                if not foundPath then
+                    floodFill()
                 end
             else
                 addPath(pathData)
@@ -385,11 +396,20 @@ function DrawTool.handlers:drawOverlay()
     love.graphics.points(points)
 
     love.graphics.setColor(1, 1, 1, 1)
-    _graphics:draw()
+
+    if fillCanvas ~= nil then
+        local windowWidth, windowHeight = love.graphics.getDimensions()
+        love.graphics.draw(fillCanvas, 0, 0, 0, DEFAULT_VIEW_WIDTH / windowWidth, DEFAULT_VIEW_WIDTH / windowWidth)
+    end
+
+    --_graphics:draw()
+
 
     if _tempGraphics ~= nil then
         _tempGraphics:draw()
     end
+
+
 end
 
 -- UI
