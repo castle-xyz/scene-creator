@@ -652,7 +652,7 @@ function DrawTool.handlers:preUpdate(dt)
                 end
             end
         elseif _subtool == 'fill' then
-            floodFill(touch.x, touch.y, {r = 0.5, g = 0.5, b = 0.5})
+            floodFill(touch.x, touch.y, {r = 0.6, g = 0.6, b = 0.9})
         elseif _subtool == 'erase line' then
             if touch.released then
                 for i = 1, #_paths do
