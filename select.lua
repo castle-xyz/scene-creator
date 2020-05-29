@@ -119,6 +119,11 @@ function Client:applySelections()
         end
     end
 
+    -- Activate Grab by default when selection changes and Grab is applicable
+    if self.selectionChanged and self.applicableTools[self.behaviorsByName.Grab.behaviorId] then
+        self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
+    end
+    
     -- If this deactivated the tool, pick another one
     if not self.activeToolBehaviorId then
         for i = #self.activeToolHistory, 1, -1 do -- Try history
@@ -147,10 +152,13 @@ function Client:applySelections()
         end
     )
     self:addToolComponents()
+    
+    self.selectionChanged = false
 end
 
 function Client:selectActor(actorId)
    self.selectedActorIds[actorId] = true
+   self.selectionChanged = true
 
    -- auto open either Body or Text component
    local actor = self.actors[actorId]
@@ -159,12 +167,11 @@ function Client:selectActor(actorId)
    elseif self.behaviorsByName.Body.components[actorId] then
       self.openComponentBehaviorId = self.behaviorsByName.Body.behaviorId
    end
-
-   self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
 end
 
 function Client:deselectActor(actorId)
     self.selectedActorIds[actorId] = nil
+    self.selectionChanged = true
 end
 
 function Client:deselectAllActors()
