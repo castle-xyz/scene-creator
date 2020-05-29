@@ -702,20 +702,22 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.draw(fillCanvas, 0, 0, 0, DEFAULT_VIEW_WIDTH / windowWidth, DEFAULT_VIEW_WIDTH / windowWidth)
     end
 
-    love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
-    love.graphics.setPointSize(10.0)
+    if _subtool == 'draw' or _subtool == 'move' then
+        love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
+        love.graphics.setPointSize(10.0)
 
-    local points = {}
+        local points = {}
 
-    for x = 1, GRID_SIZE do
-        for y = 1, GRID_SIZE do
-            local globalX, globalY = gridToGlobalCoordinates(x, y)
-            table.insert(points, globalX)
-            table.insert(points, globalY)
+        for x = 1, GRID_SIZE do
+            for y = 1, GRID_SIZE do
+                local globalX, globalY = gridToGlobalCoordinates(x, y)
+                table.insert(points, globalX)
+                table.insert(points, globalY)
+            end
         end
-    end
 
-    love.graphics.points(points)
+        love.graphics.points(points)
+    end
 
     love.graphics.setColor(1, 1, 1, 1)
 
