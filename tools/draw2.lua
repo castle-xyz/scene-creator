@@ -23,6 +23,8 @@ local _initialCoord
 local _graphics
 
 local _tempGraphics
+local _subtool
+local _grabbedPaths
 
 function DrawTool.handlers:addBehavior(opts)
     
@@ -34,6 +36,7 @@ local GRID_HORIZONTAL_PADDING = 0.1 * DEFAULT_VIEW_WIDTH
 local GRID_TOP_PADDING = 0.2 * DEFAULT_VIEW_WIDTH
 local GRID_SIZE = 10
 local GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
+local BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
 
 local pathsCanvas
 local fillCanvas
@@ -187,7 +190,7 @@ function floodFill8Way(startX, startY, width, height, test, paint)
     end
 end
 
-function floodFill(x, y)
+function floodFill(x, y, color)
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
     pathsCanvas:renderTo(
@@ -215,7 +218,7 @@ function floodFill(x, y)
             love.graphics.origin()
             --love.graphics.scale(windowWidth / DEFAULT_VIEW_WIDTH)
 
-            love.graphics.setColor(0.5, 0.5, 0.5, 1)
+            love.graphics.setColor(color.r, color.g, color.b, 1)
             
             love.graphics.setPointSize(10.0)
 
@@ -247,7 +250,7 @@ function floodFill(x, y)
                 end
 
                 r, g, b, a = fillImageData:getPixel(x, y)
-                if a > 0.0 then
+                if r == color.r and g == color.g and b == color.b then
                     return false
                 end
 
@@ -340,8 +343,8 @@ end
 
 local function drawPath(pathData)
     local path = pathData.path
-    local p1 = pathData.p1
-    local p2 = pathData.p2
+    local p1 = pathData.points[1]
+    local p2 = pathData.points[2]
     local style = pathData.style
 
     local subpath = tove.newSubpath()
@@ -481,8 +484,10 @@ end
 
 function DrawTool.handlers:onSetActive()
     _paths = {}
+    _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
+    _subtool = 'draw'
 
     resetGraphics()
 
@@ -505,6 +510,16 @@ function DrawTool.handlers:onSetActive()
             msaa = 4
         }
     )
+
+
+    fillCanvas:renderTo(
+        function()
+            love.graphics.push("all")
+            love.graphics.origin()
+            love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, 1)
+            love.graphics.pop()
+        end
+    )
 end
 
 function DrawTool.handlers:preUpdate(dt)
@@ -524,66 +539,132 @@ function DrawTool.handlers:preUpdate(dt)
         local touchId, touch = next(touchData.touches)
         local roundedX, roundedY = roundGlobalCoordinatesToGrid(touch.x, touch.y)
         local roundedCoord = {x = roundedX, y = roundedY}
-        
-        if _initialCoord == nil then
-            _initialCoord = roundedCoord
-        end
 
-        local pathData = {}
-        local path = tove.newPath()
+        if _subtool == 'draw' then
+            if _initialCoord == nil then
+                _initialCoord = roundedCoord
+            end
 
-        path:setLineColor(0.0, 0.0, 0.0, 1.0)
-        path:setLineWidth(0.2)
-        path:setMiterLimit(1)
-        path:setLineJoin("round")
+            local pathData = {}
+            local path = tove.newPath()
 
-        pathData.path = path
-        pathData.p1 = _initialCoord
-        pathData.p2 = roundedCoord
-        pathData.style = 1
-        drawPath(pathData)
+            path:setLineColor(0.0, 0.0, 0.0, 1.0)
+            path:setLineWidth(0.2)
+            path:setMiterLimit(1)
+            path:setLineJoin("round")
 
-        if touch.released then
-            if pathData.p1.x == pathData.p2.x and pathData.p1.y == pathData.p2.y then
-                local foundPath = false
+            pathData.path = path
+            pathData.points = {_initialCoord, roundedCoord}
+            pathData.style = 1
+            drawPath(pathData)
+
+            if touch.released then
+                if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then 
+                    addPath(pathData)
+                    resetGraphics()
+                end
+
+                _initialCoord = nil
+                _tempGraphics = nil
+            else
+                _tempGraphics = tove.newGraphics()
+                _tempGraphics:setDisplay("mesh", 1024)
+                _tempGraphics:addPath(path)
+            end
+        elseif _subtool == 'move' then
+            if _grabbedPaths == nil then
+                _grabbedPaths = {}
+
                 for i = 1, #_paths do
-                    if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
-                        local path = tove.newPath()
-    
-                        path:setLineColor(0.0, 0.0, 0.0, 1.0)
-                        path:setLineWidth(0.2)
-                        path:setMiterLimit(1)
-                        path:setLineJoin("round")
-    
-                        _paths[i].path = path
-                        _paths[i].style = _paths[i].style + 1
-                        if _paths[i].style > 3 then
-                            _paths[i].style = 1
+                    for p = 1, 2 do
+                        if roundedX == _paths[i].points[p].x and roundedY == _paths[i].points[p].y then
+                            _paths[i].grabPointIndex = p
+                            table.insert(_grabbedPaths, _paths[i])
+                            break
                         end
-                        drawPath(_paths[i])
-
-                        resetGraphics()
-
-                        foundPath = true
-                        break
                     end
                 end
 
-                if not foundPath then
-                    floodFill(touch.x, touch.y)
+                for i = 1, #_grabbedPaths do
+                    removePath(_grabbedPaths[i])
                 end
-            else
-                addPath(pathData)
 
-                resetGraphics()
+                if #_grabbedPaths then
+                    resetGraphics()
+                end
             end
 
-            _initialCoord = nil
-            _tempGraphics = nil
-        else
-            _tempGraphics = tove.newGraphics()
-            _tempGraphics:setDisplay("mesh", 1024)
-            _tempGraphics:addPath(path)
+            for i = 1, #_grabbedPaths do
+                _grabbedPaths[i].points[_grabbedPaths[i].grabPointIndex].x = roundedX
+                _grabbedPaths[i].points[_grabbedPaths[i].grabPointIndex].y = roundedY
+
+                local path = tove.newPath()
+
+                path:setLineColor(0.0, 0.0, 0.0, 1.0)
+                path:setLineWidth(0.2)
+                path:setMiterLimit(1)
+                path:setLineJoin("round")
+                _grabbedPaths[i].path = path
+                drawPath(_grabbedPaths[i])
+            end
+
+            if touch.released then
+                if _grabbedPaths and #_grabbedPaths > 0 then
+                    for i = 1, #_grabbedPaths do
+                        addPath(_grabbedPaths[i])
+                    end
+
+                    resetGraphics()
+                else
+                    local foundPath = false
+                    for i = 1, #_paths do
+                        if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
+                            local path = tove.newPath()
+        
+                            path:setLineColor(0.0, 0.0, 0.0, 1.0)
+                            path:setLineWidth(0.2)
+                            path:setMiterLimit(1)
+                            path:setLineJoin("round")
+        
+                            _paths[i].path = path
+                            _paths[i].style = _paths[i].style + 1
+                            if _paths[i].style > 3 then
+                                _paths[i].style = 1
+                            end
+                            drawPath(_paths[i])
+
+                            resetGraphics()
+
+                            foundPath = true
+                            break
+                        end
+                    end
+                end
+
+                _grabbedPaths = nil
+                _tempGraphics = nil
+            else
+                _tempGraphics = tove.newGraphics()
+                _tempGraphics:setDisplay("mesh", 1024)
+
+                for i = 1, #_grabbedPaths do
+                    _tempGraphics:addPath(_grabbedPaths[i].path)
+                end
+            end
+        elseif _subtool == 'fill' then
+            floodFill(touch.x, touch.y, {r = 0.5, g = 0.5, b = 0.5})
+        elseif _subtool == 'erase line' then
+            if touch.released then
+                for i = 1, #_paths do
+                    if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
+                        removePath(_paths[i])
+                        resetGraphics()
+                        break
+                    end
+                end
+            end
+        elseif _subtool == 'erase fill' then
+            floodFill(touch.x, touch.y, BACKGROUND_COLOR)
         end
     end
 end
@@ -607,7 +688,13 @@ function DrawTool.handlers:drawOverlay()
         return
     end
 
-    love.graphics.clear(0.95, 0.95, 0.95)
+    love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b)
+
+    love.graphics.setColor(1, 1, 1, 1)
+    if fillCanvas ~= nil then
+        local windowWidth, windowHeight = love.graphics.getDimensions()
+        love.graphics.draw(fillCanvas, 0, 0, 0, DEFAULT_VIEW_WIDTH / windowWidth, DEFAULT_VIEW_WIDTH / windowWidth)
+    end
 
     love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
     love.graphics.setPointSize(10.0)
@@ -626,15 +713,25 @@ function DrawTool.handlers:drawOverlay()
 
     love.graphics.setColor(1, 1, 1, 1)
 
-    if fillCanvas ~= nil then
-        local windowWidth, windowHeight = love.graphics.getDimensions()
-        love.graphics.draw(fillCanvas, 0, 0, 0, DEFAULT_VIEW_WIDTH / windowWidth, DEFAULT_VIEW_WIDTH / windowWidth)
-    end
-
     _graphics:draw()
 
     if _tempGraphics ~= nil then
         _tempGraphics:draw()
+    end
+
+    if _subtool == "move" then
+        local movePoints = {}
+
+        for i = 1, #_paths do
+            for p = 1, 2 do
+                table.insert(movePoints, _paths[i].points[p].x)
+                table.insert(movePoints, _paths[i].points[p].y)
+            end
+        end
+
+        love.graphics.setColor(1.0, 0.6, 0.6, 1.0)
+        love.graphics.setPointSize(30.0)
+        love.graphics.points(movePoints)
     end
 
 
@@ -651,4 +748,66 @@ function DrawTool.handlers:uiPanel()
     if not c then
         return
     end
+
+    ui.box(
+        "fill row",
+        {flexDirection = "row"},
+        function()
+
+            ui.toggle(
+                "draw",
+                "draw",
+                _subtool == 'draw',
+                {
+                    onToggle = function(newlineEnabled)
+                        _subtool = 'draw'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "move",
+                "move",
+                _subtool == 'move',
+                {
+                    onToggle = function(newlineEnabled)
+                        _subtool = 'move'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "fill",
+                "fill",
+                _subtool == 'fill',
+                {
+                    onToggle = function(newlineEnabled)
+                        _subtool = 'fill'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "erase line",
+                "erase line",
+                _subtool == 'erase line',
+                {
+                    onToggle = function(newlineEnabled)
+                        _subtool = 'erase line'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "erase fill",
+                "erase fill",
+                _subtool == 'erase fill',
+                {
+                    onToggle = function(newlineEnabled)
+                        _subtool = 'erase fill'
+                    end
+                }
+            )
+        end
+    )
 end
