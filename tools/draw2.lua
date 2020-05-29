@@ -37,7 +37,7 @@ end
 
 local GRID_HORIZONTAL_PADDING = 0.1 * DEFAULT_VIEW_WIDTH
 local GRID_TOP_PADDING = 0.2 * DEFAULT_VIEW_WIDTH
-local GRID_SIZE = 10
+local GRID_SIZE = 15
 local GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
 local BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
 
@@ -707,8 +707,8 @@ function DrawTool.handlers:drawOverlay()
 
     local points = {}
 
-    for x = 1, 10 do
-        for y = 1, 10 do
+    for x = 1, GRID_SIZE do
+        for y = 1, GRID_SIZE do
             local globalX, globalY = gridToGlobalCoordinates(x, y)
             table.insert(points, globalX)
             table.insert(points, globalY)
