@@ -14,6 +14,7 @@ local DrawTool =
     }
 }
 
+local DEBUG_FLOOD_FILL = true
 
 -- Behavior management
 
@@ -22,6 +23,46 @@ local _initialCoord
 local _graphics
 
 local _tempGraphics
+
+local _slabs = {}
+local _INTERSECTIONS = {}
+local _POINTS = {}
+
+local function recomputeSlabs()
+    _slabs = {}
+    _POINTS = {}
+    _INTERSECTIONS = {}
+
+    for i = 1, #_paths do
+        for j = 1, i - 1 do
+            for s = 1, _paths[i].path.subpaths.count do
+                local subpath = _paths[i].path.subpaths[s]
+
+                local numPoints, points = subpath:getPoints()
+                local lastX = nil
+                local lastY = nil
+
+                for p = 0, numPoints - 1, 3 do
+                    local x = points[2 * p + 0]
+                    local y = points[2 * p + 1]
+                    table.insert( _POINTS, x)
+                    table.insert( _POINTS, y)
+
+                    if lastX ~= nil then
+                        local intersections = _paths[j].path:intersection(lastX, lastY, x, y)
+                        for k = 1, #intersections do
+                            table.insert(_INTERSECTIONS, intersections[k])
+                        end
+                    end
+
+                    lastX = x
+                    lastY = y
+                end
+            end
+        end
+    end
+end
+
 
 function DrawTool.handlers:addBehavior(opts)
     
@@ -86,6 +127,31 @@ local function resetGraphics()
     for i = 1, #_paths do
         _graphics:addPath(_paths[i].path)
     end
+
+    local path = tove.newPath()
+    
+    path:setLineColor(0.0, 0.0, 0.0, 1.0)
+    path:setLineWidth(0.2)
+    path:setMiterLimit(1)
+    path:setLineJoin("round")
+    path:setFillColor(1.0, 0.0, 0.0, 1.0)
+
+    --_graphics:addPath(path)
+
+
+
+    local subpath1 = tove.newSubpath()
+    path:addSubpath(subpath1)
+    subpath1:arc(5, 5, 2, 0, 180)
+
+
+    local subpath2 = tove.newSubpath()
+    path:addSubpath(subpath2)
+    subpath2:moveTo(3, 5)
+    subpath2:lineTo(5, 1)
+    subpath2:lineTo(7, 5)
+
+
 end
 
 local function drawEndOfArc(path, p1x, p1y, p2x, p2y)
@@ -301,11 +367,18 @@ function DrawTool.handlers:preUpdate(dt)
                             _paths[i].style = 1
                         end
                         drawPath(_paths[i])
+
+                        recomputeSlabs()
+
                         resetGraphics()
+                        break
                     end
                 end
             else
                 addPath(pathData)
+
+                recomputeSlabs()
+
                 resetGraphics()
             end
 
@@ -361,6 +434,15 @@ function DrawTool.handlers:drawOverlay()
     if _tempGraphics ~= nil then
         _tempGraphics:draw()
     end
+
+
+    love.graphics.setColor(0.0, 0.0, 1.0, 1.0)
+    love.graphics.setPointSize(10.0)
+    love.graphics.points(_POINTS)
+
+    love.graphics.setColor(0.0, 1.0, 0.0, 1.0)
+    love.graphics.setPointSize(20.0)
+    love.graphics.points(_INTERSECTIONS)
 end
 
 -- UI

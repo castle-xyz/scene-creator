@@ -355,6 +355,11 @@ typedef struct {
 } ToveShaderCode;
 
 typedef struct {
+    float* numbers;
+    int len;
+} path_intersect_result;
+
+typedef struct {
 	// the following values are uint32_t by design: these will be unboxed,
 	// will fit into Lua doubles and can act as hash table values in Lua.
 	// uint64_t would not work.
@@ -370,6 +375,10 @@ typedef struct {
 	uint32_t id; // >= 1
 	uint32_t version;
 } ToveSendArgs;
+
+path_intersect_result PathGetIntersection(TovePathRef path, float x1, float y1, float x2, float y2);
+void ReleaseFloatArray(float *);
+
 const char *GetVersion();
 void SetReportFunction(ToveReportFunction f);
 void SetReportLevel(ToveReportLevel l);
@@ -1369,6 +1378,10 @@ function Subpath:warp(f)
 	lib.SubpathRestoreCurvature(self)
 end
 
+function Subpath:getPoints()
+	return lib.SubpathGetNumPoints(self), lib.SubpathGetPointsPtr(self)
+end
+
 ffi.metatype("ToveSubpathRef", Subpath)
 
 --- Create new subpath.
@@ -1556,6 +1569,18 @@ function Path:nearest(x, y, max, min)
 		end
 	end
 	return false
+end
+
+function Path:intersection(x1, y1, x2, y2)
+	local float_array_c = lib.PathGetIntersection(self, x1, y1, x2, y2)
+	local float_array_lua = {}
+	for i = 0, float_array_c.len - 1 do
+		float_array_lua[i + 1] = float_array_c.numbers[i]
+	end
+
+	lib.ReleaseFloatArray(float_array_c.numbers)
+
+	return float_array_lua
 end
 
 function Path:set(arg, swl)
