@@ -214,6 +214,11 @@ function floodFill(x, y, color)
     local pathsImageData = pathsCanvas:newImageData()
     local fillImageData = fillCanvas:newImageData()
 
+    local scale = windowWidth / DEFAULT_VIEW_WIDTH
+
+    local ir, ig, ib, ia = fillImageData:getPixel(math.floor(x * scale), math.floor(y * scale))
+    --print(ir .. ' ' .. ig .. ' ' .. ib)
+
     fillCanvas:renderTo(
         function()
             love.graphics.push("all")
@@ -223,12 +228,10 @@ function floodFill(x, y, color)
 
             love.graphics.setColor(color.r, color.g, color.b, 1)
             
-            love.graphics.setPointSize(10.0)
+            love.graphics.setPointSize(1.0)
 
             local points = {}
             local lookup = {}
-
-            local scale = windowWidth / DEFAULT_VIEW_WIDTH
 
             local function test(x, y)
                 if lookup[x] and lookup[x][y] then
@@ -252,10 +255,11 @@ function floodFill(x, y, color)
                     return false
                 end
 
-                r, g, b, a = fillImageData:getPixel(x, y)
-                if r == color.r and g == color.g and b == color.b then
-                    return false
-                end
+                --r, g, b, a = fillImageData:getPixel(x, y)
+                --local colorThreshold = 0.01
+                --if math.abs(r - ir) > colorThreshold or math.abs(g - ig) > colorThreshold or math.abs(b - ib) > colorThreshold then
+                --    return false
+                --end
 
                 return true
             end
@@ -829,6 +833,27 @@ function DrawTool.handlers:uiPanel()
         function()
             _fillColor[1], _fillColor[2], _fillColor[3] =
                 uiPalette(_fillColor[1], _fillColor[2], _fillColor[3])
+        end
+    )
+
+    ui.box(
+        "grid size box",
+        {
+            flex = 1,
+            justifyContent = "flex-end"
+        },
+        function()
+            GRID_SIZE =
+                ui.numberInput(
+                "grid size",
+                GRID_SIZE,
+                {
+                    hideLabel = false,
+                    min = 3,
+                    max = 25,
+                    step = 1
+                }
+            )
         end
     )
 end

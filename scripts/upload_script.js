@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const SCENE_CREATOR_API_VERSION = 3;
+const SCENE_CREATOR_API_VERSION = 4;
 
 var fs = require("fs");
 var request = require("request");
@@ -17,13 +17,13 @@ request.post(
     url: "https://api.castle.games/api/scene-creator/upload",
     headers: {
       "X-Auth-Token": token,
-      "scene-creator-api-version": SCENE_CREATOR_API_VERSION
+      "scene-creator-api-version": SCENE_CREATOR_API_VERSION,
     },
     formData: {
-      file: fs.createReadStream("../scene_creator.love")
-    }
+      file: fs.createReadStream("../scene_creator.love"),
+    },
   },
-  function(err, resp, body) {
+  function (err, resp, body) {
     if (err || resp.statusCode != 200) {
       console.log("Error! " + resp.body);
       process.exit(1);
