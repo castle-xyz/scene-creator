@@ -725,13 +725,11 @@ function DrawTool.handlers:preUpdate(dt)
         elseif _subtool == 'fill' then
             floodFill(touch.x, touch.y, {r = _fillColor[1], g = _fillColor[2], b = _fillColor[3]})
         elseif _subtool == 'erase line' then
-            if touch.released then
-                for i = 1, #_paths do
-                    if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
-                        removePath(_paths[i])
-                        resetGraphics()
-                        break
-                    end
+            for i = 1, #_paths do
+                if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
+                    removePath(_paths[i])
+                    resetGraphics()
+                    break
                 end
             end
         elseif _subtool == 'erase fill' then
@@ -823,7 +821,7 @@ function DrawTool.handlers:uiPanel()
     end
 
     ui.box(
-        "fill row",
+        "draw row",
         {flexDirection = "row"},
         function()
 
@@ -881,7 +879,14 @@ function DrawTool.handlers:uiPanel()
                     end
                 }
             )
+        end
+    )
 
+
+    ui.box(
+        "erase row",
+        {flexDirection = "row"},
+        function()
             ui.toggle(
                 "erase line",
                 "erase line",
