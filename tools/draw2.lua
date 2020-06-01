@@ -686,30 +686,6 @@ function DrawTool.handlers:preUpdate(dt)
                     end
 
                     resetGraphics()
-                else
-                    local foundPath = false
-                    for i = 1, #_paths do
-                        if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
-                            local path = tove.newPath()
-        
-                            path:setLineColor(0.0, 0.0, 0.0, 1.0)
-                            path:setLineWidth(0.2)
-                            path:setMiterLimit(1)
-                            path:setLineJoin("round")
-        
-                            _paths[i].path = path
-                            _paths[i].style = _paths[i].style + 1
-                            if _paths[i].style > 3 then
-                                _paths[i].style = 1
-                            end
-                            drawPath(_paths[i])
-
-                            resetGraphics()
-
-                            foundPath = true
-                            break
-                        end
-                    end
                 end
 
                 _grabbedPaths = nil
@@ -720,6 +696,30 @@ function DrawTool.handlers:preUpdate(dt)
 
                 for i = 1, #_grabbedPaths do
                     _tempGraphics:addPath(_grabbedPaths[i].path)
+                end
+            end
+        elseif _subtool == 'bend' then
+            if touch.released then
+                for i = 1, #_paths do
+                    if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
+                        local path = tove.newPath()
+    
+                        path:setLineColor(0.0, 0.0, 0.0, 1.0)
+                        path:setLineWidth(0.2)
+                        path:setMiterLimit(1)
+                        path:setLineJoin("round")
+    
+                        _paths[i].path = path
+                        _paths[i].style = _paths[i].style + 1
+                        if _paths[i].style > 3 then
+                            _paths[i].style = 1
+                        end
+                        drawPath(_paths[i])
+
+                        resetGraphics()
+
+                        break
+                    end
                 end
             end
         elseif _subtool == 'fill' then
@@ -856,6 +856,17 @@ function DrawTool.handlers:uiPanel()
                 {
                     onToggle = function(newlineEnabled)
                         _subtool = 'move'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "bend",
+                "bend",
+                _subtool == 'bend',
+                {
+                    onToggle = function(newlineEnabled)
+                        _subtool = 'bend'
                     end
                 }
             )
