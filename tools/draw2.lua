@@ -660,6 +660,41 @@ function DrawTool.handlers:preUpdate(dt)
                     removePath(_grabbedPaths[i])
                 end
 
+                if #_grabbedPaths == 0 then
+                    for i = 1, #_paths do
+                        local pathData = _paths[i]
+                        local distance, t, subpath = pathData.path:nearest(touch.x, touch.y, 0.5)
+                        if subpath then
+                            local pointX, pointY = subpath:position(t)
+                            removePath(pathData)
+                            local touchPoint = {x = touch.x, y = touch.y}
+
+                            local newPathData1 = {
+                                points = {
+                                    pathData.points[1],
+                                    touchPoint
+                                },
+                                style = pathData.style,
+                                grabPointIndex = 2
+                            }
+
+                            local newPathData2 = {
+                                points = {
+                                    touchPoint,
+                                    pathData.points[2]
+                                },
+                                style = pathData.style,
+                                grabPointIndex = 1
+                            }
+
+                            table.insert(_grabbedPaths, newPathData1)
+                            table.insert(_grabbedPaths, newPathData2)
+
+                            break
+                        end
+                    end
+                end
+
                 if #_grabbedPaths then
                     resetGraphics()
                 end
