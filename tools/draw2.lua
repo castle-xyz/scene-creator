@@ -184,30 +184,14 @@ local function removePathData(pathData)
     end
 end
 
-_INTERSECTIONS = {}
+_SLABS = {}
 local function resetGraphics()
     _graphics = tove.newGraphics()
     _graphics:setDisplay("mesh", 1024)
-    _INTERSECTIONS = {}
+    _SLABS = findAllSlabs(_pathDataList)
 
     for i = 1, #_pathDataList do
         _graphics:addPath(_pathDataList[i].path)
-
-        for j = 1, #_pathDataList[i].subpathDataList do
-            local subpathData = _pathDataList[i].subpathDataList[j]
-
-            for k = 1, i - 1 do
-                for l = 1, #_pathDataList[k].subpathDataList do
-                    local otherSubpathData = _pathDataList[k].subpathDataList[l]
-
-                    local p1, p2 = subpathDataIntersection(subpathData, otherSubpathData)
-                    if p1 then
-                        table.insert(_INTERSECTIONS, p1)
-                        table.insert(_INTERSECTIONS, p2)
-                    end
-                end
-            end
-        end
     end
 end
 
@@ -725,9 +709,21 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.points(movePoints)
     end
 
+
     love.graphics.setColor(0.0, 1.0, 0.0, 1.0)
+    love.graphics.setLineWidth(0.1)
+    local slabPoints = {}
+    for i = 1, #_SLABS do
+        love.graphics.line(_SLABS[i].x, GRID_TOP_PADDING, _SLABS[i].x, GRID_TOP_PADDING + GRID_SIZE)
+        for j = 1, #_SLABS[i].points do
+            table.insert(slabPoints, _SLABS[i].x)
+            table.insert(slabPoints, _SLABS[i].points[j])
+        end
+    end
+
+    love.graphics.setColor(0.0, 0.0, 1.0, 1.0)
     love.graphics.setPointSize(30.0)
-    love.graphics.points(_INTERSECTIONS)
+    love.graphics.points(slabPoints)
 end
 
 -- UI

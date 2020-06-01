@@ -1,19 +1,96 @@
+function findAllIntersections(pathDataList)
+    local result = {}
+
+    for i = 1, #pathDataList do
+        for j = 1, #pathDataList[i].subpathDataList do
+            local subpathData = pathDataList[i].subpathDataList[j]
+
+            for k = 1, i - 1 do
+                for l = 1, #pathDataList[k].subpathDataList do
+                    local otherSubpathData = pathDataList[k].subpathDataList[l]
+
+                    local p1, p2 = subpathDataIntersection(subpathData, otherSubpathData)
+                    if p1 then
+                        table.insert(result, {
+                            x = p1,
+                            y = p2,
+                        })
+                    end
+                end
+            end
+        end
+    end
+
+    return result
+end
+
+function findSlabsForPoint(slabsList, point)
+    for i = 1, #slabsList do
+        local slab = slabsList[i]
+        if point.x < slab.x then
+            local slabNum = i - 1
+            if slabNum < 1 then
+                return nil
+            end
+
+            return slabsList[slabNum], slabsList[i]
+        end
+    end
+
+    return nil
+end
+
+function findFaceForPoint(slabsList, point)
+    local slab1, slab2 = findSlabsForPoint(slabsList, point)
+
+end
+
+function findAllSlabs(pathDataList)
+    local intersectionPoints = findAllIntersections(pathDataList)
+    local tempSlabs = {}
+
+    for i = 1, #intersectionPoints do
+        table.insert(tempSlabs, {
+            x = intersectionPoints[i].x,
+            points = {
+                intersectionPoints[i].y,
+            }
+        })
+    end
+
+    table.sort(tempSlabs, function (a, b) return a.x < b.x end)
+
+    local slabs = {}
+    local hash = {}
+
+    for i = 1, #tempSlabs do
+        if hash[tempSlabs[i].x] then
+            table.insert(slabs[hash[tempSlabs[i].x]].points, tempSlabs[i].points[1])
+        else
+            table.insert(slabs, tempSlabs[i])
+            hash[tempSlabs[i].x] = #slabs
+        end
+    end
+
+    return slabs
+end
+
 function arePointsEqual(p1, p2)
     return (p1.x == p2.x and p1.y == p2.y)
 end
 
 function subpathDataIntersection(s1, s2)
-    if arePointsEqual(s1.p1, s2.p1) then
-        return s1.p1.x, s1.p1.y
-    elseif arePointsEqual(s1.p1, s2.p2) then
-        return s1.p1.x, s1.p1.y
-    elseif arePointsEqual(s1.p2, s2.p1) then
-        return s1.p2.x, s1.p2.y
-    elseif arePointsEqual(s1.p2, s2.p2) then
-        return s1.p2.x, s1.p2.y
-    end
-
     if s1.type == 'line' and s2.type == 'line' then
+        if arePointsEqual(s1.p1, s2.p1) then
+            return s1.p1.x, s1.p1.y
+        elseif arePointsEqual(s1.p1, s2.p2) then
+            return s1.p1.x, s1.p1.y
+        elseif arePointsEqual(s1.p2, s2.p1) then
+            return s1.p2.x, s1.p2.y
+        elseif arePointsEqual(s1.p2, s2.p2) then
+            return s1.p2.x, s1.p2.y
+        end
+
         local x1 = s1.p1.x
         local y1 = s1.p1.y
         local x2 = s1.p2.x
