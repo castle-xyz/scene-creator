@@ -198,15 +198,54 @@ local function resetTempGraphics()
     _tempGraphics:setDisplay("mesh", 1024)
 end
 
-local function drawEndOfArc(path, p1x, p1y, p2x, p2y)
+local function makeSubpathsFromSubpathData(pathData)
+    for i = 1, #pathData.subpathDataList do
+        local subpathData = pathData.subpathDataList[i]
+        local subpath = tove.newSubpath()
+        pathData.path:addSubpath(subpath)
+
+        if subpathData.type == 'line' then
+            subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
+            subpath:lineTo(subpathData.p2.x, subpathData.p2.y)
+        elseif subpathData.type == 'arc' then
+            subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle, subpathData.endAngle)
+        end
+    end
+end
+
+local function addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
+    table.insert(pathData.subpathDataList, {
+        type = 'line',
+        p1 = {
+            x = p1x,
+            y = p1y
+        },
+        p2 = {
+            x = p2x,
+            y = p2y
+        }
+    })
+end
+
+local function addCircleSubpathData(pathData, centerX, centerY, radius, startAngle, endAngle)
+    table.insert(pathData.subpathDataList, {
+        type = 'arc',
+        center = {
+            x = centerX,
+            y = centerY
+        },
+        radius = radius,
+        startAngle = startAngle,
+        endAngle = endAngle
+    })
+end
+
+local function drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
     if p1x == p2x and p1y == p2y then
         return
     end
 
-    local subpath = tove.newSubpath()
-    path:addSubpath(subpath)
-    subpath:moveTo(p1x, p1y)
-    subpath:lineTo(p2x, p2y)
+    addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
 end
 
 local function updatePathDataRendering(pathData)
@@ -217,17 +256,15 @@ local function updatePathDataRendering(pathData)
     path:setMiterLimit(1)
     path:setLineJoin("round")
     pathData.path = path
+    pathData.subpathDataList = {}
 
     local p1 = pathData.points[1]
     local p2 = pathData.points[2]
     local style = pathData.style
 
-    local subpath = tove.newSubpath()
-    path:addSubpath(subpath)
-
     if style == 1 then
-        subpath:moveTo(p1.x, p1.y)
-        subpath:lineTo(p2.x, p2.y)
+        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+        makeSubpathsFromSubpathData(pathData)
         return
     end
 
@@ -243,8 +280,7 @@ local function updatePathDataRendering(pathData)
     local xIsLonger = math.abs(p2.x - p1.x) > math.abs(p2.y - p1.y)
 
     if radius == 0 then
-        subpath:moveTo(p1.x, p1.y)
-        subpath:lineTo(p2.x, p2.y)
+        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
     else
         local circleCenter = {}
         local startAngle
@@ -264,12 +300,12 @@ local function updatePathDataRendering(pathData)
                     circleCenter.x = p1.x + radius
                     circleCenter.y = p2.y + radius
 
-                    drawEndOfArc(path, p1.x + radius, p2.y, p2.x, p2.y)
+                    drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
                 else
                     circleCenter.x = p2.x - radius
                     circleCenter.y = p1.y - radius
 
-                    drawEndOfArc(path, p1.x, p1.y, p2.x - radius, p1.y)
+                    drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
                 end
             else
                 --
@@ -283,12 +319,12 @@ local function updatePathDataRendering(pathData)
                     circleCenter.x = p1.x + radius
                     circleCenter.y = p2.y + radius
 
-                    drawEndOfArc(path, p1.x, p1.y, p1.x, p2.y + radius)
+                    drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y + radius)
                 else
                     circleCenter.x = p2.x - radius
                     circleCenter.y = p1.y - radius
 
-                    drawEndOfArc(path, p2.x, p1.y - radius, p2.x, p2.y)
+                    drawEndOfArc(pathData, p2.x, p1.y - radius, p2.x, p2.y)
                 end
             end
         else
@@ -306,12 +342,12 @@ local function updatePathDataRendering(pathData)
                     circleCenter.x = p2.x - radius
                     circleCenter.y = p1.y + radius
 
-                    drawEndOfArc(path, p1.x, p1.y, p2.x - radius, p1.y)
+                    drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
                 else
                     circleCenter.x = p1.x + radius
                     circleCenter.y = p2.y - radius
 
-                    drawEndOfArc(path, p1.x + radius, p2.y, p2.x, p2.y)
+                    drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
                 end
             else
                 --
@@ -325,20 +361,20 @@ local function updatePathDataRendering(pathData)
                     circleCenter.x = p2.x - radius
                     circleCenter.y = p1.y + radius
 
-                    drawEndOfArc(path, p2.x, p1.y + radius, p2.x, p2.y)
+                    drawEndOfArc(pathData, p2.x, p1.y + radius, p2.x, p2.y)
                 else
                     circleCenter.x = p1.x + radius
                     circleCenter.y = p2.y - radius
 
-                    drawEndOfArc(path, p1.x, p1.y, p1.x, p2.y - radius)
+                    drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y - radius)
                 end
             end
         end
 
-        --print('center:' .. circleCenter.x .. ', ' .. circleCenter.y .. ' radius:' .. radius .. ' startangle:' .. startAngle)
-        subpath:arc(circleCenter.x, circleCenter.y, radius, startAngle, startAngle + 90.0)
-        --subpath:arc(0.0, 0.0, 4.0, 0.0, 90.0)
+        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + 90.0)
     end
+
+    makeSubpathsFromSubpathData(pathData)
 end
 
 function DrawTool:getSingleComponent()
