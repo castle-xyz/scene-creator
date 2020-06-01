@@ -193,6 +193,11 @@ local function resetGraphics()
     end
 end
 
+local function resetTempGraphics()
+    _tempGraphics = tove.newGraphics()
+    _tempGraphics:setDisplay("mesh", 1024)
+end
+
 local function drawEndOfArc(path, p1x, p1y, p2x, p2y)
     if p1x == p2x and p1y == p2y then
         return
@@ -205,7 +210,14 @@ local function drawEndOfArc(path, p1x, p1y, p2x, p2y)
 end
 
 local function updatePathDataRendering(pathData)
-    local path = pathData.path
+    local path = tove.newPath()
+
+    path:setLineColor(0.0, 0.0, 0.0, 1.0)
+    path:setLineWidth(0.2)
+    path:setMiterLimit(1)
+    path:setLineJoin("round")
+    pathData.path = path
+
     local p1 = pathData.points[1]
     local p2 = pathData.points[2]
     local style = pathData.style
@@ -412,14 +424,6 @@ function DrawTool.handlers:preUpdate(dt)
             end
 
             local pathData = {}
-            local path = tove.newPath()
-
-            path:setLineColor(0.0, 0.0, 0.0, 1.0)
-            path:setLineWidth(0.2)
-            path:setMiterLimit(1)
-            path:setLineJoin("round")
-
-            pathData.path = path
             pathData.points = {_initialCoord, roundedCoord}
             pathData.style = 1
             updatePathDataRendering(pathData)
@@ -431,9 +435,8 @@ function DrawTool.handlers:preUpdate(dt)
                 _initialCoord = nil
                 _tempGraphics = nil
             else
-                _tempGraphics = tove.newGraphics()
-                _tempGraphics:setDisplay("mesh", 1024)
-                _tempGraphics:addPath(path)
+                resetTempGraphics()
+                _tempGraphics:addPath(pathData.path)
             end
         elseif _subtool == 'pencil' then
             if _initialCoord == nil then
@@ -470,14 +473,6 @@ function DrawTool.handlers:preUpdate(dt)
             end
                 
             _currentPathData = {}
-            local path = tove.newPath()
-
-            path:setLineColor(0.0, 0.0, 0.0, 1.0)
-            path:setLineWidth(0.2)
-            path:setMiterLimit(1)
-            path:setLineJoin("round")
-
-            _currentPathData.path = path
             _currentPathData.points = {_initialCoord, roundedCoord}
             _currentPathData.style = 1
             updatePathDataRendering(_currentPathData)
@@ -491,9 +486,8 @@ function DrawTool.handlers:preUpdate(dt)
                 _currentPathData = nil
                 _tempGraphics = nil
             else
-                _tempGraphics = tove.newGraphics()
-                _tempGraphics:setDisplay("mesh", 1024)
-                _tempGraphics:addPath(path)
+                resetTempGraphics()
+                _tempGraphics:addPath(_currentPathData.path)
             end
         elseif _subtool == 'move' then
             if _grabbedPaths == nil then
@@ -557,13 +551,6 @@ function DrawTool.handlers:preUpdate(dt)
                 _grabbedPaths[i].points[_grabbedPaths[i].grabPointIndex].x = roundedX
                 _grabbedPaths[i].points[_grabbedPaths[i].grabPointIndex].y = roundedY
 
-                local path = tove.newPath()
-
-                path:setLineColor(0.0, 0.0, 0.0, 1.0)
-                path:setLineWidth(0.2)
-                path:setMiterLimit(1)
-                path:setLineJoin("round")
-                _grabbedPaths[i].path = path
                 updatePathDataRendering(_grabbedPaths[i])
             end
 
@@ -579,8 +566,7 @@ function DrawTool.handlers:preUpdate(dt)
                 _grabbedPaths = nil
                 _tempGraphics = nil
             else
-                _tempGraphics = tove.newGraphics()
-                _tempGraphics:setDisplay("mesh", 1024)
+                resetTempGraphics()
 
                 for i = 1, #_grabbedPaths do
                     _tempGraphics:addPath(_grabbedPaths[i].path)
@@ -590,14 +576,6 @@ function DrawTool.handlers:preUpdate(dt)
             if touch.released then
                 for i = 1, #_pathDataList do
                     if _pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
-                        local path = tove.newPath()
-    
-                        path:setLineColor(0.0, 0.0, 0.0, 1.0)
-                        path:setLineWidth(0.2)
-                        path:setMiterLimit(1)
-                        path:setLineJoin("round")
-    
-                        _pathDataList[i].path = path
                         _pathDataList[i].style = _pathDataList[i].style + 1
                         if _pathDataList[i].style > 3 then
                             _pathDataList[i].style = 1
