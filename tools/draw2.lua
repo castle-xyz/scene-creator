@@ -1,3 +1,5 @@
+require('tools.draw_algorithms')
+
 local DrawTool =
     defineCoreBehavior {
     name = "Draw",
@@ -18,7 +20,7 @@ local DEBUG_FLOOD_FILL = true
 
 -- Behavior management
 
-local _paths
+local _pathDataList
 local _initialCoord
 local _currentPathData
 local _graphics
@@ -44,155 +46,6 @@ local BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
 
 local pathsCanvas
 local fillCanvas
-
--- http://will.thimbleby.net/scanline-flood-fill/
-function floodFillScanline(x, y, width, height, diagonal, test, paint)
-    -- xMin, xMax, y, down[true] / up[false], extendLeft, extendRight
-    local ranges = {}
-    table.insert(ranges, {
-        xMin = x,
-        xMax = x,
-        y = y,
-        direction = nil,
-        extendLeft = true,
-        extendRight = true,
-    })
-
-    paint(x, y)
-
-    while #ranges > 0 do
-        local r = table.remove(ranges)
-        -- print(inspect(r))
-        local down = r.direction == 'down'
-        local up =   r.direction == 'up'
-
-        -- extendLeft
-        local minX = r.xMin
-        local y = r.y
-        if r.extendLeft then
-            while minX > 0 and test(minX-1, y) do
-                minX = minX - 1
-                paint(minX, y)
-            end
-        end
-
-        local maxX = r.xMax
-        -- extendRight
-        if r.extendRight then
-            while maxX < width - 1 and test(maxX+1, y) do
-                maxX = maxX + 1
-                paint(maxX, y)
-            end
-        end
-
-        if diagonal then
-            -- extend range looked at for next lines
-            if minX>0 then minX = minX - 1 end
-            if maxX<width-1 then maxX = maxX + 1 end
-        else
-            -- extend range ignored from previous line
-            r.xMin = r.xMin - 1
-            r.xMax = r.xMax + 1
-        end
-
-        local function addNextLine(newY, isNext, direction)
-            local rMinX = minX
-            local inRange = false
-            for x=minX, maxX do
-                -- skip testing, if testing previous line within previous range
-                local empty = (isNext or (x<r.xMin or x>r.xMax)) and test(x, newY)
-                if (not inRange) and empty then
-                    rMinX = x
-                    inRange = true
-                elseif inRange and (not empty) then
-                    table.insert(ranges, {
-                        xMin = rMinX,
-                        xMax = x - 1,
-                        y = newY,
-                        direction = direction,
-                        extendLeft = rMinX==minX,
-                        extendRight = false,
-                    })
-
-                    inRange = false
-                end
-
-                if inRange then
-                    paint(x, newY)
-                end
-                -- skip
-                if (not isNext) and x==r.xMin then
-                    x = r.xMax
-                end
-            end
-            if inRange then
-                table.insert(ranges, {
-                    xMin = rMinX,
-                    xMax = x - 1,
-                    y = newY,
-                    direction = direction,
-                    extendLeft = rMinX==minX,
-                    extendRight = true,
-                })
-            end
-        end
-
-        if(y<height-1) then
-            addNextLine(y+1, not up, 'down')
-        end
-        if(y>0) then
-            addNextLine(y-1, not down, 'up')
-        end
-    end
-end
-
-function floodFill8Way(startX, startY, width, height, test, paint)
-    local queue = {}
-
-    if startX < 0 or startX < 0 or startX >= width or startX >= height then
-        return
-    end
-
-    table.insert(queue, {
-        x = startX,
-        y = startY,
-    })
-
-    while #queue > 0 do
-        local item = table.remove(queue)
-        local x = item.x
-        local y = item.y
-
-        if test(x, y) then
-            paint(x, y)
-
-            for dx = -1, 1 do
-                for dy = -1, 1 do
-                    local skip = false
-                    if dx == 0 and dy == 0 then
-                        skip = true
-                    end
-
-                    local newX = x + dx
-                    local newY = y + dy
-
-                    if newX < 0 or newY < 0 or newX >= width or newY >= height then
-                        skip = true
-                    end
-
-                    if not skip then
-                        if test(newX, newY) then
-                            table.insert(queue, {
-                                x = newX,
-                                y = newY,
-                            })
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
 
 function floodFill(x, y, color)
     local windowWidth, windowHeight = love.graphics.getDimensions()
@@ -319,14 +172,14 @@ end
 
 local function addPath(path)
     if path.points[1].x ~= path.points[2].x or path.points[1].y ~= path.points[2].y then
-        table.insert(_paths, path)
+        table.insert(_pathDataList, path)
     end
 end
 
 local function removePath(path)
-    for i = #_paths, 1, -1 do
-        if _paths[i] == path then
-            table.remove(_paths, i)
+    for i = #_pathDataList, 1, -1 do
+        if _pathDataList[i] == path then
+            table.remove(_pathDataList, i)
         end
     end
 end
@@ -335,8 +188,8 @@ local function resetGraphics()
     _graphics = tove.newGraphics()
     _graphics:setDisplay("mesh", 1024)
 
-    for i = 1, #_paths do
-        _graphics:addPath(_paths[i].path)
+    for i = 1, #_pathDataList do
+        _graphics:addPath(_pathDataList[i].path)
     end
 end
 
@@ -351,7 +204,7 @@ local function drawEndOfArc(path, p1x, p1y, p2x, p2y)
     subpath:lineTo(p2x, p2y)
 end
 
-local function drawPath(pathData)
+local function updatePathDataRendering(pathData)
     local path = pathData.path
     local p1 = pathData.points[1]
     local p2 = pathData.points[2]
@@ -493,7 +346,7 @@ end
 -- Update
 
 function DrawTool.handlers:onSetActive()
-    _paths = {}
+    _pathDataList = {}
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
@@ -569,7 +422,7 @@ function DrawTool.handlers:preUpdate(dt)
             pathData.path = path
             pathData.points = {_initialCoord, roundedCoord}
             pathData.style = 1
-            drawPath(pathData)
+            updatePathDataRendering(pathData)
 
             if touch.released then
                 addPath(pathData)
@@ -627,7 +480,7 @@ function DrawTool.handlers:preUpdate(dt)
             _currentPathData.path = path
             _currentPathData.points = {_initialCoord, roundedCoord}
             _currentPathData.style = 1
-            drawPath(_currentPathData)
+            updatePathDataRendering(_currentPathData)
 
             if touch.released then
                 addPath(_currentPathData)
@@ -646,11 +499,11 @@ function DrawTool.handlers:preUpdate(dt)
             if _grabbedPaths == nil then
                 _grabbedPaths = {}
 
-                for i = 1, #_paths do
+                for i = 1, #_pathDataList do
                     for p = 1, 2 do
-                        if roundedX == _paths[i].points[p].x and roundedY == _paths[i].points[p].y then
-                            _paths[i].grabPointIndex = p
-                            table.insert(_grabbedPaths, _paths[i])
+                        if roundedX == _pathDataList[i].points[p].x and roundedY == _pathDataList[i].points[p].y then
+                            _pathDataList[i].grabPointIndex = p
+                            table.insert(_grabbedPaths, _pathDataList[i])
                             break
                         end
                     end
@@ -661,8 +514,8 @@ function DrawTool.handlers:preUpdate(dt)
                 end
 
                 if #_grabbedPaths == 0 then
-                    for i = 1, #_paths do
-                        local pathData = _paths[i]
+                    for i = 1, #_pathDataList do
+                        local pathData = _pathDataList[i]
                         local distance, t, subpath = pathData.path:nearest(touch.x, touch.y, 0.5)
                         if subpath then
                             local pointX, pointY = subpath:position(t)
@@ -711,7 +564,7 @@ function DrawTool.handlers:preUpdate(dt)
                 path:setMiterLimit(1)
                 path:setLineJoin("round")
                 _grabbedPaths[i].path = path
-                drawPath(_grabbedPaths[i])
+                updatePathDataRendering(_grabbedPaths[i])
             end
 
             if touch.released then
@@ -735,8 +588,8 @@ function DrawTool.handlers:preUpdate(dt)
             end
         elseif _subtool == 'bend' then
             if touch.released then
-                for i = 1, #_paths do
-                    if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
+                for i = 1, #_pathDataList do
+                    if _pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
                         local path = tove.newPath()
     
                         path:setLineColor(0.0, 0.0, 0.0, 1.0)
@@ -744,12 +597,12 @@ function DrawTool.handlers:preUpdate(dt)
                         path:setMiterLimit(1)
                         path:setLineJoin("round")
     
-                        _paths[i].path = path
-                        _paths[i].style = _paths[i].style + 1
-                        if _paths[i].style > 3 then
-                            _paths[i].style = 1
+                        _pathDataList[i].path = path
+                        _pathDataList[i].style = _pathDataList[i].style + 1
+                        if _pathDataList[i].style > 3 then
+                            _pathDataList[i].style = 1
                         end
-                        drawPath(_paths[i])
+                        updatePathDataRendering(_pathDataList[i])
 
                         resetGraphics()
 
@@ -760,9 +613,9 @@ function DrawTool.handlers:preUpdate(dt)
         elseif _subtool == 'fill' then
             floodFill(touch.x, touch.y, {r = _fillColor[1], g = _fillColor[2], b = _fillColor[3]})
         elseif _subtool == 'erase line' then
-            for i = 1, #_paths do
-                if _paths[i].path:nearest(touch.x, touch.y, 0.5) then
-                    removePath(_paths[i])
+            for i = 1, #_pathDataList do
+                if _pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
+                    removePath(_pathDataList[i])
                     resetGraphics()
                     break
                 end
@@ -828,10 +681,10 @@ function DrawTool.handlers:drawOverlay()
     if _subtool == "move" then
         local movePoints = {}
 
-        for i = 1, #_paths do
+        for i = 1, #_pathDataList do
             for p = 1, 2 do
-                table.insert(movePoints, _paths[i].points[p].x)
-                table.insert(movePoints, _paths[i].points[p].y)
+                table.insert(movePoints, _pathDataList[i].points[p].x)
+                table.insert(movePoints, _pathDataList[i].points[p].y)
             end
         end
 
