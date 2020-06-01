@@ -20,6 +20,7 @@ local DEBUG_FLOOD_FILL = true
 
 local _paths
 local _initialCoord
+local _currentPathData
 local _graphics
 
 local _tempGraphics
@@ -317,7 +318,9 @@ local function roundGlobalCoordinatesToGrid(x, y)
 end
 
 local function addPath(path)
-    table.insert(_paths, path)
+    if path.points[1].x ~= path.points[2].x or path.points[1].y ~= path.points[2].y then
+        table.insert(_paths, path)
+    end
 end
 
 local function removePath(path)
@@ -569,12 +572,70 @@ function DrawTool.handlers:preUpdate(dt)
             drawPath(pathData)
 
             if touch.released then
-                if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then 
-                    addPath(pathData)
-                    resetGraphics()
-                end
+                addPath(pathData)
+                resetGraphics()
 
                 _initialCoord = nil
+                _tempGraphics = nil
+            else
+                _tempGraphics = tove.newGraphics()
+                _tempGraphics:setDisplay("mesh", 1024)
+                _tempGraphics:addPath(path)
+            end
+        elseif _subtool == 'pencil' then
+            if _initialCoord == nil then
+                _initialCoord = roundedCoord
+                _currentDirection = nil
+                _currentPathData = nil
+            end
+
+            if _initialCoord.x ~= roundedCoord.x or _initialCoord.y ~= roundedCoord.y then
+                local direction = {x = roundedCoord.x - _initialCoord.x, y = roundedCoord.y - _initialCoord.y}
+                local directionDist = math.sqrt(direction.x * direction.x + direction.y * direction.y)
+                direction.x = direction.x / directionDist
+                direction.y = direction.y / directionDist
+
+                if _currentDirection == nil then
+                    _currentDirection = direction
+                elseif _currentDirection.x ~= direction.x or _currentDirection.y ~= direction.y then
+                    -- new direction. end old line
+                    addPath(_currentPathData)
+                    resetGraphics()
+
+                    --print('current ' .. _currentDirection.x .. ' ' .. _currentDirection.y)
+                    --print('new ' .. direction.x .. ' ' .. direction.y)
+
+                    _initialCoord = _currentPathData.points[2]
+
+                    direction = {x = roundedCoord.x - _initialCoord.x, y = roundedCoord.y - _initialCoord.y}
+                    directionDist = math.sqrt(direction.x * direction.x + direction.y * direction.y)
+                    direction.x = direction.x / directionDist
+                    direction.y = direction.y / directionDist
+
+                    _currentDirection = direction
+                end
+            end
+                
+            _currentPathData = {}
+            local path = tove.newPath()
+
+            path:setLineColor(0.0, 0.0, 0.0, 1.0)
+            path:setLineWidth(0.2)
+            path:setMiterLimit(1)
+            path:setLineJoin("round")
+
+            _currentPathData.path = path
+            _currentPathData.points = {_initialCoord, roundedCoord}
+            _currentPathData.style = 1
+            drawPath(_currentPathData)
+
+            if touch.released then
+                addPath(_currentPathData)
+                resetGraphics()
+
+                _initialCoord = nil
+                _currentDirection = nil
+                _currentPathData = nil
                 _tempGraphics = nil
             else
                 _tempGraphics = tove.newGraphics()
@@ -706,7 +767,7 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.draw(fillCanvas, 0, 0, 0, DEFAULT_VIEW_WIDTH / windowWidth, DEFAULT_VIEW_WIDTH / windowWidth)
     end
 
-    if _subtool == 'draw' or _subtool == 'move' then
+    if _subtool == 'draw' or _subtool == 'pencil' or _subtool == 'move' then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
         love.graphics.setPointSize(10.0)
 
@@ -767,12 +828,23 @@ function DrawTool.handlers:uiPanel()
         function()
 
             ui.toggle(
-                "draw",
-                "draw",
+                "line",
+                "line",
                 _subtool == 'draw',
                 {
                     onToggle = function(newlineEnabled)
                         _subtool = 'draw'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "pencil",
+                "pencil",
+                _subtool == 'pencil',
+                {
+                    onToggle = function(newlineEnabled)
+                        _subtool = 'pencil'
                     end
                 }
             )
