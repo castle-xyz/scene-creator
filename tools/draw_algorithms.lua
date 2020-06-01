@@ -1,3 +1,50 @@
+function arePointsEqual(p1, p2)
+    return (p1.x == p2.x and p1.y == p2.y)
+end
+
+function subpathDataIntersection(s1, s2)
+    if arePointsEqual(s1.p1, s2.p1) then
+        return s1.p1.x, s1.p1.y
+    elseif arePointsEqual(s1.p1, s2.p2) then
+        return s1.p1.x, s1.p1.y
+    elseif arePointsEqual(s1.p2, s2.p1) then
+        return s1.p2.x, s1.p2.y
+    elseif arePointsEqual(s1.p2, s2.p2) then
+        return s1.p2.x, s1.p2.y
+    end
+
+    if s1.type == 'line' and s2.type == 'line' then
+        local x1 = s1.p1.x
+        local y1 = s1.p1.y
+        local x2 = s1.p2.x
+        local y2 = s1.p2.y
+
+        local x3 = s2.p1.x
+        local y3 = s2.p1.y
+        local x4 = s2.p2.x
+        local y4 = s2.p2.y
+
+        local denom = ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4))
+        if denom < 0.01 and denom > -0.01 then
+            return nil
+        end
+
+        local t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+        if t < 0.0 or t > 1.0 then
+            return nil
+        end
+
+        local u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+        if u  < 0.0 or u > 1.0 then
+            return nil
+        end
+
+        return (x1 + t * (x2 - x1)), (y1 + t * (y2 - y1))
+    else
+        return nil
+    end
+end
+
 
 -- http://will.thimbleby.net/scanline-flood-fill/
 function floodFillScanline(x, y, width, height, diagonal, test, paint)
