@@ -170,15 +170,15 @@ local function roundGlobalCoordinatesToGrid(x, y)
     return gridToGlobalCoordinates(gridX, gridY)
 end
 
-local function addPath(path)
-    if path.points[1].x ~= path.points[2].x or path.points[1].y ~= path.points[2].y then
-        table.insert(_pathDataList, path)
+local function addPathData(pathData)
+    if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
+        table.insert(_pathDataList, pathData)
     end
 end
 
-local function removePath(path)
+local function removePathData(pathData)
     for i = #_pathDataList, 1, -1 do
-        if _pathDataList[i] == path then
+        if _pathDataList[i] == pathData then
             table.remove(_pathDataList, i)
         end
     end
@@ -425,7 +425,7 @@ function DrawTool.handlers:preUpdate(dt)
             updatePathDataRendering(pathData)
 
             if touch.released then
-                addPath(pathData)
+                addPathData(pathData)
                 resetGraphics()
 
                 _initialCoord = nil
@@ -452,7 +452,7 @@ function DrawTool.handlers:preUpdate(dt)
                     _currentDirection = direction
                 elseif _currentDirection.x ~= direction.x or _currentDirection.y ~= direction.y then
                     -- new direction. end old line
-                    addPath(_currentPathData)
+                    addPathData(_currentPathData)
                     resetGraphics()
 
                     --print('current ' .. _currentDirection.x .. ' ' .. _currentDirection.y)
@@ -483,7 +483,7 @@ function DrawTool.handlers:preUpdate(dt)
             updatePathDataRendering(_currentPathData)
 
             if touch.released then
-                addPath(_currentPathData)
+                addPathData(_currentPathData)
                 resetGraphics()
 
                 _initialCoord = nil
@@ -510,7 +510,7 @@ function DrawTool.handlers:preUpdate(dt)
                 end
 
                 for i = 1, #_grabbedPaths do
-                    removePath(_grabbedPaths[i])
+                    removePathData(_grabbedPaths[i])
                 end
 
                 if #_grabbedPaths == 0 then
@@ -519,7 +519,7 @@ function DrawTool.handlers:preUpdate(dt)
                         local distance, t, subpath = pathData.path:nearest(touch.x, touch.y, 0.5)
                         if subpath then
                             local pointX, pointY = subpath:position(t)
-                            removePath(pathData)
+                            removePathData(pathData)
                             local touchPoint = {x = touch.x, y = touch.y}
 
                             local newPathData1 = {
@@ -570,7 +570,7 @@ function DrawTool.handlers:preUpdate(dt)
             if touch.released then
                 if _grabbedPaths and #_grabbedPaths > 0 then
                     for i = 1, #_grabbedPaths do
-                        addPath(_grabbedPaths[i])
+                        addPathData(_grabbedPaths[i])
                     end
 
                     resetGraphics()
@@ -615,7 +615,7 @@ function DrawTool.handlers:preUpdate(dt)
         elseif _subtool == 'erase line' then
             for i = 1, #_pathDataList do
                 if _pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
-                    removePath(_pathDataList[i])
+                    removePathData(_pathDataList[i])
                     resetGraphics()
                     break
                 end
