@@ -16,7 +16,7 @@ local DrawTool =
     }
 }
 
-local DEBUG_FLOOD_FILL = true
+local DEBUG_FLOOD_FILL = false
 
 -- Behavior management
 
@@ -32,6 +32,8 @@ local _grabbedPaths
 local _lineColor
 local _fillColor
 
+FACES = {}
+
 function DrawTool.handlers:addBehavior(opts)
     
 end
@@ -46,7 +48,6 @@ local BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
 
 local pathsCanvas
 local fillCanvas
-local testCanvas
 
 function floodFill(x, y, color)
     local windowWidth, windowHeight = love.graphics.getDimensions()
@@ -191,12 +192,12 @@ local function resetGraphics()
     _graphics:setDisplay("mesh", 1024)
     _SLABS = findAllSlabs(_pathDataList)
 
-    for i = 1, #_pathDataList do
-        _graphics:addPath(_pathDataList[i].path)
-    end
-
     for i = 1, #FACES do
         _graphics:addPath(FACES[i])
+    end
+
+    for i = 1, #_pathDataList do
+        _graphics:addPath(_pathDataList[i].path)
     end
 end
 
@@ -407,6 +408,8 @@ function DrawTool.handlers:onSetActive()
     _tempGraphics = nil
     _subtool = 'draw'
 
+    FACES = {}
+
     _lineColor = {hexStringToRgb(DEFAULT_PALETTE[6])}
     _fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])}
 
@@ -440,17 +443,6 @@ function DrawTool.handlers:onSetActive()
             love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, 1)
             love.graphics.pop()
         end
-    )
-
-
-    testCanvas =
-    love.graphics.newCanvas(
-        windowWidth,
-        windowHeight,
-        {
-            dpiscale = 1,
-            msaa = 4
-        }
     )
 end
 
@@ -644,22 +636,13 @@ function DrawTool.handlers:preUpdate(dt)
             end
         elseif _subtool == 'fill' then
             FACES = {}
-            testCanvas:renderTo(
-                function()
-                    love.graphics.push("all")
-                    love.graphics.origin()
-                    love.graphics.clear(0.0, 0.0, 0.0, 0.0)
-                    love.graphics.pop()
-                end
-            )
-            local windowWidth, windowHeight = love.graphics.getDimensions()
             _FACE_POINTS = {}
 
             findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
                 x = touch.x,
                 y = touch.y
-            }, FACES, testCanvas, windowWidth / DEFAULT_VIEW_WIDTH, {
-                testImageData = nil,
+            }, FACES, {
+                currentFaces = {},
             }, GRID_WIDTH / GRID_SIZE)
             resetGraphics()
         elseif _subtool == 'erase line' then
@@ -763,12 +746,6 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.setPointSize(30.0)
         love.graphics.points(_FACE_POINTS)
     end
-
-    --[[if testCanvas ~= nil then
-        love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
-        local windowWidth, windowHeight = love.graphics.getDimensions()
-        love.graphics.draw(testCanvas, 0, 0, 0, DEFAULT_VIEW_WIDTH / windowWidth, DEFAULT_VIEW_WIDTH / windowWidth)
-    end]]--
 end
 
 -- UI

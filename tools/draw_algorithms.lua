@@ -1,7 +1,5 @@
 -- for dragging points with a fill, we can render to a bmp and then test each affected slab against the bmp
 
-FACES = {}
-
 function idToSubpath(pathDataList, id)
     return pathDataList[id.pathIdx].subpathDataList[id.subpathIdx]
 end
@@ -15,6 +13,10 @@ end
 
 function makeSubpathStringId(pathIdx, subpathIdx)
     return pathIdx .. '-' .. subpathIdx
+end
+
+function subpathIdToSubpathStringId(subpathId)
+    return subpathId.pathIdx .. '-' .. subpathId.subpathIdx
 end
 
 function findAllIntersections(pathDataList)
@@ -124,16 +126,9 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
 end
 
 -- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
-function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, testCanvas, scale, testImageDataHolder, cellSize)
+function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, currentFacesHolder, cellSize)
     --table.insert(_FACE_POINTS, point.x)
     --table.insert(_FACE_POINTS, point.y)
-
-    if testImageDataHolder.testImageData then
-        local ir, ig, ib, ia = testImageDataHolder.testImageData:getPixel(math.floor(point.x * scale), math.floor(point.y * scale))
-        if ia > 0.0 then
-            return true
-        end
-    end
 
     local slab1, slab2 = findSlabsForPoint(slabsList, point)
     if not slab1 then
@@ -201,16 +196,22 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         return false
     end
 
-    local topSubpath = idToSubpath(pathDataList, slabIntersections[slabIntersectionIndex].subpathId)
-    local bottomSubpath = idToSubpath(pathDataList, slabIntersections[slabIntersectionIndex + 1].subpathId)
+    local topSubpathId = slabIntersections[slabIntersectionIndex].subpathId
+    local bottomSubpathId = slabIntersections[slabIntersectionIndex + 1].subpathId
 
-    local testGraphics = tove.newGraphics()
-    testGraphics:setDisplay("mesh", 1024)
-    
+    local faceId = subpathIdToSubpathStringId(topSubpathId) .. '+' .. subpathIdToSubpathStringId(bottomSubpathId) .. '+' .. slab1.x .. '+' .. slab2.x
+    if currentFacesHolder.currentFaces[faceId] then
+        return true
+    end
+
+    currentFacesHolder.currentFaces[faceId] = true
+
+    local topSubpath = idToSubpath(pathDataList, topSubpathId)
+    local bottomSubpath = idToSubpath(pathDataList, bottomSubpathId)
+
     local fillSubpath = tove.newSubpath()
     local fillPath = tove.newPath()
     fillPath:addSubpath(fillSubpath)
-    table.insert(newFaces, fillPath)
     fillPath:setFillColor(0.6, 0.6, 0.0, 1.0)
 
     
@@ -243,26 +244,11 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     fillSubpath.isClosed = true
 
-    testGraphics:addPath(fillPath)
-    testCanvas:renderTo(
-        function()
-            love.graphics.push("all")
+    table.insert(newFaces, fillPath)
 
-            love.graphics.origin()
-            love.graphics.scale(scale)
-
-            love.graphics.setColor(1, 1, 1, 1)
-            testGraphics:draw()
-
-            love.graphics.pop()
-        end
-    )
-
-    testImageDataHolder.testImageData = testCanvas:newImageData()
 
     -- print(cellSize .. ' ' .. topLeftY .. ' ' .. bottomLeftY .. ' ' .. topRightY .. ' ' .. bottomRightY)
 
-    --[[
     local y = topLeftY + cellSize * 0.5
     local offsetX = 0.5
     while y < bottomLeftY do
@@ -276,11 +262,11 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topLeftX - cellSize * offsetX,
                 y = y,
-            }, newFaces, testCanvas, scale, testImageDataHolder, cellSize) then
-                --for k in pairs(newFaces) do
-                --    newFaces[k] = nil
-                --end
-                --return false
+            }, newFaces, currentFacesHolder, cellSize) then
+                for k in pairs(newFaces) do
+                    newFaces[k] = nil
+                end
+                return false
             end
         end
 
@@ -299,17 +285,16 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topRightX + cellSize * offsetX,
                 y = y,
-            }, newFaces, testCanvas, scale, testImageDataHolder, cellSize) then
-                --for k in pairs(newFaces) do
-                --    newFaces[k] = nil
-                --end
-                --return false
+            }, newFaces, currentFacesHolder, cellSize) then
+                for k in pairs(newFaces) do
+                    newFaces[k] = nil
+                end
+                return false
             end
         end
 
         y = y + cellSize * 0.5
     end
-]]--
 
     return true
 end
