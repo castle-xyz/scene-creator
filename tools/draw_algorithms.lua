@@ -234,10 +234,15 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             x = topLeftX + cellSize * 0.1,
             y = y,
         }) then
-            findFaceForPoint(slabsList, pathDataList, minY, maxY, {
+            if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topLeftX - cellSize * 0.1,
                 y = y,
-            }, newFaces, testCanvas, scale, testImageDataHolder, cellSize)
+            }, newFaces, testCanvas, scale, testImageDataHolder, cellSize) then
+                for k in pairs(newFaces) do
+                    newFaces[k] = nil
+                end
+                return
+            end
         end
 
         y = y + cellSize
@@ -252,14 +257,21 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             x = topRightX + cellSize * 0.1,
             y = y,
         }) then
-            findFaceForPoint(slabsList, pathDataList, minY, maxY, {
+            if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topRightX + cellSize * 0.1,
                 y = y,
-            }, newFaces, testCanvas, scale, testImageDataHolder, cellSize)
+            }, newFaces, testCanvas, scale, testImageDataHolder, cellSize) then
+                for k in pairs(newFaces) do
+                    newFaces[k] = nil
+                end
+                return
+            end
         end
 
         y = y + cellSize
     end
+
+    return true
 end
 
 function findAllSlabs(pathDataList)
