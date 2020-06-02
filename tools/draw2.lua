@@ -16,7 +16,7 @@ local DrawTool =
     }
 }
 
-local DEBUG_FLOOD_FILL = false
+local DEBUG_FLOOD_FILL = true
 
 -- Behavior management
 
@@ -39,7 +39,7 @@ end
 -- Methods
 
 local GRID_HORIZONTAL_PADDING = 0.05 * DEFAULT_VIEW_WIDTH
-local GRID_TOP_PADDING = 0.2 * DEFAULT_VIEW_WIDTH
+local GRID_TOP_PADDING = 0.1 * DEFAULT_VIEW_WIDTH
 local GRID_SIZE = 15
 local GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
 local BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
@@ -653,6 +653,7 @@ function DrawTool.handlers:preUpdate(dt)
                 end
             )
             local windowWidth, windowHeight = love.graphics.getDimensions()
+            _FACE_POINTS = {}
 
             findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
                 x = touch.x,
@@ -906,4 +907,9 @@ function DrawTool.handlers:uiPanel()
             )
         end
     )
+end
+
+function DrawTool.handlers:contentHeight()
+    local windowWidth, windowHeight = love.graphics.getDimensions()
+    return windowHeight * 0.2
 end

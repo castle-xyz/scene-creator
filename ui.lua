@@ -447,6 +447,7 @@ end
 function Client:uiInspector()
     -- Does the active tool have a panel?
     local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+
     if activeTool and activeTool.handlers.uiPanel then
         local uiName = activeTool:getUiName()
         ui.scrollBox('inspector-tool-' .. uiName, {
@@ -884,7 +885,15 @@ function Client:uiupdate()
     ui.pane('sceneCreatorInspectorActions', function()
         self:uiInspectorActions()
     end)
-    ui.pane('sceneCreatorInspector', function()
+
+    local sceneCreatorInspectorProps = {}
+    local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+
+    if activeTool and activeTool.handlers.contentHeight then
+        sceneCreatorInspectorProps.contentHeight = activeTool.handlers.contentHeight()
+    end
+
+    ui.pane('sceneCreatorInspector', sceneCreatorInspectorProps, function()
         self:uiInspector()
     end)
 

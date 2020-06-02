@@ -13,6 +13,10 @@ function makeSubpathId(pathIdx, subpathIdx)
     }
 end
 
+function makeSubpathStringId(pathIdx, subpathIdx)
+    return pathIdx .. '-' .. subpathIdx
+end
+
 function findAllIntersections(pathDataList)
     local result = {}
 
@@ -82,9 +86,47 @@ end
 
 _FACE_POINTS = {}
 
+local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2FakeSubpath)
+    local slab1SubpathIds = {}
+
+    for i = 1, #pathDataList do
+        for j = 1, #pathDataList[i].subpathDataList do
+            local subpathData = pathDataList[i].subpathDataList[j]
+
+            local p1, p2 = subpathDataIntersection(subpathData, slab1FakeSubpath)
+            if p1 then
+                slab1SubpathIds[makeSubpathStringId(i, j)] = true
+            end
+        end
+    end
+
+    --print(inspect(slab1SubpathIds))
+
+    local slabIntersections = {}
+    for i = 1, #pathDataList do
+        for j = 1, #pathDataList[i].subpathDataList do
+            local subpathData = pathDataList[i].subpathDataList[j]
+
+            local p1, p2 = subpathDataIntersection(subpathData, slab2FakeSubpath)
+            if p1 then
+                local subpathStringId = makeSubpathStringId(i, j)
+                if slab1SubpathIds[subpathStringId] then
+                    table.insert(slabIntersections, {
+                        y = p2,
+                        subpathId = makeSubpathId(i, j),
+                    })
+                end
+            end
+        end
+    end
+
+    return slabIntersections
+end
+
 -- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
 function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, testCanvas, scale, testImageDataHolder, cellSize)
-    _FACE_POINTS = {}
+    --table.insert(_FACE_POINTS, point.x)
+    --table.insert(_FACE_POINTS, point.y)
 
     if testImageDataHolder.testImageData then
         local ir, ig, ib, ia = testImageDataHolder.testImageData:getPixel(math.floor(point.x * scale), math.floor(point.y * scale))
@@ -122,6 +164,10 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         },
     }
 
+    local slabIntersections = getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2FakeSubpath)
+    --print(inspect(slabIntersections))
+
+
     local slabPointFakeSubpath = {
         type = "line",
         p1 = {
@@ -134,29 +180,18 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         },
     }
 
-    local slabIntersections = {}
-    for i = 1, #pathDataList do
-        for j = 1, #pathDataList[i].subpathDataList do
-            local subpathData = pathDataList[i].subpathDataList[j]
+    for i = 1, #slabIntersections do
+        local subpath = idToSubpath(pathDataList, slabIntersections[i].subpathId)
+        local userIntersectionX, userIntersectionY = subpathDataIntersection(subpath, slabPointFakeSubpath)
 
-            local p1, p2 = subpathDataIntersection(subpathData, slabPointFakeSubpath)
-            if p1 then
-                table.insert(_FACE_POINTS, p1)
-                table.insert(_FACE_POINTS, p2)
-
-                table.insert(slabIntersections, {
-                    y = p2,
-                    subpathId = makeSubpathId(i, j),
-                })
-            end
-        end
+        slabIntersections[i].userIntersectionY = userIntersectionY
     end
 
-    table.sort(slabIntersections, function (a, b) return a.y < b.y end)
+    table.sort(slabIntersections, function (a, b) return a.userIntersectionY < b.userIntersectionY end)
 
     local slabIntersectionIndex = 0
     for i = 1, #slabIntersections do
-        if point.y < slabIntersections[i].y then
+        if point.y < slabIntersections[i].userIntersectionY then
             slabIntersectionIndex = i - 1
             break
         end
@@ -181,28 +216,28 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     
     local topLeftX, topLeftY = subpathDataIntersection(topSubpath, slab1FakeSubpath)
     if not topLeftX then
-        return false
+        return true
     end
     fillSubpath:moveTo(topLeftX, topLeftY)
 
 
     local topRightX, topRightY = subpathDataIntersection(topSubpath, slab2FakeSubpath)
     if not topRightX then
-        return false
+        return true
     end
     fillSubpath:lineTo(topRightX, topRightY)
 
 
     local bottomRightX, bottomRightY = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
     if not bottomRightX then
-        return false
+        return true
     end
     fillSubpath:lineTo(bottomRightX, bottomRightY)
 
 
     local bottomLeftX, bottomLeftY = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
     if not bottomLeftX then
-        return false
+        return true
     end
     fillSubpath:lineTo(bottomLeftX, bottomLeftY)
 
@@ -225,51 +260,56 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     testImageDataHolder.testImageData = testCanvas:newImageData()
 
+    -- print(cellSize .. ' ' .. topLeftY .. ' ' .. bottomLeftY .. ' ' .. topRightY .. ' ' .. bottomRightY)
+
+    --[[
     local y = topLeftY + cellSize * 0.5
+    local offsetX = 0.5
     while y < bottomLeftY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
-            x = topLeftX - cellSize * 0.1,
+            x = topLeftX - cellSize * offsetX,
             y = y,
         }, {
-            x = topLeftX + cellSize * 0.1,
+            x = topLeftX + cellSize * offsetX,
             y = y,
         }) then
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
-                x = topLeftX - cellSize * 0.1,
+                x = topLeftX - cellSize * offsetX,
                 y = y,
             }, newFaces, testCanvas, scale, testImageDataHolder, cellSize) then
-                for k in pairs(newFaces) do
-                    newFaces[k] = nil
-                end
-                return
+                --for k in pairs(newFaces) do
+                --    newFaces[k] = nil
+                --end
+                --return false
             end
         end
 
-        y = y + cellSize
+        y = y + cellSize * 0.5
     end
 
     y = topRightY + cellSize * 0.5
     while y < bottomRightY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
-            x = topRightX - cellSize * 0.1,
+            x = topRightX - cellSize * offsetX,
             y = y,
         }, {
-            x = topRightX + cellSize * 0.1,
+            x = topRightX + cellSize * offsetX,
             y = y,
         }) then
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
-                x = topRightX + cellSize * 0.1,
+                x = topRightX + cellSize * offsetX,
                 y = y,
             }, newFaces, testCanvas, scale, testImageDataHolder, cellSize) then
-                for k in pairs(newFaces) do
-                    newFaces[k] = nil
-                end
-                return
+                --for k in pairs(newFaces) do
+                --    newFaces[k] = nil
+                --end
+                --return false
             end
         end
 
-        y = y + cellSize
+        y = y + cellSize * 0.5
     end
+]]--
 
     return true
 end
