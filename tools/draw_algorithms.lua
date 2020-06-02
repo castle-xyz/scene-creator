@@ -1,3 +1,18 @@
+-- for dragging points with a fill, we can render to a bmp and then test each affected slab against the bmp
+
+FACES = {}
+
+function idToSubpath(pathDataList, id)
+    return pathDataList[id.pathIdx].subpathDataList[id.subpathIdx]
+end
+
+function makeSubpathId(pathIdx, subpathIdx)
+    return {
+        pathIdx = pathIdx,
+        subpathIdx = subpathIdx,
+    }
+end
+
 function findAllIntersections(pathDataList)
     local result = {}
 
@@ -14,6 +29,10 @@ function findAllIntersections(pathDataList)
                         table.insert(result, {
                             x = p1,
                             y = p2,
+                            subpathIds = {
+                                makeSubpathId(i, j),
+                                makeSubpathId(k, l)
+                            }
                         })
                     end
                 end
@@ -22,6 +41,27 @@ function findAllIntersections(pathDataList)
     end
 
     return result
+end
+
+function doesLineIntersectWithAnyPath(pathDataList, p1, p2)
+    local fakeSubpath = {
+        type = "line",
+        p1 = p1,
+        p2 = p2,
+    }
+
+    for i = 1, #pathDataList do
+        for j = 1, #pathDataList[i].subpathDataList do
+            local subpathData = pathDataList[i].subpathDataList[j]
+
+            local p1, p2 = subpathDataIntersection(subpathData, fakeSubpath)
+            if p1 then
+                return true
+            end
+        end
+    end
+
+    return false
 end
 
 function findSlabsForPoint(slabsList, point)
@@ -40,9 +80,186 @@ function findSlabsForPoint(slabsList, point)
     return nil
 end
 
-function findFaceForPoint(slabsList, point)
-    local slab1, slab2 = findSlabsForPoint(slabsList, point)
+_FACE_POINTS = {}
 
+-- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
+function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, testCanvas, scale, testImageDataHolder, cellSize)
+    _FACE_POINTS = {}
+
+    if testImageDataHolder.testImageData then
+        local ir, ig, ib, ia = testImageDataHolder.testImageData:getPixel(math.floor(point.x * scale), math.floor(point.y * scale))
+        if ia > 0.0 then
+            return true
+        end
+    end
+
+    local slab1, slab2 = findSlabsForPoint(slabsList, point)
+    if not slab1 then
+        return false
+    end
+
+    local slab1FakeSubpath = {
+        type = "line",
+        p1 = {
+            x = slab1.x,
+            y = minY,
+        },
+        p2 = {
+            x = slab1.x,
+            y = maxY,
+        },
+    }
+
+    local slab2FakeSubpath = {
+        type = "line",
+        p1 = {
+            x = slab2.x,
+            y = minY,
+        },
+        p2 = {
+            x = slab2.x,
+            y = maxY,
+        },
+    }
+
+    local slabPointFakeSubpath = {
+        type = "line",
+        p1 = {
+            x = point.x,
+            y = minY,
+        },
+        p2 = {
+            x = point.x,
+            y = maxY,
+        },
+    }
+
+    local slabIntersections = {}
+    for i = 1, #pathDataList do
+        for j = 1, #pathDataList[i].subpathDataList do
+            local subpathData = pathDataList[i].subpathDataList[j]
+
+            local p1, p2 = subpathDataIntersection(subpathData, slabPointFakeSubpath)
+            if p1 then
+                table.insert(_FACE_POINTS, p1)
+                table.insert(_FACE_POINTS, p2)
+
+                table.insert(slabIntersections, {
+                    y = p2,
+                    subpathId = makeSubpathId(i, j),
+                })
+            end
+        end
+    end
+
+    table.sort(slabIntersections, function (a, b) return a.y < b.y end)
+
+    local slabIntersectionIndex = 0
+    for i = 1, #slabIntersections do
+        if point.y < slabIntersections[i].y then
+            slabIntersectionIndex = i - 1
+            break
+        end
+    end
+
+    if slabIntersectionIndex < 1 or slabIntersectionIndex >= #slabIntersections then
+        return false
+    end
+
+    local topSubpath = idToSubpath(pathDataList, slabIntersections[slabIntersectionIndex].subpathId)
+    local bottomSubpath = idToSubpath(pathDataList, slabIntersections[slabIntersectionIndex + 1].subpathId)
+
+    local testGraphics = tove.newGraphics()
+    testGraphics:setDisplay("mesh", 1024)
+    
+    local fillSubpath = tove.newSubpath()
+    local fillPath = tove.newPath()
+    fillPath:addSubpath(fillSubpath)
+    table.insert(newFaces, fillPath)
+    fillPath:setFillColor(0.6, 0.6, 0.0, 1.0)
+
+    
+    local topLeftX, topLeftY = subpathDataIntersection(topSubpath, slab1FakeSubpath)
+    if not topLeftX then
+        return false
+    end
+    fillSubpath:moveTo(topLeftX, topLeftY)
+
+
+    local topRightX, topRightY = subpathDataIntersection(topSubpath, slab2FakeSubpath)
+    if not topRightX then
+        return false
+    end
+    fillSubpath:lineTo(topRightX, topRightY)
+
+
+    local bottomRightX, bottomRightY = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
+    if not bottomRightX then
+        return false
+    end
+    fillSubpath:lineTo(bottomRightX, bottomRightY)
+
+
+    local bottomLeftX, bottomLeftY = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
+    if not bottomLeftX then
+        return false
+    end
+    fillSubpath:lineTo(bottomLeftX, bottomLeftY)
+
+    fillSubpath.isClosed = true
+
+    testGraphics:addPath(fillPath)
+    testCanvas:renderTo(
+        function()
+            love.graphics.push("all")
+
+            love.graphics.origin()
+            love.graphics.scale(scale)
+
+            love.graphics.setColor(1, 1, 1, 1)
+            testGraphics:draw()
+
+            love.graphics.pop()
+        end
+    )
+
+    testImageDataHolder.testImageData = testCanvas:newImageData()
+
+    local y = topLeftY + cellSize * 0.5
+    while y < bottomLeftY do
+        if not doesLineIntersectWithAnyPath(pathDataList, {
+            x = topLeftX - cellSize * 0.1,
+            y = y,
+        }, {
+            x = topLeftX + cellSize * 0.1,
+            y = y,
+        }) then
+            findFaceForPoint(slabsList, pathDataList, minY, maxY, {
+                x = topLeftX - cellSize * 0.1,
+                y = y,
+            }, newFaces, testCanvas, scale, testImageDataHolder, cellSize)
+        end
+
+        y = y + cellSize
+    end
+
+    y = topRightY + cellSize * 0.5
+    while y < bottomRightY do
+        if not doesLineIntersectWithAnyPath(pathDataList, {
+            x = topRightX - cellSize * 0.1,
+            y = y,
+        }, {
+            x = topRightX + cellSize * 0.1,
+            y = y,
+        }) then
+            findFaceForPoint(slabsList, pathDataList, minY, maxY, {
+                x = topRightX + cellSize * 0.1,
+                y = y,
+            }, newFaces, testCanvas, scale, testImageDataHolder, cellSize)
+        end
+
+        y = y + cellSize
+    end
 end
 
 function findAllSlabs(pathDataList)
@@ -53,7 +270,10 @@ function findAllSlabs(pathDataList)
         table.insert(tempSlabs, {
             x = intersectionPoints[i].x,
             points = {
-                intersectionPoints[i].y,
+                {
+                    y = intersectionPoints[i].y,
+                    subpathIds = intersectionPoints[i].subpathIds
+                }
             }
         })
     end
@@ -77,6 +297,19 @@ end
 
 function arePointsEqual(p1, p2)
     return (p1.x == p2.x and p1.y == p2.y)
+end
+
+function subpathGetYatX(s, x)
+    if s.type == 'line' then
+        -- vertical lines are a special case. just send back top point
+        if s.p1.x == s.p2.x then
+            return math.min(s.p1.y, s.p2.y)
+        end
+
+        local riseOverRun = (s.p2.y - s.p1.y) / (s.p2.x - s.p1.x)
+        local percent = (x - s.p1.x) / (s.p2.x - s.p1.x)
+        return s.p1.y + percent * riseOverRun
+    end
 end
 
 function subpathDataIntersection(s1, s2)
