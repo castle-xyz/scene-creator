@@ -16,6 +16,22 @@ local DrawTool =
     }
 }
 
+--[[
+
+tove's coordinate system for angles looks like this
+
+             270
+
+
+180 deg      (0,0)     0 deg
+
+
+             90 deg
+
+we use the same system but in radians
+
+]]--
+
 local DEBUG_FLOOD_FILL = true
 
 -- Behavior management
@@ -255,7 +271,7 @@ local function makeSubpathsFromSubpathData(pathData)
             subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
             subpath:lineTo(subpathData.p2.x, subpathData.p2.y)
         elseif subpathData.type == 'arc' then
-            subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle * 180 / math.pi - 90, subpathData.endAngle * 180 / math.pi - 90)
+            subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle * 180 / math.pi, subpathData.endAngle * 180 / math.pi)
         end
     end
 end
@@ -418,7 +434,7 @@ local function updatePathDataRendering(pathData)
             end
         end
 
-        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle + math.pi / 2.0, startAngle + math.pi)
+        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
     end
 
     makeSubpathsFromSubpathData(pathData)

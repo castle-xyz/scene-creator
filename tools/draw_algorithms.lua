@@ -553,7 +553,7 @@ function subpathDataIntersection(s1, s2)
             y = (y1 + t * (y2 - y1))
         })
     elseif s1.type == 'arc' and s2.type == 'arc' then
-        print('here!')
+        --local d =
     else
         if s1.type == 'arc' then
             local t = s1
@@ -627,7 +627,7 @@ function subpathDataIntersection(s1, s2)
         -- check to make sure the points are actually in this part of the arc
         for i = 1, #tempResults2 do
             local tempResult = tempResults2[i]
-            local angle = math.atan2(tempResult.x, -tempResult.y)
+            local angle = math.atan2(tempResult.y, tempResult.x)
             print('intersection angle: ' .. angle)
             print('start angle: ' .. s2.startAngle .. '   end Angle' .. s2.endAngle)
             for j = -1, 1, 1 do
