@@ -16,7 +16,7 @@ local DrawTool =
     }
 }
 
-local DEBUG_FLOOD_FILL = false
+local DEBUG_FLOOD_FILL = true
 
 -- Behavior management
 
@@ -178,15 +178,19 @@ local function roundGlobalCoordinatesToGrid(x, y)
     return gridToGlobalCoordinates(gridX, gridY)
 end
 
+local function updatePathDataIds(pathData)
+    if not pathData.id then
+        pathData.id = nextPathId()
+    end
+
+    for i = 1, #pathData.subpathDataList do
+        pathData.subpathDataList[i].id = pathData.id .. '*' .. i
+    end
+end
+
 local function addPathData(pathData)
     if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
-        if not pathData.id then
-            pathData.id = nextPathId()
-        end
-
-        for i = 1, #pathData.subpathDataList do
-            pathData.subpathDataList[i].id = pathData.id .. '*' .. i
-        end
+        updatePathDataIds(pathData)
         table.insert(_pathDataList, pathData)
     end
 end
@@ -251,7 +255,7 @@ local function makeSubpathsFromSubpathData(pathData)
             subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
             subpath:lineTo(subpathData.p2.x, subpathData.p2.y)
         elseif subpathData.type == 'arc' then
-            subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle, subpathData.endAngle)
+            subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle * 180 / math.pi - 90, subpathData.endAngle * 180 / math.pi - 90)
         end
     end
 end
@@ -331,7 +335,7 @@ local function updatePathDataRendering(pathData)
         if p1.y > p2.y then
             startAngle = 0.0
             if isOver then
-                startAngle = startAngle + 180.0
+                startAngle = startAngle + math.pi
             end
 
             if xIsLonger then
@@ -371,9 +375,9 @@ local function updatePathDataRendering(pathData)
                 end
             end
         else
-            startAngle = 90.0
+            startAngle = math.pi / 2.0
             if isOver then
-                startAngle = startAngle + 180.0
+                startAngle = startAngle + math.pi
             end
 
             if xIsLonger then
@@ -414,7 +418,7 @@ local function updatePathDataRendering(pathData)
             end
         end
 
-        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + 90.0)
+        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle + math.pi / 2.0, startAngle + math.pi)
     end
 
     makeSubpathsFromSubpathData(pathData)
@@ -666,6 +670,7 @@ function DrawTool.handlers:preUpdate(dt)
                             _pathDataList[i].style = 1
                         end
                         updatePathDataRendering(_pathDataList[i])
+                        updatePathDataIds(_pathDataList[i])
 
                         resetFill()
                         resetGraphics()
@@ -675,6 +680,13 @@ function DrawTool.handlers:preUpdate(dt)
                 end
             end
         elseif _subtool == 'fill' then
+            -- TODO: right now this keeps overlaying fills as you drag
+
+
+
+------ create set of all verices added for an entire flood fill and use that as the key. check for the same 3 verteces in a row
+
+
             _FACE_POINTS = {}
             local newFaces = {}
 
@@ -861,7 +873,7 @@ function DrawTool.handlers:uiPanel()
                     end
                 }
             )
---[[
+
             ui.toggle(
                 "bend",
                 "bend",
@@ -871,7 +883,7 @@ function DrawTool.handlers:uiPanel()
                         _subtool = 'bend'
                     end
                 }
-            )]]--
+            )
 
             ui.toggle(
                 "fill",

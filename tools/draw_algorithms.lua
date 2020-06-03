@@ -31,11 +31,11 @@ function findAllIntersections(pathDataList)
                 for l = 1, #pathDataList[k].subpathDataList do
                     local otherSubpathData = pathDataList[k].subpathDataList[l]
 
-                    local p1, p2 = subpathDataIntersection(subpathData, otherSubpathData)
-                    if p1 then
+                    local intersections = subpathDataIntersection(subpathData, otherSubpathData)
+                    for m = 1, #intersections do
                         table.insert(result, {
-                            x = p1,
-                            y = p2,
+                            x = intersections[m].x,
+                            y = intersections[m].y,
                             subpathIds = {
                                 makeSubpathId(i, j, subpathData),
                                 makeSubpathId(k, l, otherSubpathData)
@@ -46,6 +46,8 @@ function findAllIntersections(pathDataList)
             end
         end
     end
+
+    --print(inspect(result))
 
     return result
 end
@@ -61,8 +63,8 @@ function doesLineIntersectWithAnyPath(pathDataList, p1, p2)
         for j = 1, #pathDataList[i].subpathDataList do
             local subpathData = pathDataList[i].subpathDataList[j]
 
-            local p1, p2 = subpathDataIntersection(subpathData, fakeSubpath)
-            if p1 then
+            local intersections = subpathDataIntersection(subpathData, fakeSubpath)
+            if #intersections > 0 then
                 return true
             end
         end
@@ -96,8 +98,8 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
         for j = 1, #pathDataList[i].subpathDataList do
             local subpathData = pathDataList[i].subpathDataList[j]
 
-            local p1, p2 = subpathDataIntersection(subpathData, slab1FakeSubpath)
-            if p1 then
+            local intersections = subpathDataIntersection(subpathData, slab1FakeSubpath)
+            if #intersections > 0 then
                 slab1SubpathIds[makeSubpathStringId(subpathData)] = true
             end
         end
@@ -110,14 +112,18 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
         for j = 1, #pathDataList[i].subpathDataList do
             local subpathData = pathDataList[i].subpathDataList[j]
 
-            local p1, p2 = subpathDataIntersection(subpathData, slab2FakeSubpath)
-            if p1 then
+            local intersections = subpathDataIntersection(subpathData, slab2FakeSubpath)
+            if #intersections > 0 then
                 local subpathStringId = makeSubpathStringId(subpathData)
                 if slab1SubpathIds[subpathStringId] then
-                    table.insert(slabIntersections, {
-                        y = p2,
-                        subpathId = makeSubpathId(i, j, subpathData),
-                    })
+                    -- TODO: i don't think it's possible to have more than one intersection here
+                    -- but should think about it more
+                    for k = 1, #intersections do
+                        table.insert(slabIntersections, {
+                            y = intersections[k].y,
+                            subpathId = makeSubpathId(i, j, subpathData),
+                        })
+                    end
                 end
             end
         end
@@ -174,9 +180,9 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFac
 
         for i = 1, #slabIntersections do
             local subpath = idToSubpath(pathDataList, slabIntersections[i].subpathId)
-            local midpointIntersectionX, midpointIntersectionY = subpathDataIntersection(subpath, slabMidpointFakeSubpath)
+            local intersections = subpathDataIntersection(subpath, slabMidpointFakeSubpath)
     
-            slabIntersections[i].midpointIntersectionY = midpointIntersectionY
+            slabIntersections[i].midpointIntersectionY = intersections[1].y
         end
     
         table.sort(slabIntersections, function (a, b) return a.midpointIntersectionY < b.midpointIntersectionY end)
@@ -199,20 +205,20 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFac
                 fillPath:setFillColor(color[1], color[2], color[3], 1.0)
 
                 
-                local topLeftX, topLeftY = subpathDataIntersection(topSubpath, slab1FakeSubpath)
-                fillSubpath:moveTo(topLeftX, topLeftY)
+                local topLeftIntersections = subpathDataIntersection(topSubpath, slab1FakeSubpath)
+                fillSubpath:moveTo(topLeftIntersections[1].x, topLeftIntersections[1].y)
 
 
-                local topRightX, topRightY = subpathDataIntersection(topSubpath, slab2FakeSubpath)
-                fillSubpath:lineTo(topRightX, topRightY)
+                local topRightIntersections = subpathDataIntersection(topSubpath, slab2FakeSubpath)
+                fillSubpath:lineTo(topRightIntersections[1].x, topRightIntersections[1].y)
 
 
-                local bottomRightX, bottomRightY = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
-                fillSubpath:lineTo(bottomRightX, bottomRightY)
+                local bottomRightIntersections = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
+                fillSubpath:lineTo(bottomRightIntersections[1].x, bottomRightIntersections[1].y)
 
 
-                local bottomLeftX, bottomLeftY = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
-                fillSubpath:lineTo(bottomLeftX, bottomLeftY)
+                local bottomLeftIntersections = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
+                fillSubpath:lineTo(bottomLeftIntersections[1].x, bottomLeftIntersections[1].y)
 
                 fillSubpath.isClosed = true
 
@@ -279,9 +285,9 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     for i = 1, #slabIntersections do
         local subpath = idToSubpath(pathDataList, slabIntersections[i].subpathId)
-        local userIntersectionX, userIntersectionY = subpathDataIntersection(subpath, slabPointFakeSubpath)
+        local userIntersections = subpathDataIntersection(subpath, slabPointFakeSubpath)
 
-        slabIntersections[i].userIntersectionY = userIntersectionY
+        slabIntersections[i].userIntersectionY = userIntersections[1].y
     end
 
     table.sort(slabIntersections, function (a, b) return a.userIntersectionY < b.userIntersectionY end)
@@ -317,32 +323,40 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     fillPath:setFillColor(color[1], color[2], color[3], 1.0)
 
     
-    local topLeftX, topLeftY = subpathDataIntersection(topSubpath, slab1FakeSubpath)
-    if not topLeftX then
+    local topLeftIntersections = subpathDataIntersection(topSubpath, slab1FakeSubpath)
+    if #topLeftIntersections == 0 then
         return true
     end
-    fillSubpath:moveTo(topLeftX, topLeftY)
+    local topLeftX = topLeftIntersections[1].x
+    local topLeftY = topLeftIntersections[1].y
+    fillSubpath:moveTo(topLeftIntersections[1].x, topLeftIntersections[1].y)
 
 
-    local topRightX, topRightY = subpathDataIntersection(topSubpath, slab2FakeSubpath)
-    if not topRightX then
+    local topRightIntersections = subpathDataIntersection(topSubpath, slab2FakeSubpath)
+    if #topRightIntersections == 0 then
         return true
     end
-    fillSubpath:lineTo(topRightX, topRightY)
+    local topRightX = topRightIntersections[1].x
+    local topRightY = topRightIntersections[1].y
+    fillSubpath:lineTo(topRightIntersections[1].x, topRightIntersections[1].y)
 
 
-    local bottomRightX, bottomRightY = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
-    if not bottomRightX then
+    local bottomRightIntersections = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
+    if #bottomRightIntersections == 0 then
         return true
     end
-    fillSubpath:lineTo(bottomRightX, bottomRightY)
+    local bottomRightX = bottomRightIntersections[1].x
+    local bottomRightY = bottomRightIntersections[1].y
+    fillSubpath:lineTo(bottomRightIntersections[1].x, bottomRightIntersections[1].y)
 
 
-    local bottomLeftX, bottomLeftY = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
-    if not bottomLeftX then
+    local bottomLeftIntersections = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
+    if #bottomLeftIntersections == 0 then
         return true
     end
-    fillSubpath:lineTo(bottomLeftX, bottomLeftY)
+    local bottomLeftX = bottomLeftIntersections[1].x
+    local bottomLeftY = bottomLeftIntersections[1].y
+    fillSubpath:lineTo(bottomLeftIntersections[1].x, bottomLeftIntersections[1].y)
 
     fillSubpath.isClosed = true
 
@@ -370,7 +384,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         end
     end
 
-    local y = topLeftY + cellSize * 0.5
+    local y = topLeftIntersections[1].y + cellSize * 0.5
     while y < bottomLeftY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
             x = topLeftX - offsetX,
@@ -492,15 +506,21 @@ function subpathGetYatX(s, x)
 end
 
 function subpathDataIntersection(s1, s2)
+    local results = {}
+
     if s1.type == 'line' and s2.type == 'line' then
-        if arePointsEqual(s1.p1, s2.p1) then
-            return s1.p1.x, s1.p1.y
-        elseif arePointsEqual(s1.p1, s2.p2) then
-            return s1.p1.x, s1.p1.y
-        elseif arePointsEqual(s1.p2, s2.p1) then
-            return s1.p2.x, s1.p2.y
-        elseif arePointsEqual(s1.p2, s2.p2) then
-            return s1.p2.x, s1.p2.y
+        if arePointsEqual(s1.p1, s2.p1) or arePointsEqual(s1.p1, s2.p2) then
+            table.insert(results, {
+                x = s1.p1.x,
+                y = s1.p1.y,
+            })
+            return results
+        elseif arePointsEqual(s1.p2, s2.p1) or arePointsEqual(s1.p2, s2.p2) then
+            table.insert(results, {
+                x = s1.p2.x,
+                y = s1.p2.y,
+            })
+            return results
         end
 
         local x1 = s1.p1.x
@@ -515,23 +535,115 @@ function subpathDataIntersection(s1, s2)
 
         local denom = ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4))
         if denom < 0.01 and denom > -0.01 then
-            return nil
+            return results
         end
 
         local t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
         if t < 0.0 or t > 1.0 then
-            return nil
+            return results
         end
 
         local u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
         if u  < 0.0 or u > 1.0 then
-            return nil
+            return results
         end
 
-        return (x1 + t * (x2 - x1)), (y1 + t * (y2 - y1))
+        table.insert(results, {
+            x = (x1 + t * (x2 - x1)),
+            y = (y1 + t * (y2 - y1))
+        })
+    elseif s1.type == 'arc' and s2.type == 'arc' then
+        print('here!')
     else
-        return nil
+        if s1.type == 'arc' then
+            local t = s1
+            s1 = s2
+            s2 = t
+        end
+
+        -- imagine the circle is centered at (0, 0)
+        local x1 = s1.p1.x - s2.center.x
+        local y1 = s1.p1.y - s2.center.y
+        local x2 = s1.p2.x - s2.center.x
+        local y2 = s1.p2.y - s2.center.y
+
+        local dx = x2 - x1
+        local dy = y2 - y1
+        local dr = math.sqrt(dx * dx + dy * dy)
+        local D = x1 * y2 - x2 * y1
+        local r = s2.radius
+
+        local discriminant = r * r * dr * dr - D * D
+        local tempResults = {}
+
+        if discriminant < 0 then
+            return results
+        elseif discriminant == 0.0 then
+            local resultX = (D * dy) / (dr * dr)
+            local resultY = (-D * dx) / (dr * dr)
+            table.insert(tempResults, {
+                x = resultX,
+                y = resultY + s2.center.y,
+            })
+        else
+            local sgnDy = 1
+            if dy < 0 then
+                sgnDy = -1
+            end
+
+            local resultX1 = (D * dy + sgnDy * dx * math.sqrt(discriminant)) / (dr * dr)
+            local resultY1 = (-D * dx + math.abs(dy) * math.sqrt(discriminant)) / (dr * dr)
+            local resultX2 = (D * dy - sgnDy * dx * math.sqrt(discriminant)) / (dr * dr)
+            local resultY2 = (-D * dx - math.abs(dy) * math.sqrt(discriminant)) / (dr * dr)
+
+            table.insert(tempResults, {
+                x = resultX1,
+                y = resultY1,
+            })
+
+            table.insert(tempResults, {
+                x = resultX2,
+                y = resultY2,
+            })
+        end
+
+        -- make sure the points are inside the line segment
+        local tempResults2 = {}
+        local delta = 0.00001
+        for i = 1, #tempResults do
+            local tempResult = tempResults[i]
+            local minx = math.min(x1, x2) - delta
+            local maxx = math.max(x1, x2) + delta
+            local miny = math.min(y1, y2) - delta
+            local maxy = math.max(y1, y2) + delta
+
+            print('minx:' .. minx .. ' maxx:' .. maxx .. ' miny:' .. miny .. ' maxy:' .. maxy .. ' tempx:' .. tempResult.x .. ' tempy:' .. tempResult.y)
+
+            if tempResult.x >= minx and tempResult.x <= maxx and tempResult.y >= miny and tempResult.y <= maxy then 
+                table.insert(tempResults2, tempResult)
+            end
+        end
+
+        -- check to make sure the points are actually in this part of the arc
+        for i = 1, #tempResults2 do
+            local tempResult = tempResults2[i]
+            local angle = math.atan2(tempResult.x, -tempResult.y)
+            print('intersection angle: ' .. angle)
+            print('start angle: ' .. s2.startAngle .. '   end Angle' .. s2.endAngle)
+            for j = -1, 1, 1 do
+                local add = 2.0 * math.pi * j
+                if angle + add >= s2.startAngle and angle + add <= s2.endAngle then
+                    table.insert(results, {
+                        x = tempResult.x + s2.center.x,
+                        y = tempResult.y + s2.center.y,
+                    })
+                    break
+                end
+            end
+        end
     end
+
+    return results
 end
 
 
