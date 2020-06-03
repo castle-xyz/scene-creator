@@ -254,7 +254,6 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     local firstSlabIdx = findSlabsForPoint(slabsList, point)
     if firstSlabIdx == nil then
-        print('1')
         return false
     end
     local slab1 = slabsList[firstSlabIdx]
@@ -318,7 +317,6 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     end
 
     if slabIntersectionIndex < 1 or slabIntersectionIndex >= #slabIntersections then
-        print('2 ' .. slabIntersectionIndex)
         return false
     end
 
@@ -326,7 +324,6 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local bottomSubpathId = slabIntersections[slabIntersectionIndex + 1].subpathId
 
     local faceId = 'subpath1:' .. subpathIdToSubpathStringId(topSubpathId) .. ' subpath2:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' slab1:' .. slab1.id .. ' slab2:' .. slab2.id
-    print(faceId)
     if currentFacesHolder.currentFaces[faceId] then
         return true
     end
@@ -350,6 +347,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local topLeftY = topLeftIntersections[1].y
     fillSubpath:moveTo(topLeftIntersections[1].x, topLeftIntersections[1].y)
 
+    cutSubpathData(topSubpath, fillSubpath, slab1.x, slab2.x, minY, maxY, topLeftIntersections[1])
 
     local topRightIntersections = subpathDataIntersection(topSubpath, slab2FakeSubpath)
     if #topRightIntersections == 0 then
@@ -358,6 +356,9 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local topRightX = topRightIntersections[1].x
     local topRightY = topRightIntersections[1].y
     fillSubpath:lineTo(topRightIntersections[1].x, topRightIntersections[1].y)
+
+
+
 
 
     local bottomRightIntersections = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
@@ -369,6 +370,8 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     fillSubpath:lineTo(bottomRightIntersections[1].x, bottomRightIntersections[1].y)
 
 
+    cutSubpathData(bottomSubpath, fillSubpath, slab1.x, slab2.x, minY, maxY, bottomRightIntersections[1])
+
     local bottomLeftIntersections = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
     if #bottomLeftIntersections == 0 then
         return true
@@ -376,6 +379,8 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local bottomLeftX = bottomLeftIntersections[1].x
     local bottomLeftY = bottomLeftIntersections[1].y
     fillSubpath:lineTo(bottomLeftIntersections[1].x, bottomLeftIntersections[1].y)
+
+
 
     fillSubpath.isClosed = true
 
@@ -643,6 +648,7 @@ function subpathDataIntersection(s1, s2)
                     table.insert(results, {
                         x = tempResult.x + s2.center.x,
                         y = tempResult.y + s2.center.y,
+                        angle = angle,
                     })
                     break
                 end
@@ -651,4 +657,118 @@ function subpathDataIntersection(s1, s2)
     end
 
     return results
+end
+
+--[[
+
+    |
+  3 |  4
+    |
+----------
+    |
+  2 |  1
+    |
+
+]]--
+
+local function normalizeRadianAngle(angle)
+    local pi2 = 2.0 * math.pi
+    if angle < 0 then
+        angle = angle + pi2
+    elseif angle > pi2 then
+        angle = angle - pi2
+    end
+
+    return angle
+end
+
+local function radianAngleQuadrant(angle)
+    return math.floor(normalizeRadianAngle(angle) / (math.pi / 2.0)) + 1
+end
+
+function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, startPoint)
+    local x1FakeSubpath = {
+        type = "line",
+        p1 = {
+            x = x1,
+            y = minY,
+        },
+        p2 = {
+            x = x1,
+            y = maxY,
+        },
+    }
+
+    local x2FakeSubpath = {
+        type = "line",
+        p1 = {
+            x = x2,
+            y = minY,
+        },
+        p2 = {
+            x = x2,
+            y = maxY,
+        },
+    }
+
+    local x1Intersections = subpathDataIntersection(subpathData, x1FakeSubpath)
+    local x2Intersections = subpathDataIntersection(subpathData, x2FakeSubpath)
+
+    if #x1Intersections ~= 1 or #x2Intersections ~= 1 then
+        -- this should be impossible
+       return nil 
+    end
+
+    local x1Int = x1Intersections[1]
+    local x2Int = x2Intersections[1]
+
+    if subpathData.type == 'line' then
+        
+    else
+        local angle1 = normalizeRadianAngle(x1Int.angle)
+        local angle2 = normalizeRadianAngle(x2Int.angle)
+        local quadrant1 = radianAngleQuadrant(angle1)
+        local quadrant2 = radianAngleQuadrant(angle2)
+
+        if quadrant1 > quadrant2 and quadrant1 ~= 4 then
+            local t = angle1
+            angle1 = angle2
+            angle2 = t
+
+            t = quadrant1
+            quadrant1 = quadrant2
+            quadrant2 = t
+        end
+
+        local startAngle, endAngle
+
+        local angle1X = math.cos(angle1) * subpathData.radius + subpathData.center.x
+        local angle1Y = math.sin(angle1) * subpathData.radius + subpathData.center.y
+        local distFromAngle1ToStartPoint = math.sqrt(math.pow(angle1X - startPoint.x, 2.0) + math.pow(angle1Y - startPoint.y, 2.0))
+        print(distFromAngle1ToStartPoint)
+        if distFromAngle1ToStartPoint < 0.001 then
+            startAngle = angle1
+            endAngle = angle2
+        else
+            startAngle = angle2
+            endAngle = angle1
+        end
+
+        local numPoints = 10
+        local angleDiff = (endAngle - startAngle) / numPoints
+        local currentAngle = startAngle
+
+        for i = 1, numPoints do
+            currentAngle = currentAngle + angleDiff
+            local x = math.cos(currentAngle) * subpathData.radius + subpathData.center.x
+            local y = math.sin(currentAngle) * subpathData.radius + subpathData.center.y
+
+            print(x .. ' ' .. y)
+
+            newSubpath:lineTo(x, y)
+        end
+
+
+        --newSubpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, startAngle * 180 / math.pi, endAngle * 180 / math.pi)
+    end
 end

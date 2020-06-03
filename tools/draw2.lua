@@ -32,7 +32,7 @@ we use the same system but in radians
 
 ]]--
 
-local DEBUG_FLOOD_FILL = true
+local DEBUG_FLOOD_FILL = false
 
 -- Behavior management
 
