@@ -32,7 +32,7 @@ local _grabbedPaths
 local _lineColor
 local _fillColor
 
-local _floodFillFaces
+local _floodFillFaceDataList
 
 function DrawTool.handlers:addBehavior(opts)
     
@@ -192,8 +192,8 @@ local function resetGraphics()
     _graphics:setDisplay("mesh", 1024)
     _SLABS = findAllSlabs(_pathDataList)
 
-    for i = 1, #_floodFillFaces do
-        _graphics:addPath(_floodFillFaces[i])
+    for i = 1, #_floodFillFaceDataList do
+        _graphics:addPath(_floodFillFaceDataList[i].face)
     end
 
     for i = 1, #_pathDataList do
@@ -403,7 +403,7 @@ end
 
 function DrawTool.handlers:onSetActive()
     _pathDataList = {}
-    _floodFillFaces = {}
+    _floodFillFaceDataList = {}
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
@@ -645,7 +645,7 @@ function DrawTool.handlers:preUpdate(dt)
             }, GRID_WIDTH / GRID_SIZE, _fillColor)
 
             for i = 1, #newFaces do
-                table.insert(_floodFillFaces, newFaces[i])
+                table.insert(_floodFillFaceDataList, newFaces[i])
             end
 
             resetGraphics()
@@ -668,31 +668,6 @@ function DrawTool.handlers:preUpdate(dt)
                 currentFaces = {},
             }, GRID_WIDTH / GRID_SIZE, _fillColor)
 
-            for i = #_floodFillFaces, 1, -1 do
-                -- TODO: should actually check if these overlap, but think this should be fine for now
-                local sumX = 0
-                local sumY = 0
-                local totalPoints = 0
-
-                for j = 1, _floodFillFaces[i].subpaths.count do
-                    local subpath = _floodFillFaces[i].subpaths[j]
-                    local numPoints, pointsPtr = subpath:getPoints()
-                    for k = 0, numPoints - 1, 1 do
-                        sumX = sumX + pointsPtr[2 * k + 0]
-                        sumY = sumY + pointsPtr[2 * k + 1]
-                        totalPoints = totalPoints + 1
-                    end
-                end
-
-                local avgX = sumX / totalPoints
-                local avgY = sumY / totalPoints
-
-                for j = 1, #newFaces do
-                    if newFaces[j]:inside(avgX, avgY) then
-                        table.remove(_floodFillFaces, i)
-                    end
-                end
-            end
 
             resetGraphics()
         end

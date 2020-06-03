@@ -199,7 +199,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local topSubpathId = slabIntersections[slabIntersectionIndex].subpathId
     local bottomSubpathId = slabIntersections[slabIntersectionIndex + 1].subpathId
 
-    local faceId = subpathIdToSubpathStringId(topSubpathId) .. '+' .. subpathIdToSubpathStringId(bottomSubpathId) .. '+' .. slab1.x .. '+' .. slab2.x
+    local faceId = subpathIdToSubpathStringId(topSubpathId) .. '+' .. subpathIdToSubpathStringId(bottomSubpathId) .. '+' .. slab1.id .. '+' .. slab2.id
     if currentFacesHolder.currentFaces[faceId] then
         return true
     end
@@ -244,7 +244,10 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     fillSubpath.isClosed = true
 
-    table.insert(newFaces, fillPath)
+    table.insert(newFaces, {
+        id = faceId,
+        face = fillPath
+    })
 
 
     -- print(cellSize .. ' ' .. topLeftY .. ' ' .. bottomLeftY .. ' ' .. topRightY .. ' ' .. bottomRightY)
@@ -304,8 +307,27 @@ function findAllSlabs(pathDataList)
     local tempSlabs = {}
 
     for i = 1, #intersectionPoints do
+        local subpathId1 = intersectionPoints[i].subpathIds[1]
+        local subpathId2 = intersectionPoints[i].subpathIds[2]
+        local shouldSwap = false
+
+        if subpathId1.pathIdx > subpathId2.pathIdx then
+            shouldSwap = true
+        elseif subpathId1.pathIdx == subpathId2.pathIdx then
+            if subpathId1.subpathIdx > subpathId2.subpathIdx then
+                shouldSwap = true
+            end
+        end
+
+        if shouldSwap then
+            local tempSubpathId = subpathId1
+            subpathId1 = subpathId2
+            subpathId2 = tempSubpathId
+        end
+
         table.insert(tempSlabs, {
             x = intersectionPoints[i].x,
+            id = 'slab+' .. subpathIdToSubpathStringId(subpathId1) .. '+' .. subpathIdToSubpathStringId(subpathId2),
             points = {
                 {
                     y = intersectionPoints[i].y,
@@ -320,6 +342,8 @@ function findAllSlabs(pathDataList)
     local slabs = {}
     local hash = {}
 
+    -- dedup
+    -- TODO: not sure exactly how we should handle ids here. just using the first might be stable enough?
     for i = 1, #tempSlabs do
         if hash[tempSlabs[i].x] then
             table.insert(slabs[hash[tempSlabs[i].x]].points, tempSlabs[i].points[1])
