@@ -209,7 +209,26 @@ function Common:runCommand(mode, command, live)
 
     -- Restore selections if not a live run
     if not live and command.selections[mode] then
-        self:deselectAllActors()
+
+       local needsReset = false
+       -- if the command includes a selection that's not already selected, reset
+       for _, actorId in ipairs(command.selections[mode]) do
+          if not self.selectedActorIds[actorId] then
+             needsReset = true
+             break
+          end
+       end
+       -- if something is selected that's not in the command, reset
+       local numSelectedActors = 0
+       for actorId, _ in pairs(self.selectedActorIds) do numSelectedActors = numSelectedActors + 1 end
+       if numSelectedActors ~= #command.selections[mode] then
+          needsReset = true
+       end
+
+       if needsReset then
+          self:deselectAllActors()
+       end
+       
         for _, actorId in ipairs(command.selections[mode]) do
             if self.actors[actorId] then
                 self:selectActor(actorId)

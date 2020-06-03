@@ -157,8 +157,11 @@ function Client:applySelections()
 end
 
 function Client:selectActor(actorId)
+   if not self.selectedActorIds[actorId] then
+      self.selectionChanged = true
+   end
+   
    self.selectedActorIds[actorId] = true
-   self.selectionChanged = true
 
    -- auto open either Body or Text component
    local actor = self.actors[actorId]
@@ -170,8 +173,10 @@ function Client:selectActor(actorId)
 end
 
 function Client:deselectActor(actorId)
+   if self.selectedActorIds[actorId] then
+       self.selectionChanged = true
+    end
     self.selectedActorIds[actorId] = nil
-    self.selectionChanged = true
 end
 
 function Client:deselectAllActors()
