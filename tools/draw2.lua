@@ -33,6 +33,7 @@ local _lineColor
 local _fillColor
 
 local _floodFillFaceDataList
+local _nextPathId = 0
 
 function DrawTool.handlers:addBehavior(opts)
     
@@ -48,6 +49,11 @@ local BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
 
 local pathsCanvas
 local fillCanvas
+
+function nextPathId()
+    _nextPathId = _nextPathId + 1
+    return _nextPathId
+end
 
 function floodFill(x, y, color)
     local windowWidth, windowHeight = love.graphics.getDimensions()
@@ -174,6 +180,13 @@ end
 
 local function addPathData(pathData)
     if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
+        if not pathData.id then
+            pathData.id = nextPathId()
+        end
+
+        for i = 1, #pathData.subpathDataList do
+            pathData.subpathDataList[i].id = pathData.id .. '*' .. i
+        end
         table.insert(_pathDataList, pathData)
     end
 end
@@ -187,6 +200,28 @@ local function removePathData(pathData)
 end
 
 _SLABS = {}
+
+
+local function applyOldFloodFillFaceIds()
+    _FACE_POINTS = {}
+    local facesToColor = {}
+
+    for i = 1, #_floodFillFaceDataList do
+        facesToColor[_floodFillFaceDataList[i].id] = true
+    end
+
+
+    local newFaces = {}
+    colorAllSlabs(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, facesToColor, newFaces, _fillColor)
+    _floodFillFaceDataList = newFaces
+end
+
+local function resetFill()
+    _SLABS = findAllSlabs(_pathDataList)
+
+    applyOldFloodFillFaceIds()
+end
+
 local function resetGraphics()
     _graphics = tove.newGraphics()
     _graphics:setDisplay("mesh", 1024)
@@ -385,20 +420,6 @@ local function updatePathDataRendering(pathData)
     makeSubpathsFromSubpathData(pathData)
 end
 
-local function applyOldFloodFillFaceIds()
-    _FACE_POINTS = {}
-    local facesToColor = {}
-
-    for i = 1, #_floodFillFaceDataList do
-        facesToColor[_floodFillFaceDataList[i].id] = true
-    end
-
-
-    local newFaces = {}
-    colorAllSlabs(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, facesToColor, newFaces, _fillColor)
-    _floodFillFaceDataList = newFaces
-end
-
 function DrawTool:getSingleComponent()
     local singleComponent
     for actorId, component in pairs(self.components) do
@@ -489,6 +510,7 @@ function DrawTool.handlers:preUpdate(dt)
 
             if touch.released then
                 addPathData(pathData)
+                resetFill()
                 resetGraphics()
 
                 _initialCoord = nil
@@ -515,6 +537,7 @@ function DrawTool.handlers:preUpdate(dt)
                 elseif _currentDirection.x ~= direction.x or _currentDirection.y ~= direction.y then
                     -- new direction. end old line
                     addPathData(_currentPathData)
+                    resetFill()
                     resetGraphics()
 
                     --print('current ' .. _currentDirection.x .. ' ' .. _currentDirection.y)
@@ -538,6 +561,7 @@ function DrawTool.handlers:preUpdate(dt)
 
             if touch.released then
                 addPathData(_currentPathData)
+                resetFill()
                 resetGraphics()
 
                 _initialCoord = nil
@@ -575,6 +599,7 @@ function DrawTool.handlers:preUpdate(dt)
                             removePathData(pathData)
                             local touchPoint = {x = touch.x, y = touch.y}
 
+                            -- todo: figure out path ids here
                             local newPathData1 = {
                                 points = {
                                     pathData.points[1],
@@ -619,9 +644,7 @@ function DrawTool.handlers:preUpdate(dt)
                         addPathData(_grabbedPaths[i])
                     end
 
-
-                    _SLABS = findAllSlabs(_pathDataList)
-                    applyOldFloodFillFaceIds()
+                    resetFill()
                     resetGraphics()
                 end
 
@@ -644,6 +667,7 @@ function DrawTool.handlers:preUpdate(dt)
                         end
                         updatePathDataRendering(_pathDataList[i])
 
+                        resetFill()
                         resetGraphics()
 
                         break
@@ -670,6 +694,7 @@ function DrawTool.handlers:preUpdate(dt)
             for i = 1, #_pathDataList do
                 if _pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
                     removePathData(_pathDataList[i])
+                    resetFill()
                     resetGraphics()
                     break
                 end
@@ -836,7 +861,7 @@ function DrawTool.handlers:uiPanel()
                     end
                 }
             )
-
+--[[
             ui.toggle(
                 "bend",
                 "bend",
@@ -846,7 +871,7 @@ function DrawTool.handlers:uiPanel()
                         _subtool = 'bend'
                     end
                 }
-            )
+            )]]--
 
             ui.toggle(
                 "fill",

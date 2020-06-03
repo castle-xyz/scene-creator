@@ -4,19 +4,20 @@ function idToSubpath(pathDataList, id)
     return pathDataList[id.pathIdx].subpathDataList[id.subpathIdx]
 end
 
-function makeSubpathId(pathIdx, subpathIdx)
+function makeSubpathId(pathIdx, subpathIdx, subpathData)
     return {
+        stringId = subpathData.id,
         pathIdx = pathIdx,
         subpathIdx = subpathIdx,
     }
 end
 
-function makeSubpathStringId(pathIdx, subpathIdx)
-    return pathIdx .. '-' .. subpathIdx
+function makeSubpathStringId(subpathData)
+    return subpathData.id
 end
 
 function subpathIdToSubpathStringId(subpathId)
-    return subpathId.pathIdx .. '-' .. subpathId.subpathIdx
+    return subpathId.stringId
 end
 
 function findAllIntersections(pathDataList)
@@ -36,8 +37,8 @@ function findAllIntersections(pathDataList)
                             x = p1,
                             y = p2,
                             subpathIds = {
-                                makeSubpathId(i, j),
-                                makeSubpathId(k, l)
+                                makeSubpathId(i, j, subpathData),
+                                makeSubpathId(k, l, otherSubpathData)
                             }
                         })
                     end
@@ -79,7 +80,7 @@ function findSlabsForPoint(slabsList, point)
                 return nil
             end
 
-            return slabsList[slabNum], slabsList[i]
+            return slabNum
         end
     end
 
@@ -97,7 +98,7 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
 
             local p1, p2 = subpathDataIntersection(subpathData, slab1FakeSubpath)
             if p1 then
-                slab1SubpathIds[makeSubpathStringId(i, j)] = true
+                slab1SubpathIds[makeSubpathStringId(subpathData)] = true
             end
         end
     end
@@ -111,11 +112,11 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
 
             local p1, p2 = subpathDataIntersection(subpathData, slab2FakeSubpath)
             if p1 then
-                local subpathStringId = makeSubpathStringId(i, j)
+                local subpathStringId = makeSubpathStringId(subpathData)
                 if slab1SubpathIds[subpathStringId] then
                     table.insert(slabIntersections, {
                         y = p2,
-                        subpathId = makeSubpathId(i, j),
+                        subpathId = makeSubpathId(i, j, subpathData),
                     })
                 end
             end
@@ -126,9 +127,9 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
 end
 
 function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFaces, color)
-    for i = 1, #slabsList - 1 do
+    print(inspect(facesToColor))
 
-        print('yooo ' .. i)
+    for i = 1, #slabsList - 1 do
         local slab1 = slabsList[i]
         local slab2 = slabsList[i + 1]
         
@@ -158,11 +159,35 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFac
     
         local slabIntersections = getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2FakeSubpath)
 
+        local midPointX = (slab1.x + slab2.x) / 2.0
+        local slabMidpointFakeSubpath = {
+            type = "line",
+            p1 = {
+                x = midPointX,
+                y = minY,
+            },
+            p2 = {
+                x = midPointX,
+                y = maxY,
+            },
+        }
+
+        for i = 1, #slabIntersections do
+            local subpath = idToSubpath(pathDataList, slabIntersections[i].subpathId)
+            local midpointIntersectionX, midpointIntersectionY = subpathDataIntersection(subpath, slabMidpointFakeSubpath)
+    
+            slabIntersections[i].midpointIntersectionY = midpointIntersectionY
+        end
+    
+        table.sort(slabIntersections, function (a, b) return a.midpointIntersectionY < b.midpointIntersectionY end)
+
+
+
         for j = 1, #slabIntersections - 1 do
             local topSubpathId = slabIntersections[j].subpathId
             local bottomSubpathId = slabIntersections[j + 1].subpathId
 
-            local faceId = subpathIdToSubpathStringId(topSubpathId) .. '+' .. subpathIdToSubpathStringId(bottomSubpathId) .. '+' .. slab1.id .. '+' .. slab2.id
+            local faceId = 'subpath1:' .. subpathIdToSubpathStringId(topSubpathId) .. ' subpath2:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' slab1:' .. slab1.id .. ' slab2:' .. slab2.id
             print(faceId)
             if facesToColor[faceId] then
                 local topSubpath = idToSubpath(pathDataList, topSubpathId)
@@ -205,10 +230,12 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     --table.insert(_FACE_POINTS, point.x)
     --table.insert(_FACE_POINTS, point.y)
 
-    local slab1, slab2 = findSlabsForPoint(slabsList, point)
-    if not slab1 then
+    local firstSlabIdx = findSlabsForPoint(slabsList, point)
+    if firstSlabIdx == nil then
         return false
     end
+    local slab1 = slabsList[firstSlabIdx]
+    local slab2 = slabsList[firstSlabIdx + 1]
 
     local slab1FakeSubpath = {
         type = "line",
@@ -274,7 +301,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local topSubpathId = slabIntersections[slabIntersectionIndex].subpathId
     local bottomSubpathId = slabIntersections[slabIntersectionIndex + 1].subpathId
 
-    local faceId = subpathIdToSubpathStringId(topSubpathId) .. '+' .. subpathIdToSubpathStringId(bottomSubpathId) .. '+' .. slab1.id .. '+' .. slab2.id
+    local faceId = 'subpath1:' .. subpathIdToSubpathStringId(topSubpathId) .. ' subpath2:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' slab1:' .. slab1.id .. ' slab2:' .. slab2.id
     if currentFacesHolder.currentFaces[faceId] then
         return true
     end
@@ -327,14 +354,29 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     -- print(cellSize .. ' ' .. topLeftY .. ' ' .. bottomLeftY .. ' ' .. topRightY .. ' ' .. bottomRightY)
 
+
+    local myOffsetX = cellSize * 0.1
+    local mySlabWidth = slab2.x - slab1.x
+    if mySlabWidth * 0.5 < myOffsetX then
+        myOffsetX = mySlabWidth * 0.5
+    end
+
+    local offsetX = cellSize * 0.1
+
+    if firstSlabIdx > 1 then
+        local prevSlabWidth = slab1.x - slabsList[firstSlabIdx - 1].x
+        if prevSlabWidth * 0.5 < offsetX then
+            offsetX = prevSlabWidth * 0.5
+        end
+    end
+
     local y = topLeftY + cellSize * 0.5
-    local offsetX = 0.1
     while y < bottomLeftY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
-            x = topLeftX - cellSize * offsetX,
+            x = topLeftX - offsetX,
             y = y,
         }, {
-            x = topLeftX + cellSize * offsetX,
+            x = topLeftX + myOffsetX,
             y = y,
         }) then
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
@@ -350,14 +392,24 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
         y = y + cellSize * 0.5
     end
+    
+
+    offsetX = cellSize * 0.1
+
+    if firstSlabIdx + 2 <= #slabsList then
+        local nextSlabWidth = slabsList[firstSlabIdx + 2].x - slab2.x
+        if nextSlabWidth * 0.5 < offsetX then
+            offsetX = nextSlabWidth * 0.5
+        end
+    end
 
     y = topRightY + cellSize * 0.5
     while y < bottomRightY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
-            x = topRightX - cellSize * offsetX,
+            x = topRightX - myOffsetX,
             y = y,
         }, {
-            x = topRightX + cellSize * offsetX,
+            x = topRightX + offsetX,
             y = y,
         }) then
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
@@ -384,17 +436,8 @@ function findAllSlabs(pathDataList)
     for i = 1, #intersectionPoints do
         local subpathId1 = intersectionPoints[i].subpathIds[1]
         local subpathId2 = intersectionPoints[i].subpathIds[2]
-        local shouldSwap = false
 
-        if subpathId1.pathIdx > subpathId2.pathIdx then
-            shouldSwap = true
-        elseif subpathId1.pathIdx == subpathId2.pathIdx then
-            if subpathId1.subpathIdx > subpathId2.subpathIdx then
-                shouldSwap = true
-            end
-        end
-
-        if shouldSwap then
+        if subpathId1.stringId > subpathId2.stringId then
             local tempSubpathId = subpathId1
             subpathId1 = subpathId2
             subpathId2 = tempSubpathId
