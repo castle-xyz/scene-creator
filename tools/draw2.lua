@@ -32,7 +32,7 @@ local _grabbedPaths
 local _lineColor
 local _fillColor
 
-FACES = {}
+local _floodFillFaces
 
 function DrawTool.handlers:addBehavior(opts)
     
@@ -192,8 +192,8 @@ local function resetGraphics()
     _graphics:setDisplay("mesh", 1024)
     _SLABS = findAllSlabs(_pathDataList)
 
-    for i = 1, #FACES do
-        _graphics:addPath(FACES[i])
+    for i = 1, #_floodFillFaces do
+        _graphics:addPath(_floodFillFaces[i])
     end
 
     for i = 1, #_pathDataList do
@@ -403,12 +403,11 @@ end
 
 function DrawTool.handlers:onSetActive()
     _pathDataList = {}
+    _floodFillFaces = {}
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
     _subtool = 'draw'
-
-    FACES = {}
 
     _lineColor = {hexStringToRgb(DEFAULT_PALETTE[6])}
     _fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])}
@@ -635,15 +634,20 @@ function DrawTool.handlers:preUpdate(dt)
                 end
             end
         elseif _subtool == 'fill' then
-            FACES = {}
             _FACE_POINTS = {}
+            local newFaces = {}
 
             findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
                 x = touch.x,
                 y = touch.y
-            }, FACES, {
+            }, newFaces, {
                 currentFaces = {},
-            }, GRID_WIDTH / GRID_SIZE)
+            }, GRID_WIDTH / GRID_SIZE, _fillColor)
+
+            for i = 1, #newFaces do
+                table.insert(_floodFillFaces, newFaces[i])
+            end
+
             resetGraphics()
         elseif _subtool == 'erase line' then
             for i = 1, #_pathDataList do
@@ -654,7 +658,43 @@ function DrawTool.handlers:preUpdate(dt)
                 end
             end
         elseif _subtool == 'erase fill' then
-            floodFill(touch.x, touch.y, BACKGROUND_COLOR)
+            _FACE_POINTS = {}
+            local newFaces = {}
+
+            findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
+                x = touch.x,
+                y = touch.y
+            }, newFaces, {
+                currentFaces = {},
+            }, GRID_WIDTH / GRID_SIZE, _fillColor)
+
+            for i = #_floodFillFaces, 1, -1 do
+                -- TODO: should actually check if these overlap, but think this should be fine for now
+                local sumX = 0
+                local sumY = 0
+                local totalPoints = 0
+
+                for j = 1, _floodFillFaces[i].subpaths.count do
+                    local subpath = _floodFillFaces[i].subpaths[j]
+                    local numPoints, pointsPtr = subpath:getPoints()
+                    for k = 0, numPoints - 1, 1 do
+                        sumX = sumX + pointsPtr[2 * k + 0]
+                        sumY = sumY + pointsPtr[2 * k + 1]
+                        totalPoints = totalPoints + 1
+                    end
+                end
+
+                local avgX = sumX / totalPoints
+                local avgY = sumY / totalPoints
+
+                for j = 1, #newFaces do
+                    if newFaces[j]:inside(avgX, avgY) then
+                        table.remove(_floodFillFaces, i)
+                    end
+                end
+            end
+
+            resetGraphics()
         end
     end
 end

@@ -126,7 +126,7 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
 end
 
 -- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
-function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, currentFacesHolder, cellSize)
+function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, currentFacesHolder, cellSize, color)
     --table.insert(_FACE_POINTS, point.x)
     --table.insert(_FACE_POINTS, point.y)
 
@@ -212,7 +212,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local fillSubpath = tove.newSubpath()
     local fillPath = tove.newPath()
     fillPath:addSubpath(fillSubpath)
-    fillPath:setFillColor(0.6, 0.6, 0.0, 1.0)
+    fillPath:setFillColor(color[1], color[2], color[3], 1.0)
 
     
     local topLeftX, topLeftY = subpathDataIntersection(topSubpath, slab1FakeSubpath)
@@ -250,7 +250,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     -- print(cellSize .. ' ' .. topLeftY .. ' ' .. bottomLeftY .. ' ' .. topRightY .. ' ' .. bottomRightY)
 
     local y = topLeftY + cellSize * 0.5
-    local offsetX = 0.5
+    local offsetX = 0.1
     while y < bottomLeftY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
             x = topLeftX - cellSize * offsetX,
@@ -262,7 +262,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topLeftX - cellSize * offsetX,
                 y = y,
-            }, newFaces, currentFacesHolder, cellSize) then
+            }, newFaces, currentFacesHolder, cellSize, color) then
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
                 end
@@ -285,7 +285,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topRightX + cellSize * offsetX,
                 y = y,
-            }, newFaces, currentFacesHolder, cellSize) then
+            }, newFaces, currentFacesHolder, cellSize, color) then
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
                 end
