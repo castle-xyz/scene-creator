@@ -308,6 +308,9 @@ local function drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
         return
     end
 
+    p1x, p1y = roundGlobalCoordinatesToGrid(p1x, p1y)
+    p2x, p2y = roundGlobalCoordinatesToGrid(p2x, p2y)
+
     addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
 end
 
