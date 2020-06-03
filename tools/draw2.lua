@@ -385,6 +385,20 @@ local function updatePathDataRendering(pathData)
     makeSubpathsFromSubpathData(pathData)
 end
 
+local function applyOldFloodFillFaceIds()
+    _FACE_POINTS = {}
+    local facesToColor = {}
+
+    for i = 1, #_floodFillFaceDataList do
+        facesToColor[_floodFillFaceDataList[i].id] = true
+    end
+
+
+    local newFaces = {}
+    colorAllSlabs(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, facesToColor, newFaces, _fillColor)
+    _floodFillFaceDataList = newFaces
+end
+
 function DrawTool:getSingleComponent()
     local singleComponent
     for actorId, component in pairs(self.components) do
@@ -587,7 +601,7 @@ function DrawTool.handlers:preUpdate(dt)
                     end
                 end
 
-                if #_grabbedPaths then
+                if #_grabbedPaths > 0 then
                     resetGraphics()
                 end
             end
@@ -605,6 +619,9 @@ function DrawTool.handlers:preUpdate(dt)
                         addPathData(_grabbedPaths[i])
                     end
 
+
+                    _SLABS = findAllSlabs(_pathDataList)
+                    applyOldFloodFillFaceIds()
                     resetGraphics()
                 end
 
@@ -668,6 +685,13 @@ function DrawTool.handlers:preUpdate(dt)
                 currentFaces = {},
             }, GRID_WIDTH / GRID_SIZE, _fillColor)
 
+            for i = 1, #newFaces do
+                for j = #_floodFillFaceDataList, 1, -1 do
+                    if _floodFillFaceDataList[j].id == newFaces[i].id then
+                        table.remove(_floodFillFaceDataList, j)
+                    end
+                end
+            end
 
             resetGraphics()
         end

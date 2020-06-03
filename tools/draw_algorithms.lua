@@ -125,6 +125,81 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
     return slabIntersections
 end
 
+function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFaces, color)
+    for i = 1, #slabsList - 1 do
+
+        print('yooo ' .. i)
+        local slab1 = slabsList[i]
+        local slab2 = slabsList[i + 1]
+        
+        local slab1FakeSubpath = {
+            type = "line",
+            p1 = {
+                x = slab1.x,
+                y = minY,
+            },
+            p2 = {
+                x = slab1.x,
+                y = maxY,
+            },
+        }
+    
+        local slab2FakeSubpath = {
+            type = "line",
+            p1 = {
+                x = slab2.x,
+                y = minY,
+            },
+            p2 = {
+                x = slab2.x,
+                y = maxY,
+            },
+        }
+    
+        local slabIntersections = getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2FakeSubpath)
+
+        for j = 1, #slabIntersections - 1 do
+            local topSubpathId = slabIntersections[j].subpathId
+            local bottomSubpathId = slabIntersections[j + 1].subpathId
+
+            local faceId = subpathIdToSubpathStringId(topSubpathId) .. '+' .. subpathIdToSubpathStringId(bottomSubpathId) .. '+' .. slab1.id .. '+' .. slab2.id
+            print(faceId)
+            if facesToColor[faceId] then
+                local topSubpath = idToSubpath(pathDataList, topSubpathId)
+                local bottomSubpath = idToSubpath(pathDataList, bottomSubpathId)
+
+                local fillSubpath = tove.newSubpath()
+                local fillPath = tove.newPath()
+                fillPath:addSubpath(fillSubpath)
+                fillPath:setFillColor(color[1], color[2], color[3], 1.0)
+
+                
+                local topLeftX, topLeftY = subpathDataIntersection(topSubpath, slab1FakeSubpath)
+                fillSubpath:moveTo(topLeftX, topLeftY)
+
+
+                local topRightX, topRightY = subpathDataIntersection(topSubpath, slab2FakeSubpath)
+                fillSubpath:lineTo(topRightX, topRightY)
+
+
+                local bottomRightX, bottomRightY = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
+                fillSubpath:lineTo(bottomRightX, bottomRightY)
+
+
+                local bottomLeftX, bottomLeftY = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
+                fillSubpath:lineTo(bottomLeftX, bottomLeftY)
+
+                fillSubpath.isClosed = true
+
+                table.insert(newFaces, {
+                    id = faceId,
+                    face = fillPath
+                })
+            end
+        end
+    end
+end
+
 -- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
 function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, currentFacesHolder, cellSize, color)
     --table.insert(_FACE_POINTS, point.x)
