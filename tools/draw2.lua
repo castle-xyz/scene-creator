@@ -32,6 +32,9 @@ we use the same system but in radians
 
 ]]--
 
+
+-- TODO: don't allow completely overlapping lines
+
 DEBUG_FLOOD_FILL = false
 
 -- Behavior management

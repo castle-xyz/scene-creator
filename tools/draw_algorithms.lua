@@ -149,7 +149,7 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
 end
 
 function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFaces, color)
-    print(inspect(facesToColor))
+    -- print(inspect(facesToColor))
 
     for i = 1, #slabsList - 1 do
         local slab1 = slabsList[i]
@@ -210,7 +210,7 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFac
             local bottomSubpathId = slabIntersections[j + 1].subpathId
 
             local faceId = 'subpath1:' .. subpathIdToSubpathStringId(topSubpathId) .. ' subpath2:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' slab1:' .. slab1.id .. ' slab2:' .. slab2.id
-            print(faceId)
+            -- print(faceId)
             if facesToColor[faceId] then
                 local topSubpath = idToSubpath(pathDataList, topSubpathId)
                 local bottomSubpath = idToSubpath(pathDataList, bottomSubpathId)
@@ -415,7 +415,6 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         end
     end
 
-    print('y ' .. (topLeftIntersections[1].y) .. '   ' .. bottomLeftY)
     local y = topLeftIntersections[1].y + cellSize * 0.5
     while y < bottomLeftY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
@@ -524,6 +523,22 @@ function arePointsEqual(p1, p2)
     return (p1.x == p2.x and p1.y == p2.y)
 end
 
+local function distance(p1, p2)
+    return math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0))
+end
+
+local function areAnglesEqual(a1, a2)
+    local delta = 0.001
+    for i = -1, 1, 1 do
+        local ta1 = a1 + (i * math.pi * 2.0)
+        if a2 > ta1 - delta and a2 < ta1 + delta then
+            return true
+        end
+    end
+
+    return false
+end
+
 function subpathDataIntersection(s1, s2)
     local results = {}
 
@@ -572,7 +587,86 @@ function subpathDataIntersection(s1, s2)
             y = (y1 + t * (y2 - y1))
         })
     elseif s1.type == 'arc' and s2.type == 'arc' then
-        --local d =
+        -- https://stackoverflow.com/questions/3349125/circle-circle-intersection-points
+        local d = distance(s1.center, s2.center)
+
+        if d > s1.radius + s2.radius then
+            return results
+        end
+
+        -- one circle is completely inside the other
+        if d < math.abs(s1.radius - s2.radius) then
+            return results
+        end
+
+        local tempResults = {}
+
+        if d > -0.0001 and d < 0.0001 then
+            -- the circles are coincident. add all the end points of the arcs
+            -- TODO: should we handle if the lines completely overlap?
+            if areAnglesEqual(s1.startAngle, s2.endAngle) or areAnglesEqual(s1.startAngle, s2.startAngle) then
+                table.insert(tempResults, {
+                    x = s1.center.x + math.cos(s1.startAngle) * s1.radius,
+                    y = s1.center.y + math.sin(s1.startAngle) * s1.radius,
+                })
+            elseif areAnglesEqual(s1.endAngle, s2.endAngle) or areAnglesEqual(s1.endAngle, s2.startAngle) then
+                table.insert(tempResults, {
+                    x = s1.center.x + math.cos(s1.endAngle) * s1.radius,
+                    y = s1.center.y + math.sin(s1.endAngle) * s1.radius,
+                })
+            else
+                return results
+            end
+        else
+            local a = (math.pow(s1.radius, 2.0) - math.pow(s2.radius, 2.0) + math.pow(d, 2.0)) / (2.0 * d)
+            -- h will be 0 if they intersect at only one point
+            local h = math.sqrt(math.pow(s1.radius, 2.0) - math.pow(a, 2.0))
+            local p2 = {
+                x = s1.center.x + ((a * (s2.center.x - s1.center.x)) / d),
+                y = s1.center.y + ((a * (s2.center.y - s1.center.y)) / d),
+            }
+
+            table.insert(tempResults, p2)
+
+            if h > -0.0001 and h < 0.0001 then
+                table.insert(tempResults, p2)
+            else
+                table.insert(tempResults, {
+                    x = p2.x + ((h * (s2.center.y - s1.center.y)) / d),
+                    y = p2.y - ((h * (s2.center.x - s1.center.x)) / d),
+                })
+
+                table.insert(tempResults, {
+                    x = p2.x - ((h * (s2.center.y - s1.center.y)) / d),
+                    y = p2.y + ((h * (s2.center.x - s1.center.x)) / d),
+                })
+            end
+        end
+
+        for i = 1, #tempResults do
+            local tempResult = tempResults[i]
+            local angle1 = math.atan2(tempResult.y - s1.center.y, tempResult.x - s1.center.x)
+            local angle2 = math.atan2(tempResult.y - s2.center.y, tempResult.x - s2.center.x)
+            local angle1Passed = false
+            local angle2Passed = false
+
+            for j = -1, 1, 1 do
+                local add = 2.0 * math.pi * j
+                if angle1 + add >= s1.startAngle - 0.001 and angle1 + add <= s1.endAngle + 0.001 then
+                    angle1Passed = true
+                end
+                if angle2 + add >= s2.startAngle - 0.001 and angle2 + add <= s2.endAngle + 0.001 then
+                    angle2Passed = true
+                end
+            end
+
+            if angle1Passed and angle2Passed then
+                table.insert(results, {
+                    x = tempResult.x,
+                    y = tempResult.y,
+                })
+            end
+        end
     else
         if s1.type == 'arc' then
             local t = s1
@@ -734,7 +828,7 @@ function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, leftToRight
         
     else
 
-        local numSegments = 3.0
+        local numSegments = 10.0
         local xStep
         local currentX
 
