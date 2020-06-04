@@ -66,102 +66,9 @@ local GRID_SIZE = 15
 local GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
 local BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
 
-local pathsCanvas
-local fillCanvas
-
 function nextPathId()
     _nextPathId = _nextPathId + 1
     return _nextPathId
-end
-
-function floodFill(x, y, color)
-    local windowWidth, windowHeight = love.graphics.getDimensions()
-
-    pathsCanvas:renderTo(
-        function()
-            love.graphics.push("all")
-
-            love.graphics.origin()
-            love.graphics.scale(windowWidth / DEFAULT_VIEW_WIDTH)
-
-            love.graphics.clear(0, 0, 0, 0)
-            love.graphics.setColor(1, 1, 1, 1)
-            _graphics:draw()
-
-            love.graphics.pop()
-        end
-    )
-
-    local pathsImageData = pathsCanvas:newImageData()
-    local fillImageData = fillCanvas:newImageData()
-
-    local scale = windowWidth / DEFAULT_VIEW_WIDTH
-
-    local ir, ig, ib, ia = fillImageData:getPixel(math.floor(x * scale), math.floor(y * scale))
-    --print(ir .. ' ' .. ig .. ' ' .. ib)
-
-    fillCanvas:renderTo(
-        function()
-            love.graphics.push("all")
-
-            love.graphics.origin()
-            --love.graphics.scale(windowWidth / DEFAULT_VIEW_WIDTH)
-
-            love.graphics.setColor(color.r, color.g, color.b, 1)
-            
-            love.graphics.setPointSize(1.0)
-
-            local points = {}
-            local lookup = {}
-
-            local function test(x, y)
-                if lookup[x] and lookup[x][y] then
-                    return false
-                end
-
-                if x < scale * GRID_HORIZONTAL_PADDING or x > scale * (GRID_HORIZONTAL_PADDING + GRID_WIDTH) then
-                    return false
-                end
-
-                if y < scale * GRID_TOP_PADDING or y > scale * (GRID_TOP_PADDING + GRID_WIDTH) then
-                    return false
-                end
-
-                if x < 0 or y < 0 or x >= pathsImageData:getWidth() or y >= pathsImageData:getHeight() then
-                    return false
-                end
-
-                local r, g, b, a = pathsImageData:getPixel(x, y)
-                if a > 0.0 then
-                    return false
-                end
-
-                --r, g, b, a = fillImageData:getPixel(x, y)
-                --local colorThreshold = 0.01
-                --if math.abs(r - ir) > colorThreshold or math.abs(g - ig) > colorThreshold or math.abs(b - ib) > colorThreshold then
-                --    return false
-                --end
-
-                return true
-            end
-
-            local function paint(x, y)
-                table.insert(points, x)
-                table.insert(points, y)
-
-                if lookup[x] == nil then
-                    lookup[x] = {}
-                end
-                lookup[x][y] = true
-            end
-
-            floodFill8Way(math.floor(x * scale), math.floor(y * scale), windowWidth, windowHeight, test, paint)
-
-            love.graphics.points(points)
-
-            love.graphics.pop()
-        end
-    )
 end
 
 local function globalToGridCoordinates(x, y)
@@ -482,36 +389,6 @@ function DrawTool.handlers:onSetActive()
     _fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])}
 
     resetGraphics()
-
-    local windowWidth, windowHeight = love.graphics.getDimensions()
-    pathsCanvas =
-    love.graphics.newCanvas(
-        windowWidth,
-        windowHeight,
-        {
-            dpiscale = 1,
-            msaa = 4
-        }
-    )
-    fillCanvas =
-    love.graphics.newCanvas(
-        windowWidth,
-        windowHeight,
-        {
-            dpiscale = 1,
-            msaa = 4
-        }
-    )
-
-
-    fillCanvas:renderTo(
-        function()
-            love.graphics.push("all")
-            love.graphics.origin()
-            love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, 1)
-            love.graphics.pop()
-        end
-    )
 end
 
 function DrawTool.handlers:preUpdate(dt)
@@ -787,10 +664,6 @@ function DrawTool.handlers:drawOverlay()
     love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b)
 
     love.graphics.setColor(1, 1, 1, 1)
-    if fillCanvas ~= nil then
-        local windowWidth, windowHeight = love.graphics.getDimensions()
-        love.graphics.draw(fillCanvas, 0, 0, 0, DEFAULT_VIEW_WIDTH / windowWidth, DEFAULT_VIEW_WIDTH / windowWidth)
-    end
 
     if _subtool == 'draw' or _subtool == 'pencil' or _subtool == 'move' then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
