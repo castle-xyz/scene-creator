@@ -32,7 +32,7 @@ we use the same system but in radians
 
 ]]--
 
-local DEBUG_FLOOD_FILL = false
+DEBUG_FLOOD_FILL = false
 
 -- Behavior management
 
@@ -247,12 +247,20 @@ local function resetGraphics()
     _graphics:setDisplay("mesh", 1024)
     _SLABS = findAllSlabs(_pathDataList)
 
-    for i = 1, #_floodFillFaceDataList do
-        _graphics:addPath(_floodFillFaceDataList[i].face)
+    if not DEBUG_FLOOD_FILL then
+        for i = 1, #_floodFillFaceDataList do
+            _graphics:addPath(_floodFillFaceDataList[i].face)
+        end
     end
 
     for i = 1, #_pathDataList do
         _graphics:addPath(_pathDataList[i].path)
+    end
+
+    if DEBUG_FLOOD_FILL then
+        for i = 1, #_floodFillFaceDataList do
+            _graphics:addPath(_floodFillFaceDataList[i].face)
+        end
     end
 end
 

@@ -338,6 +338,13 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     fillPath:addSubpath(fillSubpath)
     fillPath:setFillColor(color[1], color[2], color[3], 1.0)
 
+    if DEBUG_FLOOD_FILL then
+        fillPath:setLineColor(1.0, 0.0, 0.0, 1.0)
+        fillPath:setLineWidth(0.02)
+        fillPath:setMiterLimit(1)
+        fillPath:setLineJoin("round")
+    end
+
     
     local topLeftIntersections = subpathDataIntersection(topSubpath, slab1FakeSubpath)
     if #topLeftIntersections == 0 then
@@ -347,7 +354,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local topLeftY = topLeftIntersections[1].y
     fillSubpath:moveTo(topLeftIntersections[1].x, topLeftIntersections[1].y)
 
-    cutSubpathData(topSubpath, fillSubpath, slab1.x, slab2.x, minY, maxY, topLeftIntersections[1])
+    cutSubpathData(topSubpath, fillSubpath, slab1.x, slab2.x, minY, maxY, true)
 
     local topRightIntersections = subpathDataIntersection(topSubpath, slab2FakeSubpath)
     if #topRightIntersections == 0 then
@@ -370,7 +377,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     fillSubpath:lineTo(bottomRightIntersections[1].x, bottomRightIntersections[1].y)
 
 
-    cutSubpathData(bottomSubpath, fillSubpath, slab1.x, slab2.x, minY, maxY, bottomRightIntersections[1])
+    cutSubpathData(bottomSubpath, fillSubpath, slab1.x, slab2.x, minY, maxY, false)
 
     local bottomLeftIntersections = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
     if #bottomLeftIntersections == 0 then
@@ -408,6 +415,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         end
     end
 
+    print('y ' .. (topLeftIntersections[1].y) .. '   ' .. bottomLeftY)
     local y = topLeftIntersections[1].y + cellSize * 0.5
     while y < bottomLeftY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
@@ -686,7 +694,7 @@ local function radianAngleQuadrant(angle)
     return math.floor(normalizeRadianAngle(angle) / (math.pi / 2.0)) + 1
 end
 
-function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, startPoint)
+function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, leftToRight)
     local x1FakeSubpath = {
         type = "line",
         p1 = {
@@ -725,6 +733,39 @@ function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, startPoint)
     if subpathData.type == 'line' then
         
     else
+
+        local numSegments = 3.0
+        local xStep
+        local currentX
+
+        if leftToRight then
+            xStep = (x2 - x1) / numSegments
+            currentX = x1 + xStep
+        else
+            xStep = -(x2 - x1) / numSegments
+            currentX = x2 + xStep
+        end
+
+        for i = 1, numSegments - 1 do
+            local fakeSubpath = {
+                type = "line",
+                p1 = {
+                    x = currentX,
+                    y = minY,
+                },
+                p2 = {
+                    x = currentX,
+                    y = maxY,
+                },
+            }
+
+            local xIntersections = subpathDataIntersection(subpathData, fakeSubpath)
+            newSubpath:lineTo(xIntersections[1].x, xIntersections[1].y)
+
+            currentX = currentX + xStep
+        end
+
+        --[[
         local angle1 = normalizeRadianAngle(x1Int.angle)
         local angle2 = normalizeRadianAngle(x2Int.angle)
         local quadrant1 = radianAngleQuadrant(angle1)
@@ -754,12 +795,23 @@ function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, startPoint)
             endAngle = angle1
         end
 
-        local numPoints = 10
-        local angleDiff = (endAngle - startAngle) / numPoints
-        local currentAngle = startAngle
+        local numPoints = 3
+        local angleDiff = endAngle - startAngle
+        if math.abs(angleDiff) > math.pi / 2.0 then
+            local tryAngleDiff = angleDiff - 2.0 * math.pi
+
+            if math.abs(tryAngleDiff) > math.pi / 2.0 then
+                tryAngleDiff = angleDiff + 2.0 * math.pi
+            end
+
+            angleDiff = tryAngleDiff
+        end
+        print('angleDiff ' .. angleDiff)
+        local angleDelta = angleDiff / numPoints
+        local currentAngle = endAngle - angleDiff
 
         for i = 1, numPoints do
-            currentAngle = currentAngle + angleDiff
+            currentAngle = currentAngle + angleDelta
             local x = math.cos(currentAngle) * subpathData.radius + subpathData.center.x
             local y = math.sin(currentAngle) * subpathData.radius + subpathData.center.y
 
@@ -767,7 +819,7 @@ function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, startPoint)
 
             newSubpath:lineTo(x, y)
         end
-
+]]--
 
         --newSubpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, startAngle * 180 / math.pi, endAngle * 180 / math.pi)
     end
