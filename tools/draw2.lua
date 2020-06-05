@@ -264,7 +264,30 @@ local function updatePathDataRendering(pathData)
     local xIsLonger = math.abs(p2.x - p1.x) > math.abs(p2.y - p1.y)
 
     if radius == 0 then
-        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+        radius = math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0)) / 2.0
+        local circleCenter = {
+            x = (p2.x + p1.x) / 2.0,
+            y = (p2.y + p1.y) / 2.0,
+        }
+
+        local startAngle
+
+        if p1.x == p2.x then
+            if isOver then
+                startAngle = math.pi * 3.0 / 2.0
+            else
+                startAngle = math.pi / 2.0
+            end
+        else
+            if isOver then
+                startAngle = math.pi
+            else
+                startAngle = 0.0
+            end
+        end
+
+        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
+        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle + math.pi / 2.0, startAngle + math.pi)
     else
         local circleCenter = {}
         local startAngle
@@ -587,22 +610,21 @@ function DrawTool.handlers:preUpdate(dt)
                 end
             end
         elseif _subtool == 'fill' then
-            -- TODO: right now this keeps overlaying fills as you drag
-
-
-
 ------ create set of all verices added for an entire flood fill and use that as the key. check for the same 3 verteces in a row
 
 
             _FACE_POINTS = {}
             local newFaces = {}
+            local currentFaces = {}
+
+            for i = 1, #_floodFillFaceDataList do
+                currentFaces[_floodFillFaceDataList[i].id] = true
+            end
 
             findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
                 x = touch.x,
                 y = touch.y
-            }, newFaces, {
-                currentFaces = {},
-            }, GRID_WIDTH / GRID_SIZE, _fillColor)
+            }, newFaces, currentFaces, GRID_WIDTH / GRID_SIZE, _fillColor)
 
             for i = 1, #newFaces do
                 table.insert(_floodFillFaceDataList, newFaces[i])

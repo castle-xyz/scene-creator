@@ -248,7 +248,7 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFac
 end
 
 -- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
-function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, currentFacesHolder, cellSize, color)
+function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, currentFaces, cellSize, color)
     --table.insert(_FACE_POINTS, point.x)
     --table.insert(_FACE_POINTS, point.y)
 
@@ -324,11 +324,11 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local bottomSubpathId = slabIntersections[slabIntersectionIndex + 1].subpathId
 
     local faceId = 'subpath1:' .. subpathIdToSubpathStringId(topSubpathId) .. ' subpath2:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' slab1:' .. slab1.id .. ' slab2:' .. slab2.id
-    if currentFacesHolder.currentFaces[faceId] then
+    if currentFaces[faceId] then
         return true
     end
 
-    currentFacesHolder.currentFaces[faceId] = true
+    currentFaces[faceId] = true
 
     local topSubpath = idToSubpath(pathDataList, topSubpathId)
     local bottomSubpath = idToSubpath(pathDataList, bottomSubpathId)
@@ -427,7 +427,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topLeftX - cellSize * offsetX,
                 y = y,
-            }, newFaces, currentFacesHolder, cellSize, color) then
+            }, newFaces, currentFaces, cellSize, color) then
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
                 end
@@ -460,7 +460,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topRightX + cellSize * offsetX,
                 y = y,
-            }, newFaces, currentFacesHolder, cellSize, color) then
+            }, newFaces, currentFaces, cellSize, color) then
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
                 end
