@@ -13,7 +13,7 @@ function Client:startUi()
     self.inspectorTabs = {
        {
           name = 'general',
-          behaviors = { 'Drawing', 'Tags', 'Body' },
+          behaviors = { 'Drawing', 'Text', 'Tags', 'Body' },
        },
        {
           name = 'behaviors',
