@@ -282,6 +282,10 @@ function Client:uiInspectorActions()
     actions['setActiveTool'] = function(id) self:setActiveTool(id) end
     actions['closeInspector'] = function() self:deselectAllActors() end
 
+    actions['setSelectedInspectorTab'] = function(tab)
+       self.selectedInspectorTab = tab
+    end
+
     local tools = {}
     for _, tool in pairs(self.applicableTools) do
        table.insert(
@@ -292,10 +296,18 @@ function Client:uiInspectorActions()
           }
        )
     end
+
+    local inspectorTabs = {}
+    for _, tab in ipairs(self.inspectorTabs) do
+       table.insert(inspectorTabs, tab.name)
+    end
+    
     ui.data(
        {
           applicableTools = tools,
           activeToolBehaviorId = self.activeToolBehaviorId,
+          inspectorTabs = inspectorTabs,
+          selectedInspectorTab = self.selectedInspectorTab,
        },
        {
           actions = actions,

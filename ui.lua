@@ -9,6 +9,17 @@ function Client:startUi()
 
     self.openComponentBehaviorId = nil -- `behaviorId` of open component section
 
+    self.selectedInspectorTab = 'general'
+    self.inspectorTabs = {
+       {
+          name = 'general',
+          behaviors = { 'Drawing', 'Tags', 'Body' },
+       },
+       {
+          name = 'behaviors',
+       },
+    }
+
     self.saveBlueprintDatas = setmetatable({}, { __mode = 'k' }) -- `actor` -> data for "save blueprint" popover
 end
 

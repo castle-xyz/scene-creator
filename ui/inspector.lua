@@ -1,3 +1,42 @@
+function Client:_componentInspector(component)
+    local behavior = self.behaviors[component.behaviorId]
+    local uiName = behavior:getUiName()
+
+    -- Spacer
+    ui.box('spacer', { height = 8 }, function() end)
+
+    -- Header
+    if behavior.name ~= 'Text' then
+        ui.box('header', {
+            flexDirection = 'row',
+        }, function()
+            ui.box('title', {
+                flex = 1,
+            }, function()
+                ui.markdown('## ' .. uiName)
+            end)
+            ui.button('description', {
+                margin = 0,
+                marginLeft = 6,
+                icon = 'question',
+                iconFamily = 'FontAwesome5',
+                hideLabel = true,
+                popoverAllowed = true,
+                popoverStyle = { width = 300 },
+                popover = function()
+                    ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
+                end,
+            })
+            if behavior.name ~= 'Body' then
+               self:_removeBehaviorButton(actorId, component, behavior, uiName)
+            end
+        end)
+    end -- header
+
+    -- Component's UI
+    behavior:callHandler('uiComponent', component, {})
+end
+
 function Client:_removeBehaviorButton(actorId, component, behavior, uiName)
     ui.button('remove', {
         margin = 0,
@@ -194,7 +233,33 @@ function Client:_orderedComponents(components)
     return order
 end
 
-function Client:uiInspector()
+function Client:_tabByName(tabName)
+   for _, tab in ipairs(self.inspectorTabs) do
+      if tab.name == tabName then return tab end
+   end
+   return nil
+end
+
+function Client:_uiInspectorGeneralTab(actor)
+   local generalTab = self:_tabByName('general')
+
+   -- General behaviors
+   for _, behaviorName in ipairs(generalTab.behaviors) do
+      local behavior = self.behaviorsByName[behaviorName]
+      local component = actor.components[behavior.behaviorId]
+      if component then
+         self:_componentInspector(component)
+      end
+   end
+
+   -- Spacer
+   ui.box('spacer-2', { height = 8 }, function() end)
+   
+   -- Save blueprint
+   self:_saveBlueprintButton(actor)
+end
+
+function Client:_uiInspectorBehaviorsTab(actor)
     -- Does the active tool have a panel?
     local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
 
@@ -220,88 +285,54 @@ function Client:uiInspector()
         marginTop = -18,
         flex = 1,
     }, function()
-        local actorId = next(self.selectedActorIds)
-        if actorId then
-            local actor = self.actors[actorId]
-
             ui.box('properties-' .. actor.actorId .. '-' .. (self.updateCounts[actorId] or 1), function()
-                local order = self:_orderedComponents(actor.components)
+            local order = self:_orderedComponents(actor.components)
 
-                -- Component header buttons
-                ui.box('tabs', {
-                    flexDirection = 'row',
-                    flexWrap = 'wrap',
-                }, function()
-                    -- Each existing component
-                    for i = 1, #order do
-                        local component = order[i]
-                        local behavior = self.behaviors[component.behaviorId]
-                        local uiName = behavior:getUiName()
-                        ui.box(uiName .. ' box', { 
-                            flexDirection = 'row',
-                        }, function()
-                            ui.button(uiName, {
-                                selected = self.openComponentBehaviorId == behavior.behaviorId,
-                                onClick = function()
-                                    self.openComponentBehaviorId = behavior.behaviorId
-                                end
-                            })
-
-                            -- Last box? Add '+'.
-                            if i == #order then
-                               self:_addBehaviorButton(actor)
-                            end
-                        end)
-                    end
-                end)
-
-                -- Open component
-                local component = actor.components[self.openComponentBehaviorId]
-                if component then
+            -- Component header buttons
+            ui.box('tabs', {
+                flexDirection = 'row',
+                flexWrap = 'wrap',
+            }, function()
+                -- Each existing component
+                for i = 1, #order do
+                    local component = order[i]
                     local behavior = self.behaviors[component.behaviorId]
                     local uiName = behavior:getUiName()
-
-                    -- Spacer
-                    ui.box('spacer', { height = 8 }, function() end)
-
-                    -- Header
-                    if behavior.name ~= 'Text' then
-                        ui.box('header', {
-                            flexDirection = 'row',
-                        }, function()
-                            ui.box('title', {
-                                flex = 1,
-                            }, function()
-                                ui.markdown('## ' .. uiName)
-                            end)
-                            ui.button('description', {
-                                margin = 0,
-                                marginLeft = 6,
-                                icon = 'question',
-                                iconFamily = 'FontAwesome5',
-                                hideLabel = true,
-                                popoverAllowed = true,
-                                popoverStyle = { width = 300 },
-                                popover = function()
-                                    ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
-                                end,
-                            })
-                            if behavior.name ~= 'Body' then
-                               self:_removeBehaviorButton(actorId, component, behavior, uiName)
+                    ui.box(uiName .. ' box', { 
+                        flexDirection = 'row',
+                    }, function()
+                        ui.button(uiName, {
+                            selected = self.openComponentBehaviorId == behavior.behaviorId,
+                            onClick = function()
+                                self.openComponentBehaviorId = behavior.behaviorId
                             end
-                        end)
-                    end -- header
+                        })
 
-                    -- Component's UI
-                    behavior:callHandler('uiComponent', component, {})
+                        -- Last box? Add '+'.
+                        if i == #order then
+                           self:_addBehaviorButton(actor)
+                        end
+                    end)
                 end
-
-                -- Spacer
-                ui.box('spacer-2', { height = 8 }, function() end)
-
-                -- Save blueprint
-                self:_saveBlueprintButton(actor)
             end)
-        end
+
+            -- Open component
+            local component = actor.components[self.openComponentBehaviorId]
+            if component then
+               self:_componentInspector(component)
+            end
+        end)
     end)
+end
+
+function Client:uiInspector()
+   local actorId = next(self.selectedActorIds)
+   if actorId then
+      local actor = self.actors[actorId]
+      if self.selectedInspectorTab == 'general' then
+         self:_uiInspectorGeneralTab(actor)
+      else
+         self:_uiInspectorBehaviorsTab(actor)
+      end
+   end
 end
