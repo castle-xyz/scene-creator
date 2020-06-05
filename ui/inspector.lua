@@ -324,7 +324,21 @@ function Client:_uiInspectorBehaviorsTab(actor)
         flex = 1,
     }, function()
             ui.box('properties-' .. actor.actorId .. '-' .. (self.updateCounts[actorId] or 1), function()
-            local order = self:_orderedComponents(actor.components)
+            local componentsToList = {}
+            local generalTab = self:_tabByName('general')
+            for behaviorId, component in pairs(actor.components) do
+               local skip = false
+               for _, behaviorName in ipairs(generalTab.behaviors) do
+                  if self.behaviorsByName[behaviorName].behaviorId == behaviorId then
+                     skip = true
+                     break
+                  end
+               end
+               if not skip then
+                  componentsToList[behaviorId] = component
+               end
+            end
+            local order = self:_orderedComponents(componentsToList)
 
             -- Component header buttons
             ui.box('tabs', {
@@ -352,11 +366,14 @@ function Client:_uiInspectorBehaviorsTab(actor)
                         end
                     end)
                 end
+                if #order == 0 then
+                   self:_addBehaviorButton(actor)
+                end
             end)
 
             -- Open component
             local component = actor.components[self.openComponentBehaviorId]
-            if component then
+            if component and componentsToList[self.openComponentBehaviorId] then
                self:_componentInspector(actor.actorId, component)
             end
         end)
