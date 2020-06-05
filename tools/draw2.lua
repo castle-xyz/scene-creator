@@ -36,6 +36,7 @@ we use the same system but in radians
 -- TODO: don't allow completely overlapping lines
 
 DEBUG_FLOOD_FILL = false
+ONLY_RESET_FLOOD_FILL_ON_RELEASE = false
 
 -- Behavior management
 
@@ -52,6 +53,7 @@ local _lineColor
 local _fillColor
 
 local _floodFillFaceDataList
+local _floodFillColoredSubpathIds
 local _nextPathId = 0
 
 function DrawTool.handlers:addBehavior(opts)
@@ -131,25 +133,21 @@ end
 
 _SLABS = {}
 
-
-local function applyOldFloodFillFaceIds()
-    _FACE_POINTS = {}
-    local facesToColor = {}
-
-    for i = 1, #_floodFillFaceDataList do
-        facesToColor[_floodFillFaceDataList[i].id] = true
-    end
-
-
-    local newFaces = {}
-    colorAllSlabs(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, facesToColor, newFaces, _fillColor)
-    _floodFillFaceDataList = newFaces
-end
-
 local function resetFill()
     _SLABS = findAllSlabs(_pathDataList)
 
-    applyOldFloodFillFaceIds()
+    _FACE_POINTS = {}
+    local facesToColor = {}
+
+    local newFaces = {}
+    local newColoredSubpathIds = {}
+    colorAllSlabs(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, _floodFillColoredSubpathIds, newFaces, newColoredSubpathIds, GRID_WIDTH / GRID_SIZE, _fillColor)
+    _floodFillFaceDataList = newFaces
+
+    _floodFillColoredSubpathIds = {}
+    for i = 1, #newColoredSubpathIds do
+        _floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
+    end
 end
 
 local function resetGraphics()
@@ -403,6 +401,7 @@ end
 function DrawTool.handlers:onSetActive()
     _pathDataList = {}
     _floodFillFaceDataList = {}
+    _floodFillColoredSubpathIds = {}
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
@@ -615,6 +614,7 @@ function DrawTool.handlers:preUpdate(dt)
 
             _FACE_POINTS = {}
             local newFaces = {}
+            local newColoredSubpathIds = {}
             local currentFaces = {}
 
             for i = 1, #_floodFillFaceDataList do
@@ -624,10 +624,14 @@ function DrawTool.handlers:preUpdate(dt)
             findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
                 x = touch.x,
                 y = touch.y
-            }, newFaces, currentFaces, GRID_WIDTH / GRID_SIZE, _fillColor)
+            }, newFaces, newColoredSubpathIds, currentFaces, GRID_WIDTH / GRID_SIZE, _fillColor)
 
             for i = 1, #newFaces do
                 table.insert(_floodFillFaceDataList, newFaces[i])
+            end
+
+            for i = 1, #newColoredSubpathIds do
+                _floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
             end
 
             resetGraphics()
@@ -643,13 +647,13 @@ function DrawTool.handlers:preUpdate(dt)
         elseif _subtool == 'erase fill' then
             _FACE_POINTS = {}
             local newFaces = {}
+            local newColoredSubpathIds = {}
+            local currentFaces = {}
 
             findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
                 x = touch.x,
                 y = touch.y
-            }, newFaces, {
-                currentFaces = {},
-            }, GRID_WIDTH / GRID_SIZE, _fillColor)
+            }, newFaces, newColoredSubpathIds, currentFaces, GRID_WIDTH / GRID_SIZE, _fillColor)
 
             for i = 1, #newFaces do
                 for j = #_floodFillFaceDataList, 1, -1 do
@@ -657,6 +661,10 @@ function DrawTool.handlers:preUpdate(dt)
                         table.remove(_floodFillFaceDataList, j)
                     end
                 end
+            end
+
+            for i = 1, #newColoredSubpathIds do
+                _floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
             end
 
             resetGraphics()

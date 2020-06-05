@@ -148,8 +148,8 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
     return slabIntersections
 end
 
-function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFaces, color)
-    -- print(inspect(facesToColor))
+function colorAllSlabs(slabsList, pathDataList, minY, maxY, coloredSubpathIds, newFaces, newColoredSubpathIds, cellSize, color)
+    local currentFaces = {}
 
     for i = 1, #slabsList - 1 do
         local slab1 = slabsList[i]
@@ -203,52 +203,79 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, facesToColor, newFac
     
         table.sort(slabIntersections, function (a, b) return a.midpointIntersectionY < b.midpointIntersectionY end)
 
-
-
         for j = 1, #slabIntersections - 1 do
             local topSubpathId = slabIntersections[j].subpathId
             local bottomSubpathId = slabIntersections[j + 1].subpathId
 
-            local faceId = 'subpath1:' .. subpathIdToSubpathStringId(topSubpathId) .. ' subpath2:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' slab1:' .. slab1.id .. ' slab2:' .. slab2.id
-            -- print(faceId)
-            if facesToColor[faceId] then
+
+            local numMatches = 0
+            if coloredSubpathIds['slab:' .. slab1.id .. ' subpath:' .. subpathIdToSubpathStringId(topSubpathId) .. ' below and right'] then
+                numMatches = numMatches + 1
+            end
+
+            if coloredSubpathIds['slab:' .. slab1.id .. ' subpath:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' above and right'] then
+                numMatches = numMatches + 1
+            end
+
+            if coloredSubpathIds['slab:' .. slab2.id .. ' subpath:' .. subpathIdToSubpathStringId(topSubpathId) .. ' below and left'] then
+                numMatches = numMatches + 1
+            end
+
+            if coloredSubpathIds['slab:' .. slab2.id .. ' subpath:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' above and left'] then
+                numMatches = numMatches + 1
+            end
+
+            if numMatches >= 2 then
                 local topSubpath = idToSubpath(pathDataList, topSubpathId)
                 local bottomSubpath = idToSubpath(pathDataList, bottomSubpathId)
-
-                local fillSubpath = tove.newSubpath()
-                local fillPath = tove.newPath()
-                fillPath:addSubpath(fillSubpath)
-                fillPath:setFillColor(color[1], color[2], color[3], 1.0)
-
-                
+    
                 local topLeftIntersections = subpathDataIntersection(topSubpath, slab1FakeSubpath)
-                fillSubpath:moveTo(topLeftIntersections[1].x, topLeftIntersections[1].y)
-
-
+                local topLeftX = topLeftIntersections[1].x
+                local topLeftY = topLeftIntersections[1].y
+    
                 local topRightIntersections = subpathDataIntersection(topSubpath, slab2FakeSubpath)
-                fillSubpath:lineTo(topRightIntersections[1].x, topRightIntersections[1].y)
-
-
-                local bottomRightIntersections = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
-                fillSubpath:lineTo(bottomRightIntersections[1].x, bottomRightIntersections[1].y)
-
-
+                local topRightX = topRightIntersections[1].x
+                local topRightY = topRightIntersections[1].y
+    
                 local bottomLeftIntersections = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
-                fillSubpath:lineTo(bottomLeftIntersections[1].x, bottomLeftIntersections[1].y)
+                local bottomLeftX = bottomLeftIntersections[1].x
+                local bottomLeftY = bottomLeftIntersections[1].y
+    
+                local bottomRightIntersections = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
+                local bottomRightX = bottomRightIntersections[1].x
+                local bottomRightY = bottomRightIntersections[1].y
+    
+                local middleX = (topLeftX + topRightX + bottomLeftX + bottomRightX) / 4.0
+                local middleY = (topLeftY + topRightY + bottomLeftY + bottomRightY) / 4.0
+    
+                table.insert(_FACE_POINTS, middleX)
+                table.insert(_FACE_POINTS, middleY)
+    
+    
 
-                fillSubpath.isClosed = true
 
-                table.insert(newFaces, {
-                    id = faceId,
-                    face = fillPath
-                })
+                local tempNewFaces = {}
+                local tempNewColoredSubpathIds = {}
+                findFaceForPoint(slabsList, pathDataList, minY, maxY, {
+                    x = middleX,
+                    y = middleY,
+                }, tempNewFaces, tempNewColoredSubpathIds, currentFaces, cellSize, color)
+
+
+                for i = 1, #tempNewFaces do
+                    table.insert(newFaces, tempNewFaces[i])
+                end
+
+                for i = 1, #tempNewColoredSubpathIds do
+                    table.insert(newColoredSubpathIds, tempNewColoredSubpathIds[i])
+                end
             end
         end
     end
 end
 
 -- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
-function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, currentFaces, cellSize, color)
+function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, newColoredSubpathIds, currentFaces, cellSize, color)
     --table.insert(_FACE_POINTS, point.x)
     --table.insert(_FACE_POINTS, point.y)
 
@@ -395,6 +422,10 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         id = faceId,
         face = fillPath
     })
+    table.insert(newColoredSubpathIds, 'slab:' .. slab1.id .. ' subpath:' .. subpathIdToSubpathStringId(topSubpathId) .. ' below and right')
+    table.insert(newColoredSubpathIds, 'slab:' .. slab1.id .. ' subpath:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' above and right')
+    table.insert(newColoredSubpathIds, 'slab:' .. slab2.id .. ' subpath:' .. subpathIdToSubpathStringId(topSubpathId) .. ' below and left')
+    table.insert(newColoredSubpathIds, 'slab:' .. slab2.id .. ' subpath:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' above and left')
 
 
     -- print(cellSize .. ' ' .. topLeftY .. ' ' .. bottomLeftY .. ' ' .. topRightY .. ' ' .. bottomRightY)
@@ -427,9 +458,12 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topLeftX - cellSize * offsetX,
                 y = y,
-            }, newFaces, currentFaces, cellSize, color) then
+            }, newFaces, newColoredSubpathIds, currentFaces, cellSize, color) then
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
+                end
+                for k in pairs(newColoredSubpathIds) do
+                    newColoredSubpathIds[k] = nil
                 end
                 return false
             end
@@ -460,9 +494,12 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topRightX + cellSize * offsetX,
                 y = y,
-            }, newFaces, currentFaces, cellSize, color) then
+            }, newFaces, newColoredSubpathIds, currentFaces, cellSize, color) then
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
+                end
+                for k in pairs(newColoredSubpathIds) do
+                    newColoredSubpathIds[k] = nil
                 end
                 return false
             end
