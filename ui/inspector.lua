@@ -312,71 +312,26 @@ function Inspector.renderTab:movement(actor)
    Inspector.renderBehaviors(self, 'movement', actor)
 end
 
-function Inspector.renderTab:behaviors(actor)
+function Inspector.renderTab:rules(actor)
     -- Make sure `self.openComponentBehaviorId` is valid
     if not self.behaviors[self.openComponentBehaviorId] then
         self.openComponentBehaviorId = nil
     end
-
-    ui.scrollBox('inspector-properties', {
-        padding = 2,
-        marginTop = -18,
-        flex = 1,
-    }, function()
-            ui.box('properties-' .. actor.actorId .. '-' .. (self.updateCounts[actorId] or 1), function()
-            local componentsToList = {}
-            local generalTab = Inspector.tabByName(self, 'general')
-            for behaviorId, component in pairs(actor.components) do
-               local skip = false
-               for _, behaviorName in ipairs(generalTab.behaviors) do
-                  if self.behaviorsByName[behaviorName].behaviorId == behaviorId then
-                     skip = true
-                     break
-                  end
-               end
-               if not skip then
-                  componentsToList[behaviorId] = component
-               end
-            end
-            local order = Inspector.orderedComponents(self, componentsToList)
-
-            -- Component header buttons
-            ui.box('tabs', {
-                flexDirection = 'row',
-                flexWrap = 'wrap',
-            }, function()
-                -- Each existing component
-                for i = 1, #order do
-                    local component = order[i]
-                    local behavior = self.behaviors[component.behaviorId]
-                    local uiName = behavior:getUiName()
-                    ui.box(uiName .. ' box', { 
-                        flexDirection = 'row',
-                    }, function()
-                        ui.button(uiName, {
-                            selected = self.openComponentBehaviorId == behavior.behaviorId,
-                            onClick = function()
-                                self.openComponentBehaviorId = behavior.behaviorId
-                            end
-                        })
-
-                        -- Last box? Add '+'.
-                        if i == #order then
-                           self:_addBehaviorButton(actor)
-                        end
-                    end)
-                end
-                if #order == 0 then
-                   self:_addBehaviorButton(actor)
-                end
-            end)
-
-            -- Open component
-            local component = actor.components[self.openComponentBehaviorId]
-            if component and componentsToList[self.openComponentBehaviorId] then
-               self:_componentInspector(actor.actorId, component)
-            end
-        end)
+    ui.scrollBox('inspector-rules-box', function()
+        local behaviorId = self.behaviorsByName.Rules.behaviorId
+        local component = actor.components[behaviorId]
+        if component then
+           self:_componentInspector(actor.actorId, component)
+        else
+            ui.button('Add Rules', {
+                flex = 1,
+                icon = 'plus',
+                iconFamily = 'FontAwesome5',
+                onClick = function()
+                   self:_addBehavior(actor, behaviorId)
+                end,
+            })
+        end
     end)
 end
 
@@ -404,7 +359,7 @@ function Client:uiInspector()
       if render then
          render(self, actor)
       else
-         Inspector.renderTab['behaviors'](self, actor)
+         Inspector.renderTab['general'](self, actor)
       end
    end
 end

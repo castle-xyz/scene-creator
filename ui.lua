@@ -17,10 +17,10 @@ function Client:startUi()
        },
        {
           name = 'movement',
-          behaviors = { 'Moving', 'Falling', 'CircleShape', 'Bouncy', 'Sliding', 'Slowdown', 'Friction', 'SpeedLimit', 'RotatingMotion', 'Sling', 'Drag' },
+          behaviors = { 'Moving', 'Solid', 'Falling', 'CircleShape', 'Bouncy', 'Sliding', 'Slowdown', 'Friction', 'SpeedLimit', 'RotatingMotion', 'Sling', 'Drag' },
        },
        {
-          name = 'behaviors',
+          name = 'rules',
        },
     }
 
