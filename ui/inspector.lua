@@ -1,3 +1,7 @@
+local Inspector = {
+   renderTab = {},
+}
+
 function Client:_uiActorAllowsBehavior(actor, behavior)
    -- if actor has body and this is text, return false
    if (actor.components[self.behaviorsByName.Body.behaviorId] and behavior == self.behaviorsByName.Text) then
@@ -230,7 +234,7 @@ function Client:_addBehaviorButton(actor)
 
 end
 
-function Client:_orderedComponents(components)
+function Inspector:orderedComponents(components)
     local order = {}
     -- Sort by `behaviorId`
     for behaviorId, component in pairs(components) do
@@ -245,19 +249,21 @@ function Client:_orderedComponents(components)
     return order
 end
 
-function Client:_tabByName(tabName)
+function Inspector:tabByName(tabName)
    for _, tab in ipairs(self.inspectorTabs) do
       if tab.name == tabName then return tab end
    end
    return nil
 end
 
-function Client:_uiInspectorGeneralTab(actor)
-   local generalTab = self:_tabByName('general')
-
-   -- General behaviors
-   for _, behaviorName in ipairs(generalTab.behaviors) do
+function Inspector:renderBehaviors(tabName, actor)
+   local tab = Inspector.tabByName(self, tabName)
+   for _, behaviorName in ipairs(tab.behaviors) do
       local behavior = self.behaviorsByName[behaviorName]
+      if not behavior then
+         print('tab references unknown behavior: ' .. behaviorName)
+         return
+      end
 
       if self:_uiActorAllowsBehavior(actor, behavior) then
           local component = actor.components[behavior.behaviorId]
@@ -289,6 +295,11 @@ function Client:_uiInspectorGeneralTab(actor)
           end
       end
    end
+end
+
+function Inspector.renderTab:general(actor)
+   -- General behaviors
+   Inspector.renderBehaviors(self, 'general', actor)
 
    -- Spacer
    ui.box('spacer-2', { height = 8 }, function() end)
@@ -297,7 +308,11 @@ function Client:_uiInspectorGeneralTab(actor)
    self:_saveBlueprintButton(actor)
 end
 
-function Client:_uiInspectorBehaviorsTab(actor)
+function Inspector.renderTab:movement(actor)
+   Inspector.renderBehaviors(self, 'movement', actor)
+end
+
+function Inspector.renderTab:behaviors(actor)
     -- Does the active tool have a panel?
     local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
 
@@ -325,7 +340,7 @@ function Client:_uiInspectorBehaviorsTab(actor)
     }, function()
             ui.box('properties-' .. actor.actorId .. '-' .. (self.updateCounts[actorId] or 1), function()
             local componentsToList = {}
-            local generalTab = self:_tabByName('general')
+            local generalTab = Inspector.tabByName(self, 'general')
             for behaviorId, component in pairs(actor.components) do
                local skip = false
                for _, behaviorName in ipairs(generalTab.behaviors) do
@@ -338,7 +353,7 @@ function Client:_uiInspectorBehaviorsTab(actor)
                   componentsToList[behaviorId] = component
                end
             end
-            local order = self:_orderedComponents(componentsToList)
+            local order = Inspector.orderedComponents(self, componentsToList)
 
             -- Component header buttons
             ui.box('tabs', {
@@ -384,10 +399,11 @@ function Client:uiInspector()
    local actorId = next(self.selectedActorIds)
    if actorId then
       local actor = self.actors[actorId]
-      if self.selectedInspectorTab == 'general' then
-         self:_uiInspectorGeneralTab(actor)
+      local render = Inspector.renderTab[self.selectedInspectorTab]
+      if render then
+         render(self, actor)
       else
-         self:_uiInspectorBehaviorsTab(actor)
+         Inspector.renderTab['behaviors'](self, actor)
       end
    end
 end

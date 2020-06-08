@@ -16,6 +16,10 @@ function Client:startUi()
           behaviors = { 'Drawing', 'Text', 'Tags', 'Body' },
        },
        {
+          name = 'movement',
+          behaviors = { 'Moving', 'Falling', 'CircleShape', 'Bouncy', 'Sliding', 'Slowdown', 'Friction', 'SpeedLimit', 'RotatingMotion', 'Sling', 'Drag' },
+       },
+       {
           name = 'behaviors',
        },
     }
