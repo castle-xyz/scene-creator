@@ -123,6 +123,11 @@ function Client:applySelections()
     if self.selectionChanged and self.applicableTools[self.behaviorsByName.Grab.behaviorId] then
         self:setActiveTool(self.behaviorsByName.Grab.behaviorId)
     end
+
+    -- Reset inspector tab when selection changes
+    if self.selectionChanged then
+       self.selectedInspectorTab = 'general'
+    end
     
     -- If this deactivated the tool, pick another one
     if not self.activeToolBehaviorId then
