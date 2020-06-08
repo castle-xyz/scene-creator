@@ -313,21 +313,6 @@ function Inspector.renderTab:movement(actor)
 end
 
 function Inspector.renderTab:behaviors(actor)
-    -- Does the active tool have a panel?
-    local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
-
-    if activeTool and activeTool.handlers.uiPanel then
-        local uiName = activeTool:getUiName()
-        ui.scrollBox('inspector-tool-' .. uiName, {
-            padding = 2,
-            margin = 2,
-            flex = 1,
-        }, function()
-            activeTool:callHandler('uiPanel')
-        end)
-        return
-    end
-
     -- Make sure `self.openComponentBehaviorId` is valid
     if not self.behaviors[self.openComponentBehaviorId] then
         self.openComponentBehaviorId = nil
@@ -399,6 +384,22 @@ function Client:uiInspector()
    local actorId = next(self.selectedActorIds)
    if actorId then
       local actor = self.actors[actorId]
+
+      -- Does the active tool have a panel?
+      local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+
+      if activeTool and activeTool.handlers.uiPanel then
+          local uiName = activeTool:getUiName()
+          ui.scrollBox('inspector-tool-' .. uiName, {
+              padding = 2,
+              margin = 2,
+              flex = 1,
+          }, function()
+              activeTool:callHandler('uiPanel')
+          end)
+          return
+      end
+      
       local render = Inspector.renderTab[self.selectedInspectorTab]
       if render then
          render(self, actor)
