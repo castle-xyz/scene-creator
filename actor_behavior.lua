@@ -154,7 +154,9 @@ local CORE_BEHAVIORS = {}
 function defineCoreBehavior(behaviorSpec)
     behaviorSpec.isCore = true
     behaviorSpec.propertyNames = behaviorSpec.propertyNames or {}
+    behaviorSpec.propertySpecs = behaviorSpec.propertySpecs or {}
     behaviorSpec.handlers = behaviorSpec.handlers or {}
+    behaviorSpec.getters = behaviorSpec.getters or {}
     behaviorSpec.setters = behaviorSpec.setters or {}
     behaviorSpec.dependencies = behaviorSpec.dependencies or {}
     behaviorSpec.triggers = behaviorSpec.triggers or {}

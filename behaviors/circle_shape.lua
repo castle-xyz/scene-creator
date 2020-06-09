@@ -1,11 +1,17 @@
-local CircleShapeBehavior =
-    defineCoreBehavior {
+local CircleShapeBehavior = defineCoreBehavior {
     name = "CircleShape",
     displayName = "circle",
     propertyNames = {},
     dependencies = {
         "Body"
-    }
+    },
+    propertySpecs = {
+      radius = {
+         method = 'numberInput',
+         label = 'radius',
+         props = { min = 0.5 * MIN_BODY_SIZE, max = 0.5 * MAX_BODY_SIZE, decimalDigits = 1 },
+      },
+   },
 }
 
 -- Component management
@@ -25,6 +31,25 @@ function CircleShapeBehavior.handlers:removeComponent(component, opts)
     if opts.isOrigin and not opts.removeActor then
         self.dependencies.Body:resetShape(component.actorId)
     end
+end
+
+function CircleShapeBehavior.setters:radius(component, value)
+   value = math.max(0.5 * MIN_BODY_SIZE, math.min(value, 0.5 * MAX_BODY_SIZE))
+   local actorId = component.actorId
+   local physics = self.dependencies.Body:getPhysics()
+   self.dependencies.Body:setShape(actorId, physics:newCircleShape(value))
+end
+
+function CircleShapeBehavior.getters:radius(component)
+   local actorId = component.actorId
+   local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
+   if fixture then
+      local shape = fixture:getShape()
+      if shape:getType() == "circle" then
+         return shape:getRadius()
+      end
+   end
+   return 0
 end
 
 -- UI

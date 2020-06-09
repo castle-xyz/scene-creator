@@ -1,5 +1,4 @@
-local RotatingMotionBehavior =
-    defineCoreBehavior {
+local RotatingMotionBehavior = defineCoreBehavior {
     name = "RotatingMotion",
     displayName = "rotating motion",
     propertyNames = {
@@ -7,7 +6,13 @@ local RotatingMotionBehavior =
     },
     dependencies = {
         "Body"
-    }
+    },
+    propertySpecs = {
+       rotationsPerSecond = {
+          method = 'numberInput',
+          label = 'rotations per second',
+       },
+    },
 }
 
 -- Body type
