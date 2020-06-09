@@ -225,7 +225,7 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, coloredSubpathIds, n
                 numMatches = numMatches + 1
             end
 
-            if numMatches >= 2 then
+            if numMatches > 2 then
                 local topSubpath = idToSubpath(pathDataList, topSubpathId)
                 local bottomSubpath = idToSubpath(pathDataList, bottomSubpathId)
     
