@@ -24,7 +24,10 @@ function Client:updateTouches()
     ui.setUpdatesPaused(false)
     for _, touchId in ipairs(love.touch.getTouches()) do
         activeTouches[touchId] = true
-        ui.setUpdatesPaused(true)
+
+        if not self.performing then
+            ui.setUpdatesPaused(true)
+        end
 
         local screenX, screenY = love.touch.getPosition(touchId)
         local x, y = self.viewTransform:inverseTransformPoint(screenX, screenY)
