@@ -52,6 +52,8 @@ function Client:_componentInspector(actorId, component)
 
     -- Component's UI
     behavior:callHandler('uiComponent', component, {})
+    
+    ui.box('spacer', { height = 8 }, function() end)
 end
 
 function Client:_removeBehaviorButton(actorId, component, behavior, uiName)
@@ -271,28 +273,32 @@ function Inspector:renderBehaviors(tabName, actor)
              self:_componentInspector(actor.actorId, component)
           else
              -- show a row to add component to actor
-             -- TODO: show full behavior UI even if actor doesn't have it
-             ui.box('add-behavior-row', {
-                 flexDirection = 'row',
-                 marginBottom = 16,
+             ui.box('behavior-' .. behavior:getUiName(), {
+                 marginBottom = 16
              }, function()
-                ui.box('title', {
-                    flex = 1,
-                }, function()
-                    ui.markdown('## ' .. behavior:getUiName())
-                end)
-                ui.button('add-behavior', {
-                    margin = 0,
-                    marginLeft = 6,
-                    icon = 'plus',
-                    iconFamily = 'FontAwesome5',
-                    hideLabel = true,
-                    onClick = function()
-                       self:_addBehavior(actor, behavior.behaviorId)
-                    end
-                })
+                 ui.box('add-behavior-row', {
+                     flexDirection = 'row',
+                     marginBottom = 16,
+                 }, function()
+                    ui.box('title', {
+                        flex = 1,
+                    }, function()
+                        ui.markdown('## ' .. behavior:getUiName())
+                    end)
+                    ui.button('add-behavior', {
+                        margin = 0,
+                        marginLeft = 6,
+                        icon = 'plus',
+                        iconFamily = 'FontAwesome5',
+                        hideLabel = true,
+                        onClick = function()
+                           self:_addBehavior(actor, behavior.behaviorId)
+                        end
+                    })
+                 end)
+                 ui.box('description', function() ui.markdown('#### ' .. (behavior.description or '')) end)
              end)
-          end
+         end
       end
    end
 end
