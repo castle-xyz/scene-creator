@@ -5,7 +5,13 @@ local TagsBehavior =
     propertyNames = {
         "tagsString" -- Space-separate tags string
     },
-    dependencies = {}
+    dependencies = {},
+    propertySpecs = {
+       tagsString = {
+          method = 'textInput',
+          label = 'tags (separated by spaces)',
+       },
+    },
 }
 
 -- Behavior management

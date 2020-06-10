@@ -7,7 +7,14 @@ local SpeedLimitBehavior =
     },
     dependencies = {
         "Body"
-    }
+    },
+    propertySpecs = {
+       maximumSpeed = {
+          method = 'numberInput',
+          label = 'maximum speed (units per second)',
+          props = { min = 0.1 },
+       },
+    },
 }
 
 -- Component management

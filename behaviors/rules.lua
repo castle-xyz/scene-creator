@@ -5,7 +5,12 @@ local RulesBehavior =
     propertyNames = {
         "rules"
     },
-    dependencies = {}
+    dependencies = {},
+    propertySpecs = {
+       rules = {
+          method = 'data' -- TODO: basically never try to render this without custom ui
+       },
+    },
 }
 
 local EMPTY_RULE = {

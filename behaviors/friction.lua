@@ -6,7 +6,13 @@ local FrictionBehavior =
     dependencies = {
         "Body"
     },
-    setters = {}
+    propertySpecs = {
+       friction = {
+          method = 'numberInput',
+          label = 'friction',
+          props = { step = 0.05, min = 0 },
+       },
+    },
 }
 
 -- Component management
@@ -29,6 +35,21 @@ function FrictionBehavior.handlers:removeComponent(component, opts)
             fixture:setFriction(0)
         end
     end
+end
+
+function FrictionBehavior.getters:friction(component)
+   local actorId = component.actorId
+   local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
+   if fixture then
+      return fixture:getFriction()
+   end
+   return 0
+end
+
+function FrictionBehavior.setters:friction(component, value)
+   local actorId = component.actorId
+   local physics, bodyId, body, fixtureId = self.dependencies.Body:getMembers(actorId)
+   physics:setFriction(fixtureId, params.value)
 end
 
 -- UI

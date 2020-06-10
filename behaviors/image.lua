@@ -13,7 +13,26 @@ local ImageBehavior =
     },
     dependencies = {
         "Body"
-    }
+    },
+    propertySpecs = {
+       url = {
+          method = 'textInput',
+          label = 'url',
+       },
+       color = {
+          method = 'colorPicker',
+          label = 'color',
+       },
+       filter = {
+          method = 'dropdown',
+          label = 'scaling style',
+          props = { items = {"pixelated", "smooth"} },
+       },
+       cropEnabled = {
+          method = 'toggle',
+          label = 'crop',
+       },
+    },
 }
 
 -- Component management
@@ -85,6 +104,73 @@ function ImageBehavior.handlers:drawComponent(component)
 
     -- Draw!
     love.graphics.draw(image, theQuad, x, y, angle, scaleX, scaleY, 0.5 * imageWidth, 0.5 * imageHeight)
+end
+
+function ImageBehavior.getters:filter(component)
+   return component.properties.filter == "nearest" and "pixelated" or "smooth"
+end
+
+function ImageBehavior.setters:filter(component, value)
+   if value == "pixelated" then
+      component.properties.filter = "nearest"
+   elseif params.value == "smooth" then
+      component.properties.filter = "linear"
+   end
+end
+
+function ImageBehavior.setters:cropEnabled(component, newCropEnabled)
+    local newCropSize, cropSize
+    if not cropEnabled and newCropEnabled and component._imageHolder then
+        -- Reset crop size to image dimensions when enabling
+        newCropSize, cropSize = {}, {}
+        cropSize.x, cropSize.y = component.properties.cropX, component.properties.cropY
+        cropSize.width, cropSize.height =
+            component.properties.cropWidth,
+            component.properties.cropHeight
+        local image = component._imageHolder.image
+        local imageWidth, imageHeight = image:getDimensions()
+        newCropSize.x, newCropSize.y = 0, 0
+        newCropSize.width, newCropSize.height = imageWidth, imageHeight
+    end
+    self:command(
+        "change crop",
+        {
+            noCoalesce = true,
+            params = {"cropEnabled", "newCropEnabled", "cropSize", "newCropSize"}
+        },
+        function()
+            if newCropSize then
+                self:sendSetProperties(
+                    actorId,
+                    "cropX",
+                    newCropSize.x,
+                    "cropY",
+                    newCropSize.y,
+                    "cropWidth",
+                    newCropSize.width,
+                    "cropHeight",
+                    newCropSize.height
+                )
+            end
+            component.properties.cropEnabled = newCropEnabled
+        end,
+        function()
+            if cropSize then
+                self:sendSetProperties(
+                    actorId,
+                    "cropX",
+                    cropSize.x,
+                    "cropY",
+                    cropSize.y,
+                    "cropWidth",
+                    cropSize.width,
+                    "cropHeight",
+                    cropSize.height
+                )
+            end
+            component.properties.cropEnabled = newCropEnabled
+        end
+    )
 end
 
 -- UI

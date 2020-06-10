@@ -8,7 +8,14 @@ local SlidingBehavior =
     dependencies = {
         "Moving",
         "Body"
-    }
+    },
+    propertySpecs = {
+       direction = {
+          method = 'dropdown',
+          label = 'direction',
+          props = { items = {"horizontal", "vertical"} },
+       },
+    },
 }
 
 -- Methods

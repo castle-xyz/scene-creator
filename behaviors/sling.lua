@@ -8,7 +8,14 @@ local SlingBehavior =
     dependencies = {
         "Moving",
         "Body"
-    }
+    },
+    propertySpecs = {
+       speed = {
+          method = 'numberInput',
+          label = 'speed',
+          props = { min = 0, max = 10, step = 0.5 },
+       },
+    },
 }
 
 local MAX_DRAG_LENGTH = 3 * UNIT

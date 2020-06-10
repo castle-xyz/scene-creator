@@ -21,7 +21,31 @@ local BodyBehavior =
         "groundBodyId",
         "bodyId",
         "fixtureId"
-    }
+    },
+    propertySpecs = {
+       x = {
+          method = 'numberInput',
+          label = 'x',
+       },
+       y = {
+          method = 'numberInput',
+          label = 'y',
+       },
+       angle = {
+          method = 'numberInput',
+          label = 'angle (degrees)',
+       },
+       width = {
+          method = 'numberInput',
+          label = 'width',
+          props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
+       },
+       height = {
+          method = 'numberInput',
+          label = 'height',
+          props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
+       },
+    },
 }
 
 -- Behavior management
@@ -610,6 +634,34 @@ end
 
 -- Setters
 
+function BodyBehavior.setters:x(component, value)
+   local actorId = component.actorId
+   local physics, bodyId = self:getMembers(actorId)
+   physics:setX(bodyId, value)
+end
+
+function BodyBehavior.setters:y(component, value)
+   local actorId = component.actorId
+   local physics, bodyId = self:getMembers(actorId)
+   physics:setY(bodyId, value)
+end
+
+function BodyBehavior.setters:angle(component, value)
+   local actorId = component.actorId
+   local physics, bodyId = self:getMembers(actorId)
+   physics:setAngle(bodyId, value * math.pi / 180)
+end
+
+function BodyBehavior.setters:width(component, value)
+   local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
+   self:setRectangleShape(actorId, value, rectangleHeight)
+end
+
+function BodyBehavior.setters:height(component, value)
+   local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
+   self:setRectangleShape(actorId, rectangleWidth, value)
+end
+
 function BodyBehavior:setShape(componentOrActorId, newShapeId)
     local bodyId, body = self:getBody(componentOrActorId)
     local fixture = body:getFixtures()[1]
@@ -644,6 +696,34 @@ function BodyBehavior:resetShape(actorId)
 end
 
 -- Getters
+
+function BodyBehavior.getters:x(component)
+   local actorId = component.actorId
+   local physics, bodyId, body = self:getMembers(actorId)
+   return body:getX()
+end
+
+function BodyBehavior.getters:y(component)
+   local actorId = component.actorId
+   local physics, bodyId, body = self:getMembers(actorId)
+   return body:getY()
+end
+
+function BodyBehavior.getters:angle(component)
+   local actorId = component.actorId
+   local physics, bodyId, body = self:getMembers(actorId)
+   return body:getAngle() * 180 / math.pi
+end
+
+function BodyBehavior.getters:width(component)
+   local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
+   return rectangleWidth
+end
+
+function BodyBehavior.getters:height(component)
+   local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
+   return rectangleHeight
+end
 
 function BodyBehavior:getPhysics()
     return self._physics

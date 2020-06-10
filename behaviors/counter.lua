@@ -7,7 +7,24 @@ local CounterBehavior =
         "minValue",
         "maxValue"
     },
-    dependencies = {}
+    dependencies = {},
+    propertySpecs = {
+       value = {
+          method = 'numberInput',
+          label = 'value',
+          props = { step = 1 }, -- TODO: dynamic min and max
+       },
+       minValue = {
+          method = 'numberInput',
+          label = 'minimum value',
+          props = { step = 1 },
+       },
+       maxValue = {
+          method = 'numberInput',
+          label = 'maximum value',
+          props = { step = 1 },
+       },
+    },
 }
 
 -- Component management

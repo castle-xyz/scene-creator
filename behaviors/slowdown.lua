@@ -1,5 +1,4 @@
-local SlowdownBehavior =
-    defineCoreBehavior {
+local SlowdownBehavior = defineCoreBehavior {
     name = "Slowdown",
     displayName = "slowdown",
     propertyNames = {
@@ -10,7 +9,18 @@ local SlowdownBehavior =
         "Moving",
         "Body"
     },
-    setters = {}
+    propertySpecs = {
+       motionSlowdown = {
+          method = 'numberInput',
+          label = 'motion slowdown',
+          props = { min = 0 },
+       },
+       rotationSlowdown = {
+          method = 'numberInput',
+          label = 'rotation slowdown',
+          props = { min = 0 },
+       },
+    },
 }
 
 -- Methods
@@ -25,8 +35,6 @@ function SlowdownBehavior:updateJoint(component)
     component._joint:setMaxForce(math.max(0.01, 10 * component.properties.motionSlowdown))
     component._joint:setMaxTorque(math.max(0.01, 8 * component.properties.rotationSlowdown))
 end
-
--- Setters
 
 function SlowdownBehavior.setters:motionSlowdown(component, newMotionSlowdown)
     if component.properties.motionSlowdown ~= newMotionSlowdown then

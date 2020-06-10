@@ -7,7 +7,17 @@ local DrawingBehavior =
     },
     dependencies = {
         "Body"
-    }
+    },
+    propertySpecs = {
+       url = {
+          method = 'textInput',
+          label = 'url',
+       },
+       wobble = {
+          method = 'toggle',
+          label = 'wobble',
+       },
+    },
 }
 
 local ffi = require "ffi"

@@ -128,7 +128,12 @@ end
 
 function BaseBehavior:uiProperty(method, label, actorId, propertyName, opts)
     opts = opts or {}
-    local value = self.components[actorId].properties[propertyName]
+    local value
+    if self.getters[propertyName] then
+       value = self.getters[propertyName](self, self.components[actorId])
+    else
+       value = self.components[actorId].properties[propertyName]
+    end
     self:uiValue(
         method,
         label,
@@ -338,10 +343,14 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
         end
     end
 
-    -- Copy handlers and setters
+    -- Copy handlers and properties
     behavior.handlers = {}
     for handlerName, handler in pairs(behaviorSpec.handlers) do
         behavior.handlers[handlerName] = handler
+    end
+    behavior.getters = {}
+    for getterName, getter in pairs(behaviorSpec.getters) do
+       behavior.getters[getterName] = getter
     end
     behavior.setters = {}
     for setterName, setter in pairs(behaviorSpec.setters) do
