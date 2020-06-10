@@ -1,5 +1,4 @@
 local Inspector = {
-   renderTab = {},
 }
 
 function Client:_uiActorAllowsBehavior(actor, behavior)
@@ -13,52 +12,6 @@ function Client:_uiActorAllowsBehavior(actor, behavior)
       return false
    end
    return true
-end
-
-function Client:_componentInspector(actorId, component)
-    local behavior = self.behaviors[component.behaviorId]
-    local uiName = behavior:getUiName()
-
-    -- Spacer
-    ui.box('spacer', { height = 8 }, function() end)
-
-    -- Header
-    if behavior.name ~= 'Text' then
-        ui.box('header', {
-            flexDirection = 'row',
-        }, function()
-            ui.box('title', {
-                flex = 1,
-            }, function()
-                ui.markdown('## ' .. uiName)
-            end)
-            ui.button('description', {
-                margin = 0,
-                marginLeft = 6,
-                icon = 'question',
-                iconFamily = 'FontAwesome5',
-                hideLabel = true,
-                popoverAllowed = true,
-                popoverStyle = { width = 300 },
-                popover = function()
-                    ui.markdown('## ' .. uiName .. '\n' .. (behavior.description or ''))
-                end,
-            })
-            if behavior.name ~= 'Body' then
-               self:_removeBehaviorButton(actorId, component, behavior, uiName)
-            end
-        end)
-    end -- header
-
-    -- Component's UI
-    if behavior.handlers['uiComponent'] then
-       -- TODO: eliminate this
-       behavior:callHandler('uiComponent', component, {})
-    else
-       behavior:uiComponent(component)
-    end
-    
-    ui.box('spacer', { height = 8 }, function() end)
 end
 
 function Client:_removeBehaviorButton(actorId, component, behavior, uiName)
@@ -241,125 +194,6 @@ function Client:_addBehaviorButton(actor)
 
 end
 
-function Inspector:orderedComponents(components)
-    local order = {}
-    -- Sort by `behaviorId`
-    for behaviorId, component in pairs(components) do
-        local behavior = self.behaviors[behaviorId]
-        if not behavior.tool then
-            table.insert(order, component)
-        end
-    end
-    table.sort(order, function (component1, component2)
-        return component1.behaviorId < component2.behaviorId
-    end)
-    return order
-end
-
-function Inspector:tabByName(tabName)
-   for _, tab in ipairs(self.inspectorTabs) do
-      if tab.name == tabName then return tab end
-   end
-   return nil
-end
-
-function Inspector:renderBehaviors(tabName, actor)
-   local tab = Inspector.tabByName(self, tabName)
-   for _, behaviorName in ipairs(tab.behaviors) do
-      local behavior = self.behaviorsByName[behaviorName]
-      if not behavior then
-         print('tab references unknown behavior: ' .. behaviorName)
-         return
-      end
-
-      if self:_uiActorAllowsBehavior(actor, behavior) then
-          local component = actor.components[behavior.behaviorId]
-          if component then
-             ui.box('behavior-' .. behavior:getUiName(), {
-                 paddingVertical = 12,
-                 paddingHorizontal = 16,
-                 borderBottomWidth = 1,
-                 borderColor = '#ccc',
-             }, function()
-                 self:_componentInspector(actor.actorId, component)
-             end)
-          else
-             -- show a row to add component to actor
-             ui.box('behavior-' .. behavior:getUiName(), {
-                 paddingVertical = 12,
-                 paddingHorizontal = 16,
-                 borderBottomWidth = 1,
-                 borderColor = '#ccc',
-             }, function()
-                 ui.box('add-behavior-row', {
-                     flexDirection = 'row',
-                 }, function()
-                    ui.box('title', {
-                        flex = 1,
-                    }, function()
-                        ui.markdown('## ' .. behavior:getUiName())
-                    end)
-                    ui.button('add-behavior', {
-                        margin = 0,
-                        marginLeft = 6,
-                        icon = 'plus',
-                        iconFamily = 'FontAwesome5',
-                        hideLabel = true,
-                        onClick = function()
-                           self:_addBehavior(actor, behavior.behaviorId)
-                        end
-                    })
-                 end)
-                 ui.box('description', function() ui.markdown('#### ' .. (behavior.description or '')) end)
-             end)
-         end
-      end
-   end
-end
-
-function Inspector.renderTab:general(actor)
-   -- General behaviors
-   Inspector.renderBehaviors(self, 'general', actor)
-
-   -- Spacer
-   ui.box('spacer-2', { height = 8 }, function() end)
-   
-   -- Save blueprint
-   ui.box('blueprint', {
-      paddingVertical = 12,
-      paddingHorizontal = 16,
-   }, function()
-      self:_saveBlueprintButton(actor)
-   end)
-end
-
-function Inspector.renderTab:movement(actor)
-   Inspector.renderBehaviors(self, 'movement', actor)
-end
-
-function Inspector.renderTab:rules(actor)
-    -- Make sure `self.openComponentBehaviorId` is valid
-    if not self.behaviors[self.openComponentBehaviorId] then
-        self.openComponentBehaviorId = nil
-    end
-    ui.scrollBox('inspector-rules-box', function()
-        local behaviorId = self.behaviorsByName.Rules.behaviorId
-        local component = actor.components[behaviorId]
-        if component then
-           self:_componentInspector(actor.actorId, component)
-        else
-            ui.button('Add Rules', {
-                flex = 1,
-                icon = 'plus',
-                iconFamily = 'FontAwesome5',
-                onClick = function()
-                   self:_addBehavior(actor, behaviorId)
-                end,
-            })
-        end
-    end)
-end
-
 function Client:uiInspector()
    local actorId = next(self.selectedActorIds)
    if actorId then
@@ -379,12 +213,40 @@ function Client:uiInspector()
           end)
           return
       end
-      
-      local render = Inspector.renderTab[self.selectedInspectorTab]
-      if render then
-         render(self, actor)
-      else
-         Inspector.renderTab['general'](self, actor)
+
+      -- behaviors data
+      for behaviorName, behavior in pairs(self.behaviorsByName) do
+         local actions = {}
+         local properties = {}
+         local isActive = false
+         local component = actor.components[behavior.behaviorId]
+         if component then
+            isActive = true
+            for propertyName, _ in pairs(behavior.propertySpecs) do
+               actions['set:' .. propertyName] = function(value)
+                  self:sendSetProperties(actorId, propertyName, value)
+               end
+               if behavior.getters[propertyName] then
+                  properties[propertyName] = behavior.getters[propertyName](behavior, component)
+               else
+                  properties[propertyName] = component.properties[propertyName]
+               end
+            end
+            -- TODO: action to remove behavior
+         else
+            -- TODO: action to add behavior
+         end
+         ui.data(
+            {
+               name = behaviorName,
+               isActive = isActive,
+               propertySpecs = behavior.propertySpecs,
+               properties = properties,
+            },
+            {
+               actions = actions,
+            }
+         )
       end
    end
 end

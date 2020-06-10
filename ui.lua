@@ -6,29 +6,6 @@ require "ui.blueprints"
 
 function Client:startUi()
     self.updateCounts = setmetatable({}, { __mode = 'k' }) -- `actor` -> count to force UI updates
-
-    self.openComponentBehaviorId = nil -- `behaviorId` of open component section
-
-    self.selectedInspectorTab = 'general'
-
-    self.inspectorTabs = {
-       {
-          name = 'general',
-          behaviors = { 'Drawing', 'Text', 'Tags', 'Body', 'Image' },
-       },
-       {
-          name = 'movement',
-          behaviors = { 'Moving', 'Solid', 'Falling', 'CircleShape', 'Bouncy', 'Sliding', 'Slowdown', 'Friction', 'SpeedLimit', 'RotatingMotion', 'Sling', 'Drag' },
-       },
-       {
-          name = 'rules',
-       },
-    }
-
-    if NEW_DRAW_TOOL then
-      table.insert(self.inspectorTabs[1].behaviors, 'Drawing2')
-    end
-
     self.saveBlueprintDatas = setmetatable({}, { __mode = 'k' }) -- `actor` -> data for "save blueprint" popover
 end
 
