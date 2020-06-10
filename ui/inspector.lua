@@ -270,15 +270,24 @@ function Inspector:renderBehaviors(tabName, actor)
       if self:_uiActorAllowsBehavior(actor, behavior) then
           local component = actor.components[behavior.behaviorId]
           if component then
-             self:_componentInspector(actor.actorId, component)
+             ui.box('behavior-' .. behavior:getUiName(), {
+                 paddingVertical = 12,
+                 paddingHorizontal = 16,
+                 borderBottomWidth = 1,
+                 borderColor = '#ccc',
+             }, function()
+                 self:_componentInspector(actor.actorId, component)
+             end)
           else
              -- show a row to add component to actor
              ui.box('behavior-' .. behavior:getUiName(), {
-                 marginBottom = 16
+                 paddingVertical = 12,
+                 paddingHorizontal = 16,
+                 borderBottomWidth = 1,
+                 borderColor = '#ccc',
              }, function()
                  ui.box('add-behavior-row', {
                      flexDirection = 'row',
-                     marginBottom = 16,
                  }, function()
                     ui.box('title', {
                         flex = 1,
@@ -311,7 +320,12 @@ function Inspector.renderTab:general(actor)
    ui.box('spacer-2', { height = 8 }, function() end)
    
    -- Save blueprint
-   self:_saveBlueprintButton(actor)
+   ui.box('blueprint', {
+      paddingVertical = 12,
+      paddingHorizontal = 16,
+   }, function()
+      self:_saveBlueprintButton(actor)
+   end)
 end
 
 function Inspector.renderTab:movement(actor)
