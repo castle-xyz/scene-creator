@@ -711,8 +711,6 @@ function subpathDataIntersection(s1, s2)
                 y = s1.center.y + ((a * (s2.center.y - s1.center.y)) / d),
             }
 
-            table.insert(tempResults, p2)
-
             if h > -0.0001 and h < 0.0001 then
                 table.insert(tempResults, p2)
             else
