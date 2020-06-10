@@ -2,7 +2,7 @@ local MovingBehavior =
     defineCoreBehavior {
     name = "Moving",
     displayName = "moving",
-    propertyNames = {},
+    propertyNames = { "vx", "vy", "isRotationAllowed", "angularVelocity" },
     dependencies = {
         "Body"
     },
@@ -236,7 +236,7 @@ end
 function MovingBehavior.setters:angularVelocity(component, value)
    local actorId = component.actorId
    local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-   physics:setAngularVelocity(bodyId, params.value * math.pi / 180)
+   physics:setAngularVelocity(bodyId, value * math.pi / 180)
 end
 
 -- UI

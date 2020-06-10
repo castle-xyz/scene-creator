@@ -1,7 +1,7 @@
 local FallingBehavior = defineCoreBehavior {
     name = "Falling",
     displayName = "falling",
-    propertyNames = {},
+    propertyNames = { "gravity" },
     dependencies = {
         "Moving",
         "Body"

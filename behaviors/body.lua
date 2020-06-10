@@ -20,7 +20,12 @@ local BodyBehavior =
         "worldId",
         "groundBodyId",
         "bodyId",
-        "fixtureId"
+        "fixtureId",
+        "x",
+        "y",
+        "angle",
+        "width",
+        "height",
     },
     propertySpecs = {
        x = {
@@ -653,11 +658,13 @@ function BodyBehavior.setters:angle(component, value)
 end
 
 function BodyBehavior.setters:width(component, value)
+   local actorId = component.actorId
    local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
    self:setRectangleShape(actorId, value, rectangleHeight)
 end
 
 function BodyBehavior.setters:height(component, value)
+   local actorId = component.actorId
    local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
    self:setRectangleShape(actorId, rectangleWidth, value)
 end

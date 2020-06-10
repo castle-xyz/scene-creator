@@ -2,7 +2,7 @@ local BouncyBehavior =
     defineCoreBehavior {
     name = "Bouncy",
     displayName = "bouncy",
-    propertyNames = {},
+    propertyNames = { "bounciness" },
     dependencies = {
         "Solid",
         "Body"
