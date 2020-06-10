@@ -51,25 +51,3 @@ function FrictionBehavior.setters:friction(component, value)
    local physics, bodyId, body, fixtureId = self.dependencies.Body:getMembers(actorId)
    physics:setFriction(fixtureId, params.value)
 end
-
--- UI
-
-function FrictionBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-
-    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-    if fixture then
-        self:uiValue(
-            "numberInput",
-            "friction",
-            fixture:getFriction(),
-            {
-                props = {step = 0.05, min = 0},
-                onChange = function(params)
-                    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-                    physics:setFriction(fixtureId, params.value)
-                end
-            }
-        )
-    end
-end

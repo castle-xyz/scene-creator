@@ -7,6 +7,16 @@ local TextBehavior = defineCoreBehavior {
        'order',
     },
     dependencies = {},
+    propertySpecs = {
+       content = {
+          method = 'textArea',
+          label = 'content',
+       },
+       visible = {
+          method = 'checkbox',
+          label = 'visible',
+       },
+    },
 }
 
 
@@ -210,14 +220,6 @@ function TextBehavior.handlers:moveToBack(component)
    elseif lowerOrder == upperOrder then
       component.properties.order = component.properties.order - 1
    end
-end
-
--- UI
-
-function TextBehavior.handlers:uiComponent(component, opts)
-   local actorId = component.actorId
-   self:uiProperty('textArea', 'content', actorId, 'content')
-   self:uiProperty('checkbox', 'visible', actorId, 'visible')
 end
 
 -- Rules and triggers

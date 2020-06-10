@@ -148,6 +148,20 @@ function BaseBehavior:uiProperty(method, label, actorId, propertyName, opts)
     )
 end
 
+function BaseBehavior:uiComponent(component)
+   for propertyName, spec in pairs(self.propertySpecs) do
+      self:uiProperty(
+         spec.method,
+         spec.label,
+         component.actorId,
+         propertyName,
+         {
+            props = spec.props,
+         }
+      )
+   end
+end
+
 function BaseBehavior:onEndOfFrame(func)
     table.insert(self.game.onEndOfFrames, func)
 end
@@ -356,6 +370,7 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     for setterName, setter in pairs(behaviorSpec.setters) do
         behavior.setters[setterName] = setter
     end
+    behavior.propertySpecs = util.deepCopyTable(behaviorSpec.propertySpecs)
 
     -- Copy triggers and responses
     behavior.triggers = {}

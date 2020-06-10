@@ -80,23 +80,3 @@ function SlidingBehavior.handlers:setPerforming(newPerforming)
         end
     end
 end
-
--- UI
-
-function SlidingBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-
-    self:uiValue(
-        "dropdown",
-        "direction",
-        component.properties.direction,
-        {
-            props = {items = {"horizontal", "vertical"}},
-            onChange = function(params)
-                if params.value then
-                    self:sendSetProperties(actorId, "direction", params.value)
-                end
-            end
-        }
-    )
-end

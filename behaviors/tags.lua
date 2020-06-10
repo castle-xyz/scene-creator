@@ -92,11 +92,3 @@ function TagsBehavior:forEachActorWithTag(tag, func)
         end
     end
 end
-
--- UI
-
-function TagsBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-
-    self:uiProperty("textInput", "tags (separated by spaces)", actorId, "tagsString")
-end

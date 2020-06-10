@@ -51,7 +51,12 @@ function Client:_componentInspector(actorId, component)
     end -- header
 
     -- Component's UI
-    behavior:callHandler('uiComponent', component, {})
+    if behavior.handlers['uiComponent'] then
+       -- TODO: eliminate this
+       behavior:callHandler('uiComponent', component, {})
+    else
+       behavior:uiComponent(component)
+    end
     
     ui.box('spacer', { height = 8 }, function() end)
 end
@@ -241,7 +246,7 @@ function Inspector:orderedComponents(components)
     -- Sort by `behaviorId`
     for behaviorId, component in pairs(components) do
         local behavior = self.behaviors[behaviorId]
-        if not behavior.tool and behavior.handlers.uiComponent then
+        if not behavior.tool then
             table.insert(order, component)
         end
     end

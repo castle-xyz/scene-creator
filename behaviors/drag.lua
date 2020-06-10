@@ -126,9 +126,3 @@ function DragBehavior.handlers:drawOverlay()
         end
     end
 end
-
--- UI
-
-function DragBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-end

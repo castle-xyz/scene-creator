@@ -41,9 +41,3 @@ function SolidBehavior.handlers:removeComponent(component, opts)
         end
     end
 end
-
--- UI
-
-function SolidBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-end

@@ -51,28 +51,3 @@ function CircleShapeBehavior.getters:radius(component)
    end
    return 0
 end
-
--- UI
-
-function CircleShapeBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-    if fixture then
-        local shape = fixture:getShape()
-        if shape:getType() == "circle" then
-            self:uiValue(
-                "numberInput",
-                "radius",
-                shape:getRadius(),
-                {
-                    props = {min = 0.5 * MIN_BODY_SIZE, max = 0.5 * MAX_BODY_SIZE, decimalDigits = 1},
-                    onChange = function(params)
-                        local value = math.max(0.5 * MIN_BODY_SIZE, math.min(params.value, 0.5 * MAX_BODY_SIZE))
-                        local physics = self.dependencies.Body:getPhysics()
-                        self.dependencies.Body:setShape(actorId, physics:newCircleShape(value))
-                    end
-                }
-            )
-        end
-    end
-end

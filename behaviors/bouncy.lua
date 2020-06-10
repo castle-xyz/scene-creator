@@ -52,24 +52,3 @@ function BouncyBehavior.setters:bounciness(component, value)
    local physics, bodyId, body, fixtureId = self.dependencies.Body:getMembers(actorId)
    physics:setRestitution(fixtureId, value)
 end
-
--- UI
-
-function BouncyBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-    if fixture then
-        self:uiValue(
-            "numberInput",
-            "bounciness",
-            fixture:getRestitution(),
-            {
-                props = {step = 0.05, min = 0, max = 2},
-                onChange = function(params)
-                    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-                    physics:setRestitution(fixtureId, params.value)
-                end
-            }
-        )
-    end
-end

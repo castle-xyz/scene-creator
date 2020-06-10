@@ -135,19 +135,3 @@ function SlingBehavior.handlers:drawOverlay()
         end
     end
 end
-
--- UI
-
-function SlingBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-
-    self:uiProperty(
-        "numberInput",
-        "speed",
-        actorId,
-        "speed",
-        {
-            props = {min = 0, max = 10, step = 0.5}
-        }
-    )
-end

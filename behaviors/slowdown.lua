@@ -81,29 +81,3 @@ function SlowdownBehavior.handlers:setPerforming(newPerforming)
         end
     end
 end
-
--- UI
-
-function SlowdownBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-
-    self:uiProperty(
-        "numberInput",
-        "motion slowdown",
-        actorId,
-        "motionSlowdown",
-        {
-            props = {min = 0}
-        }
-    )
-
-    self:uiProperty(
-        "numberInput",
-        "rotation slowdown",
-        actorId,
-        "rotationSlowdown",
-        {
-            props = {min = 0}
-        }
-    )
-end

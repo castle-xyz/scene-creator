@@ -48,11 +48,3 @@ function RotatingMotionBehavior.handlers:perform(dt)
         body:setAngularVelocity(2 * math.pi * component.properties.rotationsPerSecond)
     end
 end
-
--- UI
-
-function RotatingMotionBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-
-    self:uiProperty("numberInput", "rotations per second", actorId, "rotationsPerSecond")
-end

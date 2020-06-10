@@ -50,23 +50,3 @@ function FallingBehavior.getters:gravity(component)
    local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
    return body:getGravityScale()
 end
-
--- UI
-
-function FallingBehavior.handlers:uiComponent(component, opts)
-    local actorId = component.actorId
-    local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-
-    self:uiValue(
-        "numberInput",
-        "gravity",
-        body:getGravityScale(),
-        {
-            props = {step = 0.5},
-            onChange = function(params)
-                local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-                physics:setGravityScale(bodyId, params.value)
-            end
-        }
-    )
-end
