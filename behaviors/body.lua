@@ -639,12 +639,12 @@ end
 
 function BodyBehavior.getters:width(component)
    local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
-   return rectangleWidth
+   return rectangleWidth or 0
 end
 
 function BodyBehavior.getters:height(component)
    local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
-   return rectangleHeight
+   return rectangleHeight or 0
 end
 
 function BodyBehavior:getPhysics()
