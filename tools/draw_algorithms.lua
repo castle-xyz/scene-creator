@@ -20,6 +20,54 @@ function subpathIdToSubpathStringId(subpathId)
     return subpathId.stringId
 end
 
+function directionForPathData(pathData)
+    local direction = {
+        x = pathData.points[2].x - pathData.points[1].x,
+        y = pathData.points[2].y - pathData.points[1].y,
+    }
+
+    local distance = math.sqrt(direction.x * direction.x + direction.y * direction.y)
+    direction.x = direction.x / distance
+    direction.y = direction.y / distance
+
+    return direction
+end
+
+function arePathDataDirectionsEqual(dir1, dir2)
+    return dir1.x > dir2.x - 0.001 and dir1.x < dir2.x + 0.001 and dir1.y > dir2.y - 0.001 and dir1.y < dir2.y + 0.001
+end
+
+function simplifyPathDataList(pathDataList)
+    local results = {}
+
+    local _tempPathData
+    local _currentDirection
+
+    for i = 1, #pathDataList do
+        local pathData = pathDataList[i]
+
+        local newDirection = directionForPathData(pathData)
+
+        if _tempPathData == nil then
+            _tempPathData = pathData
+            _currentDirection = directionForPathData(pathData)
+        elseif arePathDataDirectionsEqual(_currentDirection, newDirection) then
+            _tempPathData.points[2] = pathData.points[2]
+        else
+            table.insert(results, _tempPathData)
+
+            _tempPathData = pathData
+            _currentDirection = directionForPathData(pathData)
+        end
+    end
+
+    if _tempPathData ~= nil then
+        table.insert(results, _tempPathData)
+    end
+
+    return results
+end
+
 function findAllIntersections(pathDataList)
     local result = {}
 

@@ -405,7 +405,7 @@ function DrawTool.handlers:onSetActive()
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
-    _subtool = 'draw'
+    _subtool = 'pencil'
 
     _lineColor = {hexStringToRgb(DEFAULT_PALETTE[6])}
     _fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])}
@@ -455,54 +455,66 @@ function DrawTool.handlers:preUpdate(dt)
         elseif _subtool == 'pencil' then
             if _initialCoord == nil then
                 _initialCoord = roundedCoord
-                _currentDirection = nil
                 _currentPathData = nil
+                _currentPathDataList = {}
             end
 
-            if _initialCoord.x ~= roundedCoord.x or _initialCoord.y ~= roundedCoord.y then
-                local direction = {x = roundedCoord.x - _initialCoord.x, y = roundedCoord.y - _initialCoord.y}
-                local directionDist = math.sqrt(direction.x * direction.x + direction.y * direction.y)
-                direction.x = direction.x / directionDist
-                direction.y = direction.y / directionDist
+            local angle = math.atan2(touch.y - _initialCoord.y, touch.x - _initialCoord.x)
+            if angle < 0.0 then
+                angle = angle + math.pi * 2.0
+            end
+            local angleRoundedTo8Directions = math.floor((angle + (math.pi * 2.0) / (8.0 * 2.0)) * 8.0 / (math.pi * 2.0))
+            if angleRoundedTo8Directions > 7 then
+                angleRoundedTo8Directions = 0
+            end
+            local distFromOriginalPoint = math.sqrt(math.pow(touch.x - _initialCoord.x, 2.0) + math.pow(touch.y - _initialCoord.y, 2.0))
+            local newAngle = (angleRoundedTo8Directions * (math.pi * 2.0) / 8.0)
+            local direction = {x = math.cos(newAngle), y = math.sin(newAngle)}
 
-                if _currentDirection == nil then
-                    _currentDirection = direction
-                elseif _currentDirection.x ~= direction.x or _currentDirection.y ~= direction.y then
-                    -- new direction. end old line
-                    addPathData(_currentPathData)
-                    resetFill()
-                    resetGraphics()
+            local cellSize = GRID_WIDTH / GRID_SIZE
 
-                    --print('current ' .. _currentDirection.x .. ' ' .. _currentDirection.y)
-                    --print('new ' .. direction.x .. ' ' .. direction.y)
+            if distFromOriginalPoint > cellSize then
+                if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
+                    table.insert(_currentPathDataList, _currentPathData)
 
                     _initialCoord = _currentPathData.points[2]
-
-                    direction = {x = roundedCoord.x - _initialCoord.x, y = roundedCoord.y - _initialCoord.y}
-                    directionDist = math.sqrt(direction.x * direction.x + direction.y * direction.y)
-                    direction.x = direction.x / directionDist
-                    direction.y = direction.y / directionDist
-
-                    _currentDirection = direction
                 end
             end
+
+            distFromOriginalPoint = math.sqrt(math.pow(touch.x - _initialCoord.x, 2.0) + math.pow(touch.y - _initialCoord.y, 2.0)) - cellSize * 0.5
+            local newRoundedX, newRoundedY = roundGlobalCoordinatesToGrid(_initialCoord.x + direction.x * distFromOriginalPoint, _initialCoord.y + direction.y * distFromOriginalPoint)
                 
             _currentPathData = {}
-            _currentPathData.points = {_initialCoord, roundedCoord}
+            _currentPathData.points = {_initialCoord, {
+                x = newRoundedX,
+                y = newRoundedY,
+            }}
             _currentPathData.style = 1
             updatePathDataRendering(_currentPathData)
 
             if touch.released then
-                addPathData(_currentPathData)
+                if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
+                    table.insert(_currentPathDataList, _currentPathData)
+                end
+
+                local newPathDataList = simplifyPathDataList(_currentPathDataList)
+
+                for i = 1, #newPathDataList do
+                    updatePathDataRendering(newPathDataList[i])
+                    addPathData(newPathDataList[i])
+                end
                 resetFill()
                 resetGraphics()
 
                 _initialCoord = nil
-                _currentDirection = nil
                 _currentPathData = nil
+                _currentPathDataList = {}
                 _tempGraphics = nil
             else
                 resetTempGraphics()
+                for i = 1, #_currentPathDataList do
+                    _tempGraphics:addPath(_currentPathDataList[i].path)
+                end
                 _tempGraphics:addPath(_currentPathData.path)
             end
         elseif _subtool == 'move' then
@@ -775,23 +787,23 @@ function DrawTool.handlers:uiPanel()
         function()
 
             ui.toggle(
-                "line",
-                "line",
-                _subtool == 'draw',
-                {
-                    onToggle = function(newlineEnabled)
-                        _subtool = 'draw'
-                    end
-                }
-            )
-
-            ui.toggle(
                 "pencil",
                 "pencil",
                 _subtool == 'pencil',
                 {
                     onToggle = function(newlineEnabled)
                         _subtool = 'pencil'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "line",
+                "line",
+                _subtool == 'draw',
+                {
+                    onToggle = function(newlineEnabled)
+                        _subtool = 'draw'
                     end
                 }
             )
