@@ -196,7 +196,7 @@ local function getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2Fa
     return slabIntersections
 end
 
-function colorAllSlabs(slabsList, pathDataList, minY, maxY, coloredSubpathIds, newFaces, newColoredSubpathIds, cellSize, color)
+function colorAllSlabs(slabsList, pathDataList, minY, maxY, coloredSubpathIds, newFaces, newColoredSubpathIds, cellSize)
     local currentFaces = {}
 
     for i = 1, #slabsList - 1 do
@@ -307,7 +307,7 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, coloredSubpathIds, n
                 findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                     x = middleX,
                     y = middleY,
-                }, tempNewFaces, tempNewColoredSubpathIds, currentFaces, cellSize, color)
+                }, tempNewFaces, tempNewColoredSubpathIds, currentFaces, cellSize)
 
 
                 for i = 1, #tempNewFaces do
@@ -323,7 +323,7 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, coloredSubpathIds, n
 end
 
 -- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
-function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, newColoredSubpathIds, currentFaces, cellSize, color)
+function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, newColoredSubpathIds, currentFaces, cellSize)
     --table.insert(_FACE_POINTS, point.x)
     --table.insert(_FACE_POINTS, point.y)
 
@@ -408,18 +408,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local topSubpath = idToSubpath(pathDataList, topSubpathId)
     local bottomSubpath = idToSubpath(pathDataList, bottomSubpathId)
 
-    local fillSubpath = tove.newSubpath()
-    local fillPath = tove.newPath()
-    fillPath:addSubpath(fillSubpath)
-    fillPath:setFillColor(color[1], color[2], color[3], 1.0)
-
-    if DEBUG_FLOOD_FILL then
-        fillPath:setLineColor(1.0, 0.0, 0.0, 1.0)
-        fillPath:setLineWidth(0.02)
-        fillPath:setMiterLimit(1)
-        fillPath:setLineJoin("round")
-    end
-
+    local points = {}
     
     local topLeftIntersections = subpathDataIntersection(topSubpath, slab1FakeSubpath)
     if #topLeftIntersections == 0 then
@@ -427,9 +416,12 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     end
     local topLeftX = topLeftIntersections[1].x
     local topLeftY = topLeftIntersections[1].y
-    fillSubpath:moveTo(topLeftIntersections[1].x, topLeftIntersections[1].y)
+    table.insert(points, {
+        x = topLeftIntersections[1].x,
+        y = topLeftIntersections[1].y,
+    })
 
-    cutSubpathData(topSubpath, fillSubpath, slab1.x, slab2.x, minY, maxY, true)
+    cutSubpathData(topSubpath, points, slab1.x, slab2.x, minY, maxY, true)
 
     local topRightIntersections = subpathDataIntersection(topSubpath, slab2FakeSubpath)
     if #topRightIntersections == 0 then
@@ -437,7 +429,10 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     end
     local topRightX = topRightIntersections[1].x
     local topRightY = topRightIntersections[1].y
-    fillSubpath:lineTo(topRightIntersections[1].x, topRightIntersections[1].y)
+    table.insert(points, {
+        x = topRightIntersections[1].x,
+        y = topRightIntersections[1].y,
+    })
 
 
 
@@ -449,10 +444,13 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     end
     local bottomRightX = bottomRightIntersections[1].x
     local bottomRightY = bottomRightIntersections[1].y
-    fillSubpath:lineTo(bottomRightIntersections[1].x, bottomRightIntersections[1].y)
+    table.insert(points, {
+        x = bottomRightIntersections[1].x,
+        y = bottomRightIntersections[1].y,
+    })
 
 
-    cutSubpathData(bottomSubpath, fillSubpath, slab1.x, slab2.x, minY, maxY, false)
+    cutSubpathData(bottomSubpath, points, slab1.x, slab2.x, minY, maxY, false)
 
     local bottomLeftIntersections = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
     if #bottomLeftIntersections == 0 then
@@ -460,15 +458,16 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     end
     local bottomLeftX = bottomLeftIntersections[1].x
     local bottomLeftY = bottomLeftIntersections[1].y
-    fillSubpath:lineTo(bottomLeftIntersections[1].x, bottomLeftIntersections[1].y)
+    table.insert(points, {
+        x = bottomLeftIntersections[1].x,
+        y = bottomLeftIntersections[1].y,
+    })
 
 
-
-    fillSubpath.isClosed = true
 
     table.insert(newFaces, {
         id = faceId,
-        face = fillPath
+        points = points
     })
     table.insert(newColoredSubpathIds, 'slab:' .. slab1.id .. ' subpath:' .. subpathIdToSubpathStringId(topSubpathId) .. ' below and right')
     table.insert(newColoredSubpathIds, 'slab:' .. slab1.id .. ' subpath:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' above and right')
@@ -506,7 +505,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topLeftX - cellSize * offsetX,
                 y = y,
-            }, newFaces, newColoredSubpathIds, currentFaces, cellSize, color) then
+            }, newFaces, newColoredSubpathIds, currentFaces, cellSize) then
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
                 end
@@ -542,7 +541,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topRightX + cellSize * offsetX,
                 y = y,
-            }, newFaces, newColoredSubpathIds, currentFaces, cellSize, color) then
+            }, newFaces, newColoredSubpathIds, currentFaces, cellSize) then
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
                 end
@@ -871,7 +870,7 @@ local function radianAngleQuadrant(angle)
     return math.floor(normalizeRadianAngle(angle) / (math.pi / 2.0)) + 1
 end
 
-function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, leftToRight)
+function cutSubpathData(subpathData, points, x1, x2, minY, maxY, leftToRight)
     local x1FakeSubpath = {
         type = "line",
         p1 = {
@@ -937,7 +936,10 @@ function cutSubpathData(subpathData, newSubpath, x1, x2, minY, maxY, leftToRight
             }
 
             local xIntersections = subpathDataIntersection(subpathData, fakeSubpath)
-            newSubpath:lineTo(xIntersections[1].x, xIntersections[1].y)
+            table.insert(points, {
+                x = xIntersections[1].x,
+                y = xIntersections[1].y,
+            })
 
             currentX = currentX + xStep
         end

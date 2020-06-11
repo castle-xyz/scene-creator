@@ -57,6 +57,8 @@ require "behaviors.tags"
 require "behaviors.counter"
 require "behaviors.text"
 
+require "behaviors.drawing2"
+
 require "tools.grab"
 
 require "tools.drawUtils"

@@ -26,6 +26,11 @@ The source image can be **cropped** to only use a part of it.
 Represents the actor **visually** with a drawing. You can make your own drawing or edit the current one with the **draw tool** (the pencil icon).
             ]]
         },
+        Drawing2 = {
+            description = [[
+Represents the actor **visually** with a drawing. You can make your own drawing or edit the current one with the **draw tool** (the pencil icon).
+            ]]
+        },
         CircleShape = {
             description = [[
 Gives the actor a **circular collision** shape instead of the default rectangular one.

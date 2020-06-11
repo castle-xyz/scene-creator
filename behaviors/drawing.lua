@@ -304,7 +304,11 @@ function DrawingBehavior.handlers:drawComponent(component)
     local graphics, flipbook, graphicsWidth, graphicsHeight
 
     -- Check if the draw tool is acting on us
-    local drawComponent = self.dependents.Draw:get(component.actorId)
+    local drawComponent = nil
+    if not NEW_DRAW_TOOL then
+        drawComponent = self.dependents.Draw:get(component.actorId)
+    end
+
     if drawComponent and drawComponent._graphics then
         graphics = drawComponent._graphics
         graphicsWidth, graphicsHeight = drawComponent._graphicsWidth, drawComponent._graphicsHeight
