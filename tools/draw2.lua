@@ -120,7 +120,7 @@ end
 
 function DrawTool:saveDrawing(commandDescription, c)
     local actorId = c.actorId
-    local newData = self.dependencies.Drawing2:serialize(GRID_WIDTH, _drawData:serialize())
+    local newData = self.dependencies.Drawing2:serialize(DEFAULT_VIEW_WIDTH, _drawData:serialize())
     c._lastData = newData -- Prevent reloading since we're already in sync
     local oldData = self.dependencies.Drawing2:get(actorId).properties.data
     self.dependencies.Drawing2:command(
@@ -468,6 +468,8 @@ function DrawTool.handlers:drawOverlay()
         return
     end
 
+
+    love.graphics.push()
     love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b)
 
     love.graphics.setColor(1, 1, 1, 1)
@@ -532,6 +534,8 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.setPointSize(30.0)
         love.graphics.points(_FACE_POINTS)
     end
+
+    love.graphics.pop()
 end
 
 -- UI
