@@ -14,7 +14,7 @@ function Client:startUi()
     self.inspectorTabs = {
        {
           name = 'general',
-          behaviors = { 'Drawing', 'Text', 'Tags', 'Body' },
+          behaviors = { 'Drawing', 'Text', 'Tags', 'Body', 'Image' },
        },
        {
           name = 'movement',
