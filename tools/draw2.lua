@@ -353,7 +353,7 @@ function DrawTool.handlers:update(dt)
                 _grabbedPaths[i].points[_grabbedPaths[i].grabPointIndex].x = roundedX
                 _grabbedPaths[i].points[_grabbedPaths[i].grabPointIndex].y = roundedY
 
-                updatePathDataRendering(_grabbedPaths[i])
+                _grabbedPaths[i].tovePath = nil
             end
 
             if touch.released then
@@ -373,6 +373,7 @@ function DrawTool.handlers:update(dt)
                 resetTempGraphics()
 
                 for i = 1, #_grabbedPaths do
+                    updatePathDataRendering(_grabbedPaths[i])
                     _tempGraphics:addPath(_grabbedPaths[i].tovePath)
                 end
             end
@@ -420,11 +421,12 @@ function DrawTool.handlers:update(dt)
                 _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
             end
 
+            -- todo only save when there's a change
             _drawData:resetGraphics()
             self:saveDrawing("fill", c)
         elseif _subtool == 'erase line' then
             for i = 1, #_drawData.pathDataList do
-                if _drawData.pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
+                if _drawData.pathDataList[i].tovePath:nearest(touch.x, touch.y, 0.5) then
                     removePathData(_drawData.pathDataList[i])
                     _drawData:resetFill()
                     _drawData:resetGraphics()
@@ -455,6 +457,7 @@ function DrawTool.handlers:update(dt)
                 _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
             end
 
+            -- todo only save when there's a change
             _drawData:resetGraphics()
             self:saveDrawing("erase fill", c)
         end
@@ -673,6 +676,17 @@ function DrawTool.handlers:uiPanel()
                 }
             )
         end
+    )
+
+    ui.toggle(
+        "debug",
+        "debug",
+        DEBUG_FLOOD_FILL,
+        {
+            onToggle = function(enabled)
+                DEBUG_FLOOD_FILL = enabled
+            end
+        }
     )
 end
 

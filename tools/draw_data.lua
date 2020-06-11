@@ -290,7 +290,7 @@ function DrawData:new(obj)
         obj = {}
     end
 
-    print(inspect(obj))
+    --print(inspect(obj))
 
     local newObj = {
         _graphics = nil,
@@ -348,7 +348,7 @@ function DrawData:graphics()
 
         self._graphics = tove.newGraphics()
         self._graphics:setDisplay("mesh", 1024)
-        --_SLABS = findAllSlabs(_pathDataList)
+        _SLABS = findAllSlabs(self.pathDataList)
 
         if not DEBUG_FLOOD_FILL then
             for i = 1, #self.floodFillFaceDataList do
