@@ -50,7 +50,6 @@ local _drawData
 
 local _initialCoord
 local _currentPathData
-local _graphics
 
 local _tempGraphics
 local _subtool
@@ -119,13 +118,9 @@ local function resetTempGraphics()
     _tempGraphics:setDisplay("mesh", 1024)
 end
 
-local function resetGraphics()
-    _graphics = graphicsForDrawData(_drawData)
-end
-
 function DrawTool:saveDrawing(commandDescription, c)
     local actorId = c.actorId
-    local newData = self.dependencies.Drawing2:serialize(GRID_WIDTH, _graphics, _drawData:serialize())
+    local newData = self.dependencies.Drawing2:serialize(GRID_WIDTH, _drawData:serialize())
     c._lastData = newData -- Prevent reloading since we're already in sync
     local oldData = self.dependencies.Drawing2:get(actorId).properties.data
     self.dependencies.Drawing2:command(
@@ -163,8 +158,6 @@ function DrawTool.handlers:onSetActive()
     _initialCoord = nil
     _tempGraphics = nil
     _subtool = 'pencil'
-
-    resetGraphics()
 end
 
 function DrawTool.handlers:preUpdate(dt)
@@ -198,8 +191,7 @@ function DrawTool.handlers:update(dt)
         end
 
         c._lastData = drawingComponent.properties.data
-        _drawData = DrawData:new(cacheEntry.data)
-        resetGraphics()
+        _drawData = cacheEntry.drawData
     end
 
 
@@ -221,8 +213,8 @@ function DrawTool.handlers:update(dt)
 
             if touch.released then
                 addPathData(pathData)
-                resetFill(_drawData)
-                resetGraphics()
+                _drawData:resetFill()
+                _drawData:resetGraphics()
                 self:saveDrawing("line", c)
 
                 _initialCoord = nil
@@ -283,8 +275,8 @@ function DrawTool.handlers:update(dt)
                     newPathDataList[i].tovePath = nil
                     addPathData(newPathDataList[i])
                 end
-                resetFill(_drawData)
-                resetGraphics()
+                _drawData:resetFill()
+                _drawData:resetGraphics()
                 self:saveDrawing("pencil", c)
 
                 _initialCoord = nil
@@ -353,7 +345,7 @@ function DrawTool.handlers:update(dt)
                 end
 
                 if #_grabbedPaths > 0 then
-                    resetGraphics()
+                    _drawData:resetGraphics()
                 end
             end
 
@@ -370,8 +362,8 @@ function DrawTool.handlers:update(dt)
                         addPathData(_grabbedPaths[i])
                     end
 
-                    resetFill(_drawData)
-                    resetGraphics()
+                    _drawData:resetFill()
+                    _drawData:resetGraphics()
                     self:saveDrawing("move", c)
                 end
 
@@ -394,8 +386,8 @@ function DrawTool.handlers:update(dt)
                         end
                         _drawData.pathDataList[i].tovePath = nil -- reset rendering
 
-                        resetFill(_drawData)
-                        resetGraphics()
+                        _drawData:resetFill()
+                        _drawData:resetGraphics()
                         self:saveDrawing("bend", c)
 
                         break
@@ -428,14 +420,14 @@ function DrawTool.handlers:update(dt)
                 _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
             end
 
-            resetGraphics()
+            _drawData:resetGraphics()
             self:saveDrawing("fill", c)
         elseif _subtool == 'erase line' then
             for i = 1, #_drawData.pathDataList do
                 if _drawData.pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
                     removePathData(_drawData.pathDataList[i])
-                    resetFill(_drawData)
-                    resetGraphics()
+                    _drawData:resetFill()
+                    _drawData:resetGraphics()
                     self:saveDrawing("erase line", c)
                     break
                 end
@@ -463,7 +455,7 @@ function DrawTool.handlers:update(dt)
                 _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
             end
 
-            resetGraphics()
+            _drawData:resetGraphics()
             self:saveDrawing("erase fill", c)
         end
     end
@@ -499,7 +491,7 @@ function DrawTool.handlers:drawOverlay()
 
     love.graphics.setColor(1, 1, 1, 1)
 
-    _graphics:draw()
+    _drawData:graphics():draw()
 
     if _tempGraphics ~= nil then
         _tempGraphics:draw()
