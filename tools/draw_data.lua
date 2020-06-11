@@ -44,8 +44,8 @@ function DrawData:updateFloodFillFaceDataRendering(floodFillFaceData)
     fillPath:setFillColor(self.fillColor[1], self.fillColor[2], self.fillColor[3], 1.0)
 
     if DEBUG_FLOOD_FILL then
-        fillPath:setLineColor(1.0, 0.0, 0.0, 1.0)
-        fillPath:setLineWidth(0.2)
+        fillPath:setLineColor(1.0, 0.0, 1.0, 1.0)
+        fillPath:setLineWidth(0.02)
         fillPath:setMiterLimit(1)
         fillPath:setLineJoin("round")
     end

@@ -500,7 +500,9 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         end
     end
 
-    local y = topLeftIntersections[1].y + cellSize * 0.5
+    print('offsetx: ' .. offsetX)
+
+    local y = topLeftIntersections[1].y + cellSize * 0.1
     while y < bottomLeftY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
             x = topLeftX - offsetX,
@@ -509,10 +511,13 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             x = topLeftX + myOffsetX,
             y = y,
         }) then
+
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
-                x = topLeftX - cellSize * offsetX,
+                x = topLeftX - offsetX * 0.5,
                 y = y,
             }, newFaces, newColoredSubpathIds, currentFaces, cellSize) then
+                table.insert(_FACE_POINTS, topLeftX - offsetX)
+                table.insert(_FACE_POINTS, y)
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
                 end
@@ -520,14 +525,12 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
                     newColoredSubpathIds[k] = nil
                 end
                 print('return 7')
-                table.insert(_FACE_POINTS, topLeftX - offsetX)
-                table.insert(_FACE_POINTS, y)
 
                 return false
             end
         end
 
-        y = y + cellSize * 0.5
+        y = y + cellSize * 0.1
     end
     
 
@@ -540,7 +543,9 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         end
     end
 
-    y = topRightY + cellSize * 0.5
+    print('offsetx: ' .. offsetX)
+
+    y = topRightY + cellSize * 0.1
     while y < bottomRightY do
         if not doesLineIntersectWithAnyPath(pathDataList, {
             x = topRightX - myOffsetX,
@@ -549,8 +554,9 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             x = topRightX + offsetX,
             y = y,
         }) then
+
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
-                x = topRightX + cellSize * offsetX,
+                x = topRightX + offsetX * 0.5,
                 y = y,
             }, newFaces, newColoredSubpathIds, currentFaces, cellSize) then
                 for k in pairs(newFaces) do
@@ -559,15 +565,15 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
                 for k in pairs(newColoredSubpathIds) do
                     newColoredSubpathIds[k] = nil
                 end
-                print('return 8')
-                table.insert(_FACE_POINTS, topRightX - myOffsetX)
+                table.insert(_FACE_POINTS, topRightX + offsetX)
                 table.insert(_FACE_POINTS, y)
+                print('return 8')
 
                 return false
             end
         end
 
-        y = y + cellSize * 0.5
+        y = y + cellSize * 0.1
     end
 
     return true
@@ -602,19 +608,20 @@ function findAllSlabs(pathDataList)
     table.sort(tempSlabs, function (a, b) return a.x < b.x end)
 
     local slabs = {}
-    local hash = {}
 
     -- dedup
     -- TODO: not sure exactly how we should handle ids here. just using the first might be stable enough?
     for i = 1, #tempSlabs do
-        if hash[tempSlabs[i].x] then
-            table.insert(slabs[hash[tempSlabs[i].x]].points, tempSlabs[i].points[1])
+        local prevSlab = slabs[#slabs]
+
+        if prevSlab and tempSlabs[i].x < prevSlab.x + 0.0001 and tempSlabs[i].x > prevSlab.x - 0.0001 then
+            table.insert(prevSlab.points, tempSlabs[i].points[1])
         else
             table.insert(slabs, tempSlabs[i])
-            hash[tempSlabs[i].x] = #slabs
         end
     end
 
+    print(inspect(slabs))
     return slabs
 end
 

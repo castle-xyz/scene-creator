@@ -374,7 +374,7 @@ function DrawTool.handlers:update(dt)
 ------ create set of all verices added for an entire flood fill and use that as the key. check for the same 3 verteces in a row
 
 
-            _FACE_POINTS = {}
+            --_FACE_POINTS = {}
             local newFaces = {}
             local newColoredSubpathIds = {}
             local currentFaces = {}
