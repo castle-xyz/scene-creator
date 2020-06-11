@@ -1,8 +1,10 @@
 
-GRID_HORIZONTAL_PADDING = 0--0.05 * DEFAULT_VIEW_WIDTH
-GRID_TOP_PADDING = 0--0.1 * DEFAULT_VIEW_WIDTH
-GRID_SIZE = 15
+GRID_HORIZONTAL_PADDING = 0.05 * DEFAULT_VIEW_WIDTH
+GRID_TOP_PADDING = 0.1 * DEFAULT_VIEW_WIDTH
 GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
+
+DRAW_DATA_SCALE = 10.0
+
 BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
 
 require('tools.draw_algorithms')
@@ -46,6 +48,7 @@ we use the same system but in radians
 
 -- Behavior management
 
+local _viewTransform = love.math.newTransform()
 local _drawData
 
 local _initialCoord
@@ -63,38 +66,6 @@ end
 
 
 
-local function globalToGridCoordinates(x, y)
-    local gridX = 1.0 + (GRID_SIZE - 1) * (x - GRID_HORIZONTAL_PADDING) / GRID_WIDTH
-    local gridY = 1.0 + (GRID_SIZE - 1) * (y - GRID_TOP_PADDING) / GRID_WIDTH
-    return gridX, gridY
-end
-
-local function gridToGlobalCoordinates(x, y)
-    local globalX = GRID_HORIZONTAL_PADDING + ((x - 1.0) * GRID_WIDTH / (GRID_SIZE - 1))
-    local globalY = GRID_TOP_PADDING + ((y - 1.0) * GRID_WIDTH / (GRID_SIZE - 1))
-    return globalX, globalY
-end
-
-local function roundGlobalCoordinatesToGrid(x, y)
-    local gridX, gridY = globalToGridCoordinates(x, y)
-
-    gridX = math.floor(gridX + 0.5)
-    gridY = math.floor(gridY + 0.5)
-
-    if gridX <= 0 then
-        gridX = 1
-    elseif gridX > GRID_SIZE then
-        gridX = GRID_SIZE
-    end
-
-    if gridY <= 0 then
-        gridY = 1
-    elseif gridY > GRID_SIZE then
-        gridY = GRID_SIZE
-    end
-
-    return gridToGlobalCoordinates(gridX, gridY)
-end
 
 
 local function addPathData(pathData)
@@ -120,7 +91,7 @@ end
 
 function DrawTool:saveDrawing(commandDescription, c)
     local actorId = c.actorId
-    local newData = self.dependencies.Drawing2:serialize(DEFAULT_VIEW_WIDTH, _drawData:serialize())
+    local newData = self.dependencies.Drawing2:serialize(_drawData:serialize())
     c._lastData = newData -- Prevent reloading since we're already in sync
     local oldData = self.dependencies.Drawing2:get(actorId).properties.data
     self.dependencies.Drawing2:command(
@@ -185,13 +156,13 @@ function DrawTool.handlers:update(dt)
 
     local drawingComponent = self.dependencies.Drawing2:get(c.actorId)
     if c._lastData ~= drawingComponent.properties.data then
-        local cacheEntry = self.dependencies.Drawing2:cacheDrawing(drawingComponent.properties.data)
-        if not cacheEntry then
+        local cacheDrawData = self.dependencies.Drawing2:cacheDrawing(drawingComponent.properties.data)
+        if not cacheDrawData then
             return
         end
 
         c._lastData = drawingComponent.properties.data
-        _drawData = cacheEntry.drawData
+        _drawData = cacheDrawData
     end
 
 
@@ -199,7 +170,9 @@ function DrawTool.handlers:update(dt)
     if touchData.numTouches == 1 and touchData.maxNumTouches == 1 then
         -- Get the single touch
         local touchId, touch = next(touchData.touches)
-        local roundedX, roundedY = roundGlobalCoordinatesToGrid(touch.x, touch.y)
+        local touchX, touchY = _viewTransform:inverseTransformPoint(touch.x, touch.y)
+
+        local roundedX, roundedY = _drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
         local roundedCoord = {x = roundedX, y = roundedY}
 
         if _subtool == 'draw' then
@@ -221,7 +194,7 @@ function DrawTool.handlers:update(dt)
                 _tempGraphics = nil
             else
                 resetTempGraphics()
-                updatePathDataRendering(pathData)
+                _drawData:updatePathDataRendering(pathData)
                 _tempGraphics:addPath(pathData.tovePath)
             end
         elseif _subtool == 'pencil' then
@@ -231,7 +204,7 @@ function DrawTool.handlers:update(dt)
                 _currentPathDataList = {}
             end
 
-            local angle = math.atan2(touch.y - _initialCoord.y, touch.x - _initialCoord.x)
+            local angle = math.atan2(touchY - _initialCoord.y, touchX - _initialCoord.x)
             if angle < 0.0 then
                 angle = angle + math.pi * 2.0
             end
@@ -239,11 +212,11 @@ function DrawTool.handlers:update(dt)
             if angleRoundedTo8Directions > 7 then
                 angleRoundedTo8Directions = 0
             end
-            local distFromOriginalPoint = math.sqrt(math.pow(touch.x - _initialCoord.x, 2.0) + math.pow(touch.y - _initialCoord.y, 2.0))
+            local distFromOriginalPoint = math.sqrt(math.pow(touchX - _initialCoord.x, 2.0) + math.pow(touchY - _initialCoord.y, 2.0))
             local newAngle = (angleRoundedTo8Directions * (math.pi * 2.0) / 8.0)
             local direction = {x = math.cos(newAngle), y = math.sin(newAngle)}
 
-            local cellSize = GRID_WIDTH / GRID_SIZE
+            local cellSize = DRAW_DATA_SCALE / _drawData.gridSize
 
             if distFromOriginalPoint > cellSize then
                 if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
@@ -253,8 +226,8 @@ function DrawTool.handlers:update(dt)
                 end
             end
 
-            distFromOriginalPoint = math.sqrt(math.pow(touch.x - _initialCoord.x, 2.0) + math.pow(touch.y - _initialCoord.y, 2.0)) - cellSize * 0.5
-            local newRoundedX, newRoundedY = roundGlobalCoordinatesToGrid(_initialCoord.x + direction.x * distFromOriginalPoint, _initialCoord.y + direction.y * distFromOriginalPoint)
+            distFromOriginalPoint = math.sqrt(math.pow(touchX - _initialCoord.x, 2.0) + math.pow(touchY - _initialCoord.y, 2.0)) - cellSize * 0.5
+            local newRoundedX, newRoundedY = _drawData:roundGlobalCoordinatesToGrid(_initialCoord.x + direction.x * distFromOriginalPoint, _initialCoord.y + direction.y * distFromOriginalPoint)
                 
             _currentPathData = {}
             _currentPathData.points = {_initialCoord, {
@@ -262,7 +235,7 @@ function DrawTool.handlers:update(dt)
                 y = newRoundedY,
             }}
             _currentPathData.style = 1
-            updatePathDataRendering(_currentPathData)
+            _drawData:updatePathDataRendering(_currentPathData)
 
             if touch.released then
                 if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
@@ -311,11 +284,11 @@ function DrawTool.handlers:update(dt)
                 if #_grabbedPaths == 0 then
                     for i = 1, #_drawData.pathDataList do
                         local pathData = _drawData.pathDataList[i]
-                        local distance, t, subpath = pathData.tovePath:nearest(touch.x, touch.y, 0.5)
+                        local distance, t, subpath = pathData.tovePath:nearest(touchX, touchY, 0.5)
                         if subpath then
                             local pointX, pointY = subpath:position(t)
                             removePathData(pathData)
-                            local touchPoint = {x = touch.x, y = touch.y}
+                            local touchPoint = {x = touchX, y = touchY}
 
                             -- todo: figure out path ids here
                             local newPathData1 = {
@@ -373,14 +346,14 @@ function DrawTool.handlers:update(dt)
                 resetTempGraphics()
 
                 for i = 1, #_grabbedPaths do
-                    updatePathDataRendering(_grabbedPaths[i])
+                    _drawData:updatePathDataRendering(_grabbedPaths[i])
                     _tempGraphics:addPath(_grabbedPaths[i].tovePath)
                 end
             end
         elseif _subtool == 'bend' then
             if touch.released then
                 for i = 1, #_drawData.pathDataList do
-                    if _drawData.pathDataList[i].tovePath:nearest(touch.x, touch.y, 0.5) then
+                    if _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
                         _drawData.pathDataList[i].style = _drawData.pathDataList[i].style + 1
                         if _drawData.pathDataList[i].style > 3 then
                             _drawData.pathDataList[i].style = 1
@@ -408,25 +381,27 @@ function DrawTool.handlers:update(dt)
                 currentFaces[_drawData.floodFillFaceDataList[i].id] = true
             end
 
-            findFaceForPoint(_SLABS, _drawData.pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
-                x = touch.x,
-                y = touch.y
-            }, newFaces, newColoredSubpathIds, currentFaces, GRID_WIDTH / GRID_SIZE)
+            findFaceForPoint(_SLABS, _drawData.pathDataList, 0, 0 + _drawData.gridSize, {
+                x = touchX,
+                y = touchY
+            }, newFaces, newColoredSubpathIds, currentFaces, DRAW_DATA_SCALE / _drawData.gridSize)
 
-            for i = 1, #newFaces do
-                table.insert(_drawData.floodFillFaceDataList, newFaces[i])
+            if #newFaces > 0 then
+                for i = 1, #newFaces do
+                    table.insert(_drawData.floodFillFaceDataList, newFaces[i])
+                end
+
+                for i = 1, #newColoredSubpathIds do
+                    _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
+                end
+
+                -- todo only save when there's a change
+                _drawData:resetGraphics()
+                self:saveDrawing("fill", c)
             end
-
-            for i = 1, #newColoredSubpathIds do
-                _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
-            end
-
-            -- todo only save when there's a change
-            _drawData:resetGraphics()
-            self:saveDrawing("fill", c)
         elseif _subtool == 'erase line' then
             for i = 1, #_drawData.pathDataList do
-                if _drawData.pathDataList[i].tovePath:nearest(touch.x, touch.y, 0.5) then
+                if _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
                     removePathData(_drawData.pathDataList[i])
                     _drawData:resetFill()
                     _drawData:resetGraphics()
@@ -440,26 +415,28 @@ function DrawTool.handlers:update(dt)
             local newColoredSubpathIds = {}
             local currentFaces = {}
 
-            findFaceForPoint(_SLABS, _drawData.pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
-                x = touch.x,
-                y = touch.y
-            }, newFaces, newColoredSubpathIds, currentFaces, GRID_WIDTH / GRID_SIZE)
+            findFaceForPoint(_SLABS, _drawData.pathDataList, 0, 0 + _drawData.gridSize, {
+                x = touchX,
+                y = touchY
+            }, newFaces, newColoredSubpathIds, currentFaces, DRAW_DATA_SCALE / _drawData.gridSize)
 
-            for i = 1, #newFaces do
-                for j = #_drawData.floodFillFaceDataList, 1, -1 do
-                    if _drawData.floodFillFaceDataList[j].id == newFaces[i].id then
-                        table.remove(_drawData.floodFillFaceDataList, j)
+            if #newFaces > 0 then
+                for i = 1, #newFaces do
+                    for j = #_drawData.floodFillFaceDataList, 1, -1 do
+                        if _drawData.floodFillFaceDataList[j].id == newFaces[i].id then
+                            table.remove(_drawData.floodFillFaceDataList, j)
+                        end
                     end
                 end
-            end
 
-            for i = 1, #newColoredSubpathIds do
-                _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
-            end
+                for i = 1, #newColoredSubpathIds do
+                    _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
+                end
 
-            -- todo only save when there's a change
-            _drawData:resetGraphics()
-            self:saveDrawing("erase fill", c)
+                -- todo only save when there's a change
+                _drawData:resetGraphics()
+                self:saveDrawing("erase fill", c)
+            end
         end
     end
 end
@@ -473,6 +450,12 @@ function DrawTool.handlers:drawOverlay()
 
 
     love.graphics.push()
+
+    _viewTransform:reset()
+    _viewTransform:translate(GRID_HORIZONTAL_PADDING, GRID_TOP_PADDING)
+    _viewTransform:scale(GRID_WIDTH / DRAW_DATA_SCALE)
+    love.graphics.applyTransform(_viewTransform)
+
     love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b)
 
     love.graphics.setColor(1, 1, 1, 1)
@@ -483,9 +466,9 @@ function DrawTool.handlers:drawOverlay()
 
         local points = {}
 
-        for x = 1, GRID_SIZE do
-            for y = 1, GRID_SIZE do
-                local globalX, globalY = gridToGlobalCoordinates(x, y)
+        for x = 1, _drawData.gridSize do
+            for y = 1, _drawData.gridSize do
+                local globalX, globalY = _drawData:gridToGlobalCoordinates(x, y)
                 table.insert(points, globalX)
                 table.insert(points, globalY)
             end
@@ -522,7 +505,7 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.setLineWidth(0.1)
         local slabPoints = {}
         for i = 1, #_SLABS do
-            love.graphics.line(_SLABS[i].x, GRID_TOP_PADDING, _SLABS[i].x, GRID_TOP_PADDING + GRID_SIZE)
+            love.graphics.line(_SLABS[i].x, 0, _SLABS[i].x, 0 + _drawData.gridSize)
             for j = 1, #_SLABS[i].points do
                 table.insert(slabPoints, _SLABS[i].x)
                 table.insert(slabPoints, _SLABS[i].points[j].y)
@@ -664,10 +647,10 @@ function DrawTool.handlers:uiPanel()
             justifyContent = "flex-end"
         },
         function()
-            GRID_SIZE =
+            _drawData.gridSize =
                 ui.numberInput(
                 "grid size",
-                GRID_SIZE,
+                _drawData.gridSize,
                 {
                     hideLabel = false,
                     min = 3,

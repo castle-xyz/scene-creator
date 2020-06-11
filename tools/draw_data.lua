@@ -1,5 +1,38 @@
 DrawData = {}
 
+function DrawData:globalToGridCoordinates(x, y)
+    local gridX = 1.0 + (self.gridSize - 1) * x / DRAW_DATA_SCALE
+    local gridY = 1.0 + (self.gridSize - 1) * y / DRAW_DATA_SCALE
+    return gridX, gridY
+end
+
+function DrawData:gridToGlobalCoordinates(x, y)
+    local globalX = (x - 1.0) * DRAW_DATA_SCALE / (self.gridSize - 1)
+    local globalY = (y - 1.0) * DRAW_DATA_SCALE / (self.gridSize - 1)
+    return globalX, globalY
+end
+
+function DrawData:roundGlobalCoordinatesToGrid(x, y)
+    local gridX, gridY = self:globalToGridCoordinates(x, y)
+
+    gridX = math.floor(gridX + 0.5)
+    gridY = math.floor(gridY + 0.5)
+
+    if gridX <= 0 then
+        gridX = 1
+    elseif gridX > self.gridSize then
+        gridX = self.gridSize
+    end
+
+    if gridY <= 0 then
+        gridY = 1
+    elseif gridY > self.gridSize then
+        gridY = self.gridSize
+    end
+
+    return self:gridToGlobalCoordinates(gridX, gridY)
+end
+
 function DrawData:updateFloodFillFaceDataRendering(floodFillFaceData)
     if floodFillFaceData.tovePath and floodFillFaceData.tovePath ~= nil then
         return
@@ -12,7 +45,7 @@ function DrawData:updateFloodFillFaceDataRendering(floodFillFaceData)
 
     if DEBUG_FLOOD_FILL then
         fillPath:setLineColor(1.0, 0.0, 0.0, 1.0)
-        fillPath:setLineWidth(0.02)
+        fillPath:setLineWidth(0.2)
         fillPath:setMiterLimit(1)
         fillPath:setLineJoin("round")
     end
@@ -74,19 +107,19 @@ local function addCircleSubpathData(pathData, centerX, centerY, radius, startAng
     })
 end
 
-local function drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
+function DrawData:drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
     if p1x == p2x and p1y == p2y then
         return
     end
 
     -- TODO: fix
-    p1x, p1y = roundGlobalCoordinatesToGrid(p1x, p1y)
-    p2x, p2y = roundGlobalCoordinatesToGrid(p2x, p2y)
+    p1x, p1y = self:roundGlobalCoordinatesToGrid(p1x, p1y)
+    p2x, p2y = self:roundGlobalCoordinatesToGrid(p2x, p2y)
 
     addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
 end
 
-function updatePathDataRendering(pathData)
+function DrawData:updatePathDataRendering(pathData)
     if pathData.tovePath and pathData.tovePath ~= nil then
         return
     end
@@ -165,12 +198,12 @@ function updatePathDataRendering(pathData)
                     circleCenter.x = p1.x + radius
                     circleCenter.y = p2.y + radius
 
-                    drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
+                    self:drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
                 else
                     circleCenter.x = p2.x - radius
                     circleCenter.y = p1.y - radius
 
-                    drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
+                    self:drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
                 end
             else
                 --
@@ -184,12 +217,12 @@ function updatePathDataRendering(pathData)
                     circleCenter.x = p1.x + radius
                     circleCenter.y = p2.y + radius
 
-                    drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y + radius)
+                    self:drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y + radius)
                 else
                     circleCenter.x = p2.x - radius
                     circleCenter.y = p1.y - radius
 
-                    drawEndOfArc(pathData, p2.x, p1.y - radius, p2.x, p2.y)
+                    self:drawEndOfArc(pathData, p2.x, p1.y - radius, p2.x, p2.y)
                 end
             end
         else
@@ -207,12 +240,12 @@ function updatePathDataRendering(pathData)
                     circleCenter.x = p2.x - radius
                     circleCenter.y = p1.y + radius
 
-                    drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
+                    self:drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
                 else
                     circleCenter.x = p1.x + radius
                     circleCenter.y = p2.y - radius
 
-                    drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
+                    self:drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
                 end
             else
                 --
@@ -226,12 +259,12 @@ function updatePathDataRendering(pathData)
                     circleCenter.x = p2.x - radius
                     circleCenter.y = p1.y + radius
 
-                    drawEndOfArc(pathData, p2.x, p1.y + radius, p2.x, p2.y)
+                    self:drawEndOfArc(pathData, p2.x, p1.y + radius, p2.x, p2.y)
                 else
                     circleCenter.x = p1.x + radius
                     circleCenter.y = p2.y - radius
 
-                    drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y - radius)
+                    self:drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y - radius)
                 end
             end
         end
@@ -263,7 +296,7 @@ function DrawData:cleanUpPathsAndFaces()
     end
 
     for i = 1, #self.pathDataList do
-        updatePathDataRendering(self.pathDataList[i])
+        self:updatePathDataRendering(self.pathDataList[i])
         self:updatePathDataIds(self.pathDataList[i])
     end
 end
@@ -277,7 +310,7 @@ function DrawData:resetFill()
 
     local newFaces = {}
     local newColoredSubpathIds = {}
-    colorAllSlabs(_SLABS, self.pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, self.floodFillColoredSubpathIds, newFaces, newColoredSubpathIds, GRID_WIDTH / GRID_SIZE)
+    colorAllSlabs(_SLABS, self.pathDataList, 0, self.gridSize, self.floodFillColoredSubpathIds, newFaces, newColoredSubpathIds, DRAW_DATA_SCALE / self.gridSize)
     self.floodFillFaceDataList = newFaces
 
     self.floodFillColoredSubpathIds = {}
@@ -301,6 +334,8 @@ function DrawData:new(obj)
         floodFillColoredSubpathIds = obj.floodFillColoredSubpathIds or {},
         nextPathId = obj.nextPathId or 0,
         fillColor = obj.fillColor or {hexStringToRgb(DEFAULT_PALETTE[7])},
+        gridSize = obj.gridSize or 15,
+        scale = obj.scale or DRAW_DATA_SCALE,
     }
 
     setmetatable(newObj, self)
@@ -320,6 +355,8 @@ function DrawData:serialize()
         floodFillColoredSubpathIds = self.floodFillColoredSubpathIds,
         nextPathId = self.nextPathId,
         fillColor = self.fillColor,
+        gridSize = self.gridSize,
+        scale = self.scale,
     }
 
     for i = 1, #self.pathDataList do

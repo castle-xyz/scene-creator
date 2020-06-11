@@ -21,31 +21,15 @@ local DEFAULT_DATA = ''
 
 local cache = setmetatable({}, {__mode = "v"})
 
-function Drawing2Behavior:cacheDrawing(data, opts)
-    opts = opts or {}
-
-    local cacheEntry = cache[data]
-    if not cacheEntry then
-        cacheEntry = {}
-        cache[data] = cacheEntry
+function Drawing2Behavior:cacheDrawing(data)
+    if not cache[data] then
+        cache[data] = self:deserialize(data)
     end
-    local drawData = cacheEntry.drawData
-    if not drawData then
-        if not cacheEntry.drawDataRequested then
-            cacheEntry.drawDataRequested = true
-            
-            cacheEntry.size, cacheEntry.drawData = self:deserialize(data)
-        end
-    end
-    return cacheEntry
+    return cache[data]
 end
 
-function Drawing2Behavior:serialize(size, drawData)
-    local payload = {}
-
-    -- Width, height
-    payload.size = size
-    payload.drawData = drawData
+function Drawing2Behavior:serialize(drawData)
+    local payload = drawData
 
     local encoded = bitser.dumps(payload)
     --print('encoded', #encoded)
@@ -65,11 +49,7 @@ function Drawing2Behavior:deserialize(base64)
     local encoded = love.data.decompress("string", "zlib", compressed)
     local payload = bitser.loads(encoded)
 
-    -- Width, height
-    local size = payload.size or 0
-    local drawData = payload.drawData or {}
-
-    return size, DrawData:new(drawData)
+    return DrawData:new(payload)
 end
 
 -- Component management
@@ -78,10 +58,7 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.data = bp.data or DEFAULT_DATA
 
-    self:cacheDrawing(
-        component.properties.data,
-        {}
-    )
+    self:cacheDrawing(component.properties.data)
 end
 
 function Drawing2Behavior.handlers:blueprintComponent(component, bp)
@@ -98,13 +75,9 @@ function Drawing2Behavior.handlers:drawComponent(component)
     local bodyX, bodyY = body:getPosition()
     local bodyAngle = body:getAngle()
 
-    local cacheEntry =
-        self:cacheDrawing(
-        component.properties.data,
-        {}
-    )
-    component._cacheEntry = cacheEntry -- Maintain strong reference
-    local graphicsSize = cacheEntry.size or 1024
+    local drawData = self:cacheDrawing(component.properties.data)
+    component._drawData = drawData -- Maintain strong reference
+    local graphicsSize = drawData.scale or 10
 
     -- Push transform
     love.graphics.push()
@@ -115,7 +88,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
 
     -- Draw!
     love.graphics.setColor(1, 1, 1, 1)
-    cacheEntry.drawData:graphics():draw()
+    drawData:graphics():draw()
 
     -- Pop transform
     love.graphics.pop()
