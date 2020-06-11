@@ -216,7 +216,7 @@ function DrawTool.handlers:update(dt)
             local newAngle = (angleRoundedTo8Directions * (math.pi * 2.0) / 8.0)
             local direction = {x = math.cos(newAngle), y = math.sin(newAngle)}
 
-            local cellSize = DRAW_DATA_SCALE / _drawData.gridSize
+            local cellSize = _drawData.scale / _drawData.gridSize
 
             if distFromOriginalPoint > cellSize then
                 if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
@@ -381,10 +381,10 @@ function DrawTool.handlers:update(dt)
                 currentFaces[_drawData.floodFillFaceDataList[i].id] = true
             end
 
-            findFaceForPoint(_SLABS, _drawData.pathDataList, 0, 0 + _drawData.gridSize, {
+            findFaceForPoint(_SLABS, _drawData.pathDataList, -0.01, 0.01 + _drawData.scale, {
                 x = touchX,
                 y = touchY
-            }, newFaces, newColoredSubpathIds, currentFaces, DRAW_DATA_SCALE / _drawData.gridSize)
+            }, newFaces, newColoredSubpathIds, currentFaces, _drawData.scale / _drawData.gridSize)
 
             if #newFaces > 0 then
                 for i = 1, #newFaces do
@@ -415,10 +415,10 @@ function DrawTool.handlers:update(dt)
             local newColoredSubpathIds = {}
             local currentFaces = {}
 
-            findFaceForPoint(_SLABS, _drawData.pathDataList, 0, 0 + _drawData.gridSize, {
+            findFaceForPoint(_SLABS, _drawData.pathDataList, 0, 0 + _drawData.scale, {
                 x = touchX,
                 y = touchY
-            }, newFaces, newColoredSubpathIds, currentFaces, DRAW_DATA_SCALE / _drawData.gridSize)
+            }, newFaces, newColoredSubpathIds, currentFaces, _drawData.scale / _drawData.gridSize)
 
             if #newFaces > 0 then
                 for i = 1, #newFaces do
@@ -505,7 +505,7 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.setLineWidth(0.1)
         local slabPoints = {}
         for i = 1, #_SLABS do
-            love.graphics.line(_SLABS[i].x, 0, _SLABS[i].x, 0 + _drawData.gridSize)
+            love.graphics.line(_SLABS[i].x, 0, _SLABS[i].x, 0 + _drawData.scale)
             for j = 1, #_SLABS[i].points do
                 table.insert(slabPoints, _SLABS[i].x)
                 table.insert(slabPoints, _SLABS[i].points[j].y)

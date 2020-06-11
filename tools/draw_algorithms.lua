@@ -360,7 +360,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     }
 
     local slabIntersections = getSharedSubpathsForSlabs(pathDataList, slab1FakeSubpath, slab2FakeSubpath)
-    --print(inspect(slabIntersections))
+    -- print(inspect(slabIntersections))
 
 
     local slabPointFakeSubpath = {
