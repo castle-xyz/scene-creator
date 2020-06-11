@@ -319,6 +319,16 @@ function DrawData:resetFill()
     end
 end
 
+function DrawData:clone()
+    local result = DrawData:new(self)
+    result = util.deepCopyTable(result)
+
+    setmetatable(result, self)
+    self.__index = self
+
+    return result
+end
+
 function DrawData:new(obj)
     if not obj or obj == nil then
         obj = {}
@@ -406,4 +416,9 @@ function DrawData:graphics()
     end
     
     return self._graphics
+end
+
+function DrawData:clearGraphics()
+    self._graphics = nil
+    self._graphicsNeedsReset = true
 end

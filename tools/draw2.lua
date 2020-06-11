@@ -91,9 +91,11 @@ end
 
 function DrawTool:saveDrawing(commandDescription, c)
     local actorId = c.actorId
-    local newData = self.dependencies.Drawing2:serialize(_drawData:serialize())
+    local newDrawData = _drawData:serialize()
+    local newData = self.dependencies.Drawing2:serialize(newDrawData)
     c._lastData = newData -- Prevent reloading since we're already in sync
     local oldData = self.dependencies.Drawing2:get(actorId).properties.data
+
     self.dependencies.Drawing2:command(
         commandDescription,
         {
@@ -162,7 +164,7 @@ function DrawTool.handlers:update(dt)
         end
 
         c._lastData = drawingComponent.properties.data
-        _drawData = cacheDrawData
+        _drawData = cacheDrawData:clone()
     end
 
 
@@ -395,7 +397,6 @@ function DrawTool.handlers:update(dt)
                     _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
                 end
 
-                -- todo only save when there's a change
                 _drawData:resetGraphics()
                 self:saveDrawing("fill", c)
             end
@@ -420,20 +421,21 @@ function DrawTool.handlers:update(dt)
                 y = touchY
             }, newFaces, newColoredSubpathIds, currentFaces, _drawData.scale / _drawData.gridSize)
 
-            if #newFaces > 0 then
-                for i = 1, #newFaces do
-                    for j = #_drawData.floodFillFaceDataList, 1, -1 do
-                        if _drawData.floodFillFaceDataList[j].id == newFaces[i].id then
-                            table.remove(_drawData.floodFillFaceDataList, j)
-                        end
+            local didChange = false
+            for i = 1, #newFaces do
+                for j = #_drawData.floodFillFaceDataList, 1, -1 do
+                    if _drawData.floodFillFaceDataList[j].id == newFaces[i].id then
+                        didChange = true
+                        table.remove(_drawData.floodFillFaceDataList, j)
                     end
                 end
+            end
 
-                for i = 1, #newColoredSubpathIds do
-                    _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
-                end
+            for i = 1, #newColoredSubpathIds do
+                _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
+            end
 
-                -- todo only save when there's a change
+            if didChange then
                 _drawData:resetGraphics()
                 self:saveDrawing("erase fill", c)
             end

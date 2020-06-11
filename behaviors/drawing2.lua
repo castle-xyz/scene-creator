@@ -25,6 +25,13 @@ function Drawing2Behavior:cacheDrawing(data)
     if not cache[data] then
         cache[data] = self:deserialize(data)
     end
+
+    for k, v in pairs(cache) do
+        if k ~= data then
+            cache[k]:clearGraphics()
+        end
+    end
+
     return cache[data]
 end
 
