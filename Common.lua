@@ -57,7 +57,9 @@ require "behaviors.tags"
 require "behaviors.counter"
 require "behaviors.text"
 
-require "behaviors.drawing2"
+if NEW_DRAW_TOOL then
+    require "behaviors.drawing2"
+end
 
 require "tools.grab"
 

@@ -630,7 +630,6 @@ function findAllSlabs(pathDataList)
         end
     end
 
-    print(inspect(slabs))
     return slabs
 end
 

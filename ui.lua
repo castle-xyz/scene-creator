@@ -10,10 +10,11 @@ function Client:startUi()
     self.openComponentBehaviorId = nil -- `behaviorId` of open component section
 
     self.selectedInspectorTab = 'general'
+
     self.inspectorTabs = {
        {
           name = 'general',
-          behaviors = { 'Drawing', 'Drawing2', 'Text', 'Tags', 'Body' },
+          behaviors = { 'Drawing', 'Text', 'Tags', 'Body' },
        },
        {
           name = 'movement',
@@ -23,6 +24,10 @@ function Client:startUi()
           name = 'rules',
        },
     }
+
+    if NEW_DRAW_TOOL then
+      table.insert(self.inspectorTabs[1].behaviors, 'Drawing2')
+    end
 
     self.saveBlueprintDatas = setmetatable({}, { __mode = 'k' }) -- `actor` -> data for "save blueprint" popover
 end
