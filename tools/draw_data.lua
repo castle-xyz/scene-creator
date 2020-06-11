@@ -321,6 +321,7 @@ end
 
 function DrawData:clone()
     local result = DrawData:new(self)
+    result:clearGraphics()
     result = util.deepCopyTable(result)
 
     setmetatable(result, self)
@@ -421,4 +422,13 @@ end
 function DrawData:clearGraphics()
     self._graphics = nil
     self._graphicsNeedsReset = true
+
+    for i = 1, #self.pathDataList do
+        self.pathDataList[i].tovePath = nil
+        self.pathDataList[i].subpathDataList = nil
+    end
+
+    for i = 1, #self.floodFillFaceDataList do
+        self.floodFillFaceDataList[i].tovePath = nil
+    end
 end
