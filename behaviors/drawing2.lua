@@ -119,7 +119,7 @@ function Drawing2Behavior:deserialize(base64)
     local encoded = love.data.decompress("string", "zlib", compressed)
     local payload = bitser.loads(encoded)
 
-    print(inspect(payload))
+    --print(inspect(payload))
 
     -- Width, height
     local size = payload.size or 0

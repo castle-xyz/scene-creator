@@ -285,19 +285,52 @@ function resetFill(drawData)
     end
 end
 
-function DrawData:new()
-    local obj = {
-        pathDataList = {},
-        floodFillFaceDataList = {},
-        floodFillColoredSubpathIds = {},
-        nextPathId = 0,
-        fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])},
+function DrawData:new(obj)
+    if not obj or obj == nil then
+        obj = {}
+    end
+
+    local newObj = {
+        pathDataList = obj.pathDataList or {},
+        floodFillFaceDataList = obj.floodFillFaceDataList or {},
+        floodFillColoredSubpathIds = obj.floodFillColoredSubpathIds or {},
+        nextPathId = obj.nextPathId or 0,
+        fillColor = obj.fillColor or {hexStringToRgb(DEFAULT_PALETTE[7])},
     }
 
-    setmetatable(obj, self)
+    setmetatable(newObj, self)
     self.__index = self
 
-    return obj
+    return newObj
+end
+
+function DrawData:serialize()
+    local data = {
+        pathDataList = {},
+        floodFillFaceDataList = {},
+        floodFillColoredSubpathIds = self.floodFillColoredSubpathIds,
+        nextPathId = self.nextPathId,
+        fillColor = self.fillColor,
+    }
+
+    for i = 1, #self.pathDataList do
+        local pathData = self.pathDataList[i]
+        table.insert(data.pathDataList, {
+            points = pathData.points,
+            style = pathData.style,
+            id = pathData.id,
+        })
+    end
+
+    for i = 1, #self.floodFillFaceDataList do
+        local floodFillFaceData = self.floodFillFaceDataList[i]
+        table.insert(data.floodFillFaceDataList, {
+            points = floodFillFaceData.points,
+            id = floodFillFaceData.id,
+        })
+    end
+
+    return data
 end
 
 function graphicsForDrawData(drawData)

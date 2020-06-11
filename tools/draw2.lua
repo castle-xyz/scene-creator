@@ -46,7 +46,7 @@ we use the same system but in radians
 
 -- Behavior management
 
-local _drawData = {}
+local _drawData
 
 local _initialCoord
 local _currentPathData
@@ -123,65 +123,9 @@ local function resetGraphics()
     _graphics = graphicsForDrawData(_drawData)
 end
 
-function serializeData()
-    local data = {
-        pathDataList = {},
-        floodFillFaceDataList = {},
-        floodFillColoredSubpathIds = _drawData.floodFillColoredSubpathIds,
-        nextPathId = _drawData.nextPathId,
-    }
-
-    for i = 1, #_drawData.pathDataList do
-        local pathData = _drawData.pathDataList[i]
-        table.insert(data.pathDataList, {
-            points = pathData.points,
-            style = pathData.style,
-            id = pathData.id,
-        })
-    end
-
-    for i = 1, #_drawData.floodFillFaceDataList do
-        local floodFillFaceData = _drawData.floodFillFaceDataList[i]
-        table.insert(data.floodFillFaceDataList, {
-            points = floodFillFaceData.points,
-            id = floodFillFaceData.id,
-        })
-    end
-
-    print(inspect(data))
-
-    return data
-end
-
-function deserializeData(data)
-    _drawData = DrawData:new()
-
-    if data.pathDataList then
-        for i = 1, #data.pathDataList do
-            local pathData = data.pathDataList[i]
-            table.insert(_drawData.pathDataList, pathData)
-        end
-    end
-
-    if data.floodFillFaceDataList then
-        for i = 1, #data.floodFillFaceDataList do
-            local floodFillFaceData = data.floodFillFaceDataList[i]
-            table.insert(_drawData.floodFillFaceDataList, floodFillFaceData)
-        end
-    end
-
-    if data.floodFillColoredSubpathIds then
-        _drawData.floodFillColoredSubpathIds = data.floodFillColoredSubpathIds
-    end
-
-    if data.nextPathId then
-        _drawData.nextPathId = data.nextPathId
-    end
-end
-
 function DrawTool:saveDrawing(commandDescription, c)
     local actorId = c.actorId
-    local newData = self.dependencies.Drawing2:serialize(GRID_WIDTH, _graphics, serializeData())
+    local newData = self.dependencies.Drawing2:serialize(GRID_WIDTH, _graphics, _drawData:serialize())
     c._lastData = newData -- Prevent reloading since we're already in sync
     local oldData = self.dependencies.Drawing2:get(actorId).properties.data
     self.dependencies.Drawing2:command(
@@ -254,7 +198,7 @@ function DrawTool.handlers:update(dt)
         end
 
         c._lastData = drawingComponent.properties.data
-        deserializeData(cacheEntry.data)
+        _drawData = DrawData:new(cacheEntry.data)
         resetGraphics()
     end
 
