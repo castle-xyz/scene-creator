@@ -4,6 +4,7 @@ jsEvents = require "__ghost__.jsEvents"
 
 NEW_DRAW_TOOL = true
 SHOW_TEXT_ACTORS = true
+DEBUG_FLOOD_FILL = false
 
 function castle.onQuit()
 end

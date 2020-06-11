@@ -1,4 +1,12 @@
+
+GRID_HORIZONTAL_PADDING = 0.05 * DEFAULT_VIEW_WIDTH
+GRID_TOP_PADDING = 0.1 * DEFAULT_VIEW_WIDTH
+GRID_SIZE = 15
+GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
+BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
+
 require('tools.draw_algorithms')
+require('tools.draw_data')
 
 local DrawTool =
     defineCoreBehavior {
@@ -35,12 +43,11 @@ we use the same system but in radians
 
 -- TODO: don't allow completely overlapping lines
 
-DEBUG_FLOOD_FILL = false
-ONLY_RESET_FLOOD_FILL_ON_RELEASE = false
 
 -- Behavior management
 
-local _pathDataList
+local _drawData = {}
+
 local _initialCoord
 local _currentPathData
 local _graphics
@@ -49,29 +56,12 @@ local _tempGraphics
 local _subtool
 local _grabbedPaths
 
-local _lineColor
-local _fillColor
-
-local _floodFillFaceDataList
-local _floodFillColoredSubpathIds
-local _nextPathId = 0
-
 function DrawTool.handlers:addBehavior(opts)
     
 end
 
 -- Methods
 
-local GRID_HORIZONTAL_PADDING = 0.05 * DEFAULT_VIEW_WIDTH
-local GRID_TOP_PADDING = 0.1 * DEFAULT_VIEW_WIDTH
-local GRID_SIZE = 15
-local GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
-local BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
-
-function nextPathId()
-    _nextPathId = _nextPathId + 1
-    return _nextPathId
-end
 
 
 local function globalToGridCoordinates(x, y)
@@ -107,26 +97,17 @@ local function roundGlobalCoordinatesToGrid(x, y)
     return gridToGlobalCoordinates(gridX, gridY)
 end
 
-local function updatePathDataIds(pathData)
-    if not pathData.id then
-        pathData.id = nextPathId()
-    end
-
-    for i = 1, #pathData.subpathDataList do
-        pathData.subpathDataList[i].id = pathData.id .. '*' .. i
-    end
-end
 
 local function addPathData(pathData)
     if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
-        table.insert(_pathDataList, pathData)
+        table.insert(_drawData.pathDataList, pathData)
     end
 end
 
 local function removePathData(pathData)
-    for i = #_pathDataList, 1, -1 do
-        if _pathDataList[i] == pathData then
-            table.remove(_pathDataList, i)
+    for i = #_drawData.pathDataList, 1, -1 do
+        if _drawData.pathDataList[i] == pathData then
+            table.remove(_drawData.pathDataList, i)
         end
     end
 end
@@ -138,310 +119,20 @@ local function resetTempGraphics()
     _tempGraphics:setDisplay("mesh", 1024)
 end
 
-local function makeSubpathsFromSubpathData(pathData)
-    for i = 1, #pathData.subpathDataList do
-        local subpathData = pathData.subpathDataList[i]
-        local subpath = tove.newSubpath()
-        pathData.tovePath:addSubpath(subpath)
-
-        if subpathData.type == 'line' then
-            subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
-            subpath:lineTo(subpathData.p2.x, subpathData.p2.y)
-        elseif subpathData.type == 'arc' then
-            subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle * 180 / math.pi, subpathData.endAngle * 180 / math.pi)
-        end
-    end
-end
-
-local function addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
-    table.insert(pathData.subpathDataList, {
-        type = 'line',
-        p1 = {
-            x = p1x,
-            y = p1y
-        },
-        p2 = {
-            x = p2x,
-            y = p2y
-        }
-    })
-end
-
-local function addCircleSubpathData(pathData, centerX, centerY, radius, startAngle, endAngle)
-    table.insert(pathData.subpathDataList, {
-        type = 'arc',
-        center = {
-            x = centerX,
-            y = centerY
-        },
-        radius = radius,
-        startAngle = startAngle,
-        endAngle = endAngle
-    })
-end
-
-local function drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
-    if p1x == p2x and p1y == p2y then
-        return
-    end
-
-    p1x, p1y = roundGlobalCoordinatesToGrid(p1x, p1y)
-    p2x, p2y = roundGlobalCoordinatesToGrid(p2x, p2y)
-
-    addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
-end
-
-local function updateFloodFillFaceDataRendering(floodFillFaceData)
-    if floodFillFaceData.tovePath and floodFillFaceData.tovePath ~= nil then
-        return
-    end
-
-    local fillSubpath = tove.newSubpath()
-    local fillPath = tove.newPath()
-    fillPath:addSubpath(fillSubpath)
-    fillPath:setFillColor(_fillColor[1], _fillColor[2], _fillColor[3], 1.0)
-
-    if DEBUG_FLOOD_FILL then
-        fillPath:setLineColor(1.0, 0.0, 0.0, 1.0)
-        fillPath:setLineWidth(0.02)
-        fillPath:setMiterLimit(1)
-        fillPath:setLineJoin("round")
-    end
-
-    floodFillFaceData.tovePath = fillPath
-
-    if #floodFillFaceData.points < 3 then
-        return
-    end
-
-    fillSubpath:moveTo(floodFillFaceData.points[1].x, floodFillFaceData.points[1].y)
-
-    for i = 2, #floodFillFaceData.points do
-        fillSubpath:lineTo(floodFillFaceData.points[i].x, floodFillFaceData.points[i].y)
-    end
-
-    fillSubpath.isClosed = true
-end
-
-local function updatePathDataRendering(pathData)
-    if pathData.tovePath and pathData.tovePath ~= nil then
-        return
-    end
-
-    local path = tove.newPath()
-
-    path:setLineColor(0.0, 0.0, 0.0, 1.0)
-    path:setLineWidth(0.2)
-    path:setMiterLimit(1)
-    path:setLineJoin("round")
-    pathData.tovePath = path
-    pathData.subpathDataList = {}
-
-    local p1 = pathData.points[1]
-    local p2 = pathData.points[2]
-    local style = pathData.style
-
-    if style == 1 then
-        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
-        makeSubpathsFromSubpathData(pathData)
-        return
-    end
-
-    local isOver = style == 2
-
-    if p1.x > p2.x or (p1.x == p2.x and p1.y > p2.y) then
-        local t = p1
-        p1 = p2
-        p2 = t
-    end
-
-    local radius = math.min(math.abs(p2.x - p1.x), math.abs(p2.y - p1.y))
-    local xIsLonger = math.abs(p2.x - p1.x) > math.abs(p2.y - p1.y)
-
-    if radius == 0 then
-        radius = math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0)) / 2.0
-        local circleCenter = {
-            x = (p2.x + p1.x) / 2.0,
-            y = (p2.y + p1.y) / 2.0,
-        }
-
-        local startAngle
-
-        if p1.x == p2.x then
-            if isOver then
-                startAngle = math.pi * 3.0 / 2.0
-            else
-                startAngle = math.pi / 2.0
-            end
-        else
-            if isOver then
-                startAngle = math.pi
-            else
-                startAngle = 0.0
-            end
-        end
-
-        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
-        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle + math.pi / 2.0, startAngle + math.pi)
-    else
-        local circleCenter = {}
-        local startAngle
-
-        if p1.y > p2.y then
-            startAngle = 0.0
-            if isOver then
-                startAngle = startAngle + math.pi
-            end
-
-            if xIsLonger then
-                --
-                --             .
-                -- .
-                --
-                if isOver then
-                    circleCenter.x = p1.x + radius
-                    circleCenter.y = p2.y + radius
-
-                    drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
-                else
-                    circleCenter.x = p2.x - radius
-                    circleCenter.y = p1.y - radius
-
-                    drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
-                end
-            else
-                --
-                --   .
-                --
-                --
-                --
-                -- .
-                --
-                if isOver then
-                    circleCenter.x = p1.x + radius
-                    circleCenter.y = p2.y + radius
-
-                    drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y + radius)
-                else
-                    circleCenter.x = p2.x - radius
-                    circleCenter.y = p1.y - radius
-
-                    drawEndOfArc(pathData, p2.x, p1.y - radius, p2.x, p2.y)
-                end
-            end
-        else
-            startAngle = math.pi / 2.0
-            if isOver then
-                startAngle = startAngle + math.pi
-            end
-
-            if xIsLonger then
-                --
-                -- .
-                --             .
-                --
-                if isOver then
-                    circleCenter.x = p2.x - radius
-                    circleCenter.y = p1.y + radius
-
-                    drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
-                else
-                    circleCenter.x = p1.x + radius
-                    circleCenter.y = p2.y - radius
-
-                    drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
-                end
-            else
-                --
-                -- .
-                --
-                --
-                --
-                --   .
-                --
-                if isOver then
-                    circleCenter.x = p2.x - radius
-                    circleCenter.y = p1.y + radius
-
-                    drawEndOfArc(pathData, p2.x, p1.y + radius, p2.x, p2.y)
-                else
-                    circleCenter.x = p1.x + radius
-                    circleCenter.y = p2.y - radius
-
-                    drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y - radius)
-                end
-            end
-        end
-
-        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
-    end
-
-    makeSubpathsFromSubpathData(pathData)
-end
-
-local function cleanUpPathsAndFaces()
-    for i = 1, #_floodFillFaceDataList do
-        updateFloodFillFaceDataRendering(_floodFillFaceDataList[i])
-    end
-
-    for i = 1, #_pathDataList do
-        updatePathDataRendering(_pathDataList[i])
-        updatePathDataIds(_pathDataList[i])
-    end
-end
-
-local function resetFill()
-    cleanUpPathsAndFaces()
-    _SLABS = findAllSlabs(_pathDataList)
-
-    _FACE_POINTS = {}
-    local facesToColor = {}
-
-    local newFaces = {}
-    local newColoredSubpathIds = {}
-    colorAllSlabs(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, _floodFillColoredSubpathIds, newFaces, newColoredSubpathIds, GRID_WIDTH / GRID_SIZE)
-    _floodFillFaceDataList = newFaces
-
-    _floodFillColoredSubpathIds = {}
-    for i = 1, #newColoredSubpathIds do
-        _floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
-    end
-end
-
 local function resetGraphics()
-    cleanUpPathsAndFaces()
-
-    _graphics = tove.newGraphics()
-    _graphics:setDisplay("mesh", 1024)
-    _SLABS = findAllSlabs(_pathDataList)
-
-    if not DEBUG_FLOOD_FILL then
-        for i = 1, #_floodFillFaceDataList do
-            _graphics:addPath(_floodFillFaceDataList[i].tovePath)
-        end
-    end
-
-    for i = 1, #_pathDataList do
-        _graphics:addPath(_pathDataList[i].tovePath)
-    end
-
-    if DEBUG_FLOOD_FILL then
-        for i = 1, #_floodFillFaceDataList do
-            _graphics:addPath(_floodFillFaceDataList[i].tovePath)
-        end
-    end
+    _graphics = graphicsForDrawData(_drawData)
 end
 
 function serializeData()
     local data = {
         pathDataList = {},
         floodFillFaceDataList = {},
-        floodFillColoredSubpathIds = _floodFillColoredSubpathIds,
-        nextPathId = _nextPathId,
+        floodFillColoredSubpathIds = _drawData.floodFillColoredSubpathIds,
+        nextPathId = _drawData.nextPathId,
     }
 
-    for i = 1, #_pathDataList do
-        local pathData = _pathDataList[i]
+    for i = 1, #_drawData.pathDataList do
+        local pathData = _drawData.pathDataList[i]
         table.insert(data.pathDataList, {
             points = pathData.points,
             style = pathData.style,
@@ -449,8 +140,8 @@ function serializeData()
         })
     end
 
-    for i = 1, #_floodFillFaceDataList do
-        local floodFillFaceData = _floodFillFaceDataList[i]
+    for i = 1, #_drawData.floodFillFaceDataList do
+        local floodFillFaceData = _drawData.floodFillFaceDataList[i]
         table.insert(data.floodFillFaceDataList, {
             points = floodFillFaceData.points,
             id = floodFillFaceData.id,
@@ -463,31 +154,28 @@ function serializeData()
 end
 
 function deserializeData(data)
-    _pathDataList = {}
-    _floodFillFaceDataList = {}
-    _floodFillColoredSubpathIds = {}
-    _nextPathId = 0
+    _drawData = DrawData:new()
 
     if data.pathDataList then
         for i = 1, #data.pathDataList do
             local pathData = data.pathDataList[i]
-            table.insert(_pathDataList, pathData)
+            table.insert(_drawData.pathDataList, pathData)
         end
     end
 
     if data.floodFillFaceDataList then
         for i = 1, #data.floodFillFaceDataList do
             local floodFillFaceData = data.floodFillFaceDataList[i]
-            table.insert(_floodFillFaceDataList, floodFillFaceData)
+            table.insert(_drawData.floodFillFaceDataList, floodFillFaceData)
         end
     end
 
     if data.floodFillColoredSubpathIds then
-        _floodFillColoredSubpathIds = data.floodFillColoredSubpathIds
+        _drawData.floodFillColoredSubpathIds = data.floodFillColoredSubpathIds
     end
 
     if data.nextPathId then
-        _nextPathId = data.nextPathId
+        _drawData.nextPathId = data.nextPathId
     end
 end
 
@@ -526,16 +214,11 @@ end
 -- Update
 
 function DrawTool.handlers:onSetActive()
-    _pathDataList = {}
-    _floodFillFaceDataList = {}
-    _floodFillColoredSubpathIds = {}
+    _drawData = DrawData:new()
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
     _subtool = 'pencil'
-
-    _lineColor = {hexStringToRgb(DEFAULT_PALETTE[6])}
-    _fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])}
 
     resetGraphics()
 end
@@ -594,7 +277,7 @@ function DrawTool.handlers:update(dt)
 
             if touch.released then
                 addPathData(pathData)
-                resetFill()
+                resetFill(_drawData)
                 resetGraphics()
                 self:saveDrawing("line", c)
 
@@ -656,7 +339,7 @@ function DrawTool.handlers:update(dt)
                     newPathDataList[i].tovePath = nil
                     addPathData(newPathDataList[i])
                 end
-                resetFill()
+                resetFill(_drawData)
                 resetGraphics()
                 self:saveDrawing("pencil", c)
 
@@ -675,11 +358,11 @@ function DrawTool.handlers:update(dt)
             if _grabbedPaths == nil then
                 _grabbedPaths = {}
 
-                for i = 1, #_pathDataList do
+                for i = 1, #_drawData.pathDataList do
                     for p = 1, 2 do
-                        if roundedX == _pathDataList[i].points[p].x and roundedY == _pathDataList[i].points[p].y then
-                            _pathDataList[i].grabPointIndex = p
-                            table.insert(_grabbedPaths, _pathDataList[i])
+                        if roundedX == _drawData.pathDataList[i].points[p].x and roundedY == _drawData.pathDataList[i].points[p].y then
+                            _drawData.pathDataList[i].grabPointIndex = p
+                            table.insert(_grabbedPaths, _drawData.pathDataList[i])
                             break
                         end
                     end
@@ -690,8 +373,8 @@ function DrawTool.handlers:update(dt)
                 end
 
                 if #_grabbedPaths == 0 then
-                    for i = 1, #_pathDataList do
-                        local pathData = _pathDataList[i]
+                    for i = 1, #_drawData.pathDataList do
+                        local pathData = _drawData.pathDataList[i]
                         local distance, t, subpath = pathData.tovePath:nearest(touch.x, touch.y, 0.5)
                         if subpath then
                             local pointX, pointY = subpath:position(t)
@@ -743,7 +426,7 @@ function DrawTool.handlers:update(dt)
                         addPathData(_grabbedPaths[i])
                     end
 
-                    resetFill()
+                    resetFill(_drawData)
                     resetGraphics()
                     self:saveDrawing("move", c)
                 end
@@ -759,15 +442,15 @@ function DrawTool.handlers:update(dt)
             end
         elseif _subtool == 'bend' then
             if touch.released then
-                for i = 1, #_pathDataList do
-                    if _pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
-                        _pathDataList[i].style = _pathDataList[i].style + 1
-                        if _pathDataList[i].style > 3 then
-                            _pathDataList[i].style = 1
+                for i = 1, #_drawData.pathDataList do
+                    if _drawData.pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
+                        _drawData.pathDataList[i].style = _drawData.pathDataList[i].style + 1
+                        if _drawData.pathDataList[i].style > 3 then
+                            _drawData.pathDataList[i].style = 1
                         end
-                        _pathDataList[i].tovePath = nil -- reset rendering
+                        _drawData.pathDataList[i].tovePath = nil -- reset rendering
 
-                        resetFill()
+                        resetFill(_drawData)
                         resetGraphics()
                         self:saveDrawing("bend", c)
 
@@ -784,30 +467,30 @@ function DrawTool.handlers:update(dt)
             local newColoredSubpathIds = {}
             local currentFaces = {}
 
-            for i = 1, #_floodFillFaceDataList do
-                currentFaces[_floodFillFaceDataList[i].id] = true
+            for i = 1, #_drawData.floodFillFaceDataList do
+                currentFaces[_drawData.floodFillFaceDataList[i].id] = true
             end
 
-            findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
+            findFaceForPoint(_SLABS, _drawData.pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
                 x = touch.x,
                 y = touch.y
             }, newFaces, newColoredSubpathIds, currentFaces, GRID_WIDTH / GRID_SIZE)
 
             for i = 1, #newFaces do
-                table.insert(_floodFillFaceDataList, newFaces[i])
+                table.insert(_drawData.floodFillFaceDataList, newFaces[i])
             end
 
             for i = 1, #newColoredSubpathIds do
-                _floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
+                _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
             end
 
             resetGraphics()
             self:saveDrawing("fill", c)
         elseif _subtool == 'erase line' then
-            for i = 1, #_pathDataList do
-                if _pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
-                    removePathData(_pathDataList[i])
-                    resetFill()
+            for i = 1, #_drawData.pathDataList do
+                if _drawData.pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
+                    removePathData(_drawData.pathDataList[i])
+                    resetFill(_drawData)
                     resetGraphics()
                     self:saveDrawing("erase line", c)
                     break
@@ -819,21 +502,21 @@ function DrawTool.handlers:update(dt)
             local newColoredSubpathIds = {}
             local currentFaces = {}
 
-            findFaceForPoint(_SLABS, _pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
+            findFaceForPoint(_SLABS, _drawData.pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, {
                 x = touch.x,
                 y = touch.y
             }, newFaces, newColoredSubpathIds, currentFaces, GRID_WIDTH / GRID_SIZE)
 
             for i = 1, #newFaces do
-                for j = #_floodFillFaceDataList, 1, -1 do
-                    if _floodFillFaceDataList[j].id == newFaces[i].id then
-                        table.remove(_floodFillFaceDataList, j)
+                for j = #_drawData.floodFillFaceDataList, 1, -1 do
+                    if _drawData.floodFillFaceDataList[j].id == newFaces[i].id then
+                        table.remove(_drawData.floodFillFaceDataList, j)
                     end
                 end
             end
 
             for i = 1, #newColoredSubpathIds do
-                _floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
+                _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
             end
 
             resetGraphics()
@@ -881,10 +564,10 @@ function DrawTool.handlers:drawOverlay()
     if _subtool == "move" then
         local movePoints = {}
 
-        for i = 1, #_pathDataList do
+        for i = 1, #_drawData.pathDataList do
             for p = 1, 2 do
-                table.insert(movePoints, _pathDataList[i].points[p].x)
-                table.insert(movePoints, _pathDataList[i].points[p].y)
+                table.insert(movePoints, _drawData.pathDataList[i].points[p].x)
+                table.insert(movePoints, _drawData.pathDataList[i].points[p].y)
             end
         end
 
@@ -1026,8 +709,8 @@ function DrawTool.handlers:uiPanel()
             justifyContent = "flex-end"
         },
         function()
-            _fillColor[1], _fillColor[2], _fillColor[3] =
-                uiPalette(_fillColor[1], _fillColor[2], _fillColor[3])
+            _drawData.fillColor[1], _drawData.fillColor[2], _drawData.fillColor[3] =
+                uiPalette(_drawData.fillColor[1], _drawData.fillColor[2], _drawData.fillColor[3])
         end
     )
 

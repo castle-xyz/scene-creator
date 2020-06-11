@@ -1,3 +1,5 @@
+require('tools.draw_data')
+
 local Drawing2Behavior =
     defineCoreBehavior {
     name = "Drawing2",

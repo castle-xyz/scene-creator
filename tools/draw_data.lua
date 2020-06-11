@@ -1,0 +1,327 @@
+DrawData = {}
+
+local function updateFloodFillFaceDataRendering(drawData, floodFillFaceData)
+    if floodFillFaceData.tovePath and floodFillFaceData.tovePath ~= nil then
+        return
+    end
+
+    local fillSubpath = tove.newSubpath()
+    local fillPath = tove.newPath()
+    fillPath:addSubpath(fillSubpath)
+    fillPath:setFillColor(drawData.fillColor[1], drawData.fillColor[2], drawData.fillColor[3], 1.0)
+
+    if DEBUG_FLOOD_FILL then
+        fillPath:setLineColor(1.0, 0.0, 0.0, 1.0)
+        fillPath:setLineWidth(0.02)
+        fillPath:setMiterLimit(1)
+        fillPath:setLineJoin("round")
+    end
+
+    floodFillFaceData.tovePath = fillPath
+
+    if #floodFillFaceData.points < 3 then
+        return
+    end
+
+    fillSubpath:moveTo(floodFillFaceData.points[1].x, floodFillFaceData.points[1].y)
+
+    for i = 2, #floodFillFaceData.points do
+        fillSubpath:lineTo(floodFillFaceData.points[i].x, floodFillFaceData.points[i].y)
+    end
+
+    fillSubpath.isClosed = true
+end
+
+local function makeSubpathsFromSubpathData(pathData)
+    for i = 1, #pathData.subpathDataList do
+        local subpathData = pathData.subpathDataList[i]
+        local subpath = tove.newSubpath()
+        pathData.tovePath:addSubpath(subpath)
+
+        if subpathData.type == 'line' then
+            subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
+            subpath:lineTo(subpathData.p2.x, subpathData.p2.y)
+        elseif subpathData.type == 'arc' then
+            subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle * 180 / math.pi, subpathData.endAngle * 180 / math.pi)
+        end
+    end
+end
+
+local function addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
+    table.insert(pathData.subpathDataList, {
+        type = 'line',
+        p1 = {
+            x = p1x,
+            y = p1y
+        },
+        p2 = {
+            x = p2x,
+            y = p2y
+        }
+    })
+end
+
+local function addCircleSubpathData(pathData, centerX, centerY, radius, startAngle, endAngle)
+    table.insert(pathData.subpathDataList, {
+        type = 'arc',
+        center = {
+            x = centerX,
+            y = centerY
+        },
+        radius = radius,
+        startAngle = startAngle,
+        endAngle = endAngle
+    })
+end
+
+local function drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
+    if p1x == p2x and p1y == p2y then
+        return
+    end
+
+    p1x, p1y = roundGlobalCoordinatesToGrid(p1x, p1y)
+    p2x, p2y = roundGlobalCoordinatesToGrid(p2x, p2y)
+
+    addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
+end
+
+function updatePathDataRendering(pathData)
+    if pathData.tovePath and pathData.tovePath ~= nil then
+        return
+    end
+
+    local path = tove.newPath()
+
+    path:setLineColor(0.0, 0.0, 0.0, 1.0)
+    path:setLineWidth(0.2)
+    path:setMiterLimit(1)
+    path:setLineJoin("round")
+    pathData.tovePath = path
+    pathData.subpathDataList = {}
+
+    local p1 = pathData.points[1]
+    local p2 = pathData.points[2]
+    local style = pathData.style
+
+    if style == 1 then
+        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+        makeSubpathsFromSubpathData(pathData)
+        return
+    end
+
+    local isOver = style == 2
+
+    if p1.x > p2.x or (p1.x == p2.x and p1.y > p2.y) then
+        local t = p1
+        p1 = p2
+        p2 = t
+    end
+
+    local radius = math.min(math.abs(p2.x - p1.x), math.abs(p2.y - p1.y))
+    local xIsLonger = math.abs(p2.x - p1.x) > math.abs(p2.y - p1.y)
+
+    if radius == 0 then
+        radius = math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0)) / 2.0
+        local circleCenter = {
+            x = (p2.x + p1.x) / 2.0,
+            y = (p2.y + p1.y) / 2.0,
+        }
+
+        local startAngle
+
+        if p1.x == p2.x then
+            if isOver then
+                startAngle = math.pi * 3.0 / 2.0
+            else
+                startAngle = math.pi / 2.0
+            end
+        else
+            if isOver then
+                startAngle = math.pi
+            else
+                startAngle = 0.0
+            end
+        end
+
+        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
+        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle + math.pi / 2.0, startAngle + math.pi)
+    else
+        local circleCenter = {}
+        local startAngle
+
+        if p1.y > p2.y then
+            startAngle = 0.0
+            if isOver then
+                startAngle = startAngle + math.pi
+            end
+
+            if xIsLonger then
+                --
+                --             .
+                -- .
+                --
+                if isOver then
+                    circleCenter.x = p1.x + radius
+                    circleCenter.y = p2.y + radius
+
+                    drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
+                else
+                    circleCenter.x = p2.x - radius
+                    circleCenter.y = p1.y - radius
+
+                    drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
+                end
+            else
+                --
+                --   .
+                --
+                --
+                --
+                -- .
+                --
+                if isOver then
+                    circleCenter.x = p1.x + radius
+                    circleCenter.y = p2.y + radius
+
+                    drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y + radius)
+                else
+                    circleCenter.x = p2.x - radius
+                    circleCenter.y = p1.y - radius
+
+                    drawEndOfArc(pathData, p2.x, p1.y - radius, p2.x, p2.y)
+                end
+            end
+        else
+            startAngle = math.pi / 2.0
+            if isOver then
+                startAngle = startAngle + math.pi
+            end
+
+            if xIsLonger then
+                --
+                -- .
+                --             .
+                --
+                if isOver then
+                    circleCenter.x = p2.x - radius
+                    circleCenter.y = p1.y + radius
+
+                    drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
+                else
+                    circleCenter.x = p1.x + radius
+                    circleCenter.y = p2.y - radius
+
+                    drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
+                end
+            else
+                --
+                -- .
+                --
+                --
+                --
+                --   .
+                --
+                if isOver then
+                    circleCenter.x = p2.x - radius
+                    circleCenter.y = p1.y + radius
+
+                    drawEndOfArc(pathData, p2.x, p1.y + radius, p2.x, p2.y)
+                else
+                    circleCenter.x = p1.x + radius
+                    circleCenter.y = p2.y - radius
+
+                    drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y - radius)
+                end
+            end
+        end
+
+        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
+    end
+
+    makeSubpathsFromSubpathData(pathData)
+end
+
+function nextPathId(drawData)
+    drawData.nextPathId = drawData.nextPathId + 1
+    return drawData.nextPathId
+end
+
+local function updatePathDataIds(drawData, pathData)
+    if not pathData.id then
+        pathData.id = nextPathId(drawData)
+    end
+
+    for i = 1, #pathData.subpathDataList do
+        pathData.subpathDataList[i].id = pathData.id .. '*' .. i
+    end
+end
+
+local function cleanUpPathsAndFaces(drawData)
+    for i = 1, #drawData.floodFillFaceDataList do
+        updateFloodFillFaceDataRendering(drawData, drawData.floodFillFaceDataList[i])
+    end
+
+    for i = 1, #drawData.pathDataList do
+        updatePathDataRendering(drawData.pathDataList[i])
+        updatePathDataIds(drawData, drawData.pathDataList[i])
+    end
+end
+
+function resetFill(drawData)
+    cleanUpPathsAndFaces(drawData)
+    _SLABS = findAllSlabs(drawData.pathDataList)
+
+    _FACE_POINTS = {}
+    local facesToColor = {}
+
+    local newFaces = {}
+    local newColoredSubpathIds = {}
+    colorAllSlabs(_SLABS, drawData.pathDataList, GRID_TOP_PADDING, GRID_TOP_PADDING + GRID_SIZE, drawData.floodFillColoredSubpathIds, newFaces, newColoredSubpathIds, GRID_WIDTH / GRID_SIZE)
+    drawData.floodFillFaceDataList = newFaces
+
+    drawData.floodFillColoredSubpathIds = {}
+    for i = 1, #newColoredSubpathIds do
+        _drdrawDataawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
+    end
+end
+
+function DrawData:new()
+    local obj = {
+        pathDataList = {},
+        floodFillFaceDataList = {},
+        floodFillColoredSubpathIds = {},
+        nextPathId = 0,
+        fillColor = {hexStringToRgb(DEFAULT_PALETTE[7])},
+    }
+
+    setmetatable(obj, self)
+    self.__index = self
+
+    return obj
+end
+
+function graphicsForDrawData(drawData)
+    cleanUpPathsAndFaces(drawData)
+
+    local graphics = tove.newGraphics()
+    graphics:setDisplay("mesh", 1024)
+    --_SLABS = findAllSlabs(_pathDataList)
+
+    if not DEBUG_FLOOD_FILL then
+        for i = 1, #drawData.floodFillFaceDataList do
+            graphics:addPath(drawData.floodFillFaceDataList[i].tovePath)
+        end
+    end
+
+    for i = 1, #drawData.pathDataList do
+        graphics:addPath(drawData.pathDataList[i].tovePath)
+    end
+
+    if DEBUG_FLOOD_FILL then
+        for i = 1, #drawData.floodFillFaceDataList do
+            graphics:addPath(drawData.floodFillFaceDataList[i].tovePath)
+        end
+    end
+    
+    return graphics
+end
