@@ -322,10 +322,15 @@ function colorAllSlabs(slabsList, pathDataList, minY, maxY, coloredSubpathIds, n
     end
 end
 
+function addDebugPoint(x, y)
+    table.insert(_FACE_POINTS, x)
+    table.insert(_FACE_POINTS, y)
+end
+
 -- find the top left point of the face. this is not necessarily a subpath/subpath intersection. can also be a subpath/slab line intersection
 function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, newColoredSubpathIds, currentFaces, cellSize)
-    --table.insert(_FACE_POINTS, point.x)
-    --table.insert(_FACE_POINTS, point.y)
+    table.insert(_FACE_POINTS, point.x)
+    table.insert(_FACE_POINTS, point.y)
 
     local firstSlabIdx = findSlabsForPoint(slabsList, point)
     if firstSlabIdx == nil then
@@ -334,15 +339,16 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     end
     local slab1 = slabsList[firstSlabIdx]
     local slab2 = slabsList[firstSlabIdx + 1]
+    local SLAB_X_PADDING = 0.001
 
     local slab1FakeSubpath = {
         type = "line",
         p1 = {
-            x = slab1.x,
+            x = slab1.x + SLAB_X_PADDING,
             y = minY,
         },
         p2 = {
-            x = slab1.x,
+            x = slab1.x + SLAB_X_PADDING,
             y = maxY,
         },
     }
@@ -350,11 +356,11 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     local slab2FakeSubpath = {
         type = "line",
         p1 = {
-            x = slab2.x,
+            x = slab2.x - SLAB_X_PADDING,
             y = minY,
         },
         p2 = {
-            x = slab2.x,
+            x = slab2.x - SLAB_X_PADDING,
             y = maxY,
         },
     }
@@ -418,12 +424,13 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         print('return 3')
         return true
     end
-    local topLeftX = topLeftIntersections[1].x
+    local topLeftX = topLeftIntersections[1].x - SLAB_X_PADDING
     local topLeftY = topLeftIntersections[1].y
     table.insert(points, {
-        x = topLeftIntersections[1].x,
-        y = topLeftIntersections[1].y,
+        x = topLeftX,
+        y = topLeftY,
     })
+    addDebugPoint(topLeftX, topLeftY)
 
     cutSubpathData(topSubpath, points, slab1.x, slab2.x, minY, maxY, true)
 
@@ -432,13 +439,13 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         print('return 4')
         return true
     end
-    local topRightX = topRightIntersections[1].x
+    local topRightX = topRightIntersections[1].x + SLAB_X_PADDING
     local topRightY = topRightIntersections[1].y
     table.insert(points, {
-        x = topRightIntersections[1].x,
-        y = topRightIntersections[1].y,
+        x = topRightX,
+        y = topRightY,
     })
-
+    addDebugPoint(topRightX, topRightY)
 
 
 
@@ -448,12 +455,13 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         print('return 5')
         return true
     end
-    local bottomRightX = bottomRightIntersections[1].x
+    local bottomRightX = bottomRightIntersections[1].x + SLAB_X_PADDING
     local bottomRightY = bottomRightIntersections[1].y
     table.insert(points, {
-        x = bottomRightIntersections[1].x,
-        y = bottomRightIntersections[1].y,
+        x = bottomRightX,
+        y = bottomRightY,
     })
+    addDebugPoint(bottomRightX, bottomRightY)
 
 
     cutSubpathData(bottomSubpath, points, slab1.x, slab2.x, minY, maxY, false)
@@ -463,12 +471,13 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         print('return 6')
         return true
     end
-    local bottomLeftX = bottomLeftIntersections[1].x
+    local bottomLeftX = bottomLeftIntersections[1].x - SLAB_X_PADDING
     local bottomLeftY = bottomLeftIntersections[1].y
     table.insert(points, {
-        x = bottomLeftIntersections[1].x,
-        y = bottomLeftIntersections[1].y,
+        x = bottomLeftX,
+        y = bottomLeftY,
     })
+    addDebugPoint(bottomLeftX, bottomLeftY)
 
 
 
@@ -511,13 +520,13 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             x = topLeftX + myOffsetX,
             y = y,
         }) then
+            table.insert(_FACE_POINTS, topLeftX - offsetX)
+            table.insert(_FACE_POINTS, y)
 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topLeftX - offsetX * 0.5,
                 y = y,
             }, newFaces, newColoredSubpathIds, currentFaces, cellSize) then
-                table.insert(_FACE_POINTS, topLeftX - offsetX)
-                table.insert(_FACE_POINTS, y)
                 for k in pairs(newFaces) do
                     newFaces[k] = nil
                 end
@@ -554,6 +563,8 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
             x = topRightX + offsetX,
             y = y,
         }) then
+            --table.insert(_FACE_POINTS, topRightX + offsetX)
+            --table.insert(_FACE_POINTS, y)
 
             if not findFaceForPoint(slabsList, pathDataList, minY, maxY, {
                 x = topRightX + offsetX * 0.5,
@@ -565,8 +576,6 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
                 for k in pairs(newColoredSubpathIds) do
                     newColoredSubpathIds[k] = nil
                 end
-                table.insert(_FACE_POINTS, topRightX + offsetX)
-                table.insert(_FACE_POINTS, y)
                 print('return 8')
 
                 return false
