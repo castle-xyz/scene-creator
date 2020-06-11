@@ -1,6 +1,6 @@
 
-GRID_HORIZONTAL_PADDING = 0.05 * DEFAULT_VIEW_WIDTH
-GRID_TOP_PADDING = 0.1 * DEFAULT_VIEW_WIDTH
+GRID_HORIZONTAL_PADDING = 0--0.05 * DEFAULT_VIEW_WIDTH
+GRID_TOP_PADDING = 0--0.1 * DEFAULT_VIEW_WIDTH
 GRID_SIZE = 15
 GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
 BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
@@ -380,7 +380,7 @@ function DrawTool.handlers:update(dt)
         elseif _subtool == 'bend' then
             if touch.released then
                 for i = 1, #_drawData.pathDataList do
-                    if _drawData.pathDataList[i].path:nearest(touch.x, touch.y, 0.5) then
+                    if _drawData.pathDataList[i].tovePath:nearest(touch.x, touch.y, 0.5) then
                         _drawData.pathDataList[i].style = _drawData.pathDataList[i].style + 1
                         if _drawData.pathDataList[i].style > 3 then
                             _drawData.pathDataList[i].style = 1
