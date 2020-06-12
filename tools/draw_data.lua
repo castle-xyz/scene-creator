@@ -136,7 +136,63 @@ function DrawData:updatePathDataRendering(pathData)
     local p1 = pathData.points[1]
     local p2 = pathData.points[2]
     local style = pathData.style
+    local bendPoint = pathData.bendPoint
 
+    if not bendPoint or bendPoint == nil then
+        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+        makeSubpathsFromSubpathData(pathData)
+        return
+    end
+
+    local p1NormalVector = {
+        dx = -(bendPoint.y - p1.y),
+        dy = bendPoint.x - p1.x
+    }
+    local p2NormalVector = {
+        dx = -(bendPoint.y - p2.y),
+        dy = bendPoint.x - p2.x
+    }
+    local p1Midpoint = {
+        x = (bendPoint.x + p1.x) / 2.0,
+        y = (bendPoint.y + p1.y) / 2.0,
+    }
+    local p2Midpoint = {
+        x = (bendPoint.x + p2.x) / 2.0,
+        y = (bendPoint.y + p2.y) / 2.0,
+    }
+
+    local circleCenterX, circleCenterY = rayRayIntersection(
+        p1Midpoint.x, p1Midpoint.y,
+        p1Midpoint.x + p1NormalVector.dx, p1Midpoint.y + p1NormalVector.dy,
+        p2Midpoint.x, p2Midpoint.y,
+        p2Midpoint.x + p2NormalVector.dx, p2Midpoint.y + p2NormalVector.dy
+    )
+
+    if circleCenterX == nil then
+        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+        makeSubpathsFromSubpathData(pathData)
+        return
+    end
+
+    local radius = math.sqrt(math.pow(p1.y - circleCenterY, 2.0) + math.pow(p1.x - circleCenterX, 2.0))
+
+    if radius > 50 then
+        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+        makeSubpathsFromSubpathData(pathData)
+        return
+    end
+
+    local angle1 = math.atan2(p1.y - circleCenterY, p1.x - circleCenterX)
+    local angleBendPoint = math.atan2(bendPoint.y - circleCenterY, bendPoint.x - circleCenterX)
+    local angle2 = math.atan2(p2.y - circleCenterY, p2.x - circleCenterX)
+
+    if isAngleBetween(angleBendPoint, angle1, angle2) then
+        addCircleSubpathData(pathData, circleCenterX, circleCenterY, radius, angle1, angle2)
+    else
+        addCircleSubpathData(pathData, circleCenterX, circleCenterY, radius, angle2, angle1)
+    end
+
+    --[[
     if style == 1 then
         addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
         makeSubpathsFromSubpathData(pathData)
@@ -270,7 +326,7 @@ function DrawData:updatePathDataRendering(pathData)
         end
 
         addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
-    end
+    end]]--
 
     makeSubpathsFromSubpathData(pathData)
 end
@@ -375,6 +431,7 @@ function DrawData:serialize()
         table.insert(data.pathDataList, {
             points = pathData.points,
             style = pathData.style,
+            bendPoint = pathData.bendPoint,
             id = pathData.id,
         })
     end

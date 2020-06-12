@@ -653,6 +653,17 @@ local function areAnglesEqual(a1, a2)
     return false
 end
 
+function rayRayIntersection(x1, y1, x2, y2, x3, y3, x4, y4)
+    local denom = ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4))
+    if denom < 0.01 and denom > -0.01 then
+        return nil
+    end
+
+    local t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+
+    return (x1 + t * (x2 - x1)), (y1 + t * (y2 - y1))
+end
+
 function subpathDataIntersection(s1, s2)
     local results = {}
 
@@ -894,6 +905,18 @@ local function normalizeRadianAngle(angle)
     end
 
     return angle
+end
+
+function isAngleBetween(N, a, b)
+    N = normalizeRadianAngle(N)
+    a = normalizeRadianAngle(a)
+    b = normalizeRadianAngle(b)
+   
+    if a < b then
+        return a <= N and N <= b
+    else
+        return a <= N or N <= b
+    end
 end
 
 local function radianAngleQuadrant(angle)

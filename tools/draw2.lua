@@ -353,21 +353,43 @@ function DrawTool.handlers:update(dt)
                 end
             end
         elseif _subtool == 'bend' then
-            if touch.released then
+            if _grabbedPaths == nil then
+                _grabbedPaths = {}
+
                 for i = 1, #_drawData.pathDataList do
                     if _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
-                        _drawData.pathDataList[i].style = _drawData.pathDataList[i].style + 1
-                        if _drawData.pathDataList[i].style > 3 then
-                            _drawData.pathDataList[i].style = 1
-                        end
-                        _drawData.pathDataList[i].tovePath = nil -- reset rendering
-
-                        _drawData:resetFill()
+                        table.insert(_grabbedPaths, _drawData.pathDataList[i])
+                        removePathData(_drawData.pathDataList[i])
                         _drawData:resetGraphics()
-                        self:saveDrawing("bend", c)
-
                         break
                     end
+                end
+            end
+
+            if #_grabbedPaths > 0 then
+                _grabbedPaths[1].bendPoint = {
+                    x = touchX,
+                    y = touchY,
+                }
+                _grabbedPaths[1].tovePath = nil
+            end
+
+            if touch.released then
+                if #_grabbedPaths > 0 then
+                    addPathData(_grabbedPaths[1])
+                end
+                
+                _drawData:resetFill()
+                _drawData:resetGraphics()
+                self:saveDrawing("bend", c)
+
+                _grabbedPaths = nil
+                _tempGraphics = nil
+            else
+                if #_grabbedPaths > 0 then
+                    resetTempGraphics()
+                    _drawData:updatePathDataRendering(_grabbedPaths[1])
+                    _tempGraphics:addPath(_grabbedPaths[1].tovePath)
                 end
             end
         elseif _subtool == 'fill' then
