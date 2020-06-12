@@ -49,7 +49,7 @@ end
 
 function Drawing2Behavior:deserialize(base64)
     if base64 == nil or string.len(base64) == 0 then
-        return 0, DrawData:new({})
+        return DrawData:new({})
     end
 
     local compressed = love.data.decode("string", "base64", base64)
@@ -83,6 +83,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
     local bodyAngle = body:getAngle()
 
     local drawData = self:cacheDrawing(component.properties.data)
+
     component._drawData = drawData -- Maintain strong reference
     local graphicsSize = drawData.scale or 10
 
