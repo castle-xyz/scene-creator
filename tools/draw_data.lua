@@ -126,7 +126,7 @@ function DrawData:updatePathDataRendering(pathData)
 
     local path = tove.newPath()
 
-    path:setLineColor(0.0, 0.0, 0.0, 1.0)
+    path:setLineColor(self.lineColor[1], self.lineColor[2], self.lineColor[3], 1.0)
     path:setLineWidth(0.2)
     path:setMiterLimit(1)
     path:setLineJoin("round")
@@ -401,6 +401,7 @@ function DrawData:new(obj)
         floodFillColoredSubpathIds = obj.floodFillColoredSubpathIds or {},
         nextPathId = obj.nextPathId or 0,
         fillColor = obj.fillColor or {hexStringToRgb(DEFAULT_PALETTE[7])},
+        lineColor = obj.lineColor or {0.0, 0.0, 0.0},
         gridSize = obj.gridSize or 15,
         scale = obj.scale or DRAW_DATA_SCALE,
     }
@@ -422,6 +423,7 @@ function DrawData:serialize()
         floodFillColoredSubpathIds = self.floodFillColoredSubpathIds,
         nextPathId = self.nextPathId,
         fillColor = self.fillColor,
+        lineColor = self.lineColor,
         gridSize = self.gridSize,
         scale = self.scale,
     }
@@ -488,4 +490,30 @@ function DrawData:clearGraphics()
     for i = 1, #self.floodFillFaceDataList do
         self.floodFillFaceDataList[i].tovePath = nil
     end
+end
+
+function DrawData:updateFillColor(r, g, b)
+    if r == self.fillColor[1] and g == self.fillColor[2] and b == self.fillColor[3] then
+        return false
+    end
+
+    self.fillColor[1] = r
+    self.fillColor[2] = g
+    self.fillColor[3] = b
+
+    self:clearGraphics()
+    return true
+end
+
+function DrawData:updateLineColor(r, g, b)
+    if r == self.lineColor[1] and g == self.lineColor[2] and b == self.lineColor[3] then
+        return false
+    end
+
+    self.lineColor[1] = r
+    self.lineColor[2] = g
+    self.lineColor[3] = b
+
+    self:clearGraphics()
+    return true
 end

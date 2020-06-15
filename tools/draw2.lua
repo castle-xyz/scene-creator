@@ -659,8 +659,23 @@ function DrawTool.handlers:uiPanel()
             justifyContent = "flex-end"
         },
         function()
-            _drawData.fillColor[1], _drawData.fillColor[2], _drawData.fillColor[3] =
-                uiPalette(_drawData.fillColor[1], _drawData.fillColor[2], _drawData.fillColor[3])
+            if _drawData:updateFillColor(uiPalette(_drawData.fillColor[1], _drawData.fillColor[2], _drawData.fillColor[3])) then
+                self:saveDrawing("update fill color", c)
+            end
+        end
+    )
+
+    ui.box(
+        "line color box",
+        {
+            flex = 1,
+            alignItems = "flex-start",
+            justifyContent = "flex-end"
+        },
+        function()
+            if _drawData:updateLineColor(uiPalette(_drawData.lineColor[1], _drawData.lineColor[2], _drawData.lineColor[3])) then
+                self:saveDrawing("update line color", c)
+            end
         end
     )
 
