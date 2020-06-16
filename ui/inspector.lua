@@ -112,21 +112,6 @@ function Client:uiInspector()
    if actorId then
       local actor = self.actors[actorId]
 
-      -- Does the active tool have a panel?
-      local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
-
-      if activeTool and activeTool.handlers.uiPanel then
-          local uiName = activeTool:getUiName()
-          ui.scrollBox('inspector-tool-' .. uiName, {
-              padding = 2,
-              margin = 2,
-              flex = 1,
-          }, function()
-              activeTool:callHandler('uiPanel')
-          end)
-          return
-      end
-
       -- behaviors data
       for behaviorName, behavior in pairs(self.behaviorsByName) do
          local actions = {}
@@ -150,6 +135,11 @@ function Client:uiInspector()
             -- action to remove behavior from this actor
             actions['remove'] = function()
                self:_removeBehavior(actorId, component, behavior)
+            end
+         elseif self.tools[behavior.behaviorId] then
+            -- action to use tool
+            actions['setActiveTool'] = function()
+               self:setActiveTool(behavior.behaviorId)
             end
          else
             -- actor does not have this behavior, action to add it

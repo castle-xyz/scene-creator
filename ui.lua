@@ -41,6 +41,24 @@ function Client:uiTextActorsData()
    ui.data({ textActors = textActors })
 end
 
+function Client:uiActiveTool()
+    -- Does the active tool have a panel?
+    local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+
+    if activeTool and activeTool.handlers.uiPanel then
+        local uiName = activeTool:getUiName()
+        ui.scrollBox('inspector-tool-' .. uiName, {
+            padding = 2,
+            margin = 2,
+            flex = 1,
+        }, function()
+            activeTool:callHandler('uiPanel')
+        end)
+    else
+       ui.data({})
+    end
+end
+
 function Client:uiGlobalActions()
    local actionsAvailable = {}
    local actions = {}
@@ -64,12 +82,29 @@ function Client:uiGlobalActions()
    actions['onRedo'] = function()
       self:redo()
    end
+
+   -- TODO: dup of some logic in inspector_actions
+   local tools = {}
+    for _, tool in pairs(self.tools) do
+       table.insert(
+          tools,
+          {
+             name = tool.name,
+             behaviorId = tool.behaviorId,
+             hasUi = not (not tool.handlers.uiPanel),
+          }
+       )
+    end
+    actions['setActiveTool'] = function(id) self:setActiveTool(id) end
+    actions['resetActiveTool'] = function(id) self:setActiveTool(self.behaviorsByName.Grab.behaviorId) end
    
    ui.data(
       {
          performing = self.performing,
          hasSelection = next(self.selectedActorIds) ~= nil,
          actionsAvailable = actionsAvailable,
+         tools = tools,
+         activeToolBehaviorId = self.activeToolBehaviorId,
       },
       {
          actions = actions,
@@ -124,4 +159,7 @@ function Client:uiupdate()
     ui.pane('sceneCreatorTextActors', function()
         self:uiTextActorsData()
     end)
+
+    -- Active "tool" ui (only drawing at time of writing)
+    ui.pane('sceneCreatorTool', function() self:uiActiveTool() end)
 end
