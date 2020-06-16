@@ -43,7 +43,7 @@ if SHOW_TEXT_ACTORS then
             actorBlueprint = {
                 components = {
                     Text = {
-                        content = "Once upon a time..."
+                        content = ""
                     }
                 }
             }
