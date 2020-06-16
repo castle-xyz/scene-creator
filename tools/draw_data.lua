@@ -376,14 +376,7 @@ function DrawData:resetFill()
 end
 
 function DrawData:clone()
-    local result = DrawData:new(self)
-    result:clearGraphics()
-    result = util.deepCopyTable(result)
-
-    setmetatable(result, self)
-    self.__index = self
-
-    return result
+    return DrawData:new(self)
 end
 
 function DrawData:new(obj)
@@ -408,6 +401,14 @@ function DrawData:new(obj)
 
     setmetatable(newObj, self)
     self.__index = self
+
+    newObj:clearGraphics()
+    newObj = util.deepCopyTable(newObj)
+
+    setmetatable(newObj, self)
+    self.__index = self
+
+    newObj:graphics()
 
     return newObj
 end

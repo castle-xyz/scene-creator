@@ -36,26 +36,13 @@ function Drawing2Behavior:cacheDrawing(data)
 end
 
 function Drawing2Behavior:serialize(drawData)
-    local payload = drawData
-
-    local encoded = bitser.dumps(payload)
-    --print('encoded', #encoded)
-    local compressed = love.data.compress("string", "zlib", encoded)
-    --print('compressed', #compressed)
-    local base64 = love.data.encode("string", "base64", compressed)
-    --print('base64', #base64)
-    return base64
+    return drawData
 end
 
-function Drawing2Behavior:deserialize(base64)
-    if base64 == nil or string.len(base64) == 0 then
+function Drawing2Behavior:deserialize(payload)
+    if payload == nil then
         return DrawData:new({})
     end
-
-    local compressed = love.data.decode("string", "base64", base64)
-    local encoded = love.data.decompress("string", "zlib", compressed)
-    local payload = bitser.loads(encoded)
-
     return DrawData:new(payload)
 end
 
