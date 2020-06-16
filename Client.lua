@@ -5,6 +5,7 @@ jsEvents = require "__ghost__.jsEvents"
 NEW_DRAW_TOOL = true
 SHOW_TEXT_ACTORS = true
 DEBUG_FLOOD_FILL = false
+DEBUG_PHYSICS_BODIES = false
 
 function castle.onQuit()
 end
@@ -622,7 +623,7 @@ function Client:draw()
         self:callHandlers("drawOverlay")
     end
 
-    if false then -- Physics bodies
+    if DEBUG_PHYSICS_BODIES then -- Physics bodies
         local physics = self.behaviorsByName.Body:getPhysics()
         local worldId, world = physics:getWorld()
         if world then

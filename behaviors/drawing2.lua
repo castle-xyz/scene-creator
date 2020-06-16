@@ -1,10 +1,13 @@
 require('tools.draw_data')
+require('tools.physics_body_data')
 
 local Drawing2Behavior =
     defineCoreBehavior {
     name = "Drawing2",
     propertyNames = {
-        "data"
+        "hash",
+        "drawData",
+        "physicsBodyData"
     },
     dependencies = {
         "Body"
@@ -22,41 +25,54 @@ local DEFAULT_DATA = ''
 local cache = setmetatable({}, {__mode = "v"})
 
 function Drawing2Behavior:cacheDrawing(data)
-    if not cache[data] then
-        cache[data] = self:deserialize(data)
+    local hash = data.hash
+
+    if not cache[hash] then
+        cache[hash] = self:deserialize(data)
     end
 
-    for k, v in pairs(cache) do
-        if k ~= data then
-            cache[k]:clearGraphics()
-        end
-    end
-
-    return cache[data]
+    return cache[hash]
 end
 
-function Drawing2Behavior:serialize(drawData)
-    return drawData
+function Drawing2Behavior:hash(drawData, physicsBodyData)
+    local payload = {
+        drawData = drawData,
+        physicsBodyData = physicsBodyData,
+    }
+    local encoded = bitser.dumps(payload)
+    local compressed = love.data.compress("string", "zlib", encoded)
+    local base64 = love.data.encode("string", "base64", compressed)
+    return base64
 end
 
 function Drawing2Behavior:deserialize(payload)
+    local result = {}
+
     if payload == nil then
-        return DrawData:new({})
+        result.drawData = DrawData:new({})
+        result.physicsBodyData = PhysicsBodyData:new({})
+    else
+        result.drawData = DrawData:new(payload.drawData or {})
+        result.physicsBodyData = PhysicsBodyData:new(payload.physicsBodyData or {})
     end
-    return DrawData:new(payload)
+
+    return result
 end
 
 -- Component management
 
 function Drawing2Behavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
-    component.properties.data = bp.data or DEFAULT_DATA
+    component.properties.drawData = bp.drawData or DEFAULT_DATA
+    component.properties.physicsBodyData = bp.physicsBodyData or DEFAULT_DATA
+    component.properties.hash = self:hash(component.properties.drawData, component.properties.physicsBodyData)
 
-    self:cacheDrawing(component.properties.data)
+    self:cacheDrawing(component.properties)
 end
 
 function Drawing2Behavior.handlers:blueprintComponent(component, bp)
-    bp.data = component.properties.data
+    bp.drawData = component.properties.drawData
+    bp.physicsBodyData = component.properties.physicsBodyData
 end
 
 
@@ -69,7 +85,8 @@ function Drawing2Behavior.handlers:drawComponent(component)
     local bodyX, bodyY = body:getPosition()
     local bodyAngle = body:getAngle()
 
-    local drawData = self:cacheDrawing(component.properties.data)
+    local data = self:cacheDrawing(component.properties)
+    local drawData = data.drawData
 
     component._drawData = drawData -- Maintain strong reference
     local graphicsSize = drawData.scale or 10

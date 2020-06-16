@@ -50,6 +50,7 @@ we use the same system but in radians
 
 local _viewTransform = love.math.newTransform()
 local _drawData
+local _physicsBodyData
 
 local _initialCoord
 local _currentPathData
@@ -92,20 +93,27 @@ end
 function DrawTool:saveDrawing(commandDescription, c)
     local actorId = c.actorId
     local newDrawData = _drawData:serialize()
-    local newData = self.dependencies.Drawing2:serialize(newDrawData)
-    c._lastData = newData -- Prevent reloading since we're already in sync
-    local oldData = self.dependencies.Drawing2:get(actorId).properties.data
+    local newPhysicsBodyData = _physicsBodyData:serialize()
+    local newHash = self.dependencies.Drawing2:hash(newDrawData, newPhysicsBodyData) -- Prevent reloading since we're already in sync
+    c._lastHash = newHash
+    local oldDrawData = self.dependencies.Drawing2:get(actorId).properties.drawData
+    local oldPhysicsBodyData = self.dependencies.Drawing2:get(actorId).properties.physicsBodyData
+    local oldHash = self.dependencies.Drawing2:get(actorId).properties.hash
 
     self.dependencies.Drawing2:command(
         commandDescription,
         {
-            params = {"oldData", "newData"}
+            params = {"oldDrawData", "newDrawData", "oldPhysicsBodyData", "newPhysicsBodyData", "oldHash", "newHash"}
         },
         function()
-            self:sendSetProperties(actorId, "data", newData)
+            self:sendSetProperties(actorId, "drawData", newDrawData)
+            self:sendSetProperties(actorId, "physicsBodyData", newPhysicsBodyData)
+            self:sendSetProperties(actorId, "hash", newHash)
         end,
         function()
-            self:sendSetProperties(actorId, "data", oldData)
+            self:sendSetProperties(actorId, "drawData", oldDrawData)
+            self:sendSetProperties(actorId, "physicsBodyData", oldPhysicsBodyData)
+            self:sendSetProperties(actorId, "hash", oldHash)
         end
     )
 end
@@ -127,6 +135,7 @@ end
 
 function DrawTool.handlers:onSetActive()
     _drawData = DrawData:new()
+    _physicsBodyData = DrawData:new()
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
@@ -157,14 +166,12 @@ function DrawTool.handlers:update(dt)
     end
 
     local drawingComponent = self.dependencies.Drawing2:get(c.actorId)
-    if c._lastData ~= drawingComponent.properties.data then
-        local cacheDrawData = self.dependencies.Drawing2:cacheDrawing(drawingComponent.properties.data)
-        if not cacheDrawData then
-            return
-        end
+    if c._lastHash ~= drawingComponent.properties.hash then
+        local data = self.dependencies.Drawing2:cacheDrawing(drawingComponent.properties)
 
-        c._lastData = drawingComponent.properties.data
-        _drawData = cacheDrawData:clone()
+        c._lastHash = drawingComponent.properties.hash
+        _drawData = data.drawData:clone()
+        _physicsBodyData = data.physicsBodyData:clone()
     end
 
 
