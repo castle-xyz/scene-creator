@@ -1,5 +1,26 @@
 -- Core library
 
+local drawingComponentName
+local wallDrawingComponent, ballDrawingComponent
+if NEW_DRAW_TOOL then
+   drawingComponentName = 'Drawing2'
+   local drawing2Component = {
+      Drawing2 = {
+         data = {}
+      },
+   }
+   wallDrawingComponent = util.deepCopyTable(drawing2Component)
+   ballDrawingComponent = util.deepCopyTable(drawing2Component)
+else
+   drawingComponentName = 'Drawing'
+   wallDrawingComponent = {
+      url = "assets/rectangle.svg"
+   }
+   ballDrawingComponent = {
+      url = "assets/circle.svg"
+   }
+end
+
 local CORE_LIBRARY = {
     {
         entryType = "actorBlueprint",
@@ -7,9 +28,7 @@ local CORE_LIBRARY = {
         description = "A rectangular solid that doesn't move.",
         actorBlueprint = {
             components = {
-                Drawing = {
-                    url = "assets/rectangle.svg"
-                },
+                [drawingComponentName] = wallDrawingComponent,
                 Body = {},
                 Solid = {}
             }
@@ -21,9 +40,7 @@ local CORE_LIBRARY = {
         description = "A circular solid that falls.",
         actorBlueprint = {
             components = {
-                Drawing = {
-                    url = "assets/circle.svg"
-                },
+                [drawingComponentName] = ballDrawingComponent,
                 Body = {gravityScale = 1},
                 CircleShape = {},
                 Solid = {},
