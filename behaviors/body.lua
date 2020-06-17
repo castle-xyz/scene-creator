@@ -190,7 +190,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
             width = bp.width
             height = bp.height
         else
-            width, height = self:getSize(component.actorId)
+            width, height = self:getFixtureBoundingBoxSize(component.actorId)
         end
 
         component.properties.width = width
@@ -743,6 +743,20 @@ local function getRectangleSizeFromFixture(fixture)
 end
 
 function BodyBehavior:getSize(actorId)
+    local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
+    local bodyId, body = self:getBody(component)
+    local fixture = body:getFixtures()[1]
+    local shape = fixture:getShape()
+    local shapeType = shape:getType()
+
+    if shapeType == 'circle' then
+        return self:getFixtureBoundingBoxSize(actorId)
+    else
+        return component.properties.width, component.properties.height
+    end
+end
+
+function BodyBehavior:getFixtureBoundingBoxSize(actorId)
     -- Get bounding box size, whatever the shape of the body
 
     local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
