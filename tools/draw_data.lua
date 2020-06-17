@@ -1,14 +1,14 @@
 DrawData = {}
 
 function DrawData:globalToGridCoordinates(x, y)
-    local gridX = 1.0 + (self.gridSize - 1) * x / DRAW_DATA_SCALE
-    local gridY = 1.0 + (self.gridSize - 1) * y / DRAW_DATA_SCALE
+    local gridX = 1.0 + (self.gridSize - 1) * x / self.scale
+    local gridY = 1.0 + (self.gridSize - 1) * y / self.scale
     return gridX, gridY
 end
 
 function DrawData:gridToGlobalCoordinates(x, y)
-    local globalX = (x - 1.0) * DRAW_DATA_SCALE / (self.gridSize - 1)
-    local globalY = (y - 1.0) * DRAW_DATA_SCALE / (self.gridSize - 1)
+    local globalX = (x - 1.0) * self.scale / (self.gridSize - 1)
+    local globalY = (y - 1.0) * self.scale / (self.gridSize - 1)
     return globalX, globalY
 end
 
@@ -366,7 +366,7 @@ function DrawData:resetFill()
 
     local newFaces = {}
     local newColoredSubpathIds = {}
-    colorAllSlabs(_SLABS, self.pathDataList, 0, self.gridSize, self.floodFillColoredSubpathIds, newFaces, newColoredSubpathIds, DRAW_DATA_SCALE / self.gridSize)
+    colorAllSlabs(_SLABS, self.pathDataList, 0, self.gridSize, self.floodFillColoredSubpathIds, newFaces, newColoredSubpathIds, self.scale / self.gridSize)
     self.floodFillFaceDataList = newFaces
 
     self.floodFillColoredSubpathIds = {}

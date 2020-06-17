@@ -59,6 +59,10 @@ function Drawing2Behavior:deserialize(payload)
     return result
 end
 
+function Drawing2Behavior:updateBodyShape(component, physicsBodyData)
+    self.dependencies.Body:setPoints(component.actorId, physicsBodyData:getNormalizedPoints())
+end
+
 -- Component management
 
 function Drawing2Behavior.handlers:addComponent(component, bp, opts)
@@ -67,7 +71,14 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
     component.properties.physicsBodyData = bp.physicsBodyData or DEFAULT_DATA
     component.properties.hash = self:hash(component.properties.drawData, component.properties.physicsBodyData)
 
-    self:cacheDrawing(component.properties)
+    local data = self:cacheDrawing(component.properties)
+    self:updateBodyShape(component, data.physicsBodyData)
+end
+
+function Drawing2Behavior.handlers:removeComponent(component, opts)
+    if opts.isOrigin and not opts.removeActor then
+        self.dependencies.Body:resetShape(component.actorId)
+    end
 end
 
 function Drawing2Behavior.handlers:blueprintComponent(component, bp)
@@ -87,6 +98,11 @@ function Drawing2Behavior.handlers:drawComponent(component)
 
     local data = self:cacheDrawing(component.properties)
     local drawData = data.drawData
+
+    if component._hash ~= component.properties.hash then
+        self:updateBodyShape(component, data.physicsBodyData)
+    end
+    component._hash = component.properties.hash
 
     component._drawData = drawData -- Maintain strong reference
     local graphicsSize = drawData.scale or 10

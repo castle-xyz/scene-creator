@@ -1,5 +1,9 @@
 -- for dragging points with a fill, we can render to a bmp and then test each affected slab against the bmp
 
+function floatEquals(f1, f2)
+    return f1 > f2 - 0.001 and f1 < f2 + 0.001
+end
+
 function idToSubpath(pathDataList, id)
     return pathDataList[id.pathIdx].subpathDataList[id.subpathIdx]
 end
@@ -1055,4 +1059,39 @@ function cutSubpathData(subpathData, points, x1, x2, minY, maxY, leftToRight)
 
         --newSubpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, startAngle * 180 / math.pi, endAngle * 180 / math.pi)
     end
+end
+
+function isConvexHull(points)
+    local sign = false
+
+    local prevIndex = #points - 1
+    for i = 1, #points, 2 do
+        local nextIndex = i + 2
+        if nextIndex > #points then
+            nextIndex = nextIndex - #points
+        end
+
+        local x1 = points[prevIndex]
+        local y1 = points[prevIndex + 1]
+        local x2 = points[i]
+        local y2 = points[i + 1]
+        local x3 = points[nextIndex]
+        local y3 = points[nextIndex + 1]
+
+        local dx1 = x3 - x2
+        local dy1 = y3 - y2
+        local dx2 = x1 - x2
+        local dy2 = y1 - y2
+        local zcp = dx1 * dy2 - dy1 * dx2
+        
+        if i == 1 then
+            sign = zcp > 0
+        elseif sign ~= (zcp > 0) then
+            return false
+        end
+
+        prevIndex = i
+    end
+
+    return true
 end

@@ -285,7 +285,7 @@ function ScaleRotateTool.handlers:update(dt)
                                 }
                             },
                             function(params)
-                                self.dependencies.Body:setRectangleShape(actorId, params.width, params.height)
+                                self.dependencies.Body:resize(actorId, params.width, params.height)
 
                                 local physics = self.dependencies.Body:getPhysics()
                                 local reliable = params.gestureEnded or not live
