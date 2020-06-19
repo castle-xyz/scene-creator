@@ -26,6 +26,7 @@ local BodyBehavior =
         "angle",
         "width",
         "height",
+        "fixedRotation",
     },
     propertySpecs = {
        x = {
@@ -49,6 +50,10 @@ local BodyBehavior =
           method = 'numberInput',
           label = 'height',
           props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
+       },
+       fixedRotation = {
+          method = 'toggle',
+          label = 'Rotates',
        },
     },
 }
