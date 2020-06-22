@@ -18,9 +18,11 @@ function Client:moveActorForward(actorId, command)
     local actor = self.actors[actorId]
     if actor.drawOrder < table.maxn(self.actorsByDrawOrder) then
         local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
-        local fixture = body:getFixtures()[1]
-        if fixture then
-            local newDrawOrder
+        local fixtures = body:getFixtures()
+
+        local newDrawOrder
+
+        for _, fixture in pairs(fixtures) do
             local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
                 fixture:getBoundingBox())
             for hit in pairs(hits) do -- Find greatest draw order below us
@@ -30,22 +32,23 @@ function Client:moveActorForward(actorId, command)
                     newDrawOrder = otherActor.drawOrder
                 end
             end
-            if newDrawOrder then
-                if command then
-                    self:command('move forward', {
-                        params = { 'newDrawOrder' },
-                    }, function(params, live)
-                        if live then
-                            self:send('setActorDrawOrder', actorId, newDrawOrder)
-                        else
-                            self:moveActorForward(actorId, false)
-                        end
-                    end, function()
-                        self:moveActorBackward(actorId, false)
-                    end)
-                else
-                    self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
-                end
+        end
+
+        if newDrawOrder then
+            if command then
+                self:command('move forward', {
+                    params = { 'newDrawOrder' },
+                }, function(params, live)
+                    if live then
+                        self:send('setActorDrawOrder', actorId, newDrawOrder)
+                    else
+                        self:moveActorForward(actorId, false)
+                    end
+                end, function()
+                    self:moveActorBackward(actorId, false)
+                end)
+            else
+                self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
             end
         end
     end
@@ -71,9 +74,11 @@ function Client:moveActorBackward(actorId, command)
     local actor = self.actors[actorId]
     if actor.drawOrder > 1 then
         local bodyId, body = self.behaviorsByName.Body:getBody(actor.actorId)
-        local fixture = body:getFixtures()[1]
-        if fixture then
-            local newDrawOrder
+        local fixtures = body:getFixtures()
+
+        local newDrawOrder
+
+        for _, fixture in pairs(fixtures) do
             local hits = self.behaviorsByName.Body:getActorsAtBoundingBox(
                 fixture:getBoundingBox())
             for hit in pairs(hits) do -- Find greatest draw order below us
@@ -83,22 +88,23 @@ function Client:moveActorBackward(actorId, command)
                     newDrawOrder = otherActor.drawOrder
                 end
             end
-            if newDrawOrder then
-                if command then
-                    self:command('move backward', {
-                        params = { 'newDrawOrder' },
-                    }, function(params, live)
-                        if live then
-                            self:send('setActorDrawOrder', actorId, newDrawOrder)
-                        else
-                            self:moveActorBackward(actorId, false)
-                        end
-                    end, function()
-                        self:moveActorForward(actorId, false)
-                    end)
-                else
-                    self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
-                end
+        end
+
+        if newDrawOrder then
+            if command then
+                self:command('move backward', {
+                    params = { 'newDrawOrder' },
+                }, function(params, live)
+                    if live then
+                        self:send('setActorDrawOrder', actorId, newDrawOrder)
+                    else
+                        self:moveActorBackward(actorId, false)
+                    end
+                end, function()
+                    self:moveActorForward(actorId, false)
+                end)
+            else
+                self:send('setActorDrawOrder', actor.actorId, newDrawOrder)
             end
         end
     end

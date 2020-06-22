@@ -60,7 +60,7 @@ function Drawing2Behavior:deserialize(payload)
 end
 
 function Drawing2Behavior:updateBodyShape(component, physicsBodyData)
-    self.dependencies.Body:setPoints(component.actorId, physicsBodyData:getNormalizedPoints())
+    self.dependencies.Body:setPoints(component.actorId, {physicsBodyData:getNormalizedPoints()})
 end
 
 -- Component management
@@ -77,7 +77,7 @@ end
 
 function Drawing2Behavior.handlers:removeComponent(component, opts)
     if opts.isOrigin and not opts.removeActor then
-        self.dependencies.Body:resetShape(component.actorId)
+        self.dependencies.Body:resetShapes(component.actorId)
     end
 end
 

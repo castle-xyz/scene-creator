@@ -325,7 +325,7 @@ function ScaleRotateTool.handlers:update(dt)
                         },
                         function(params)
                             local physics = self.dependencies.Body:getPhysics()
-                            self.dependencies.Body:setShape(actorId, physics:newCircleShape(params.radius))
+                            self.dependencies.Body:setShapes(actorId, {physics:newCircleShape(params.radius)})
 
                             local reliable = params.gestureEnded or not live
                             local sendOpts = {

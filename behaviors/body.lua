@@ -575,20 +575,20 @@ Is true if the actor **is currently in contact** with another actor. If a **tag*
 
 function BodyBehavior.setters:x(component, value)
    local actorId = component.actorId
-   local physics, bodyId = self:getMembers(actorId)
-   physics:setX(bodyId, value)
+   local members = self:getMembers(actorId)
+   members.physics:setX(bodyId, value)
 end
 
 function BodyBehavior.setters:y(component, value)
    local actorId = component.actorId
-   local physics, bodyId = self:getMembers(actorId)
-   physics:setY(bodyId, value)
+   local members = self:getMembers(actorId)
+   members.physics:setY(bodyId, value)
 end
 
 function BodyBehavior.setters:angle(component, value)
    local actorId = component.actorId
-   local physics, bodyId = self:getMembers(actorId)
-   physics:setAngle(bodyId, value * math.pi / 180)
+   local members = self:getMembers(actorId)
+   members.physics:setAngle(bodyId, value * math.pi / 180)
 end
 
 function BodyBehavior.setters:width(component, value)
@@ -605,67 +605,80 @@ function BodyBehavior.setters:height(component, value)
    self:setRectangleShape(actorId, rectangleWidth, value)
 end
 
-function BodyBehavior:setShape(componentOrActorId, newShapeId)
+function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
     local bodyId, body = self:getBody(componentOrActorId)
-    local fixture = body:getFixtures()[1]
-    if fixture then
-        local fixtureId = self._physics:idForObject(fixture)
+    local fixtures = body:getFixtures()
+    local firstFixture = fixtures[1]
+    local density = firstFixture:getDensity()
+    local friction = firstFixture:getFriction()
+    local restitution = firstFixture:getRestitution()
+    local sensor = firstFixture:isSensor()
 
-        local newFixtureId = self._physics:newFixture(bodyId, newShapeId, fixture:getDensity())
+    for _, fixture in pairs(fixtures) do
+        local fixtureId = self._physics:idForObject(fixture)
+        self._physics:destroyObject(fixtureId)
+    end
+
+    for _, newShapeId in pairs(newShapeIds) do
+        local newFixtureId = self._physics:newFixture(bodyId, newShapeId, density)
         self._physics:destroyObject(newShapeId)
 
-        self._physics:setFriction(newFixtureId, fixture:getFriction())
-        self._physics:setRestitution(newFixtureId, fixture:getRestitution())
-        self._physics:setSensor(newFixtureId, fixture:isSensor())
-
-        self._physics:destroyObject(fixtureId)
-
-        return newFixtureId
+        self._physics:setFriction(newFixtureId, friction)
+        self._physics:setRestitution(newFixtureId, restitution)
+        self._physics:setSensor(newFixtureId, sensor)
     end
 end
 
-function BodyBehavior:setPoints(componentOrActorId, points)
+function BodyBehavior:setPoints(componentOrActorId, pointsSets)
     local component = self:getComponent(componentOrActorId)
+    local shapes = {}
 
-    for i = 1, #points, 2 do
-        points[i] = points[i] * component.properties.width
-        points[i + 1] = points[i + 1] * component.properties.height
+    for _, points in pairs(pointsSets) do
+        for i = 1, #points, 2 do
+            points[i] = points[i] * component.properties.width
+            points[i + 1] = points[i + 1] * component.properties.height
+        end
+
+        table.insert(shapes, self._physics:newPolygonShape(points))
     end
 
-    self:setShape(
+    self:setShapes(
         componentOrActorId,
-        self._physics:newPolygonShape(points)
+        shapes
     )
 end
 
 function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
     newWidth = math.max(MIN_BODY_SIZE, math.min(newWidth, MAX_BODY_SIZE))
     newHeight = math.max(MIN_BODY_SIZE, math.min(newHeight, MAX_BODY_SIZE))
-    self:setShape(
+    self:setShapes(
         componentOrActorId,
-        self._physics:newRectangleShape(newWidth - BODY_RECTANGLE_SLOP, newHeight - BODY_RECTANGLE_SLOP)
+        {self._physics:newRectangleShape(newWidth - BODY_RECTANGLE_SLOP, newHeight - BODY_RECTANGLE_SLOP)}
     )
 end
 
 function BodyBehavior:resize(componentOrActorId, newWidth, newHeight)
-    local physics, bodyId, body, fixtureId, fixture = self:getMembers(componentOrActorId)
-    local points = {fixture:getShape():getPoints()}
+    local members = self:getMembers(componentOrActorId)
     local component = self:getComponent(componentOrActorId)
+    local newShapes = {}
 
-    for i = 1, #points, 2 do
-        points[i] = points[i] * newWidth / component.properties.width
-        points[i + 1] = points[i + 1] * newHeight / component.properties.height
+    for _, fixture in pairs(members.fixtures) do
+        local points = {fixture:getShape():getPoints()}
+
+        for i = 1, #points, 2 do
+            points[i] = points[i] * newWidth / component.properties.width
+            points[i + 1] = points[i + 1] * newHeight / component.properties.height
+        end
+
+        table.insert(newShapes, self._physics:newPolygonShape(points))
     end
 
-    self:setShape(
-        componentOrActorId,
-        self._physics:newPolygonShape(points)
-    )
+    self:setShapes(componentOrActorId, newShapes)
     self:sendSetProperties(component.actorId, "width", newWidth)
     self:sendSetProperties(component.actorId, "height", newHeight)
 end
 
-function BodyBehavior:resetShape(actorId)
+function BodyBehavior:resetShapes(actorId)
     local component = self:getComponent(actorId)
     self:setRectangleShape(actorId, component.properties.width or UNIT, component.properties.height or UNIT)
 end
@@ -674,20 +687,20 @@ end
 
 function BodyBehavior.getters:x(component)
    local actorId = component.actorId
-   local physics, bodyId, body = self:getMembers(actorId)
-   return body:getX()
+   local members = self:getMembers(actorId)
+   return members.body:getX()
 end
 
 function BodyBehavior.getters:y(component)
    local actorId = component.actorId
-   local physics, bodyId, body = self:getMembers(actorId)
-   return body:getY()
+   local members = self:getMembers(actorId)
+   return members.body:getY()
 end
 
 function BodyBehavior.getters:angle(component)
    local actorId = component.actorId
-   local physics, bodyId, body = self:getMembers(actorId)
-   return body:getAngle() * 180 / math.pi
+   local members = self:getMembers(actorId)
+   return members.body:getAngle() * 180 / math.pi
 end
 
 function BodyBehavior.getters:width(component)
@@ -727,9 +740,22 @@ end
 function BodyBehavior:getMembers(componentOrActorId)
     local physics = self._physics
     local bodyId, body = self:getBody(componentOrActorId)
-    local fixture = body and body:getFixtures()[1]
-    local fixtureId = fixture and physics:idForObject(fixture)
-    return physics, bodyId, body, fixtureId, fixture
+    local fixtures = body and body:getFixtures()
+    local firstFixture = fixtures and fixtures[1]
+    local fixtureIds = {}
+
+    for _, fixture in pairs(fixtures) do
+        table.insert(fixtureIds, physics:idForObject(fixture))
+    end
+
+    return {
+        physics = physics,
+        bodyId = bodyId,
+        body = body,
+        fixtures = fixtures,
+        firstFixture = firstFixture,
+        fixtureIds = fixtureIds,
+    }
 end
 
 local function getRectangleSizeFromFixture(fixture)
@@ -766,29 +792,37 @@ function BodyBehavior:getFixtureBoundingBoxSize(actorId)
 
     local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
     local bodyId, body = self:getBody(component)
-    local fixture = body:getFixtures()[1]
-    if fixture then
-        local rectangleWidth, rectangleHeight = getRectangleSizeFromFixture(fixture, component)
+    local fixtures = body:getFixtures()
+    local firstFixture = fixtures[1]
+    local firstShape = firstFixture:getShape()
+    local firstShapeType = firstShape:getType()
+
+    if #fixtures == 1 then
+        local rectangleWidth, rectangleHeight = getRectangleSizeFromFixture(firstFixture, component)
         if rectangleHeight and rectangleHeight then
             return rectangleWidth, rectangleHeight
         end
 
-        local shape = fixture:getShape()
-        local shapeType = shape:getType()
-
-        if shapeType == "circle" then
-            local radius = shape:getRadius()
+        if firstShapeType == "circle" then
+            local radius = firstShape:getRadius()
             return 2 * radius, 2 * radius
-        elseif shapeType == "polygon" or shapeType == "edge" or shapeType == "chain" then
-            local points = {shape:getPoints()}
-            local minX, minY, maxX, maxY = points[1], points[2], points[1], points[2]
-            for i = 3, #points - 1, 2 do
-                minX, minY = math.min(minX, points[i]), math.min(minY, points[i + 1])
-                maxX, maxY = math.max(maxX, points[i]), math.max(maxY, points[i + 1])
-            end
-            return maxX - minX, maxY - minY
         end
     end
+
+    local points = {firstShape:getPoints()}
+    local minX, minY, maxX, maxY = points[1], points[2], points[1], points[2]
+
+    for _, fixture in pairs(fixtures) do
+        local shape = fixture:getShape()
+        points = {shape:getPoints()}
+
+        for i = 3, #points - 1, 2 do
+            minX, minY = math.min(minX, points[i]), math.min(minY, points[i + 1])
+            maxX, maxY = math.max(maxX, points[i]), math.max(maxY, points[i + 1])
+        end
+    end
+
+    return maxX - minX, maxY - minY
 end
 
 function BodyBehavior:getRectangleSize(componentOrActorId)
@@ -875,17 +909,19 @@ function BodyBehavior:drawBodyOutline(componentOrActorId)
         local hw = 0.5 * rectangleWidth
         love.graphics.polygon("line", body:getWorldPoints(-hw, -hh, -hw, hh, hw, hh, hw, -hh))
     else
-        local fixture = body:getFixtures()[1]
-        local shape = fixture:getShape()
-        local ty = shape:getType()
-        if ty == "circle" then
-            love.graphics.circle("line", body:getX(), body:getY(), shape:getRadius())
-        elseif ty == "polygon" then
-            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
-        elseif ty == "edge" then
-            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
-        elseif ty == "chain" then
-            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+        local fixtures = body:getFixtures()
+        for _, fixture in pairs(fixtures) do
+            local shape = fixture:getShape()
+            local ty = shape:getType()
+            if ty == "circle" then
+                love.graphics.circle("line", body:getX(), body:getY(), shape:getRadius())
+            elseif ty == "polygon" then
+                love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+            elseif ty == "edge" then
+                love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+            elseif ty == "chain" then
+                love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+            end
         end
     end
 end

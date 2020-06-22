@@ -41,12 +41,12 @@ end
 
 function FallingBehavior.setters:gravity(component, value)
    local actorId = component.actorId
-   local physics, bodyId = self.dependencies.Body:getMembers(actorId)
-   physics:setGravityScale(bodyId, value)   
+   local members = self.dependencies.Body:getMembers(actorId)
+   members.physics:setGravityScale(members.bodyId, value)
 end
 
 function FallingBehavior.getters:gravity(component)
    local actorId = component.actorId
-   local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-   return body:getGravityScale()
+   local members = self.dependencies.Body:getMembers(actorId)
+   return members.body:getGravityScale()
 end

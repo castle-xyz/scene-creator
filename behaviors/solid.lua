@@ -24,8 +24,8 @@ end
 
 function SolidBehavior.handlers:addComponent(component, bp, opts)
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-    local fixture = body:getFixtures()[1]
-    if fixture then
+    local fixtures = body:getFixtures()
+    for _, fixture in pairs(fixtures) do
         fixture:setSensor(false)
         wakeBodyAndColliders(body)
     end
@@ -34,8 +34,8 @@ end
 function SolidBehavior.handlers:removeComponent(component, opts)
     if not opts.removeActor then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        local fixture = body:getFixtures()[1]
-        if fixture then
+        local fixtures = body:getFixtures()
+        for _, fixture in pairs(fixtures) do
             fixture:setSensor(true)
             wakeBodyAndColliders(body)
         end

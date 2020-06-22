@@ -547,9 +547,9 @@ RulesBehavior.responses.create = {
         if entry then
             local x = 0
             local y = 0
-            local physics, bodyId, body = self.game.behaviorsByName.Body:getMembers(actorId)
-            if bodyId and body and context.isOwner then
-                x, y = body:getPosition()
+            local members = self.game.behaviorsByName.Body:getMembers(actorId)
+            if members.bodyId and members.body and context.isOwner then
+                x, y = members.body:getPosition()
             elseif context.x and context.y and context.isOwner then
                 x, y = context.x, context.y -- Actor was destroyed but left a position in `context`
             end
@@ -580,10 +580,10 @@ RulesBehavior.responses.destroy = {
     category = "lifetime",
     run = function(self, actorId, params, context)
         if self.game.actors[actorId] then
-            local physics, bodyId, body = self.game.behaviorsByName.Body:getMembers(actorId)
-            if bodyId and body then
+            local members = self.game.behaviorsByName.Body:getMembers(actorId)
+            if members.bodyId and members.body then
                 -- Save a few things in `context` for use in responses after 'wait's
-                context.x, context.y = body:getPosition()
+                context.x, context.y = members.body:getPosition()
             end
             self:onEndOfFrame(
                 function()

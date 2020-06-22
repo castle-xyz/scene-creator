@@ -22,14 +22,14 @@ function CircleShapeBehavior.handlers:addComponent(component, bp, opts)
             local physics = self.dependencies.Body:getPhysics()
             local width, height = self.dependencies.Body:getSize(component.actorId)
             local newRadius = 0.5 * (width and height and math.max(width, height) or UNIT)
-            self.dependencies.Body:setShape(component.actorId, physics:newCircleShape(newRadius))
+            self.dependencies.Body:setShapes(component.actorId, {physics:newCircleShape(newRadius)})
         end
     end
 end
 
 function CircleShapeBehavior.handlers:removeComponent(component, opts)
     if opts.isOrigin and not opts.removeActor then
-        self.dependencies.Body:resetShape(component.actorId)
+        self.dependencies.Body:resetShapes(component.actorId)
     end
 end
 
@@ -37,14 +37,14 @@ function CircleShapeBehavior.setters:radius(component, value)
    value = math.max(0.5 * MIN_BODY_SIZE, math.min(value, 0.5 * MAX_BODY_SIZE))
    local actorId = component.actorId
    local physics = self.dependencies.Body:getPhysics()
-   self.dependencies.Body:setShape(actorId, physics:newCircleShape(value))
+   self.dependencies.Body:setShapes(actorId, {physics:newCircleShape(value)})
 end
 
 function CircleShapeBehavior.getters:radius(component)
    local actorId = component.actorId
-   local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-   if fixture then
-      local shape = fixture:getShape()
+   local members = self.dependencies.Body:getMembers(actorId)
+   if members.firstFixture then
+      local shape = members.firstFixture:getShape()
       if shape:getType() == "circle" then
          return shape:getRadius()
       end

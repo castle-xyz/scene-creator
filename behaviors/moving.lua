@@ -188,53 +188,53 @@ Sets the actor's rotation speed to the given value.
 
 function MovingBehavior.getters:vx(component)
    local actorId = component.actorId
-   local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-   local vx, vy = body:getLinearVelocity()
+   local members = self.dependencies.Body:getMembers(actorId)
+   local vx, vy = members.body:getLinearVelocity()
    return vx
 end
 
 function MovingBehavior.getters:vy(component)
    local actorId = component.actorId
-   local physics, bodyId, body, fixtureId, fixture = self.dependencies.Body:getMembers(actorId)
-   local vx, vy = body:getLinearVelocity()
+   local members = self.dependencies.Body:getMembers(actorId)
+   local vx, vy = members.body:getLinearVelocity()
    return vy
 end
 
 function MovingBehavior.getters:isRotationAllowed(component)
    local actorId = component.actorId
-   local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-   local isFixedRotation = body:isFixedRotation()
+   local members = self.dependencies.Body:getMembers(actorId)
+   local isFixedRotation = members.body:isFixedRotation()
    return not isFixedRotation
 end
 
 function MovingBehavior.getters:angularVelocity(component)
    local actorId = component.actorId
-   local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-   return body:getAngularVelocity() * 180 / math.pi
+   local members = self.dependencies.Body:getMembers(actorId)
+   return members.body:getAngularVelocity() * 180 / math.pi
 end
 
 function MovingBehavior.setters:vx(component, value)
    local actorId = component.actorId
-   local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-   local vx, vy = body:getLinearVelocity()
-   physics:setLinearVelocity(bodyId, value, vy)
+   local members = self.dependencies.Body:getMembers(actorId)
+   local vx, vy = members.body:getLinearVelocity()
+   members.physics:setLinearVelocity(members.bodyId, value, vy)
 end
 
 function MovingBehavior.setters:vy(component, value)
    local actorId = component.actorId
-   local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-   local vx, vy = body:getLinearVelocity()
-   physics:setLinearVelocity(bodyId, vx, value)
+   local members = self.dependencies.Body:getMembers(actorId)
+   local vx, vy = members.body:getLinearVelocity()
+   members.physics:setLinearVelocity(members.bodyId, vx, value)
 end
 
 function MovingBehavior.setters:isRotationAllowed(component, value)
    local actorId = component.actorId
-   local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-   physics:setFixedRotation(bodyId, not value)
+   local members = self.dependencies.Body:getMembers(actorId)
+   members.physics:setFixedRotation(members.bodyId, not value)
 end
 
 function MovingBehavior.setters:angularVelocity(component, value)
    local actorId = component.actorId
-   local physics, bodyId, body = self.dependencies.Body:getMembers(actorId)
-   physics:setAngularVelocity(bodyId, value * math.pi / 180)
+   local members = self.dependencies.Body:getMembers(actorId)
+   members.physics:setAngularVelocity(members.bodyId, value * math.pi / 180)
 end
