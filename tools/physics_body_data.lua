@@ -65,19 +65,19 @@ function PhysicsBodyData:serialize()
     return data
 end
 
-function PhysicsBodyData:getNormalizedPointsSets()
-    local pointsSets = {}
+function PhysicsBodyData:getShapesForBody(physics, width, height)
+    local shapes = {}
 
     for _, points in pairs(self.pointsSets) do
         local newPoints = {}
 
         for i = 1, #points, 2 do
-            table.insert(newPoints, points[i] * 1.0 / self.scale - 1.0 / 2.0)
-            table.insert(newPoints, points[i + 1] * 1.0 / self.scale - 1.0 / 2.0)
+            table.insert(newPoints, (points[i] * 1.0 / self.scale - 1.0 / 2.0) * width)
+            table.insert(newPoints, (points[i + 1] * 1.0 / self.scale - 1.0 / 2.0) * height)
         end
 
-        table.insert(pointsSets, newPoints)
+        table.insert(shapes, physics:newPolygonShape(newPoints))
     end
 
-    return pointsSets
+    return shapes
 end

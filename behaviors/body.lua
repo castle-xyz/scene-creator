@@ -633,25 +633,6 @@ function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
     end
 end
 
-function BodyBehavior:setPointsSets(componentOrActorId, pointsSets)
-    local component = self:getComponent(componentOrActorId)
-    local shapes = {}
-
-    for _, points in pairs(pointsSets) do
-        for i = 1, #points, 2 do
-            points[i] = points[i] * component.properties.width
-            points[i + 1] = points[i + 1] * component.properties.height
-        end
-
-        table.insert(shapes, self._physics:newPolygonShape(points))
-    end
-
-    self:setShapes(
-        componentOrActorId,
-        shapes
-    )
-end
-
 function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
     newWidth = math.max(MIN_BODY_SIZE, math.min(newWidth, MAX_BODY_SIZE))
     newHeight = math.max(MIN_BODY_SIZE, math.min(newHeight, MAX_BODY_SIZE))
@@ -780,15 +761,21 @@ end
 function BodyBehavior:getSize(actorId)
     local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
     local bodyId, body = self:getBody(component)
-    local fixture = body:getFixtures()[1]
+    local fixtures = body:getFixtures()
+    local fixture = fixtures[1]
     local shape = fixture:getShape()
     local shapeType = shape:getType()
 
-    if shapeType == 'circle' then
+    if #fixtures == 1 and shapeType == 'circle' then
         return self:getFixtureBoundingBoxSize(actorId)
     else
         return component.properties.width, component.properties.height
     end
+end
+
+function BodyBehavior:getComponentSize(actorId)
+    local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
+    return component.properties.width, component.properties.height
 end
 
 function BodyBehavior:getFixtureBoundingBoxSize(actorId)
@@ -841,7 +828,12 @@ end
 
 function BodyBehavior:getShapeType(actorId)
     local bodyId, body = self:getBody(actorId)
-    local fixture = body:getFixtures()[1]
+    local fixtures = body:getFixtures()
+    if #fixtures ~= 1 then
+        return "polygon"
+    end
+
+    local fixture = fixtures[1]
     if fixture then
         local shape = fixture:getShape()
         if shape then
