@@ -2,7 +2,7 @@ local MovingBehavior =
     defineCoreBehavior {
     name = "Moving",
     displayName = "moving",
-    propertyNames = { "vx", "vy", "isRotationAllowed", "angularVelocity" },
+    propertyNames = { "vx", "vy", "angularVelocity" },
     dependencies = {
         "Body"
     },
@@ -14,10 +14,6 @@ local MovingBehavior =
        vy = {
           method = 'numberInput',
           label = 'velocity y',
-       },
-       isRotationAllowed = {
-          method = 'toggle',
-          label = 'allow rotation',
        },
        angularVelocity = {
           method = 'numberInput',
@@ -200,13 +196,6 @@ function MovingBehavior.getters:vy(component)
    return vy
 end
 
-function MovingBehavior.getters:isRotationAllowed(component)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   local isFixedRotation = members.body:isFixedRotation()
-   return not isFixedRotation
-end
-
 function MovingBehavior.getters:angularVelocity(component)
    local actorId = component.actorId
    local members = self.dependencies.Body:getMembers(actorId)
@@ -225,12 +214,6 @@ function MovingBehavior.setters:vy(component, value)
    local members = self.dependencies.Body:getMembers(actorId)
    local vx, vy = members.body:getLinearVelocity()
    members.physics:setLinearVelocity(members.bodyId, vx, value)
-end
-
-function MovingBehavior.setters:isRotationAllowed(component, value)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   members.physics:setFixedRotation(members.bodyId, not value)
 end
 
 function MovingBehavior.setters:angularVelocity(component, value)

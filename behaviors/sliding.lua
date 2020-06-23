@@ -3,7 +3,8 @@ local SlidingBehavior =
     name = "Sliding",
     displayName = "sliding",
     propertyNames = {
-        "direction"
+       "direction",
+       "isRotationAllowed",
     },
     dependencies = {
         "Moving",
@@ -14,6 +15,10 @@ local SlidingBehavior =
           method = 'dropdown',
           label = 'direction',
           props = { items = {"horizontal", "vertical", "both"} },
+       },
+       isRotationAllowed = {
+          method = 'toggle',
+          label = 'allow rotation',
        },
     },
 }
@@ -45,7 +50,22 @@ function SlidingBehavior:updateJoint(component)
     end
 end
 
+-- Getters
+
+function SlidingBehavior.getters:isRotationAllowed(component)
+   local actorId = component.actorId
+   local members = self.dependencies.Body:getMembers(actorId)
+   local isFixedRotation = members.body:isFixedRotation()
+   return not isFixedRotation
+end
+
 -- Setters
+
+function SlidingBehavior.setters:isRotationAllowed(component, value)
+   local actorId = component.actorId
+   local members = self.dependencies.Body:getMembers(actorId)
+   members.physics:setFixedRotation(members.bodyId, not value)
+end
 
 function SlidingBehavior.setters:direction(component, newLimitType)
     if component.properties.direction ~= newLimitType then
