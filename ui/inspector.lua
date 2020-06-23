@@ -147,11 +147,17 @@ function Client:uiInspector()
                self:_addBehavior(actor, behavior.behaviorId, blueprint)
             end
          end
+
+         local dependencies = {}
+         for _, dep in ipairs(behavior.dependencies) do
+            table.insert(dependencies, dep)
+         end
          
          ui.data(
             {
                name = behaviorName,
                isActive = isActive,
+               dependencies = dependencies,
                propertySpecs = behavior.propertySpecs,
                properties = properties,
             },
