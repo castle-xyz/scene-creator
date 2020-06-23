@@ -1,21 +1,39 @@
 PhysicsBodyData = {}
 
-local function defaultPoints()
+local function defaultPointsSets()
+    local pointsSets = {}
+
     local points = {}
+    table.insert(pointsSets, points)
+
     local angle = math.pi * 2.0
     local angleDiff = math.pi * 2.0 / 8.0
     local scale = DRAW_DATA_SCALE
-    local center = scale * 0.5
-    local radius = scale * 0.5
+    local centerX = scale * 0.25
+    local centerY = scale * 0.5
+    local radius = scale * 0.23
 
     for i = 1, 8 do
-        table.insert(points, center + math.cos(angle) * radius)
-        table.insert(points, center + math.sin(angle) * radius)
+        table.insert(points, centerX + math.cos(angle) * radius)
+        table.insert(points, centerY + math.sin(angle) * radius)
 
         angle = angle - angleDiff
     end
 
-    return points
+    points = {}
+    table.insert(pointsSets, points)
+
+    angle = math.pi * 2.0
+    centerX = scale * 0.75
+
+    for i = 1, 8 do
+        table.insert(points, centerX + math.cos(angle) * radius)
+        table.insert(points, centerY + math.sin(angle) * radius)
+
+        angle = angle - angleDiff
+    end
+
+    return pointsSets
 end
 
 function PhysicsBodyData:clone()
@@ -28,7 +46,7 @@ function PhysicsBodyData:new(obj)
     end
 
     local newObj = {
-        points = obj.points or defaultPoints(),
+        pointsSets = obj.pointsSets or defaultPointsSets(),
         scale = obj.scale or DRAW_DATA_SCALE,
     }
 
@@ -40,20 +58,26 @@ end
 
 function PhysicsBodyData:serialize()
     local data = {
-        points = self.points,
+        pointsSets = self.pointsSets,
         scale = self.scale,
     }
 
     return data
 end
 
-function PhysicsBodyData:getNormalizedPoints()
-    local points = {}
+function PhysicsBodyData:getNormalizedPointsSets()
+    local pointsSets = {}
 
-    for i = 1, #self.points, 2 do
-        table.insert(points, self.points[i] * 1.0 / self.scale - 1.0 / 2.0)
-        table.insert(points, self.points[i + 1] * 1.0 / self.scale - 1.0 / 2.0)
+    for _, points in pairs(self.pointsSets) do
+        local newPoints = {}
+
+        for i = 1, #points, 2 do
+            table.insert(newPoints, points[i] * 1.0 / self.scale - 1.0 / 2.0)
+            table.insert(newPoints, points[i + 1] * 1.0 / self.scale - 1.0 / 2.0)
+        end
+
+        table.insert(pointsSets, newPoints)
     end
 
-    return points
+    return pointsSets
 end

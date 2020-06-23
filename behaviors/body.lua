@@ -104,7 +104,16 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
 
         local bodyId = self._physics:newBody(self.globals.worldId, bp.x or 0, bp.y or 0, bp.bodyType or "static")
         if bp.massData then
-            self._physics:setMassData(bodyId, unpack(bp.massData))
+            local massData = bp.massData
+
+            -- box2d throws an error if this is negative
+            local m_I = massData[4] - massData[3] * (massData[1]*massData[1] + massData[2]*massData[2])
+            if m_I < 0 then
+                -- TODO: actually calculate this in a better way
+                massData = {0, 0, 5.0, 0.0}
+            end
+
+            self._physics:setMassData(bodyId, unpack(massData))
         end
         if bp.fixedRotation ~= nil then
             self._physics:setFixedRotation(bodyId, bp.fixedRotation)
@@ -624,7 +633,7 @@ function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
     end
 end
 
-function BodyBehavior:setPoints(componentOrActorId, pointsSets)
+function BodyBehavior:setPointsSets(componentOrActorId, pointsSets)
     local component = self:getComponent(componentOrActorId)
     local shapes = {}
 

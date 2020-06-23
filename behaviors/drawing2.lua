@@ -60,7 +60,7 @@ function Drawing2Behavior:deserialize(payload)
 end
 
 function Drawing2Behavior:updateBodyShape(component, physicsBodyData)
-    self.dependencies.Body:setPoints(component.actorId, {physicsBodyData:getNormalizedPoints()})
+    self.dependencies.Body:setPointsSets(component.actorId, physicsBodyData:getNormalizedPointsSets())
 end
 
 -- Component management

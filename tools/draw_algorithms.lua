@@ -338,7 +338,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     local firstSlabIdx = findSlabsForPoint(slabsList, point)
     if firstSlabIdx == nil then
-        print('return 0')
+        --print('return 0')
         return false
     end
     local slab1 = slabsList[firstSlabIdx]
@@ -403,7 +403,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     end
 
     if slabIntersectionIndex < 1 or slabIntersectionIndex >= #slabIntersections then
-        print('return 1')
+        --print('return 1')
         return false
     end
 
@@ -412,7 +412,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     local faceId = 'subpath1:' .. subpathIdToSubpathStringId(topSubpathId) .. ' subpath2:' .. subpathIdToSubpathStringId(bottomSubpathId) .. ' slab1:' .. slab1.id .. ' slab2:' .. slab2.id
     if currentFaces[faceId] then
-        print('return 2')
+        --print('return 2')
         return true
     end
 
@@ -425,7 +425,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
     
     local topLeftIntersections = subpathDataIntersection(topSubpath, slab1FakeSubpath)
     if #topLeftIntersections == 0 then
-        print('return 3')
+        --print('return 3')
         return true
     end
     local topLeftX = topLeftIntersections[1].x - SLAB_X_PADDING
@@ -440,7 +440,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     local topRightIntersections = subpathDataIntersection(topSubpath, slab2FakeSubpath)
     if #topRightIntersections == 0 then
-        print('return 4')
+        --print('return 4')
         return true
     end
     local topRightX = topRightIntersections[1].x + SLAB_X_PADDING
@@ -456,7 +456,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     local bottomRightIntersections = subpathDataIntersection(bottomSubpath, slab2FakeSubpath)
     if #bottomRightIntersections == 0 then
-        print('return 5')
+        --print('return 5')
         return true
     end
     local bottomRightX = bottomRightIntersections[1].x + SLAB_X_PADDING
@@ -472,7 +472,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
 
     local bottomLeftIntersections = subpathDataIntersection(bottomSubpath, slab1FakeSubpath)
     if #bottomLeftIntersections == 0 then
-        print('return 6')
+        --print('return 6')
         return true
     end
     local bottomLeftX = bottomLeftIntersections[1].x - SLAB_X_PADDING
@@ -513,7 +513,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         end
     end
 
-    print('offsetx: ' .. offsetX)
+    --print('offsetx: ' .. offsetX)
 
     local y = topLeftIntersections[1].y + cellSize * 0.1
     while y < bottomLeftY do
@@ -537,7 +537,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
                 for k in pairs(newColoredSubpathIds) do
                     newColoredSubpathIds[k] = nil
                 end
-                print('return 7')
+                --print('return 7')
 
                 return false
             end
@@ -556,7 +556,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
         end
     end
 
-    print('offsetx: ' .. offsetX)
+    --print('offsetx: ' .. offsetX)
 
     y = topRightY + cellSize * 0.1
     while y < bottomRightY do
@@ -580,7 +580,7 @@ function findFaceForPoint(slabsList, pathDataList, minY, maxY, point, newFaces, 
                 for k in pairs(newColoredSubpathIds) do
                     newColoredSubpathIds[k] = nil
                 end
-                print('return 8')
+                --print('return 8')
 
                 return false
             end

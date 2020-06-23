@@ -136,7 +136,7 @@ end
 
 function DrawTool.handlers:onSetActive()
     _drawData = DrawData:new()
-    _physicsBodyData = DrawData:new()
+    _physicsBodyData = PhysicsBodyData:new()
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
@@ -157,33 +157,41 @@ function DrawTool.handlers:preUpdate(dt)
 end
 
 local _physicsBodyPointIndex = nil
+local _physicsBodyPointSetIndex = nil
+
 function DrawTool:updatePhysicsBodyTool(c, touch)
     local touchX, touchY = _viewTransform:inverseTransformPoint(touch.x, touch.y)
 
     if _physicsBodyPointIndex == nil then
-        for i = 1, #_physicsBodyData.points, 2 do
-            local x = _physicsBodyData.points[i]
-            local y = _physicsBodyData.points[i + 1]
-            local dist = math.sqrt(math.pow(touchY - y, 2.0) + math.pow(touchX - x, 2.0))
-            if dist < 0.5 then
-                _physicsBodyPointIndex = i
-                break
+        for j = 1, #_physicsBodyData.pointsSets do
+            local points = _physicsBodyData.pointsSets[j]
+
+            for i = 1, #points, 2 do
+                local x = points[i]
+                local y = points[i + 1]
+                local dist = math.sqrt(math.pow(touchY - y, 2.0) + math.pow(touchX - x, 2.0))
+                if dist < 0.5 then
+                    _physicsBodyPointSetIndex = j
+                    _physicsBodyPointIndex = i
+                    break
+                end
             end
         end
     end
 
     if _physicsBodyPointIndex ~= nil then
-        local points = util.deepCopyTable(_physicsBodyData.points)
+        local pointsSets = util.deepCopyTable(_physicsBodyData.pointsSets)
 
-        points[_physicsBodyPointIndex] = touchX
-        points[_physicsBodyPointIndex + 1] = touchY
+        pointsSets[_physicsBodyPointSetIndex][_physicsBodyPointIndex] = touchX
+        pointsSets[_physicsBodyPointSetIndex][_physicsBodyPointIndex + 1] = touchY
 
-        if isConvexHull(points) then
-            _physicsBodyData.points = points
+        if isConvexHull(pointsSets[_physicsBodyPointSetIndex]) then
+            _physicsBodyData.pointsSets = pointsSets
         end
 
         if touch.released then
             _physicsBodyPointIndex = nil
+            _physicsBodyPointSetIndex = nil
             self:saveDrawing("update collision shape", c)
         end
     end
@@ -519,20 +527,21 @@ end
 -- Draw
 
 function drawPhysicsBody(drawPoints)
-    if _physicsBodyData.points and #_physicsBodyData.points > 2 then
-        love.graphics.setLineWidth(0.1)
-        love.graphics.setColor(0.5, 0.5, 1.0, 1.0)
-        love.graphics.line(_physicsBodyData.points)
-        local numPoints = #_physicsBodyData.points
-        love.graphics.line(_physicsBodyData.points[numPoints - 1], _physicsBodyData.points[numPoints], _physicsBodyData.points[1], _physicsBodyData.points[2])
+    for _, points in pairs(_physicsBodyData.pointsSets) do
+        if #points > 2 then
+            love.graphics.setLineWidth(0.1)
+            love.graphics.setColor(0.5, 0.5, 1.0, 1.0)
+            love.graphics.line(points)
+            local numPoints = #points
+            love.graphics.line(points[numPoints - 1], points[numPoints], points[1], points[2])
 
-        if drawPoints then
-            love.graphics.setColor(0.0, 0.0, 1.0, 1.0)
-            love.graphics.setPointSize(30.0)
-            love.graphics.points(_physicsBodyData.points)
+            if drawPoints then
+                love.graphics.setColor(0.0, 0.0, 1.0, 1.0)
+                love.graphics.setPointSize(30.0)
+                love.graphics.points(points)
+            end
         end
     end
-
 end
 
 function DrawTool.handlers:drawOverlay()
