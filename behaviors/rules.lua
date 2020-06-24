@@ -1332,22 +1332,28 @@ function RulesBehavior.handlers:uiComponent(component, opts)
             icon = "plus",
             iconFamily = "FontAwesome5",
             onClick = function()
-                local oldRules = util.deepCopyTable(component.properties.rules)
-                table.insert(component.properties.rules, util.deepCopyTable(EMPTY_RULE))
-                local newRules = util.deepCopyTable(component.properties.rules)
-                self:command(
-                    description,
-                    {
-                        params = {"oldRules", "newRules"}
-                    },
-                    function()
-                        self:sendSetProperties(actorId, "rules", newRules)
-                    end,
-                    function()
-                        self:sendSetProperties(actorId, "rules", oldRules)
-                    end
-                )
+               self:addRule(actorId, component)
             end
         }
     )
+end
+
+-- Rule management
+
+function RulesBehavior:addRule(actorId, component)
+   local oldRules = util.deepCopyTable(component.properties.rules)
+   table.insert(component.properties.rules, util.deepCopyTable(EMPTY_RULE))
+   local newRules = util.deepCopyTable(component.properties.rules)
+   self:command(
+      description,
+      {
+         params = {"oldRules", "newRules"}
+      },
+      function()
+         self:sendSetProperties(actorId, "rules", newRules)
+      end,
+      function()
+         self:sendSetProperties(actorId, "rules", oldRules)
+      end
+   )
 end

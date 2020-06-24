@@ -1,6 +1,7 @@
 require "ui.inspector"
 require "ui.inspector_actions"
 require "ui.blueprints"
+require "ui.rules"
 
 -- Start / stop
 
@@ -148,6 +149,10 @@ function Client:uiupdate()
 
     ui.pane('sceneCreatorInspector', sceneCreatorInspectorProps, function()
         self:uiInspector()
+    end)
+
+    ui.pane('sceneCreatorRules', function()
+        self:uiRules()
     end)
 
     -- Settings
