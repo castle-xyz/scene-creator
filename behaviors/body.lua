@@ -30,24 +30,24 @@ local BodyBehavior =
     propertySpecs = {
        x = {
           method = 'numberInput',
-          label = 'x',
+          label = 'X Position',
        },
        y = {
           method = 'numberInput',
-          label = 'y',
+          label = 'Y Position',
        },
        angle = {
           method = 'numberInput',
-          label = 'angle (degrees)',
+          label = 'Rotation',
        },
        width = {
           method = 'numberInput',
-          label = 'width',
+          label = 'Width',
           props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
        },
        height = {
           method = 'numberInput',
-          label = 'height',
+          label = 'Height',
           props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
        },
     },

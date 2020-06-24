@@ -1,7 +1,7 @@
 local SlingBehavior =
     defineCoreBehavior {
     name = "Sling",
-    displayName = "sling",
+    displayName = "Slingshot",
     propertyNames = {
         "speed"
     },
@@ -12,7 +12,7 @@ local SlingBehavior =
     propertySpecs = {
        speed = {
           method = 'numberInput',
-          label = 'speed',
+          label = 'Speed',
           props = { min = 0, max = 10, step = 0.5 },
        },
     },

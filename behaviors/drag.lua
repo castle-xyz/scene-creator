@@ -1,7 +1,7 @@
 local DragBehavior =
     defineCoreBehavior {
     name = "Drag",
-    displayName = "drag",
+    displayName = "Drag",
     propertyNames = {},
     dependencies = {
         "Moving",

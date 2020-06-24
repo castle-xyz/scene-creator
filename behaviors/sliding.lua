@@ -1,7 +1,7 @@
 local SlidingBehavior =
     defineCoreBehavior {
     name = "Sliding",
-    displayName = "sliding",
+    displayName = "Axis Lock",
     propertyNames = {
        "direction",
        "isRotationAllowed",
@@ -13,12 +13,12 @@ local SlidingBehavior =
     propertySpecs = {
        direction = {
           method = 'dropdown',
-          label = 'direction',
+          label = 'Direction',
           props = { items = {"horizontal", "vertical", "both"} },
        },
        isRotationAllowed = {
           method = 'toggle',
-          label = 'allow rotation',
+          label = 'Rotates',
        },
     },
 }

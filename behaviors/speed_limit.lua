@@ -1,7 +1,7 @@
 local SpeedLimitBehavior =
     defineCoreBehavior {
     name = "SpeedLimit",
-    displayName = "speed limit",
+    displayName = "Speed Limit",
     propertyNames = {
         "maximumSpeed"
     },
@@ -11,7 +11,7 @@ local SpeedLimitBehavior =
     propertySpecs = {
        maximumSpeed = {
           method = 'numberInput',
-          label = 'maximum speed (units per second)',
+          label = 'Max speed',
           props = { min = 0.1 },
        },
     },

@@ -1,7 +1,7 @@
 local FrictionBehavior =
     defineCoreBehavior {
     name = "Friction",
-    displayName = "friction",
+    displayName = "Friction",
     propertyNames = { "friction" },
     dependencies = {
         "Body"
@@ -9,7 +9,7 @@ local FrictionBehavior =
     propertySpecs = {
        friction = {
           method = 'numberInput',
-          label = 'friction',
+          label = 'Amount',
           props = { step = 0.05, min = 0 },
        },
     },

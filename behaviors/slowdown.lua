@@ -1,6 +1,6 @@
 local SlowdownBehavior = defineCoreBehavior {
     name = "Slowdown",
-    displayName = "slowdown",
+    displayName = "Slow down",
     propertyNames = {
         "motionSlowdown",
         "rotationSlowdown"
@@ -12,12 +12,12 @@ local SlowdownBehavior = defineCoreBehavior {
     propertySpecs = {
        motionSlowdown = {
           method = 'numberInput',
-          label = 'motion slowdown',
+          label = 'Translation',
           props = { min = 0 },
        },
        rotationSlowdown = {
           method = 'numberInput',
-          label = 'rotation slowdown',
+          label = 'Rotation',
           props = { min = 0 },
        },
     },

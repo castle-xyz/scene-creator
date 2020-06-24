@@ -156,6 +156,7 @@ function Client:uiInspector()
          ui.data(
             {
                name = behaviorName,
+               displayName = behavior.displayName,
                isActive = isActive,
                dependencies = dependencies,
                propertySpecs = behavior.propertySpecs,

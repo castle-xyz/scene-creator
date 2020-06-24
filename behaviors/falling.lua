@@ -1,6 +1,6 @@
 local FallingBehavior = defineCoreBehavior {
     name = "Falling",
-    displayName = "falling",
+    displayName = "Gravity",
     propertyNames = { "gravity" },
     dependencies = {
         "Moving",
@@ -9,7 +9,7 @@ local FallingBehavior = defineCoreBehavior {
     propertySpecs = {
       gravity = {
          method = 'numberInput',
-         label = 'gravity',
+         label = 'Strength',
          props = {
             step = 0.5
          },

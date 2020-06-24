@@ -1,7 +1,7 @@
 local BouncyBehavior =
     defineCoreBehavior {
     name = "Bouncy",
-    displayName = "bouncy",
+    displayName = "Bounce",
     propertyNames = { "bounciness" },
     dependencies = {
         "Solid",
@@ -10,7 +10,7 @@ local BouncyBehavior =
     propertySpecs = {
        bounciness = {
           method = 'numberInput',
-          label = 'bounciness',
+          label = 'Rebound',
           props = { step = 0.05, min = 0, max = 2 },
        },
     },
