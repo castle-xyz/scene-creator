@@ -11,6 +11,8 @@ function Rules.sanitizeEntries(categories)
          local cleanEntry = {
             name = entry.name,
             behaviorId = entry.behaviorId,
+            behaviorName = entry.behaviorName,
+            category = entry.category,
             entry = {
                returnType = entry.entry.returnType,
                triggerFilter = entry.entry.triggerFilter,

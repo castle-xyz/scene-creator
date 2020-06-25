@@ -1315,6 +1315,8 @@ function RulesBehavior:getRuleEntries(kind, behaviorIds, props)
                     {
                         name = name,
                         behaviorId = behaviorId,
+                        behaviorName = behavior.name,
+                        category = categoryName,
                         entry = entry
                     }
                 )
