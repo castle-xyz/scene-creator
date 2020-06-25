@@ -861,7 +861,7 @@ end
 
 -- UI
 
-function RulesBehavior:uiPartContextualPopover(part, entry)
+function RulesBehavior:uiPartContextualPopover(part, entry, closePopover, props)
      ui.markdown("## " .. part.name .. "\n" .. (entry.description or ""))
      if entry.uiMenu then
          callEntryUi("uiMenu")
@@ -949,7 +949,7 @@ function RulesBehavior:uiPartContextualPopover(part, entry)
      )
 end
 
-function RulesBehavior:uiPartPickerEntries(actor, part, props)
+function RulesBehavior:uiPartPickerEntries(actor, part, closePopover, props)
     local behaviorIds =
        props.allBehaviors and self.game.behaviors or actor.components
     local categories = self:getRuleEntries(props.kind, behaviorIds, props)
@@ -1160,9 +1160,9 @@ function RulesBehavior:uiPart(actorId, part, props)
                                             },
                                             function()
                                                 if part.name ~= "none" and not self._picking then
-                                                   self:uiPartContextualPopover(part, entry)
+                                                   self:uiPartContextualPopover(part, entry, closePopover, props)
                                                 else
-                                                   self:uiPartPickerEntries(actor, part, props)
+                                                   self:uiPartPickerEntries(actor, part, closePopover, props)
                                                 end
                                             end
                                         )
