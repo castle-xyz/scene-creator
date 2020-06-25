@@ -41,8 +41,8 @@ end
 function BouncyBehavior.getters:bounciness(component)
     local actorId = component.actorId
     local members = self.dependencies.Body:getMembers(actorId)
-    if members.fixture then
-       return members.fixture:getRestitution()
+    if members.firstFixture then
+        return members.firstFixture:getRestitution()
     end
     return 0
 end
@@ -52,6 +52,6 @@ function BouncyBehavior.setters:bounciness(component, value)
    local members = self.dependencies.Body:getMembers(actorId)
 
    for _, fixtureId in pairs(members.fixtureIds) do
-    members.physics:setRestitution(fixtureId, value)
+       members.physics:setRestitution(fixtureId, value)
    end
 end
