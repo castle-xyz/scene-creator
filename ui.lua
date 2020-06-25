@@ -131,6 +131,9 @@ function Client:uiupdate()
     end)
 
     -- Blueprints
+    ui.pane('sceneCreatorLegacyBlueprints', function()
+        self:uiLegacyBlueprints()
+    end)
     ui.pane('sceneCreatorBlueprints', function()
         self:uiBlueprints()
     end)

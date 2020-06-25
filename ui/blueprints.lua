@@ -17,7 +17,7 @@ function Client:_makeBlueprintData(actor)
 end
 
 function Client:_getExistingLibraryEntry(entryId)
-    local existingEntry = self.library[saveBlueprintData.entryId]
+    local existingEntry = self.library[entryId]
     local numOtherActors = 0
     if existingEntry then
         for otherActorId, otherActor in pairs(self.actors) do
@@ -148,6 +148,33 @@ function Client:_saveBlueprintButton(actor)
 end
 
 function Client:uiBlueprints()
+   local data = { library = self.library }
+   local actions = {}
+   
+   local actorId = next(self.selectedActorIds)
+   if actorId then
+      local actor = self.actors[actorId]
+
+      local saveBlueprintData = self:_makeBlueprintData(actor)
+      local existingEntry, numOtherActors = self:_getExistingLibraryEntry(saveBlueprintData.entryId)
+
+      data['saveBlueprintData'] = saveBlueprintData
+      data['isExisting'] = (existingEntry ~= nil)
+      data['numOtherActors'] = numOtherActors
+
+      actions['updateBlueprint'] = function(saveBlueprintData)
+         self:_updateBlueprint(actor, saveBlueprintData, existingEntry)
+      end
+
+      actions['addBlueprint'] = function(saveBlueprintData)
+         self:_addBlueprint(actor, saveBlueprintData)
+      end
+   end
+   
+   ui.data(data, { actions = actions })
+end
+
+function Client:uiLegacyBlueprints()
     self:uiLibrary({
         id = 'add actor',
         filterType = 'actorBlueprint',
