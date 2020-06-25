@@ -1257,7 +1257,14 @@ function RulesBehavior.handlers:uiComponent(component, opts)
                                 kind = "trigger",
                                 noMarginTop = true,
                                 onChange = function(newTrigger, description, shouldCoalesce)
-                                   self:changeTrigger(actorId, component, rule, newTrigger, description, shouldCoalesce)
+                                   self:changeRules(
+                                      actorId, component,
+                                      function()
+                                         rule.trigger = newTrigger or util.deepCopyTable(EMPTY_RULE.trigger)
+                                      end,
+                                      description,
+                                      shouldCoalesce
+                                   )
                                 end
                             }
                         )
@@ -1270,7 +1277,14 @@ function RulesBehavior.handlers:uiComponent(component, opts)
                         triggerName = rule.trigger and rule.trigger.name or "none",
                         kind = "response",
                         onChange = function(newResponse, description, shouldCoalesce)
-                           self:changeResponse(actorId, component, rule, newResponse, description, shouldCoalesce)
+                              self:changeRules(
+                                 actorId, component,
+                                 function()
+                                    rule.response = newResponse or util.deepCopyTable(EMPTY_RULE.response)
+                                 end,
+                                 description,
+                                 shouldCoalesce
+                              )
                         end
                     }
                 )
@@ -1326,55 +1340,27 @@ function RulesBehavior:getRuleEntries(kind, behaviorIds, props)
     return categories
 end
 
-function RulesBehavior:changeTrigger(actorId, component, rule, newTrigger, description, shouldCoalesce)
-   local oldRules = util.deepCopyTable(component.properties.rules)
-   rule.trigger = newTrigger or util.deepCopyTable(EMPTY_RULE.trigger)
-   local newRules = util.deepCopyTable(component.properties.rules)
-   self:command(
-      description,
-      {
-         coalesceLast = false,
-         params = {"oldRules", "newRules"},
-         coalesceSuffix = shouldCoalesce and description or nil
-      },
-      function()
-         self:sendSetProperties(actorId, "rules", newRules)
-      end,
-      function()
-         self:sendSetProperties(actorId, "rules", oldRules)
-      end
-   )
-end
-
--- TODO: different for adding subseq responses
-function RulesBehavior:changeResponse(actorId, component, rule, newResponse, description, shouldCoalesce)
-   local oldRules = util.deepCopyTable(component.properties.rules)
-   rule.response = newResponse or util.deepCopyTable(EMPTY_RULE.response)
-   local newRules = util.deepCopyTable(component.properties.rules)
-   self:command(
-      description,
-      {
-         coalesceLast = false,
-         params = {"oldRules", "newRules"},
-         coalesceSuffix = shouldCoalesce and description or nil
-      },
-      function()
-         self:sendSetProperties(actorId, "rules", newRules)
-      end,
-      function()
-         self:sendSetProperties(actorId, "rules", oldRules)
-      end
-   )
-end
-
 function RulesBehavior:addRule(actorId, component)
+   self:changeRules(
+      actorId, component,
+      function()
+         table.insert(component.properties.rules, util.deepCopyTable(EMPTY_RULE))
+      end,
+      'add new rule'
+   )
+end
+
+function RulesBehavior:changeRules(actorId, component, changeRulesFunc, description, shouldCoalesce)
+   description = description or ''
    local oldRules = util.deepCopyTable(component.properties.rules)
-   table.insert(component.properties.rules, util.deepCopyTable(EMPTY_RULE))
+   changeRulesFunc(actorId, component)
    local newRules = util.deepCopyTable(component.properties.rules)
    self:command(
       description,
       {
-         params = {"oldRules", "newRules"}
+         coalesceLast = false,
+         params = {"oldRules", "newRules"},
+         coalesceSuffix = shouldCoalesce and description or nil,
       },
       function()
          self:sendSetProperties(actorId, "rules", newRules)

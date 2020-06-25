@@ -13,11 +13,9 @@ function Rules.sanitizeEntries(categories)
             behaviorId = entry.behaviorId,
             behaviorName = entry.behaviorName,
             category = entry.category,
-            entry = {
-               returnType = entry.entry.returnType,
-               triggerFilter = entry.entry.triggerFilter,
-               initialParams = entry.entry.initialParams,
-            },
+            initialParams = entry.entry.initialParams,
+            returnType = entry.entry.returnType,
+            triggerFilter = entry.entry.triggerFilter,
          }
          table.insert(category, cleanEntry)
       end
@@ -26,23 +24,27 @@ function Rules.sanitizeEntries(categories)
    return result
 end
 
-function Client:_addRule(actorId, component)
-   self.behaviorsByName.Rules:addRule(actorId, component)
-end
-
 function Client:uiRules()
    local actorId = next(self.selectedActorIds)
    if actorId then
       local actor = self.actors[actorId]
       local rulesBehavior = self.behaviorsByName.Rules
       local actions = {}
-      local rules = {} -- TODO: replace with individual data panes
+      local rules = {}
 
       -- top-level rules actions
       local component = actor.components[rulesBehavior.behaviorId]
       if component then
          actions['add'] = function()
-            self:_addRule(actorId, component)
+            self.behaviorsByName.Rules:addRule(actorId, component)
+         end
+         actions['change'] = function(newRules)
+            self.behaviorsByName.Rules:changeRules(
+               actorId, component,
+               function()
+                  component.properties.rules = newRules
+               end
+            )
          end
          rules = component.properties.rules
       else
@@ -67,11 +69,5 @@ function Client:uiRules()
             actions = actions,
          }
       )
-      
-      --[[
-         TODO: ui.pane (from ui.lua) containing many ui.datas
-         - ui.data for each rule
-         ----- actions: specific to rule
-         ]]--
    end
 end
