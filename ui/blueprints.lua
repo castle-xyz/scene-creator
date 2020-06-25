@@ -1,3 +1,78 @@
+function Client:_makeBlueprintData(actor)
+   local saveBlueprintData = self.saveBlueprintDatas[actor]
+   if not saveBlueprintData then
+      local oldEntry = self.library[actor.parentEntryId]
+      if oldEntry.isCore then
+         -- Don't overwrite core entries
+         oldEntry = nil
+      end
+      saveBlueprintData = {
+         entryId = oldEntry and oldEntry.entryId or nil,
+         title = oldEntry and oldEntry.title or '',
+         description = oldEntry and oldEntry.description or '',
+      }
+      self.saveBlueprintDatas[actor] = saveBlueprintData
+   end
+   return saveBlueprintData
+end
+
+function Client:_getExistingLibraryEntry(entryId)
+    local existingEntry = self.library[saveBlueprintData.entryId]
+    local numOtherActors = 0
+    if existingEntry then
+        for otherActorId, otherActor in pairs(self.actors) do
+            if otherActorId ~= actorId and otherActor.parentEntryId == existingEntry.entryId then
+                numOtherActors = numOtherActors + 1
+            end
+        end
+    end
+    return existingEntry, numOtherActors
+end
+
+function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
+    local entryId = existingEntry.entryId
+    local oldEntry = existingEntry
+    local newActorBp = self:blueprintActor(actor.actorId)
+    if newActorBp.components.Body then
+        newActorBp.components.Body.x, newActorBp.components.Body.y = nil, nil
+    end
+    local newEntry = {
+        entryType = 'actorBlueprint',
+        title = saveBlueprintData.title,
+        description = saveBlueprintData.description,
+        actorBlueprint = newActorBp,
+    }
+
+    self:command('update blueprint', {
+        params = { 'entryId', 'oldEntry', 'newEntry' },
+    }, function(params, live)
+        self:send('updateLibraryEntry', self.clientId, entryId, newEntry, {
+            updateActors = true,
+            skipActorId = actorId,
+        })
+    end, function()
+        self:send('updateLibraryEntry', self.clientId, entryId, oldEntry, {
+            updateActors = true,
+            skipActorId = actorId,
+        })
+    end)
+end
+
+function Client:_addBlueprint(actor, saveBlueprintData)
+    local newEntryId = util.uuid()
+    local newActorBp = self:blueprintActor(actor.actorId)
+    if newActorBp.components.Body then
+        newActorBp.components.Body.x, newActorBp.components.Body.y = nil, nil
+    end
+    self:send('addLibraryEntry', newEntryId, {
+        entryType = 'actorBlueprint',
+        title = saveBlueprintData.title,
+        description = saveBlueprintData.description,
+        actorBlueprint = newActorBp,
+    })
+    self:send('setActorParentEntryId', actor.actorId, newEntryId)
+end
+
 function Client:_saveBlueprintButton(actor)
     ui.button('save blueprint', {
         flex = 1,
@@ -10,33 +85,12 @@ function Client:_saveBlueprintButton(actor)
         popoverStyle = { width = 300 },
         popover = function(closePopover)
             ui.scrollBox('save blueprint', { flex = 1 }, function()
-                local saveBlueprintData = self.saveBlueprintDatas[actor]
-                if not saveBlueprintData then
-                    local oldEntry = self.library[actor.parentEntryId]
-                    if oldEntry.isCore then
-                        -- Don't overwrite core entries
-                        oldEntry = nil
-                    end
-                    saveBlueprintData = {
-                        entryId = oldEntry and oldEntry.entryId or nil,
-                        title = oldEntry and oldEntry.title or '',
-                        description = oldEntry and oldEntry.description or '',
-                    }
-                    self.saveBlueprintDatas[actor] = saveBlueprintData
-                end
-
+                local saveBlueprintData = self:_makeBlueprintData(actor)
                 saveBlueprintData.title = ui.textInput('title', saveBlueprintData.title)
-
                 saveBlueprintData.description = ui.textArea('description', saveBlueprintData.description)
 
-                local existingEntry = self.library[saveBlueprintData.entryId]
+                local existingEntry, numOtherActors = self:_getExistingLibraryEntry(saveBlueprintData.entryId)
                 if existingEntry then
-                    local numOtherActors = 0
-                    for otherActorId, otherActor in pairs(self.actors) do
-                        if otherActorId ~= actorId and otherActor.parentEntryId == existingEntry.entryId then
-                            numOtherActors = numOtherActors + 1
-                        end
-                    end
                     if numOtherActors > 0 then
                         ui.markdown('This blueprint is used by ' .. numOtherActors ..
                             ' other actor' .. (numOtherActors > 1 and 's' or ''))
@@ -62,34 +116,8 @@ function Client:_saveBlueprintButton(actor)
                                 end
                             end
 
-                            local entryId = existingEntry.entryId
-                            local oldEntry = existingEntry
-                            local newActorBp = self:blueprintActor(actor.actorId)
-                            if newActorBp.components.Body then
-                                newActorBp.components.Body.x, newActorBp.components.Body.y = nil, nil
-                            end
-                            local newEntry = {
-                                entryType = 'actorBlueprint',
-                                title = saveBlueprintData.title,
-                                description = saveBlueprintData.description,
-                                actorBlueprint = newActorBp,
-                            }
-
+                            self:_updateBlueprint(actor, saveBlueprintData, existingEntry)
                             closePopover()
-
-                            self:command('update blueprint', {
-                                params = { 'entryId', 'oldEntry', 'newEntry' },
-                            }, function(params, live)
-                                self:send('updateLibraryEntry', self.clientId, entryId, newEntry, {
-                                    updateActors = true,
-                                    skipActorId = actorId,
-                                })
-                            end, function()
-                                self:send('updateLibraryEntry', self.clientId, entryId, oldEntry, {
-                                    updateActors = true,
-                                    skipActorId = actorId,
-                                })
-                            end)
                         end,
                     })
                 end
@@ -110,20 +138,8 @@ function Client:_saveBlueprintButton(actor)
                             end
                         end
 
+                        self:_addBlueprint(actor, saveBlueprintData)
                         closePopover()
-
-                        local newEntryId = util.uuid()
-                        local newActorBp = self:blueprintActor(actor.actorId)
-                        if newActorBp.components.Body then
-                            newActorBp.components.Body.x, newActorBp.components.Body.y = nil, nil
-                        end
-                        self:send('addLibraryEntry', newEntryId, {
-                            entryType = 'actorBlueprint',
-                            title = saveBlueprintData.title,
-                            description = saveBlueprintData.description,
-                            actorBlueprint = newActorBp,
-                        })
-                        self:send('setActorParentEntryId', actor.actorId, newEntryId)
                     end,
                 })
             end)
