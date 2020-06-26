@@ -861,7 +861,7 @@ end
 
 -- UI
 
-function RulesBehavior:uiPartContextualPopover(part, entry, closePopover, props)
+function RulesBehavior:uiPartContextualPopover(part, entry, closePopover, callEntryUi, props)
      ui.markdown("## " .. part.name .. "\n" .. (entry.description or ""))
      if entry.uiMenu then
          callEntryUi("uiMenu")
@@ -1160,7 +1160,7 @@ function RulesBehavior:uiPart(actorId, part, props)
                                             },
                                             function()
                                                 if part.name ~= "none" and not self._picking then
-                                                   self:uiPartContextualPopover(part, entry, closePopover, props)
+                                                   self:uiPartContextualPopover(part, entry, closePopover, callEntryUi, props)
                                                 else
                                                    self:uiPartPickerEntries(actor, part, closePopover, props)
                                                 end
