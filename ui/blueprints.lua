@@ -16,7 +16,7 @@ function Client:_makeBlueprintData(actor)
    return saveBlueprintData
 end
 
-function Client:_getExistingLibraryEntry(entryId)
+function Client:_getExistingLibraryEntry(actorId, entryId)
     local existingEntry = self.library[entryId]
     local numOtherActors = 0
     if existingEntry then
@@ -89,7 +89,7 @@ function Client:_saveBlueprintButton(actor)
                 saveBlueprintData.title = ui.textInput('title', saveBlueprintData.title)
                 saveBlueprintData.description = ui.textArea('description', saveBlueprintData.description)
 
-                local existingEntry, numOtherActors = self:_getExistingLibraryEntry(saveBlueprintData.entryId)
+                local existingEntry, numOtherActors = self:_getExistingLibraryEntry(actor.actorId, saveBlueprintData.entryId)
                 if existingEntry then
                     if numOtherActors > 0 then
                         ui.markdown('This blueprint is used by ' .. numOtherActors ..
@@ -156,7 +156,7 @@ function Client:uiBlueprints()
       local actor = self.actors[actorId]
 
       local saveBlueprintData = self:_makeBlueprintData(actor)
-      local existingEntry, numOtherActors = self:_getExistingLibraryEntry(saveBlueprintData.entryId)
+      local existingEntry, numOtherActors = self:_getExistingLibraryEntry(actorId, saveBlueprintData.entryId)
 
       data['saveBlueprintData'] = saveBlueprintData
       data['isExisting'] = (existingEntry ~= nil)
