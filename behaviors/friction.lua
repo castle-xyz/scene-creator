@@ -24,6 +24,8 @@ function FrictionBehavior.handlers:addComponent(component, bp, opts)
         for _, fixture in pairs(fixtures) do
             fixture:setFriction(0.2)
         end
+
+        self.dependencies.Body:sendSetProperties(component.actorId, "friction", 0.2)
     end
 end
 
@@ -34,6 +36,8 @@ function FrictionBehavior.handlers:removeComponent(component, opts)
         for _, fixture in pairs(fixtures) do
             fixture:setFriction(0)
         end
+
+        self.dependencies.Body:sendSetProperties(component.actorId, "friction", 0)
     end
 end
 
@@ -52,4 +56,6 @@ function FrictionBehavior.setters:friction(component, value)
    for _, fixtureId in pairs(members.fixtureIds) do
       members.physics:setFriction(fixtureId, value)
    end
+
+   self.dependencies.Body:sendSetProperties(component.actorId, "friction", value)
 end

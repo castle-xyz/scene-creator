@@ -26,6 +26,11 @@ local BodyBehavior =
         "angle",
         "width",
         "height",
+        "fixtures",
+        "isNewDrawingTool",
+        "friction",
+        "restitution",
+        "sensor",
     },
     propertySpecs = {
        x = {
@@ -108,7 +113,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
 
             -- box2d throws an error if this is negative
             local m_I = massData[4] - massData[3] * (massData[1]*massData[1] + massData[2]*massData[2])
-            if m_I < 0 then
+            if m_I <= 0.00001 then
                 -- TODO: actually calculate this in a better way
                 massData = {0, 0, 5.0, 0.0}
             end
@@ -146,53 +151,45 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
 
         local fixtureBps = bp.fixture and {bp.fixture} or bp.fixtures
         if fixtureBps then
-            for _, fixtureBp in ipairs(fixtureBps) do
-                local shapeId
-                local shapeType = fixtureBp.shapeType
-
-                if shapeType == "circle" then
-                    shapeId =
-                        self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0.5 * UNIT)
-                elseif shapeType == "polygon" then
-                    shapeId = self._physics:newPolygonShape(unpack(assert(fixtureBp.points)))
-                elseif shapeType == "edge" then
-                    shapeId = self._physics:newEdgeShape(unpack(assert(fixtureBp.points)))
-                    self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
-                    self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
-                elseif shapeType == "chain" then
-                    shapeId = self._physics:newChainShape(unpack(assert(fixtureBp.points)))
-                    self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
-                    self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
-                end
-
-                local fixtureId = self._physics:newFixture(bodyId, shapeId, fixtureBp.density or 1)
-                if fixtureBp.friction ~= nil then
-                    self._physics:setFriction(fixtureId, fixtureBp.friction)
-                else
-                    self._physics:setFriction(fixtureId, 0)
-                end
-                if fixtureBp.restitution ~= nil then
-                    self._physics:setRestitution(fixtureId, fixtureBp.restitution)
-                end
-                if fixtureBp.sensor ~= nil then
-                    self._physics:setSensor(fixtureId, fixtureBp.sensor)
-                else
-                    self._physics:setSensor(fixtureId, true) -- Sensor by default
-                end
-
-                self._physics:destroyObject(shapeId)
-            end
+            component.properties.fixtures = fixtureBps
         else -- Default shape
             local shapeId = self._physics:newRectangleShape(UNIT - BODY_RECTANGLE_SLOP, UNIT - BODY_RECTANGLE_SLOP)
-            local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
-            self._physics:setFriction(fixtureId, 0)
-            self._physics:setSensor(fixtureId, true) -- Sensor by default
-            self._physics:destroyObject(shapeId)
+            component.properties.fixtures = {
+                shapeType = "polygon",
+                points = {
+                    shapeId:getPoints()
+                },
+            }
+        end
+
+        local firstFixtureBp = fixtureBps[1]
+        if bp.friction ~= nil then
+            component.properties.friction = bp.friction
+        elseif firstFixtureBp.friction ~= nil then
+            component.properties.friction = firstFixtureBp.friction
+        else
+            component.properties.friction = 0
+        end
+        if bp.restitution ~= nil then
+            component.properties.restitution = bp.restitution
+        elseif firstFixtureBp.restitution ~= nil then
+            component.properties.restitution = firstFixtureBp.restitution
+        else
+            component.properties.restitution = 0
+        end
+        if bp.sensor ~= nil then
+            component.properties.sensor = bp.sensor
+        elseif firstFixtureBp.sensor ~= nil then
+            component.properties.sensor = firstFixtureBp.sensor
+        else
+            component.properties.sensor = true
         end
 
         -- Associate the component with the underlying body
         self._physics:setUserData(bodyId, component.actorId)
         self:sendSetProperties(component.actorId, "bodyId", bodyId)
+
+        self:updatePhysicsFixturesFromProperties(component.actorId)
 
         local width, height
         if bp.width then
@@ -204,6 +201,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
 
         component.properties.width = width
         component.properties.height = height
+        component.properties.isNewDrawingTool = false
     end
 end
 
@@ -214,6 +212,35 @@ function BodyBehavior.handlers:removeComponent(component, opts)
 
         self._physics:destroyObject(component.properties.bodyId)
     end
+end
+
+function BodyBehavior:serializeFixture(fixture)
+    local fixtureBp = {}
+
+    local shape = fixture:getShape()
+    local shapeType = shape:getType()
+    fixtureBp.shapeType = shapeType
+    if shapeType == "circle" then
+        fixtureBp.x, fixtureBp.y = shape:getPoint()
+        fixtureBp.radius = shape:getRadius()
+    elseif shapeType == "polygon" then
+        fixtureBp.points = {shape:getPoints()}
+    elseif shapeType == "edge" then
+        fixtureBp.points = {shape:getPoints()}
+        fixtureBp.previousVertex = {shape:getPreviousVertex()}
+        fixtureBp.nextVertex = {shape:getNextVertex()}
+    elseif shapeType == "chain" then
+        fixtureBp.points = {shape:getPoints()}
+        fixtureBp.previousVertex = {shape:getPreviousVertex()}
+        fixtureBp.nextVertex = {shape:getNextVertex()}
+    end
+
+    fixtureBp.density = fixture:getDensity()
+    fixtureBp.friction = fixture:getFriction()
+    fixtureBp.restitution = fixture:getRestitution()
+    fixtureBp.sensor = fixture:isSensor()
+
+    return fixtureBp
 end
 
 function BodyBehavior.handlers:blueprintComponent(component, bp)
@@ -231,38 +258,12 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.bullet = body:isBullet()
     bp.gravityScale = body:getGravityScale()
 
-    bp.fixtures = {}
-    for _, fixture in ipairs(body:getFixtures()) do
-        local fixtureBp = {}
-
-        local shape = fixture:getShape()
-        local shapeType = shape:getType()
-        fixtureBp.shapeType = shapeType
-        if shapeType == "circle" then
-            fixtureBp.x, fixtureBp.y = shape:getPoint()
-            fixtureBp.radius = shape:getRadius()
-        elseif shapeType == "polygon" then
-            fixtureBp.points = {shape:getPoints()}
-        elseif shapeType == "edge" then
-            fixtureBp.points = {shape:getPoints()}
-            fixtureBp.previousVertex = {shape:getPreviousVertex()}
-            fixtureBp.nextVertex = {shape:getNextVertex()}
-        elseif shapeType == "chain" then
-            fixtureBp.points = {shape:getPoints()}
-            fixtureBp.previousVertex = {shape:getPreviousVertex()}
-            fixtureBp.nextVertex = {shape:getNextVertex()}
-        end
-
-        fixtureBp.density = fixture:getDensity()
-        fixtureBp.friction = fixture:getFriction()
-        fixtureBp.restitution = fixture:getRestitution()
-        fixtureBp.sensor = fixture:isSensor()
-
-        table.insert(bp.fixtures, fixtureBp)
-    end
-
+    bp.fixtures = component.properties.fixtures
     bp.width = component.properties.width
     bp.height = component.properties.height
+    bp.friction = component.properties.friction
+    bp.restitution = component.properties.restitution
+    bp.sensor = component.properties.sensor
 end
 
 function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
@@ -609,6 +610,60 @@ function BodyBehavior.setters:height(component, value)
    self:setRectangleShape(actorId, rectangleWidth, value)
 end
 
+function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
+    local bodyId, body = self:getBody(componentOrActorId)
+    local bodyFixtures = body:getFixtures()
+
+    for _, fixture in pairs(bodyFixtures) do
+        local fixtureId = self._physics:idForObject(fixture)
+        self._physics:destroyObject(fixtureId)
+    end
+
+    local component = self:getComponent(componentOrActorId)
+
+    if self.game.performing or not component.properties.isNewDrawingTool then
+        for _, fixtureBp in ipairs(component.properties.fixtures) do
+            local shapeId
+            local shapeType = fixtureBp.shapeType
+
+            if shapeType == "circle" then
+                shapeId =
+                    self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0.5 * UNIT)
+            elseif shapeType == "polygon" then
+                shapeId = self._physics:newPolygonShape(unpack(assert(fixtureBp.points)))
+            elseif shapeType == "edge" then
+                shapeId = self._physics:newEdgeShape(unpack(assert(fixtureBp.points)))
+                self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
+                self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
+            elseif shapeType == "chain" then
+                shapeId = self._physics:newChainShape(unpack(assert(fixtureBp.points)))
+                self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
+                self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
+            end
+
+            local fixtureId = self._physics:newFixture(bodyId, shapeId, fixtureBp.density or 1)
+            self._physics:setFriction(fixtureId, component.properties.friction)
+            self._physics:setRestitution(fixtureId, component.properties.restitution)
+            self._physics:setSensor(fixtureId, component.properties.sensor)
+
+            self._physics:destroyObject(shapeId)
+        end
+    else
+        local halfWidth = component.properties.width
+        local halfHeight = component.properties.height
+
+        local shapeId = self._physics:newRectangleShape(component.properties.width, component.properties.height)
+        local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
+        self._physics:setFriction(fixtureId, component.properties.friction)
+        self._physics:setRestitution(fixtureId, component.properties.restitution)
+        self._physics:setSensor(fixtureId, component.properties.sensor)
+
+        self._physics:destroyObject(shapeId)
+    end
+end
+
+-- TODO: this is inefficient. it should take serialized fixtures instead of
+-- actual physics objects
 function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
     local bodyId, body = self:getBody(componentOrActorId)
     local fixtures = body:getFixtures()
@@ -631,6 +686,14 @@ function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
         self._physics:setRestitution(newFixtureId, restitution)
         self._physics:setSensor(newFixtureId, sensor)
     end
+
+    local component = self:getComponent(componentOrActorId)
+    component.properties.fixtures = {}
+    for _, fixture in ipairs(body:getFixtures()) do
+        table.insert(component.properties.fixtures, self:serializeFixture(fixture))
+    end
+
+    self:updatePhysicsFixturesFromProperties(componentOrActorId)
 end
 
 function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
@@ -762,15 +825,18 @@ function BodyBehavior:getSize(actorId)
     local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
     local bodyId, body = self:getBody(component)
     local fixtures = body:getFixtures()
-    local fixture = fixtures[1]
-    local shape = fixture:getShape()
-    local shapeType = shape:getType()
 
-    if #fixtures == 1 and shapeType == 'circle' then
-        return self:getFixtureBoundingBoxSize(actorId)
-    else
-        return component.properties.width, component.properties.height
+    if not component.properties.isNewDrawingTool then
+        local fixture = fixtures[1]
+        local shape = fixture:getShape()
+        local shapeType = shape:getType()
+
+        if shapeType == 'circle' then
+            return self:getFixtureBoundingBoxSize(actorId)
+        end
     end
+    
+    return component.properties.width, component.properties.height
 end
 
 function BodyBehavior:getComponentSize(actorId)
@@ -785,10 +851,14 @@ function BodyBehavior:getFixtureBoundingBoxSize(actorId)
     local bodyId, body = self:getBody(component)
     local fixtures = body:getFixtures()
     local firstFixture = fixtures[1]
+    if not firstFixture then
+        return 0, 0
+    end
+
     local firstShape = firstFixture:getShape()
     local firstShapeType = firstShape:getType()
 
-    if #fixtures == 1 then
+    if not component.properties.isNewDrawingTool then
         local rectangleWidth, rectangleHeight = getRectangleSizeFromFixture(firstFixture, component)
         if rectangleHeight and rectangleHeight then
             return rectangleWidth, rectangleHeight
@@ -827,9 +897,11 @@ function BodyBehavior:getRectangleSize(componentOrActorId)
 end
 
 function BodyBehavior:getShapeType(actorId)
+    local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
     local bodyId, body = self:getBody(actorId)
     local fixtures = body:getFixtures()
-    if #fixtures ~= 1 then
+
+    if component.properties.isNewDrawingTool then
         return "polygon"
     end
 

@@ -526,24 +526,6 @@ end
 
 -- Draw
 
-function drawPhysicsBody(drawPoints)
-    for _, points in pairs(_physicsBodyData.pointsSets) do
-        if #points > 2 then
-            love.graphics.setLineWidth(0.1)
-            love.graphics.setColor(0.5, 0.5, 1.0, 1.0)
-            love.graphics.line(points)
-            local numPoints = #points
-            love.graphics.line(points[numPoints - 1], points[numPoints], points[1], points[2])
-
-            if drawPoints then
-                love.graphics.setColor(0.0, 0.0, 1.0, 1.0)
-                love.graphics.setPointSize(30.0)
-                love.graphics.points(points)
-            end
-        end
-    end
-end
-
 function DrawTool.handlers:drawOverlay()
     if not self:isActive() then
         return
@@ -562,7 +544,7 @@ function DrawTool.handlers:drawOverlay()
     love.graphics.setColor(1, 1, 1, 1)
 
     if _tool == 'draw' then
-        drawPhysicsBody(false)
+        _physicsBodyData:draw()
     end
 
     if _tool == 'draw' and (_subtool == 'draw' or _subtool == 'pencil' or _subtool == 'move') then
@@ -627,7 +609,7 @@ function DrawTool.handlers:drawOverlay()
     end
 
     if _tool == 'physics_body' then
-        drawPhysicsBody(true)
+        _physicsBodyData:draw()
     end
 
     love.graphics.pop()
@@ -656,6 +638,32 @@ function DrawTool.handlers:uiPanel()
                 else
                     _tool = 'physics_body'
                 end
+            end
+        }
+    )
+
+    ui.button(
+        "circle",
+        {
+            icon = "plus",
+            iconFamily = "FontAwesome5",
+            hideLabel = false,
+            onClick = function()
+                _physicsBodyData:addCircle()
+                self:saveDrawing("add circle collision shape", c)
+            end
+        }
+    )
+
+    ui.button(
+        "rect",
+        {
+            icon = "plus",
+            iconFamily = "FontAwesome5",
+            hideLabel = false,
+            onClick = function()
+                _physicsBodyData:addRectangle()
+                self:saveDrawing("add rectangle collision shape", c)
             end
         }
     )

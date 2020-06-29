@@ -623,7 +623,7 @@ function Client:draw()
         self:callHandlers("drawOverlay")
     end
 
-    if DEBUG_PHYSICS_BODIES then -- Physics bodies
+    if DEBUG_PHYSICS_BODIES and not self:isActiveToolFullscreen() then -- Physics bodies
         local physics = self.behaviorsByName.Body:getPhysics()
         local worldId, world = physics:getWorld()
         if world then

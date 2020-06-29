@@ -29,6 +29,8 @@ function SolidBehavior.handlers:addComponent(component, bp, opts)
         fixture:setSensor(false)
         wakeBodyAndColliders(body)
     end
+
+   self.dependencies.Body:sendSetProperties(component.actorId, "sensor", false)
 end
 
 function SolidBehavior.handlers:removeComponent(component, opts)
@@ -39,5 +41,7 @@ function SolidBehavior.handlers:removeComponent(component, opts)
             fixture:setSensor(true)
             wakeBodyAndColliders(body)
         end
+
+        self.dependencies.Body:sendSetProperties(component.actorId, "sensor", true)
     end
 end

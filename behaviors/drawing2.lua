@@ -75,12 +75,16 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
 
     local data = self:cacheDrawing(component.properties)
     self:updateBodyShape(component, data.physicsBodyData)
+
+    self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
 end
 
 function Drawing2Behavior.handlers:removeComponent(component, opts)
     if opts.isOrigin and not opts.removeActor then
         self.dependencies.Body:resetShapes(component.actorId)
     end
+
+    self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", false)
 end
 
 function Drawing2Behavior.handlers:blueprintComponent(component, bp)
