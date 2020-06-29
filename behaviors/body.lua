@@ -581,19 +581,19 @@ Is true if the actor **is currently in contact** with another actor. If a **tag*
 function BodyBehavior.setters:x(component, value)
    local actorId = component.actorId
    local members = self:getMembers(actorId)
-   members.physics:setX(bodyId, value)
+   members.physics:setX(members.bodyId, value)
 end
 
 function BodyBehavior.setters:y(component, value)
    local actorId = component.actorId
    local members = self:getMembers(actorId)
-   members.physics:setY(bodyId, value)
+   members.physics:setY(members.bodyId, value)
 end
 
 function BodyBehavior.setters:angle(component, value)
    local actorId = component.actorId
    local members = self:getMembers(actorId)
-   members.physics:setAngle(bodyId, value * math.pi / 180)
+   members.physics:setAngle(members.bodyId, value * math.pi / 180)
 end
 
 function BodyBehavior.setters:width(component, value)
