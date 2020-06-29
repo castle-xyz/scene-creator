@@ -154,32 +154,36 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
             component.properties.fixtures = fixtureBps
         else -- Default shape
             local shapeId = self._physics:newRectangleShape(UNIT - BODY_RECTANGLE_SLOP, UNIT - BODY_RECTANGLE_SLOP)
-            component.properties.fixtures = {
+            component.properties.fixtures = {{
                 shapeType = "polygon",
                 points = {
-                    shapeId:getPoints()
+                    self._physics:objectForId(shapeId):getPoints()
                 },
-            }
+            }}
         end
 
-        local firstFixtureBp = fixtureBps[1]
+        local firstFixtureBp = nil
+        if fixtureBps and fixtureBps[1] then
+            firstFixtureBp = fixtureBps[1]
+        end
+
         if bp.friction ~= nil then
             component.properties.friction = bp.friction
-        elseif firstFixtureBp.friction ~= nil then
+        elseif firstFixtureBp ~= nil and firstFixtureBp.friction ~= nil then
             component.properties.friction = firstFixtureBp.friction
         else
             component.properties.friction = 0
         end
         if bp.restitution ~= nil then
             component.properties.restitution = bp.restitution
-        elseif firstFixtureBp.restitution ~= nil then
+        elseif firstFixtureBp ~= nil and firstFixtureBp.restitution ~= nil then
             component.properties.restitution = firstFixtureBp.restitution
         else
             component.properties.restitution = 0
         end
         if bp.sensor ~= nil then
             component.properties.sensor = bp.sensor
-        elseif firstFixtureBp.sensor ~= nil then
+        elseif firstFixtureBp ~= nil and firstFixtureBp.sensor ~= nil then
             component.properties.sensor = firstFixtureBp.sensor
         else
             component.properties.sensor = true
@@ -667,11 +671,13 @@ end
 function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
     local bodyId, body = self:getBody(componentOrActorId)
     local fixtures = body:getFixtures()
-    local firstFixture = fixtures[1]
-    local density = firstFixture:getDensity()
-    local friction = firstFixture:getFriction()
-    local restitution = firstFixture:getRestitution()
-    local sensor = firstFixture:isSensor()
+
+    local component = self:getComponent(componentOrActorId)
+
+    local density = 1 --todo: not sure what to do here
+    local friction = component.properties.friction
+    local restitution = component.properties.restitution
+    local sensor = component.properties.sensor
 
     for _, fixture in pairs(fixtures) do
         local fixtureId = self._physics:idForObject(fixture)
@@ -687,7 +693,6 @@ function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
         self._physics:setSensor(newFixtureId, sensor)
     end
 
-    local component = self:getComponent(componentOrActorId)
     component.properties.fixtures = {}
     for _, fixture in ipairs(body:getFixtures()) do
         table.insert(component.properties.fixtures, self:serializeFixture(fixture))
