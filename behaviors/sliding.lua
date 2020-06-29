@@ -14,7 +14,7 @@ local SlidingBehavior =
        direction = {
           method = 'dropdown',
           label = 'Direction',
-          props = { items = {"horizontal", "vertical", "both"} },
+          props = { items = {"horizontal", "vertical", "both", "none"} },
        },
        isRotationAllowed = {
           method = 'toggle',
@@ -32,7 +32,14 @@ function SlidingBehavior:updateJoint(component)
     end
 
     local direction = component.properties.direction
-    if direction ~= "both" then
+    if direction == "none" then
+       -- we still want to allow rotation, so fix the body to a revolute joint at its own position
+       local members = self.dependencies.Body:getMembers(component.actorId)
+       local x, y = members.body:getPosition()
+       local groundBodyId, groundBody = self.dependencies.Body:getGroundBody()
+       component._joint = love.physics.newRevoluteJoint(groundBody, members.body, x, y)
+    elseif direction ~= "both" then
+        -- allow motion in one dimension
         local ax, ay
         if direction == "horizontal" then
             ax, ay = 1, 0
