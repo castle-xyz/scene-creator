@@ -107,6 +107,25 @@ function Client:_addBehavior(actor, behaviorId, blueprint)
     end)
 end
 
+function Client:_setProperty(actorId, behaviorId, propertyName, oldValue, newValue)
+   self:command(
+      'change ' .. propertyName,
+      {
+         coalesceLast = false,
+         coalesceSuffix = propertyName,
+         params = { "behaviorId", "actorId", "propertyName", "oldValue", "newValue" },
+      },
+      function()
+         local behavior = self.behaviors[behaviorId]
+         behavior:sendSetProperties(actorId, propertyName, newValue)
+      end,
+      function()
+         local behavior = self.behaviors[behaviorId]
+         behavior:sendSetProperties(actorId, propertyName, oldValue)
+      end
+   )
+end
+
 function Client:uiInspector()
    local actorId = next(self.selectedActorIds)
    if actorId then
@@ -121,15 +140,15 @@ function Client:uiInspector()
          if component then
             isActive = true
             for propertyName, _ in pairs(behavior.propertySpecs) do
-               -- actions to set value for each property of the behavior
-               actions['set:' .. propertyName] = function(value)
-                  behavior:sendSetProperties(actorId, propertyName, value)
-               end
                -- current value of each property of the behavior
                if behavior.getters[propertyName] then
                   properties[propertyName] = behavior.getters[propertyName](behavior, component)
                else
                   properties[propertyName] = component.properties[propertyName]
+               end
+               -- actions to set value for each property of the behavior
+               actions['set:' .. propertyName] = function(value)
+                  self:_setProperty(actorId, behavior.behaviorId, propertyName, properties[propertyName], value)
                end
             end
             -- action to remove behavior from this actor
