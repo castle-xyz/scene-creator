@@ -1,5 +1,5 @@
 function Client:_makeBlueprintData(actor)
-   local saveBlueprintData = self.saveBlueprintDatas[actor]
+   local saveBlueprintData = nil
    if not saveBlueprintData then
       local oldEntry = self.library[actor.parentEntryId]
       if oldEntry.isCore then
