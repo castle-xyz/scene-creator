@@ -1,7 +1,7 @@
 local MovingBehavior =
     defineCoreBehavior {
     name = "Moving",
-    displayName = "moving",
+    displayName = "Dynamic Motion",
     propertyNames = { "vx", "vy", "angularVelocity" },
     dependencies = {
         "Body"

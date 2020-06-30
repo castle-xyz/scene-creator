@@ -5,7 +5,7 @@
 local BaseBehavior = {}
 
 function BaseBehavior:getUiName()
-    return (self.displayName or self.name):lower()
+    return self.displayName or self.name
 end
 
 function BaseBehavior:isActive()
