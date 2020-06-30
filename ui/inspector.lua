@@ -14,8 +14,28 @@ function Client:_uiActorAllowsBehavior(actor, behavior)
    return true
 end
 
-function Client:_removeBehavior(actorId, component, behavior)
-    local uiName = behavior:getUiName()
+function Client:_getDependenciesOrder(actor, behavior)
+    -- Get full order of adding behaviors in case of non-present dependencies
+    local order = {}
+    local visited = {}
+    local function visit(behavior)
+        if visited[behavior.behaviorId] then
+            return
+        end
+        visited[behavior.behaviorId] = true
+        if not actor.components[behavior.behaviorId] then
+            for _, dependency in pairs(behavior.dependencies) do
+                visit(dependency)
+            end
+            table.insert(order, behavior.behaviorId)
+        end
+    end
+    visit(behavior)
+    return order
+end
+
+function Client:_checkDependentsForRemoval(component)
+    local uiName = self.behaviors[component.behaviorId]:getUiName()
     if next(component.dependents) ~= nil then -- Has dependents?
         local names = {}
         for dependentId in pairs(component.dependents) do
@@ -36,7 +56,14 @@ function Client:_removeBehavior(actorId, component, behavior)
         local message = (list .. ' need' .. (#names > 1 and '' or 's') .. " '" ..
             uiName .. "'.")
         castle.system.alert("Cannot remove '" .. uiName .. "'", message)
-    else
+        return false
+    end
+    return true
+end
+
+function Client:_removeBehavior(actorId, component, behavior)
+    local uiName = behavior:getUiName()
+    if self:_checkDependentsForRemoval(component) then
         local behaviorId = component.behaviorId
         local componentBp = {}
         behavior:callHandler('blueprintComponent', component, componentBp)
@@ -63,23 +90,7 @@ end
 function Client:_addBehavior(actor, behaviorId, blueprint)
     local behavior = self.behaviors[behaviorId]
     local actorId = actor.actorId
-
-    -- Get full order of adding behaviors in case of non-present dependencies
-    local order = {}
-    local visited = {}
-    local function visit(behavior)
-        if visited[behavior.behaviorId] then
-            return
-        end
-        visited[behavior.behaviorId] = true
-        if not actor.components[behavior.behaviorId] then
-            for _, dependency in pairs(behavior.dependencies) do
-                visit(dependency)
-            end
-            table.insert(order, behavior.behaviorId)
-        end
-    end
-    visit(behavior)
+    local order = self:_getDependenciesOrder(actor, behavior)
 
     self:command('add ' .. behavior:getUiName(), {
         params = { 'behaviorId', 'order', 'blueprint' },
@@ -103,6 +114,52 @@ function Client:_addBehavior(actor, behaviorId, blueprint)
         for i = #order, 1, -1 do
             self:send('removeComponent', self.clientId, actorId, order[i])
         end
+        self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+    end)
+end
+
+function Client:_swapBehavior(actor, component, newBehaviorId, blueprint)
+    local actorId = actor.actorId
+    local newBehavior = self.behaviors[newBehaviorId]
+    local oldBehaviorId = component.behaviorId
+    local oldBehavior = self.behaviors[oldBehaviorId]
+
+    if not self:_checkDependentsForRemoval(component) then return end
+
+    local oldComponentBp = {}
+    oldBehavior:callHandler('blueprintComponent', component, oldComponentBp)
+
+    local order = self:_getDependenciesOrder(actor, newBehavior)
+    
+    self:command('swap ' .. oldBehavior:getUiName() .. ' with ' .. newBehavior:getUiName(), {
+        params = { 'oldBehaviorId', 'oldComponentBp', 'newBehaviorId', 'order', 'blueprint' },
+    }, function()
+        if not self.behaviors[oldBehaviorId].components[actorId] then
+            return 'old behavior was removed'
+        end
+        if self.behaviors[newBehaviorId].components[actorId] then
+            return 'new behavior was added'
+        end
+
+        self:send('removeComponent', self.clientId, actorId, oldBehaviorId)
+        for i = 1, #order do
+            local bp = (i == #order) and blueprint or {} -- use provided blueprint only for root component being added
+            self:send('addComponent', self.clientId, actorId, order[i], bp, {
+                interactive = true,
+            })
+        end
+        self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+    end, function()
+        if not self.behaviors[newBehaviorId].components[actorId] then
+            return 'new behavior was removed'
+        end
+        if self.behaviors[oldBehaviorId].components[actorId] then
+            return 'old behavior was added'
+        end
+        for i = #order, 1, -1 do
+            self:send('removeComponent', self.clientId, actorId, order[i])
+        end
+        self:send('addComponent', self.clientId, actorId, oldBehaviorId, oldComponentBp)
         self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
     end)
 end
@@ -154,6 +211,12 @@ function Client:uiInspector()
             -- action to remove behavior from this actor
             actions['remove'] = function()
                self:_removeBehavior(actorId, component, behavior)
+            end
+            -- action to swap this behavior for another
+            actions['swap'] = function(newBlueprint)
+               local newBehaviorName = newBlueprint.name
+               local newBehaviorId = self.behaviorsByName[newBehaviorName].behaviorId
+               self:_swapBehavior(actor, component, newBehaviorId, newBlueprint)
             end
          elseif self.tools[behavior.behaviorId] then
             -- action to use tool
