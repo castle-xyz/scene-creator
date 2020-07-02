@@ -1346,7 +1346,8 @@ function RulesBehavior:addRule(actorId, component)
       function()
          table.insert(component.properties.rules, util.deepCopyTable(EMPTY_RULE))
       end,
-      'add new rule'
+      'add new rule',
+      false
    )
 end
 

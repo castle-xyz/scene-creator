@@ -155,8 +155,7 @@ function Client:uiupdate()
     end)
 
     ui.pane('sceneCreatorRules', function()
-        -- TODO: enable data rules: self:uiRules()
-        self:uiLegacyRules()
+        self:uiRules()
     end)
 
     -- Settings
