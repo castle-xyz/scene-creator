@@ -11,6 +11,8 @@ end
 
 -- Update
 
+local TOUCH_MOVE_THRESHOLD = 35
+
 function Client:updateTouches()
     -- Clear old released touches
     for touchId, touch in pairs(self.touches) do
@@ -54,7 +56,9 @@ function Client:updateTouches()
             touch.x, touch.y = x, y
             touch.screenDX, touch.screenDY = screenX - touch.screenX, screenY - touch.screenY
             touch.screenX, touch.screenY = screenX, screenY
-            if not (touch.screenX == touch.initialScreenX and touch.screenY == touch.initialScreenY) then
+            
+            if not (util.similar(touch.screenX, touch.initialScreenX, TOUCH_MOVE_THRESHOLD) and
+                    util.similar(touch.screenY, touch.initialScreenY, TOUCH_MOVE_THRESHOLD)) then
                 touch.moved = true
             end
         end

@@ -38,6 +38,9 @@ function util.quantize(value, divisor, start)
     return divisor * math.floor(0.5 + (value - start) / divisor) + start
 end
 
+function util.similar(value1, value2, maxDelta)
+    return math.abs(value1 - value2) < maxDelta;
+end
 
 function util.uuid()
     return uuidLib()
