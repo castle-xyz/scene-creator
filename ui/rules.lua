@@ -57,6 +57,7 @@ function Client:uiRules()
 
       local triggers = rulesBehavior:getRuleEntries('trigger', self.behaviors)
       local responses = rulesBehavior:getRuleEntries('response', self.behaviors)
+      local conditions = rulesBehavior:getRuleEntries('response', self.behaviors, { returnType = 'boolean' })
       
       ui.data(
          {
@@ -64,6 +65,7 @@ function Client:uiRules()
             rules = rules,
             triggers = Rules.sanitizeEntries(triggers),
             responses = Rules.sanitizeEntries(responses),
+            conditions = Rules.sanitizeEntries(conditions),
          },
          {
             actions = actions,
