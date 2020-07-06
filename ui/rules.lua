@@ -1,5 +1,16 @@
 local Rules = {}
 
+-- cjson will try to serialize 1-indexed consecutive tables to arrays, but will later
+-- encounter issues with diffs if we try to grow the array, so instead just pick
+-- not-1-indexed keys to convince the bridge that this should never be an array.
+function Rules.noArray(array)
+   local result = {}
+   for k, v in ipairs(array) do
+      result[k + 42] = v
+   end
+   return result
+end
+
 -- TODO: we only do this because the raw entries contain functions,
 -- which cannot be serialized.
 -- this method won't be necessary after entries stop containing ui logic.
@@ -62,7 +73,7 @@ function Client:uiRules()
       ui.data(
          {
             name = 'Rules',
-            rules = rules,
+            rules = Rules.noArray(rules),
             triggers = Rules.sanitizeEntries(triggers),
             responses = Rules.sanitizeEntries(responses),
             conditions = Rules.sanitizeEntries(conditions),
