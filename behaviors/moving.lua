@@ -41,9 +41,17 @@ end
 -- Responses
 
 MovingBehavior.responses["add velocity"] = {
-    description = [[
-Changes the actor's velocity by the given amount.
-    ]],
+    description = "Adjust velocity",
+    paramSpecs = {
+       x = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+       y = {
+          method = "numberInput",
+          initialValue = -3,
+       },
+    },
     initialParams = {
         x = 0,
         y = -3
@@ -85,9 +93,13 @@ Changes the actor's velocity by the given amount.
 }
 
 MovingBehavior.responses["add rotation speed"] = {
-    description = [[
-Changes the actor's rotation speed by the given amount.
-    ]],
+    description = "Adjust rotation speed",
+    paramSpecs = {
+       speed = {
+          method = "numberInput",
+          initialValue = 20,
+       },
+    },
     initialParams = {
         speed = 20
     },
@@ -113,9 +125,17 @@ Changes the actor's rotation speed by the given amount.
 }
 
 MovingBehavior.responses["set velocity"] = {
-    description = [[
-Sets the actor's velocity to the given value.
-    ]],
+    description = "Set velocity",
+    paramSpecs = {
+       x = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+       y = {
+          method = "numberInput",
+          initialValue = -3,
+       },
+    },
     initialParams = {
         x = 0,
         y = -3
@@ -156,9 +176,13 @@ Sets the actor's velocity to the given value.
 }
 
 MovingBehavior.responses["set rotation speed"] = {
-    description = [[
-Sets the actor's rotation speed to the given value.
-    ]],
+    description = "Set rotation speed",
+    paramSpecs = {
+       speed = {
+          method = "numberInput",
+          initialValue = 20,
+       },
+    },
     initialParams = {
         speed = 20
     },

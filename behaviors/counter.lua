@@ -78,10 +78,25 @@ end
 -- Triggers
 
 CounterBehavior.triggers["counter reaches value"] = {
-    description = [[
-Triggered when the actor's counter reaches a given value.
-    ]],
+    description = "When this actor's counter reaches a value",
     category = "counter",
+    paramSpecs = {
+       comparison = {
+          method = "dropdown",
+          initialValue = "equal",
+          props = {
+             items = {
+                "equal",
+                "less or equal",
+                "greater or equal",
+             },
+          },
+       },
+       value = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+    },
     initialParams = {
         comparison = "equal",
         value = 0
@@ -122,19 +137,21 @@ Triggered when the actor's counter reaches a given value.
 }
 
 CounterBehavior.triggers["counter changes"] = {
-    description = [[
-Triggered when the actor's counter changes.
-    ]],
+    description = "When the actor's counter changes",
     category = "counter"
 }
 
 -- Responses
 
 CounterBehavior.responses["change counter"] = {
-    description = [[
-Changes the actor's counter by the given value. A **positive value increments** the counter, while a **negative value decrements** it.
-    ]],
+    description = "Adjust the actor's counter",
     category = "counter",
+    paramSpecs = {
+       changeBy = {
+          method = "numberInput",
+          initialValue = 1,
+       },
+    },
     initialParams = {
         changeBy = 1
     },
@@ -161,10 +178,14 @@ Changes the actor's counter by the given value. A **positive value increments** 
 }
 
 CounterBehavior.responses["set counter"] = {
-    description = [[
-**Directly sets** the counter to the given value.
-    ]],
+    description = "Set the actor's counter",
     category = "counter",
+    paramSpecs = {
+       setToValue = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+    },
     initialParams = {
         setToValue = 0
     },
@@ -191,11 +212,26 @@ CounterBehavior.responses["set counter"] = {
 }
 
 CounterBehavior.responses["counter meets condition"] = {
-    description = [[
-Returns true if the actor's counter meets the condition.
-    ]],
+    description = "If the actor's counter meets a condition",
     category = "counter",
     returnType = "boolean",
+    paramSpecs = {
+       comparison = {
+          method = "dropdown",
+          initialValue = "equal",
+          props = {
+             items = {
+                "equal",
+                "less or equal",
+                "greater or equal",
+             },
+          },
+       },
+       value = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+    },
     initialParams = {
         comparison = "equal",
         value = 0

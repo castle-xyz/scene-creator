@@ -248,10 +248,18 @@ RulesBehavior.triggers["variable changes"] = {
 -- Variables responses
 
 RulesBehavior.responses["change variable"] = {
-    description = [[
-Changes a variable by the given value. A **positive value increments** the variable, while a **negative value decrements** it.
-    ]],
+    description = "Adjust the value of a variable",
     category = "variable",
+    paramSpecs = {
+       changeBy = {
+          method = "numberInput",
+          initialValue = 1,
+       },
+       variableId = {
+          method = "dropdown",
+          initialValue = "(none)",
+       },
+    },
     initialParams = {
         changeBy = 1,
         variableId = nil
@@ -292,10 +300,18 @@ Changes a variable by the given value. A **positive value increments** the varia
 }
 
 RulesBehavior.responses["set variable"] = {
-    description = [[
-**Directly sets** a variable to the given value.
-    ]],
+    description = 'Set a variable to a value',
     category = "variable",
+    paramSpecs = {
+       variableId = {
+          method = "dropdown",
+          initialValue = "(none)",
+       },
+       setToValue = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+    },
     initialParams = {
         setToValue = 0,
         variableId = nil
@@ -334,11 +350,30 @@ RulesBehavior.responses["set variable"] = {
 }
 
 RulesBehavior.responses["variable meets condition"] = {
-    description = [[
-Returns true if the variable meets the condition.
-    ]],
+    description = 'If a variable meets a condition',
     category = "variable",
     returnType = "boolean",
+    paramSpecs = {
+       variableId = {
+          method = "dropdown",
+          initialValue = "(none)",
+       },
+       comparison = {
+          method = "dropdown",
+          initialValue = "equal",
+          props = {
+             items = {
+                "equal",
+                "less or equal",
+                "greater or equal",
+             },
+          },
+       },
+       value = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+    },
     initialParams = {
         variableId = "(none)",
         comparison = "equal",
