@@ -136,10 +136,29 @@ end
 -- Variables triggers
 
 RulesBehavior.triggers["variable reaches value"] = {
-    description = [[
-Triggered when a variable reaches a given value.
-    ]],
+    description = "When a variable reaches a value",
     category = "variable",
+    paramSpecs = {
+       variableId = {
+          method = "dropdown",
+          initialValue = "(none)",
+       },
+       comparison = {
+          method = "dropdown",
+          initialValue = "equal",
+          props = {
+             items = {
+                "equal",
+                "less or equal",
+                "greater or equal",
+             },
+          },
+       },
+       value = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+    },
     initialParams = {
         variableId = "(none)",
         comparison = "equal",
@@ -192,10 +211,14 @@ Triggered when a variable reaches a given value.
 }
 
 RulesBehavior.triggers["variable changes"] = {
-    description = [[
-Triggered when a variable changes.
-    ]],
+    description = "When a variable changes",
     category = "variable",
+    paramSpecs = {
+       variableId = {
+          method = "dropdown",
+          initialValue = "(none)",
+       },
+    },
     initialParams = {
         variableId = "(none)"
     },
@@ -383,26 +406,34 @@ Returns true if the variable meets the condition.
 -- Lifetime triggers
 
 RulesBehavior.triggers.create = {
-    description = [[
-Triggered when the **actor is created**. If the actor is already present when the scene starts, this is triggered when the scene starts.
-    ]],
+    description = "When this is created",
     category = "lifetime"
 }
 
 RulesBehavior.triggers.destroy = {
-    description = [[
-Triggered when the actor is **removed from the scene**.
-    ]],
+    description = "When this is destroyed",
     category = "lifetime"
 }
 
 -- Lifetime responses
 
 RulesBehavior.responses.create = {
-    description = [[
-**Adds a new actor** to the scene, based on a selected **blueprint**. The new actor can be placed at an offset position from the actor creating it.
-    ]],
+    description = "Create a new actor",
     category = "lifetime",
+    paramSpecs = {
+       entryId = {
+          method = "blueprint",
+          initialValue = nil,
+       },
+       xOffset = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+       yOffset = {
+          method = "numberInput",
+          initialValue = 0,
+       },
+    },
     initialParams = {
         xOffset = 0,
         yOffset = 0,
@@ -574,9 +605,7 @@ RulesBehavior.responses.create = {
 }
 
 RulesBehavior.responses.destroy = {
-    description = [[
-**Removes the actor** from the scene.
-    ]],
+    description = "Destroy this actor",
     category = "lifetime",
     run = function(self, actorId, params, context)
         if self.game.actors[actorId] then
@@ -597,9 +626,7 @@ RulesBehavior.responses.destroy = {
 -- Scene responses
 
 RulesBehavior.responses["restart scene"] = {
-    description = [[
-Restores the scene back to the start state.
-    ]],
+    description = "Restart this card",
     category = "scene",
     run = function(self, actorId, params, context)
         self.game:restartScene()
@@ -609,11 +636,15 @@ Restores the scene back to the start state.
 -- Timing responses
 
 RulesBehavior.responses.wait = {
-    description = [[
-**Wait some time** before performing the next response.
-    ]],
+    description = "Wait before a response",
     autoNext = false,
     category = "timing",
+    paramSpecs = {
+       duration = {
+          method = "numberInput",
+          initialValue = 1,
+       },
+    },
     initialParams = {
         duration = 1
     },
@@ -642,9 +673,7 @@ RulesBehavior.responses.wait = {
 -- Logic responses
 
 RulesBehavior.responses["if"] = {
-    description = [[
-Perform responses **only if** a given condition is true. Optionally can have an 'else' branch for when the condition is false.
-    ]],
+    description = "Condition a response",
     category = "logic",
     uiMenu = function(self, params, onChangeParam, uiChild)
         ui.toggle(
@@ -712,10 +741,14 @@ Perform responses **only if** a given condition is true. Optionally can have an 
 }
 
 RulesBehavior.responses["repeat"] = {
-    description = [[
-Repeat responses a certain number of times.
-    ]],
+    description = "Repeat a response",
     category = "logic",
+    paramSpecs = {
+       count = {
+          method = "numberInput",
+          initialValue = 3,
+       },
+    },
     initialParams = {
         count = 3
     },
@@ -741,10 +774,13 @@ Repeat responses a certain number of times.
 }
 
 RulesBehavior.responses["act on"] = {
-    description = [[
-Run responses **on each actor** that has the given **tag**.
-    ]],
+    description = "Act on any actor with a specific tag",
     category = "act",
+    paramSpecs = {
+       tag = {
+          method = "textInput",
+       },
+    },
     uiBody = function(self, params, onChangeParam, uiChild)
         ui.textInput(
             "tag",
@@ -774,9 +810,7 @@ Run responses **on each actor** that has the given **tag**.
 }
 
 RulesBehavior.responses["act on other"] = {
-    description = [[
-Run responses on the **other actor** that an actor **collided** with.
-    ]],
+    description = "Act on the other actor this collided with",
     category = "act",
     triggerFilter = {collide = true},
     uiBody = function(self, params, onChangeParam, uiChild)
@@ -792,11 +826,15 @@ Run responses on the **other actor** that an actor **collided** with.
 -- Random responses
 
 RulesBehavior.responses["coin flip"] = {
-    description = [[
-Is true if a coin flip comes up heads. The coin can be biased with a given probability.
-    ]],
+    description = "If a coin flip shows heads",
     category = "random",
     returnType = "boolean",
+    paramSpecs = {
+       probability = {
+          method = "numberInput",
+          initialValue = 0.5,
+       },
+    },
     initialParams = {
         probability = 0.5
     },

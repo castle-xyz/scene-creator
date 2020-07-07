@@ -502,10 +502,13 @@ end
 -- Triggers
 
 BodyBehavior.triggers.collide = {
-    description = [[
-Triggered when the actor **comes into contact** with another actor. If a **tag** is specified, the trigger is only fired when the other actor has the given tag.
-    ]],
+    description = "When this collides with another actor",
     category = "collision",
+    paramSpecs = {
+       tag = {
+          method = "textInput",
+       },
+    },
     uiBody = function(self, params, onChangeParam)
         ui.textInput(
             "with tag",
@@ -524,27 +527,26 @@ Triggered when the actor **comes into contact** with another actor. If a **tag**
 }
 
 BodyBehavior.triggers.tap = {
-    description = [[
-Triggered when the user taps (a quick **touch and release**) on the actor.
-]],
-    category = "input"
+    description = "When this is tapped",
+    category = "input",
 }
 
 BodyBehavior.triggers.press = {
-    description = [[
-Triggered repeatedly **while the user is pressing** (touches and holds their touch) on the actor.
-]],
+    description = "While this is pressed",
     category = "input"
 }
 
 -- Responses
 
 BodyBehavior.responses["is colliding"] = {
-    description = [[
-Is true if the actor **is currently in contact** with another actor. If a **tag** is specified, is only true when the actor is colliding an actor with the given tag.
-    ]],
+    description = "If this is colliding",
     category = "collision",
     returnType = "boolean",
+    paramSpecs = {
+       tag = {
+          method = "textInput",
+       },
+    },
     uiBody = function(self, params, onChangeParam, uiChild)
         ui.textInput(
             "with tag",

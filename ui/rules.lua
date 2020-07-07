@@ -21,9 +21,11 @@ function Rules.sanitizeEntries(categories)
       for _, entry in pairs(entries) do
          local cleanEntry = {
             name = entry.name,
+            description = entry.entry.description,
             behaviorId = entry.behaviorId,
             behaviorName = entry.behaviorName,
             category = entry.category,
+            paramSpecs = entry.entry.paramSpecs,
             initialParams = entry.entry.initialParams,
             returnType = entry.entry.returnType,
             triggerFilter = entry.entry.triggerFilter,
