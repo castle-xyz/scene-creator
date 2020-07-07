@@ -79,7 +79,7 @@ end
 
 CounterBehavior.triggers["counter reaches value"] = {
     description = "When this actor's counter reaches a value",
-    category = "counter",
+    category = "state",
     paramSpecs = {
        comparison = {
           method = "dropdown",
@@ -138,14 +138,14 @@ CounterBehavior.triggers["counter reaches value"] = {
 
 CounterBehavior.triggers["counter changes"] = {
     description = "When the actor's counter changes",
-    category = "counter"
+    category = "state"
 }
 
 -- Responses
 
 CounterBehavior.responses["change counter"] = {
     description = "Adjust the actor's counter",
-    category = "counter",
+    category = "state",
     paramSpecs = {
        changeBy = {
           method = "numberInput",
@@ -179,7 +179,7 @@ CounterBehavior.responses["change counter"] = {
 
 CounterBehavior.responses["set counter"] = {
     description = "Set the actor's counter",
-    category = "counter",
+    category = "state",
     paramSpecs = {
        setToValue = {
           method = "numberInput",
@@ -213,7 +213,7 @@ CounterBehavior.responses["set counter"] = {
 
 CounterBehavior.responses["counter meets condition"] = {
     description = "If the actor's counter meets a condition",
-    category = "counter",
+    category = "state",
     returnType = "boolean",
     paramSpecs = {
        comparison = {

@@ -137,7 +137,7 @@ end
 
 RulesBehavior.triggers["variable reaches value"] = {
     description = "When a variable reaches a value",
-    category = "variable",
+    category = "state",
     paramSpecs = {
        variableId = {
           method = "dropdown",
@@ -212,7 +212,7 @@ RulesBehavior.triggers["variable reaches value"] = {
 
 RulesBehavior.triggers["variable changes"] = {
     description = "When a variable changes",
-    category = "variable",
+    category = "state",
     paramSpecs = {
        variableId = {
           method = "dropdown",
@@ -249,7 +249,7 @@ RulesBehavior.triggers["variable changes"] = {
 
 RulesBehavior.responses["change variable"] = {
     description = "Adjust the value of a variable",
-    category = "variable",
+    category = "state",
     paramSpecs = {
        changeBy = {
           method = "numberInput",
@@ -301,7 +301,7 @@ RulesBehavior.responses["change variable"] = {
 
 RulesBehavior.responses["set variable"] = {
     description = 'Set a variable to a value',
-    category = "variable",
+    category = "state",
     paramSpecs = {
        variableId = {
           method = "dropdown",
@@ -351,7 +351,7 @@ RulesBehavior.responses["set variable"] = {
 
 RulesBehavior.responses["variable meets condition"] = {
     description = 'If a variable meets a condition',
-    category = "variable",
+    category = "state",
     returnType = "boolean",
     paramSpecs = {
        variableId = {
@@ -442,19 +442,19 @@ RulesBehavior.responses["variable meets condition"] = {
 
 RulesBehavior.triggers.create = {
     description = "When this is created",
-    category = "lifetime"
+    category = "general"
 }
 
 RulesBehavior.triggers.destroy = {
     description = "When this is destroyed",
-    category = "lifetime"
+    category = "general"
 }
 
 -- Lifetime responses
 
 RulesBehavior.responses.create = {
     description = "Create a new actor",
-    category = "lifetime",
+    category = "general",
     paramSpecs = {
        entryId = {
           method = "blueprint",
@@ -641,7 +641,7 @@ RulesBehavior.responses.create = {
 
 RulesBehavior.responses.destroy = {
     description = "Destroy this actor",
-    category = "lifetime",
+    category = "general",
     run = function(self, actorId, params, context)
         if self.game.actors[actorId] then
             local members = self.game.behaviorsByName.Body:getMembers(actorId)
@@ -662,7 +662,7 @@ RulesBehavior.responses.destroy = {
 
 RulesBehavior.responses["restart scene"] = {
     description = "Restart this card",
-    category = "scene",
+    category = "general",
     run = function(self, actorId, params, context)
         self.game:restartScene()
     end
@@ -673,7 +673,7 @@ RulesBehavior.responses["restart scene"] = {
 RulesBehavior.responses.wait = {
     description = "Wait before a response",
     autoNext = false,
-    category = "timing",
+    category = "logic",
     paramSpecs = {
        duration = {
           method = "numberInput",
@@ -810,7 +810,7 @@ RulesBehavior.responses["repeat"] = {
 
 RulesBehavior.responses["act on"] = {
     description = "Act on any actor with a specific tag",
-    category = "act",
+    category = "interaction",
     paramSpecs = {
        tag = {
           method = "textInput",
@@ -846,7 +846,7 @@ RulesBehavior.responses["act on"] = {
 
 RulesBehavior.responses["act on other"] = {
     description = "Act on the other actor this collided with",
-    category = "act",
+    category = "interaction",
     triggerFilter = {collide = true},
     uiBody = function(self, params, onChangeParam, uiChild)
         uiChild("body", {allBehaviors = true})

@@ -503,7 +503,7 @@ end
 
 BodyBehavior.triggers.collide = {
     description = "When this collides with another actor",
-    category = "collision",
+    category = "general",
     paramSpecs = {
        tag = {
           method = "textInput",
@@ -528,12 +528,12 @@ BodyBehavior.triggers.collide = {
 
 BodyBehavior.triggers.tap = {
     description = "When this is tapped",
-    category = "input",
+    category = "controls",
 }
 
 BodyBehavior.triggers.press = {
     description = "While this is pressed",
-    category = "input"
+    category = "controls"
 }
 
 -- Responses
