@@ -5,7 +5,7 @@ jsEvents = require "__ghost__.jsEvents"
 NEW_DRAW_TOOL = true
 SHOW_TEXT_ACTORS = true
 DEBUG_FLOOD_FILL = false
-DEBUG_PHYSICS_BODIES = false
+DEBUG_PHYSICS_BODIES = true
 
 function castle.onQuit()
 end
@@ -643,7 +643,8 @@ function Client:draw()
                     local shape = fixture:getShape()
                     local ty = shape:getType()
                     if ty == "circle" then
-                        love.graphics.circle("line", body:getX(), body:getY(), shape:getRadius())
+                        local x, y = body:getWorldPoints(shape:getPoint())
+                        love.graphics.circle("line", x, y, shape:getRadius())
                     elseif ty == "polygon" then
                         love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
                     elseif ty == "edge" then

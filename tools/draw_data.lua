@@ -1,5 +1,9 @@
 DrawData = {}
 
+function DrawData:gridCellSize()
+    return self.scale / (self.gridSize - 1)
+end
+
 function DrawData:globalToGridCoordinates(x, y)
     local gridX = 1.0 + (self.gridSize - 1) * x / self.scale
     local gridY = 1.0 + (self.gridSize - 1) * y / self.scale
@@ -7,9 +11,18 @@ function DrawData:globalToGridCoordinates(x, y)
 end
 
 function DrawData:gridToGlobalCoordinates(x, y)
-    local globalX = (x - 1.0) * self.scale / (self.gridSize - 1)
-    local globalY = (y - 1.0) * self.scale / (self.gridSize - 1)
+    local globalX = (x - 1.0) * self:gridCellSize()
+    local globalY = (y - 1.0) * self:gridCellSize()
     return globalX, globalY
+end
+
+function DrawData:roundGlobalDiffCoordinatesToGrid(x, y)
+    local gridX, gridY = self:globalToGridCoordinates(x, y)
+
+    gridX = math.floor(gridX + 0.5)
+    gridY = math.floor(gridY + 0.5)
+
+    return self:gridToGlobalCoordinates(gridX, gridY)
 end
 
 function DrawData:roundGlobalCoordinatesToGrid(x, y)
@@ -31,6 +44,11 @@ function DrawData:roundGlobalCoordinatesToGrid(x, y)
     end
 
     return self:gridToGlobalCoordinates(gridX, gridY)
+end
+
+function DrawData:roundGlobalDistanceToGrid(d)
+    local x, y = self:roundGlobalCoordinatesToGrid(d, 0)
+    return x
 end
 
 function DrawData:updateFloodFillFaceDataRendering(floodFillFaceData)

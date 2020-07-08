@@ -58,6 +58,7 @@ local _currentPathData
 local _tempGraphics
 local _tool
 local _subtool
+local _physicsBodySubtool
 local _grabbedPaths
 
 function DrawTool.handlers:addBehavior(opts)
@@ -142,6 +143,7 @@ function DrawTool.handlers:onSetActive()
     _tempGraphics = nil
     _tool = 'draw'
     _subtool = 'pencil'
+    _physicsBodySubtool = 'rectangle'
 end
 
 function DrawTool.handlers:preUpdate(dt)
@@ -156,43 +158,102 @@ function DrawTool.handlers:preUpdate(dt)
     end
 end
 
-local _physicsBodyPointIndex = nil
-local _physicsBodyPointSetIndex = nil
+local _grabbedShape = nil
+
+local function bind(t, k)
+    return function(...) return t[k](t, ...) end
+end
 
 function DrawTool:updatePhysicsBodyTool(c, touch)
     local touchX, touchY = _viewTransform:inverseTransformPoint(touch.x, touch.y)
 
-    if _physicsBodyPointIndex == nil then
-        for j = 1, #_physicsBodyData.pointsSets do
-            local points = _physicsBodyData.pointsSets[j]
+    local roundedX, roundedY = _drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
+    local roundedCoord = {x = roundedX, y = roundedY}
 
-            for i = 1, #points, 2 do
-                local x = points[i]
-                local y = points[i + 1]
-                local dist = math.sqrt(math.pow(touchY - y, 2.0) + math.pow(touchX - x, 2.0))
-                if dist < 0.5 then
-                    _physicsBodyPointSetIndex = j
-                    _physicsBodyPointIndex = i
-                    break
-                end
-            end
+    if _physicsBodySubtool == 'rectangle' or _physicsBodySubtool == 'circle' or _physicsBodySubtool == 'triangle' then
+        if _initialCoord == nil then
+            _initialCoord = roundedCoord
         end
-    end
 
-    if _physicsBodyPointIndex ~= nil then
-        local pointsSets = util.deepCopyTable(_physicsBodyData.pointsSets)
+        local shape
+        if _physicsBodySubtool == 'rectangle' then
+            shape = _physicsBodyData:getRectangleShape(_initialCoord, roundedCoord)
+        elseif _physicsBodySubtool == 'circle' then
+            shape = _physicsBodyData:getCircleShape(_initialCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'))
+        elseif _physicsBodySubtool == 'triangle' then
+            shape = _physicsBodyData:getTriangleShape(_initialCoord, roundedCoord)
+        end
 
-        pointsSets[_physicsBodyPointSetIndex][_physicsBodyPointIndex] = touchX
-        pointsSets[_physicsBodyPointSetIndex][_physicsBodyPointIndex + 1] = touchY
-
-        if isConvexHull(pointsSets[_physicsBodyPointSetIndex]) then
-            _physicsBodyData.pointsSets = pointsSets
+        if shape then
+            _physicsBodyData.tempShape = shape
         end
 
         if touch.released then
-            _physicsBodyPointIndex = nil
-            _physicsBodyPointSetIndex = nil
-            self:saveDrawing("update collision shape", c)
+            if _physicsBodyData:commitTempShape() then
+                self:saveDrawing('add ' .. _physicsBodySubtool, c)
+            end
+
+            _initialCoord = nil
+        end
+    elseif _physicsBodySubtool == 'move' then
+        if _initialCoord == nil then
+            _initialCoord = {
+                x = touchX,
+                y = touchY
+            }
+            local idx = _physicsBodyData:getShapeIdxAtPoint(_initialCoord)
+            if idx then
+                _grabbedShape = _physicsBodyData:removeShapeAtIndex(idx)
+            end
+        end
+
+        if _grabbedShape then
+            local diffX, diffY = _drawData:roundGlobalDiffCoordinatesToGrid(touchX - _initialCoord.x, touchY - _initialCoord.y)
+
+            _physicsBodyData.tempShape = _physicsBodyData:moveShapeBy(_grabbedShape, diffX, diffY, _drawData:gridCellSize())
+        end
+
+        if touch.released then
+            if _physicsBodyData:commitTempShape() then
+                self:saveDrawing("move", c)
+            end
+
+            _initialCoord = nil
+            _grabbedShape = nil
+        end
+    elseif _physicsBodySubtool == 'rotate' then
+        if _initialCoord == nil then
+            _initialCoord = roundedCoord
+
+            local idx = _physicsBodyData:getShapeIdxAtPoint(_initialCoord)
+            if idx then
+                local shape = _physicsBodyData:getShapeAtIndex(idx)
+                if shape.type == "triangle" then
+                    shape.orientation = shape.orientation + 1
+                    if shape.orientation >= 4 then
+                        shape.orientation = 0
+                    end
+                    self:saveDrawing("rotate", c)
+                end
+            end
+        end
+
+        if touch.released then
+            _initialCoord = nil
+        end
+    elseif _physicsBodySubtool == 'erase' then
+        if _initialCoord == nil then
+            _initialCoord = roundedCoord
+
+            local idx = _physicsBodyData:getShapeIdxAtPoint(_initialCoord)
+            if idx then
+                _physicsBodyData:removeShapeAtIndex(idx)
+                self:saveDrawing("erase", c)
+            end
+        end
+
+        if touch.released then
+            _initialCoord = nil
         end
     end
 end
@@ -526,6 +587,16 @@ end
 
 -- Draw
 
+local function drawShapes()
+    love.graphics.setColor(1, 1, 1, 1)
+
+    _drawData:graphics():draw()
+
+    if _tempGraphics ~= nil then
+        _tempGraphics:draw()
+    end
+end
+
 function DrawTool.handlers:drawOverlay()
     if not self:isActive() then
         return
@@ -545,9 +616,11 @@ function DrawTool.handlers:drawOverlay()
 
     if _tool == 'draw' then
         _physicsBodyData:draw()
+    else
+        drawShapes()
     end
 
-    if _tool == 'draw' and (_subtool == 'draw' or _subtool == 'pencil' or _subtool == 'move') then
+    if _tool ~= 'draw' or (_subtool == 'draw' or _subtool == 'pencil' or _subtool == 'move') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
         love.graphics.setPointSize(10.0)
 
@@ -564,13 +637,11 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.points(points)
     end
 
-    love.graphics.setColor(1, 1, 1, 1)
-
-    _drawData:graphics():draw()
-
-    if _tempGraphics ~= nil then
-        _tempGraphics:draw()
+    if _tool == 'draw' then
+        drawShapes()
     end
+
+    love.graphics.setColor(1, 1, 1, 1)
 
     if _tool == "draw" and _subtool == "move" then
         local movePoints = {}
@@ -642,6 +713,7 @@ function DrawTool.handlers:uiPanel()
         }
     )
 
+    --[[
     ui.button(
         "circle",
         {
@@ -666,7 +738,82 @@ function DrawTool.handlers:uiPanel()
                 self:saveDrawing("add rectangle collision shape", c)
             end
         }
+    )]]--
+
+
+    ui.box(
+        "draw row",
+        {flexDirection = "row"},
+        function()
+            ui.toggle(
+                "circle",
+                "circle",
+                _physicsBodySubtool == 'circle',
+                {
+                    onToggle = function(newlineEnabled)
+                        _physicsBodySubtool = 'circle'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "rectangle",
+                "rectangle",
+                _physicsBodySubtool == 'rectangle',
+                {
+                    onToggle = function(newlineEnabled)
+                        _physicsBodySubtool = 'rectangle'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "triangle",
+                "triangle",
+                _physicsBodySubtool == 'triangle',
+                {
+                    onToggle = function(newlineEnabled)
+                        _physicsBodySubtool = 'triangle'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "move",
+                "move",
+                _physicsBodySubtool == 'move',
+                {
+                    onToggle = function(newlineEnabled)
+                        _physicsBodySubtool = 'move'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "rotate",
+                "rotate",
+                _physicsBodySubtool == 'rotate',
+                {
+                    onToggle = function(newlineEnabled)
+                        _physicsBodySubtool = 'rotate'
+                    end
+                }
+            )
+
+            ui.toggle(
+                "erase",
+                "erase",
+                _physicsBodySubtool == 'erase',
+                {
+                    onToggle = function(newlineEnabled)
+                        _physicsBodySubtool = 'erase'
+                    end
+                }
+            )
+        end
     )
+
+
 
     --if _tool == 'draw' then
         ui.box(
