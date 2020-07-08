@@ -64,7 +64,7 @@ function Client:uiRules()
          actions['add'] = function(blueprint)
             self:_addBehavior(actor, rulesBehavior.behaviorId, blueprint)
             component = actor.components[rulesBehavior.behaviorId]
-            self:_addRule(actorId, component)
+            self.behaviorsByName.Rules:addRule(actorId, component)
          end
       end
 

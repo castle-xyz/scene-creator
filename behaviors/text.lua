@@ -225,18 +225,14 @@ end
 -- Rules and triggers
 
 TextBehavior.triggers.tap = {
-    description = [[
-Triggered when the user taps (a quick **touch and release**) on the actor.
-]],
-    category = "input"
+    description = "When this is tapped",
+    category = "controls"
 }
 
 -- Responses
 
 TextBehavior.responses["show"] = {
-   description = [[
-Shows the text.
-   ]],
+   description = "Show this text",
    category = 'visible',
    run = function(self, actorId, params, context)
       local component = self.components[actorId]
@@ -245,9 +241,7 @@ Shows the text.
 }
 
 TextBehavior.responses["hide"] = {
-   description = [[
-Hides the text.
-   ]],
+   description = "Hide this text",
    category = 'visible',
    run = function(self, actorId, params, context)
       local component = self.components[actorId]
@@ -256,11 +250,15 @@ Hides the text.
 }
 
 TextBehavior.responses["send player to card"] = {
-   description = [[
-Sends the player to another card in this deck.
-   ]],
-   category = 'navigation',
+   description = "Send player to a different card",
+   category = 'general',
    triggerFilter = { tap = true },
+   paramSpecs = {
+      card = {
+         method = "cardPicker",
+         initialValue = nil,
+      },
+   },
    initialParams = {
       card = nil,
    },
