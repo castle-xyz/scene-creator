@@ -142,6 +142,9 @@ RulesBehavior.triggers["variable reaches value"] = {
        variableId = {
           method = "dropdown",
           initialValue = "(none)",
+          props = {
+             showVariablesItems = true,
+          },
        },
        comparison = {
           method = "dropdown",
@@ -217,6 +220,9 @@ RulesBehavior.triggers["variable changes"] = {
        variableId = {
           method = "dropdown",
           initialValue = "(none)",
+          props = {
+             showVariablesItems = true,
+          },
        },
     },
     initialParams = {
@@ -258,6 +264,9 @@ RulesBehavior.responses["change variable"] = {
        variableId = {
           method = "dropdown",
           initialValue = "(none)",
+          props = {
+             showVariablesItems = true,
+          },
        },
     },
     initialParams = {
@@ -306,6 +315,9 @@ RulesBehavior.responses["set variable"] = {
        variableId = {
           method = "dropdown",
           initialValue = "(none)",
+          props = {
+             showVariablesItems = true,
+          },
        },
        setToValue = {
           method = "numberInput",
@@ -357,6 +369,9 @@ RulesBehavior.responses["variable meets condition"] = {
        variableId = {
           method = "dropdown",
           initialValue = "(none)",
+          props = {
+             showVariablesItems = true,
+          },
        },
        comparison = {
           method = "dropdown",
