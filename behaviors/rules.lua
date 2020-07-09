@@ -1406,6 +1406,7 @@ function RulesBehavior:getRuleEntries(kind, behaviorIds, props)
             if
                 (entry.returnType == props.returnType and
                     (not entry.triggerFilter or
+                        props.triggerFilter == "all" or
                         entry.triggerFilter[props.triggerName]))
              then
                 local categoryName = entry.category or behaviorUiName

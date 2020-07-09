@@ -67,9 +67,9 @@ function Client:uiRules()
          end
       end
 
-      local triggers = rulesBehavior:getRuleEntries('trigger', self.behaviors)
-      local responses = rulesBehavior:getRuleEntries('response', self.behaviors)
-      local conditions = rulesBehavior:getRuleEntries('response', self.behaviors, { returnType = 'boolean' })
+      local triggers = rulesBehavior:getRuleEntries('trigger', self.behaviors, { triggerFilter = "all" })
+      local responses = rulesBehavior:getRuleEntries('response', self.behaviors, { triggerFilter = "all" })
+      local conditions = rulesBehavior:getRuleEntries('response', self.behaviors, { returnType = 'boolean' }, { triggerFilter = "all" })
       
       ui.data(
          {
