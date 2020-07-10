@@ -49,12 +49,12 @@ MovingBehavior.responses["add velocity"] = {
        },
        y = {
           method = "numberInput",
-          initialValue = -3,
+          initialValue = 0,
        },
     },
     initialParams = {
         x = 0,
-        y = -3
+        y = 0
     },
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
@@ -70,11 +70,11 @@ MovingBehavior.responses["add rotation speed"] = {
     paramSpecs = {
        speed = {
           method = "numberInput",
-          initialValue = 20,
+          initialValue = 0,
        },
     },
     initialParams = {
-        speed = 20
+        speed = 0
     },
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
@@ -94,12 +94,12 @@ MovingBehavior.responses["set velocity"] = {
        },
        y = {
           method = "numberInput",
-          initialValue = -3,
+          initialValue = 0,
        },
     },
     initialParams = {
         x = 0,
-        y = -3
+        y = 0
     },
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
@@ -115,11 +115,11 @@ MovingBehavior.responses["set rotation speed"] = {
        speed = {
           label = "rotation speed",
           method = "numberInput",
-          initialValue = 20,
+          initialValue = 0,
        },
     },
     initialParams = {
-        speed = 20
+        speed = 0
     },
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
