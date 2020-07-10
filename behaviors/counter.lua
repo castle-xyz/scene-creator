@@ -148,6 +148,7 @@ CounterBehavior.responses["change counter"] = {
     category = "state",
     paramSpecs = {
        changeBy = {
+          label = "adjust by",
           method = "numberInput",
           initialValue = 1,
        },
@@ -182,6 +183,7 @@ CounterBehavior.responses["set counter"] = {
     category = "state",
     paramSpecs = {
        setToValue = {
+          label = "set to value",
           method = "numberInput",
           initialValue = 0,
        },

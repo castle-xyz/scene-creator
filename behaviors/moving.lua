@@ -179,6 +179,7 @@ MovingBehavior.responses["set rotation speed"] = {
     description = "Set rotation speed",
     paramSpecs = {
        speed = {
+          label = "rotation speed",
           method = "numberInput",
           initialValue = 20,
        },

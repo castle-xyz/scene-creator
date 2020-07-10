@@ -255,6 +255,7 @@ TextBehavior.responses["send player to card"] = {
    triggerFilter = { tap = true },
    paramSpecs = {
       card = {
+         label = "destination card",
          method = "cardPicker",
          initialValue = nil,
       },

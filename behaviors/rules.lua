@@ -140,6 +140,7 @@ RulesBehavior.triggers["variable reaches value"] = {
     category = "state",
     paramSpecs = {
        variableId = {
+          label = "variable",
           method = "dropdown",
           initialValue = "(none)",
           props = {
@@ -218,6 +219,7 @@ RulesBehavior.triggers["variable changes"] = {
     category = "state",
     paramSpecs = {
        variableId = {
+          label = "variable",
           method = "dropdown",
           initialValue = "(none)",
           props = {
@@ -258,10 +260,12 @@ RulesBehavior.responses["change variable"] = {
     category = "state",
     paramSpecs = {
        changeBy = {
+          label = "adjust by",
           method = "numberInput",
           initialValue = 1,
        },
        variableId = {
+          label = "variable",
           method = "dropdown",
           initialValue = "(none)",
           props = {
@@ -313,6 +317,7 @@ RulesBehavior.responses["set variable"] = {
     category = "state",
     paramSpecs = {
        variableId = {
+          label = "variable",
           method = "dropdown",
           initialValue = "(none)",
           props = {
@@ -320,6 +325,7 @@ RulesBehavior.responses["set variable"] = {
           },
        },
        setToValue = {
+          label = "set to value",
           method = "numberInput",
           initialValue = 0,
        },
@@ -367,6 +373,7 @@ RulesBehavior.responses["variable meets condition"] = {
     returnType = "boolean",
     paramSpecs = {
        variableId = {
+          label = "variable",
           method = "dropdown",
           initialValue = "(none)",
           props = {
@@ -472,14 +479,17 @@ RulesBehavior.responses.create = {
     category = "general",
     paramSpecs = {
        entryId = {
+          label = "blueprint to create",
           method = "blueprint",
           initialValue = nil,
        },
        xOffset = {
+          label = "relative x position",
           method = "numberInput",
           initialValue = 0,
        },
        yOffset = {
+          label = "relative y position",
           method = "numberInput",
           initialValue = 0,
        },
@@ -795,6 +805,7 @@ RulesBehavior.responses["repeat"] = {
     category = "logic",
     paramSpecs = {
        count = {
+          label = "number of repeats",
           method = "numberInput",
           initialValue = 3,
        },
@@ -881,6 +892,7 @@ RulesBehavior.responses["coin flip"] = {
     returnType = "boolean",
     paramSpecs = {
        probability = {
+          label = "probability of heads",
           method = "numberInput",
           initialValue = 0.5,
        },

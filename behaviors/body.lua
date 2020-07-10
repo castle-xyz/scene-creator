@@ -506,6 +506,7 @@ BodyBehavior.triggers.collide = {
     category = "general",
     paramSpecs = {
        tag = {
+          label = "colliding with tag",
           method = "textInput",
        },
     },
@@ -544,6 +545,7 @@ BodyBehavior.responses["is colliding"] = {
     returnType = "boolean",
     paramSpecs = {
        tag = {
+          label = "colliding with tag",
           method = "textInput",
        },
     },
