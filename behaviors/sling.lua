@@ -71,10 +71,16 @@ function SlingBehavior.handlers:postPerform(dt)
                     physics:setOwner(bodyId, self.game.clientId, true, 0)
                 end
                 body:setLinearVelocity(component.properties.speed * dragX, component.properties.speed * dragY)
+                self:fireTrigger("sling", actorId)
             end
         end
     end
 end
+
+SlingBehavior.triggers.sling = {
+   description = "When this is slung",
+   category = "controls",
+}
 
 -- Draw
 
