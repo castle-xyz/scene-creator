@@ -701,8 +701,14 @@ RulesBehavior.responses.wait = {
     category = "logic",
     paramSpecs = {
        duration = {
+          label = "duration (seconds"),
           method = "numberInput",
           initialValue = 1,
+          props = {
+             min = 0,
+             max = 30,
+             step = 0.2,
+          },
        },
     },
     initialParams = {
@@ -805,9 +811,13 @@ RulesBehavior.responses["repeat"] = {
     category = "logic",
     paramSpecs = {
        count = {
-          label = "number of repeats",
+          label = "repetitions",
           method = "numberInput",
           initialValue = 3,
+          props = {
+             min = 0,
+             step = 1,
+          },
        },
     },
     initialParams = {
@@ -895,6 +905,11 @@ RulesBehavior.responses["coin flip"] = {
           label = "probability of heads",
           method = "numberInput",
           initialValue = 0.5,
+          props = {
+             min = 0,
+             max = 1,
+             step = 0.1,
+          },
        },
     },
     initialParams = {
