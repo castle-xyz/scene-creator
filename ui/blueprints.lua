@@ -73,80 +73,6 @@ function Client:_addBlueprint(actor, saveBlueprintData)
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
 end
 
-function Client:_saveBlueprintButton(actor)
-    ui.button('save blueprint', {
-        flex = 1,
-        icon = 'save',
-        iconFamily = 'FontAwesome5',
-        onClick = function()
-            self.saveBlueprintDatas[actor] = nil
-        end,
-        popoverAllowed = true,
-        popoverStyle = { width = 300 },
-        popover = function(closePopover)
-            ui.scrollBox('save blueprint', { flex = 1 }, function()
-                local saveBlueprintData = self:_makeBlueprintData(actor)
-                saveBlueprintData.title = ui.textInput('title', saveBlueprintData.title)
-                saveBlueprintData.description = ui.textArea('description', saveBlueprintData.description)
-
-                local existingEntry, numOtherActors = self:_getExistingLibraryEntry(actor.actorId, saveBlueprintData.entryId)
-                if existingEntry then
-                    if numOtherActors > 0 then
-                        ui.markdown('This blueprint is used by ' .. numOtherActors ..
-                            ' other actor' .. (numOtherActors > 1 and 's' or ''))
-                    else
-                        ui.markdown('No other actors use this blueprint')
-                    end
-
-                    ui.button('update used blueprint', {
-                        icon = 'file-upload',
-                        iconFamily = 'FontAwesome5',
-                        onClick = function()
-                            if saveBlueprintData.title == '' then
-                                castle.system.alert('Title required', 'Please enter a title for the blueprint.')
-                                return
-                            end
-                            for entryId, entry in pairs(self.library) do
-                                if (entry.entryType == 'actorBlueprint' and
-                                        entry.entryId ~= existingEntry.entryId and
-                                        entry.title == saveBlueprintData.title) then
-                                    castle.system.alert('Title in use',
-                                        'This title is already used by another blueprint. Please enter a different title.')
-                                    return
-                                end
-                            end
-
-                            self:_updateBlueprint(actor, saveBlueprintData, existingEntry)
-                            closePopover()
-                        end,
-                    })
-                end
-
-                ui.button('save as new blueprint', {
-                    icon = 'addfile',
-                    iconFamily = 'AntDesign',
-                    onClick = function()
-                        if saveBlueprintData.title == '' then
-                            castle.system.alert('Title required', 'Please enter a title for the new blueprint.')
-                            return
-                        end
-                        for entryId, entry in pairs(self.library) do
-                            if entry.entryType == 'actorBlueprint' and entry.title == saveBlueprintData.title then
-                                castle.system.alert('Title in use',
-                                    'This title is already used by another blueprint. Please enter a different title.')
-                                return
-                            end
-                        end
-
-                        self:_addBlueprint(actor, saveBlueprintData)
-                        closePopover()
-                    end,
-                })
-            end)
-        end
-    })
-end
-
 function Client:uiBlueprints()
    local data = { library = self.library }
    local actions = {}
@@ -220,21 +146,4 @@ function Client:_addBlueprintToScene(entryId)
         self:deselectActor(newActorId)
         self:send('removeActor', self.clientId, newActorId)
     end)
-end
-
-function Client:uiLegacyBlueprints()
-    self:uiLibrary({
-        id = 'add actor',
-        filterType = 'actorBlueprint',
-        buttons = function(entry)
-            ui.button('add to scene', {
-                flex = 1,
-                icon = 'plus',
-                iconFamily = 'FontAwesome5',
-                onClick = function()
-                   self:_addBlueprintToScene(entry.entryId)
-                end
-            })
-        end,
-    })
 end
