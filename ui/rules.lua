@@ -85,15 +85,3 @@ function Client:uiRules()
       )
    end
 end
-
-function Client:uiLegacyRules()
-   local actorId = next(self.selectedActorIds)
-   if actorId then
-      local actor = self.actors[actorId]
-      local rulesBehavior = self.behaviorsByName.Rules
-      local component = actor.components[rulesBehavior.behaviorId]
-      if component then
-         rulesBehavior:callHandler('uiComponent', component)
-      end
-   end
-end

@@ -510,21 +510,6 @@ BodyBehavior.triggers.collide = {
           method = "textInput",
        },
     },
-    uiBody = function(self, params, onChangeParam)
-        ui.textInput(
-            "with tag",
-            params.tag or "",
-            {
-                onChange = function(newTag)
-                    newTag = newTag:gsub(" ", "")
-                    if newTag == "" then
-                        newTag = nil
-                    end
-                    onChangeParam("change collide tag", "tag", newTag)
-                end
-            }
-        )
-    end
 }
 
 BodyBehavior.triggers.tap = {
@@ -549,21 +534,6 @@ BodyBehavior.responses["is colliding"] = {
           method = "textInput",
        },
     },
-    uiBody = function(self, params, onChangeParam, uiChild)
-        ui.textInput(
-            "with tag",
-            params.tag or "",
-            {
-                onChange = function(newTag)
-                    newTag = newTag:gsub(" ", "")
-                    if newTag == "" then
-                        newTag = nil
-                    end
-                    onChangeParam("change is colliding tag", "tag", newTag)
-                end
-            }
-        )
-    end,
     run = function(self, actorId, params, context)
         local bodyId, body = self:getBody(actorId)
         if body then

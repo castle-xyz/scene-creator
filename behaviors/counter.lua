@@ -101,39 +101,6 @@ CounterBehavior.triggers["counter reaches value"] = {
         comparison = "equal",
         value = 0
     },
-    uiBody = function(self, params, onChangeParam)
-        util.uiRow(
-            "the row",
-            function()
-                ui.dropdown(
-                    "comparison",
-                    params.comparison,
-                    {
-                        "equal",
-                        "less or equal",
-                        "greater or equal"
-                    },
-                    {
-                        onChange = function(newComparison)
-                            onChangeParam("change comparison type", "comparison", newComparison)
-                        end
-                    }
-                )
-            end,
-            function()
-                ui.numberInput(
-                    "value",
-                    params.value,
-                    {
-                        step = 1,
-                        onChange = function(newValue)
-                            onChangeParam("change comparison value", "value", newValue)
-                        end
-                    }
-                )
-            end
-        )
-    end
 }
 
 CounterBehavior.triggers["counter changes"] = {
@@ -156,18 +123,6 @@ CounterBehavior.responses["change counter"] = {
     initialParams = {
         changeBy = 1
     },
-    uiBody = function(self, params, onChangeParam)
-        ui.numberInput(
-            "change by",
-            params.changeBy,
-            {
-                step = 1,
-                onChange = function(newChangeBy)
-                    onChangeParam("set counter change by", "changeBy", newChangeBy)
-                end
-            }
-        )
-    end,
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
             local component = self.components[actorId]
@@ -191,18 +146,6 @@ CounterBehavior.responses["set counter"] = {
     initialParams = {
         setToValue = 0
     },
-    uiBody = function(self, params, onChangeParam)
-        ui.numberInput(
-            "set to value",
-            params.setToValue,
-            {
-                step = 1,
-                onChange = function(newSetToValue)
-                    onChangeParam("change set counter value", "setToValue", newSetToValue)
-                end
-            }
-        )
-    end,
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
             local component = self.components[actorId]
@@ -238,39 +181,6 @@ CounterBehavior.responses["counter meets condition"] = {
         comparison = "equal",
         value = 0
     },
-    uiBody = function(self, params, onChangeParam)
-        util.uiRow(
-            "the row",
-            function()
-                ui.dropdown(
-                    "comparison",
-                    params.comparison,
-                    {
-                        "equal",
-                        "less or equal",
-                        "greater or equal"
-                    },
-                    {
-                        onChange = function(newComparison)
-                            onChangeParam("change comparison type", "comparison", newComparison)
-                        end
-                    }
-                )
-            end,
-            function()
-                ui.numberInput(
-                    "value",
-                    params.value,
-                    {
-                        step = 1,
-                        onChange = function(newValue)
-                            onChangeParam("change comparison value", "value", newValue)
-                        end
-                    }
-                )
-            end
-        )
-    end,
     run = function(self, actorId, params, context)
         local component = self.components[actorId]
         if not component then

@@ -56,33 +56,6 @@ MovingBehavior.responses["add velocity"] = {
         x = 0,
         y = -3
     },
-    uiBody = function(self, params, onChangeParam)
-        util.uiRow(
-            "velocity",
-            function()
-                ui.numberInput(
-                    "added velocity x",
-                    params.x,
-                    {
-                        onChange = function(newX)
-                            onChangeParam("change add velocity x", "x", newX)
-                        end
-                    }
-                )
-            end,
-            function()
-                ui.numberInput(
-                    "added velocity y",
-                    params.y,
-                    {
-                        onChange = function(newY)
-                            onChangeParam("change add velocity y", "y", newY)
-                        end
-                    }
-                )
-            end
-        )
-    end,
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         if body then
@@ -103,18 +76,6 @@ MovingBehavior.responses["add rotation speed"] = {
     initialParams = {
         speed = 20
     },
-    uiBody = function(self, params, onChangeParam)
-        ui.numberInput(
-            "added rotation speed (degrees per second)",
-            params.speed,
-            {
-                step = 20,
-                onChange = function(newSpeed)
-                    onChangeParam("change add rotation speed", "speed", newSpeed)
-                end
-            }
-        )
-    end,
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         if body then
@@ -140,33 +101,6 @@ MovingBehavior.responses["set velocity"] = {
         x = 0,
         y = -3
     },
-    uiBody = function(self, params, onChangeParam)
-        util.uiRow(
-            "velocity",
-            function()
-                ui.numberInput(
-                    "velocity x",
-                    params.x,
-                    {
-                        onChange = function(newX)
-                            onChangeParam("change set velocity x", "x", newX)
-                        end
-                    }
-                )
-            end,
-            function()
-                ui.numberInput(
-                    "velocity y",
-                    params.y,
-                    {
-                        onChange = function(newY)
-                            onChangeParam("change set velocity y", "y", newY)
-                        end
-                    }
-                )
-            end
-        )
-    end,
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         if body then
@@ -187,21 +121,10 @@ MovingBehavior.responses["set rotation speed"] = {
     initialParams = {
         speed = 20
     },
-    uiBody = function(self, params, onChangeParam)
-        ui.numberInput(
-            "rotation speed (degrees per second)",
-            params.speed,
-            {
-                step = 20,
-                onChange = function(newSpeed)
-                    onChangeParam("change set rotation speed", "speed", newSpeed)
-                end
-            }
-        )
-    end,
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         if body then
+            -- degrees per second
             body:setAngularVelocity(params.speed * math.pi / 180)
         end
     end
