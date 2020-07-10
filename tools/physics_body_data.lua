@@ -32,6 +32,49 @@ function PhysicsBodyData:serialize()
     return data
 end
 
+function PhysicsBodyData:getHandlesForShape(shape)
+    local type = shape.type
+    local points
+
+    if type == "circle" then
+        points = {
+            shape.x + shape.radius, shape.y,
+            shape.x, shape.y + shape.radius,
+            shape.x - shape.radius, shape.y,
+            shape.x, shape.y - shape.radius,
+        }
+    else
+        points = self:_pointsForShape(shape)
+    end
+
+    local centerX, centerY = self:_centerOfShape(shape)
+
+    local results = {}
+    for i = 1, #points, 2 do
+        local x = points[i]
+        local y = points[i + 1]
+
+        table.insert(results, {
+            x = x,
+            y = y,
+            oppositeX = x - (x - centerX) * 2.0,
+            oppositeY = y - (y - centerY) * 2.0,
+        })
+    end
+
+    return results
+end
+
+function PhysicsBodyData:_centerOfShape(shape)
+    local type = shape.type
+
+    if type == "circle" then
+        return shape.x, shape.y
+    else
+        return (shape.p1.x + shape.p2.x) / 2.0, (shape.p1.y + shape.p2.y) / 2.0
+    end
+end
+
 function PhysicsBodyData:_pointsForShape(shape)
     local type = shape.type
 
@@ -230,6 +273,10 @@ function PhysicsBodyData:getShapeIdxAtPoint(point)
     end
 
     return nil
+end
+
+function PhysicsBodyData:getNumShapes()
+    return #self.shapes
 end
 
 function PhysicsBodyData:getShapeAtIndex(idx)
