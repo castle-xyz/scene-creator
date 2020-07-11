@@ -303,6 +303,32 @@ local function floatEquals(f1, f2)
     return f1 > f2 - 0.001 and f1 < f2 + 0.001
 end
 
+local function sortPoints(p1, p2)
+    if p1.x > p2.x then
+        local t = p1
+        p1 = p2
+        p2 = t
+    end
+
+    local newP1 = {
+        x = p1.x,
+    }
+    local newP2 = {
+        x = p2.x
+    }
+
+    if p1.y > p2.y then
+        local t = p1
+        p1 = p2
+        p2 = t
+    end
+
+    newP1.y = p1.y
+    newP2.y = p2.y
+
+    return newP1, newP2
+end
+
 function PhysicsBodyData:getRectangleShape(p1, p2)
     local shape = {
         type = "rectangle",
@@ -318,11 +344,13 @@ function PhysicsBodyData:getRectangleShape(p1, p2)
 end
 
 function PhysicsBodyData:getTriangleShape(p1, p2)
+    p1, p2 = sortPoints(p1, p2)
+
     local shape = {
         type = "triangle",
         p1 = p1,
         p2 = p2,
-        orientation = 1,
+        orientation = 0,
     }
 
     if self:isShapeInBounds(shape) and not floatEquals(p1.x, p2.x) and not floatEquals(p1.y, p2.y) then

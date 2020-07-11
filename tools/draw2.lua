@@ -297,6 +297,10 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
         if touch.released then
             if _scaleRotateData.handle and _physicsBodyData:commitTempShape() then
                 self:saveDrawing("scale", c)
+
+                local index = _physicsBodyData:getNumShapes()
+                _scaleRotateData.shape = _physicsBodyData:getShapeAtIndex(index)
+                _scaleRotateData.index = index
             end
 
             _initialCoord = nil
