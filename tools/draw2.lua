@@ -162,8 +162,7 @@ function DrawTool.handlers:preUpdate(dt)
 end
 
 local _grabbedShape = nil
-local _scaleRotateShape = nil
-local _scaleRotateHandle = nil
+local _scaleRotateData = {}
 
 local function bind(t, k)
     return function(...) return t[k](t, ...) end
@@ -233,24 +232,27 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
                 y = touchY
             }
 
-            if _scaleRotateShape then
+            if _scaleRotateData.shape then
                 local handleTouchRadius = HANDLE_TOUCH_RADIUS * self.game:getPixelScale()
             
-                for _, handle in ipairs(_physicsBodyData:getHandlesForShape(_scaleRotateShape)) do
+                for _, handle in ipairs(_physicsBodyData:getHandlesForShape(_scaleRotateData.shape)) do
                     local distance = math.sqrt(math.pow(touchX - handle.x, 2.0) + math.pow(touchY - handle.y, 2.0))
                     if distance < handleTouchRadius then
-                        _scaleRotateHandle = handle
-                        _grabbedShape = true
-                        _physicsBodyData:removeShapeAtIndex(_scaleRotateShape.index)
+                        _scaleRotateData.handle = handle
+                        _scaleRotateData.shape = _physicsBodyData:removeShapeAtIndex(_scaleRotateData.index)
+                        _scaleRotateData.isGrabbed = true
                     end
                 end
             end
 
             -- only allow choosing a new shape if we didn't find a handle
-            if _scaleRotateHandle == nil then
+            if _scaleRotateData.handle == nil then
                 local index = _physicsBodyData:getShapeIdxAtPoint(_initialCoord)
-                _scaleRotateShape = _physicsBodyData:getShapeAtIndex(index)
-                _scaleRotateShape.index = index
+
+                if index then
+                    _scaleRotateData.shape = _physicsBodyData:getShapeAtIndex(index)
+                    _scaleRotateData.index = index
+                end
             end
 
             --[[
@@ -267,21 +269,39 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
             end]]--
         end
 
-        if _grabbedShape then
-            _physicsBodyData.tempShape = _physicsBodyData:getRectangleShape({
-                x = _scaleRotateHandle.oppositeX,
-                y = _scaleRotateHandle.oppositeY,
-            }, roundedCoord)
+        if _scaleRotateData.shape and _scaleRotateData.isGrabbed then
+            local otherCoord = {
+                x = _scaleRotateData.handle.oppositeX,
+                y = _scaleRotateData.handle.oppositeY,
+            }
+            local type = _scaleRotateData.shape.type
+            local shape
+
+            if type == 'rectangle' then
+                shape = _physicsBodyData:getRectangleShape(otherCoord, roundedCoord)
+            elseif type == 'circle' then
+                shape = _physicsBodyData:getCircleShape(otherCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'))
+            elseif type == 'triangle' then
+                shape = _physicsBodyData:getTriangleShape(otherCoord, roundedCoord)
+                if shape then
+                    shape.orientation = _scaleRotateData.shape.orientation
+                end
+            end
+
+            if shape then
+                _physicsBodyData.tempShape = shape
+                _scaleRotateData.shape = shape
+            end
         end
 
         if touch.released then
-            if _scaleRotateHandle and _physicsBodyData:commitTempShape() then
+            if _scaleRotateData.handle and _physicsBodyData:commitTempShape() then
                 self:saveDrawing("scale", c)
             end
 
             _initialCoord = nil
-            _scaleRotateHandle = nil
-            _grabbedShape = nil
+            _scaleRotateData.handle = nil
+            _scaleRotateData.isGrabbed = false
         end
     elseif _physicsBodySubtool == 'erase' then
         if _initialCoord == nil then
@@ -724,13 +744,13 @@ function DrawTool.handlers:drawOverlay()
     if _tool == 'physics_body' then
         _physicsBodyData:draw()
 
-        if _physicsBodySubtool == 'scale-rotate' and _scaleRotateShape then
+        if _physicsBodySubtool == 'scale-rotate' and _scaleRotateData.shape then
             love.graphics.setColor(1.0, 0.0, 0.0, 1.0)
             love.graphics.setPointSize(30.0)
             love.graphics.points()
 
             local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
-            for _, handle in ipairs(_physicsBodyData:getHandlesForShape(_scaleRotateShape)) do
+            for _, handle in ipairs(_physicsBodyData:getHandlesForShape(_scaleRotateData.shape)) do
                 love.graphics.circle("fill", handle.x, handle.y, handleDrawRadius)
                 if handle.endX and handle.endY then
                     love.graphics.line(handle.x, handle.y, handle.endX, handle.endY)
@@ -854,10 +874,10 @@ function DrawTool.handlers:uiPanel()
                         _physicsBodySubtool = 'scale-rotate'
                         if _physicsBodyData:getNumShapes() > 0 then
                             local index = _physicsBodyData:getNumShapes()
-                            _scaleRotateShape = _physicsBodyData:getShapeAtIndex(index)
-                            _scaleRotateShape.index = index
+                            _scaleRotateData.shape = _physicsBodyData:getShapeAtIndex(index)
+                            _scaleRotateData.index = index
                         else
-                            _scaleRotateShape = nil
+                            _scaleRotateData = {}
                         end
                     end
                 }

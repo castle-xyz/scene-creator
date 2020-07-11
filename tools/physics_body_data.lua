@@ -299,6 +299,10 @@ function PhysicsBodyData:commitTempShape()
     return false
 end
 
+local function floatEquals(f1, f2)
+    return f1 > f2 - 0.001 and f1 < f2 + 0.001
+end
+
 function PhysicsBodyData:getRectangleShape(p1, p2)
     local shape = {
         type = "rectangle",
@@ -306,7 +310,7 @@ function PhysicsBodyData:getRectangleShape(p1, p2)
         p2 = p2,
     }
 
-    if self:isShapeInBounds(shape) and p1.x ~= p2.x and p1.y ~= p2.y then
+    if self:isShapeInBounds(shape) and not floatEquals(p1.x, p2.x) and not floatEquals(p1.y, p2.y) then
         return shape
     else
         return nil
@@ -321,7 +325,7 @@ function PhysicsBodyData:getTriangleShape(p1, p2)
         orientation = 1,
     }
 
-    if self:isShapeInBounds(shape) and p1.x ~= p2.x and p1.y ~= p2.y then
+    if self:isShapeInBounds(shape) and not floatEquals(p1.x, p2.x) and not floatEquals(p1.y, p2.y) then
         return shape
     else
         return nil
