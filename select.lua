@@ -286,7 +286,7 @@ function Client:touchToSelect()
         local touchId, touch = next(self.touches)
 
         -- Press and move? Check at point and select if nothing already selected there.
-        if (not touch.used and touch.moved and love.timer.getTime() - touch.pressTime < 0.2) then
+        if (not touch.used and touch.movedNear and love.timer.getTime() - touch.pressTime < 0.2) then
             local someSelectedHit = false
             local hits = self.behaviorsByName.Body:getActorsAtPoint(touch.initialX, touch.initialY)
             for actorId in pairs(hits) do
@@ -303,7 +303,7 @@ function Client:touchToSelect()
         end
 
         -- Quick press and release without moving? Select!
-        if (not touch.used and touch.released and not touch.moved and love.timer.getTime() - touch.pressTime < 0.2) then
+        if (not touch.used and touch.released and not touch.movedNear and love.timer.getTime() - touch.pressTime < 0.2) then
             self:selectActorAtTouch(touch)
         end
     end

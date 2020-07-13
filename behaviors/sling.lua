@@ -56,7 +56,7 @@ function SlingBehavior.handlers:postPerform(dt)
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 and touchData.allTouchesReleased then
         local touchId, touch = next(touchData.touches)
-        if not touch.used and touch.moved then
+        if not touch.used and touch.movedNear then
             local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > MAX_DRAG_LENGTH then
@@ -98,7 +98,7 @@ function SlingBehavior.handlers:drawOverlay()
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
-        if not touch.used and touch.moved then
+        if not touch.used and touch.movedNear then
             local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then

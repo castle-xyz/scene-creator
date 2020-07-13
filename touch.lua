@@ -47,7 +47,8 @@ function Client:updateTouches()
             touch.pressTime = love.timer.getTime()
             touch.pressed = true
             touch.released = false
-            touch.moved = false
+            touch.movedNear = false
+            touch.movedFar = false
 
             self.touches[touchId] = touch
         else -- Move
@@ -59,7 +60,11 @@ function Client:updateTouches()
             
             if not (util.similar(touch.screenX, touch.initialScreenX, TOUCH_MOVE_THRESHOLD) and
                     util.similar(touch.screenY, touch.initialScreenY, TOUCH_MOVE_THRESHOLD)) then
-                touch.moved = true
+                touch.movedFar = true
+            end
+
+            if not (touch.screenX == touch.initialScreenX and touch.screenY == touch.initialScreenY) then
+                touch.movedNear = true
             end
         end
     end
