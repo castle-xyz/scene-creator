@@ -13,6 +13,9 @@ local FallingBehavior = defineCoreBehavior {
          props = {
             step = 0.5
          },
+         rules = {
+             set = true,
+          },
       },
    },
 }

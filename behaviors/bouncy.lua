@@ -12,6 +12,9 @@ local BouncyBehavior =
           method = 'numberInput',
           label = 'Rebound',
           props = { step = 0.05, min = 0, max = 2 },
+          rules = {
+             set = true,
+          },
        },
     },
 }

@@ -11,6 +11,9 @@ local FrictionBehavior =
           method = 'numberInput',
           label = 'Amount',
           props = { step = 0.05, min = 0 },
+          rules = {
+             set = true,
+          },
        },
     },
 }

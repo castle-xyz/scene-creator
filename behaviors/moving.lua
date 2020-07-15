@@ -10,14 +10,23 @@ local MovingBehavior =
        vx = {
           method = 'numberInput',
           label = 'velocity x',
+          rules = {
+             set = true,
+          },
        },
        vy = {
           method = 'numberInput',
           label = 'velocity y',
+          rules = {
+             set = true,
+          },
        },
        angularVelocity = {
           method = 'numberInput',
           label = 'rotation speed (degrees)',
+          rules = {
+             set = true,
+          },
        },
     },
 }

@@ -13,6 +13,9 @@ local SpeedLimitBehavior =
           method = 'numberInput',
           label = 'Max speed',
           props = { min = 0.1 },
+          rules = {
+             set = true,
+          },
        },
     },
 }

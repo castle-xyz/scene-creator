@@ -14,11 +14,17 @@ local SlowdownBehavior = defineCoreBehavior {
           method = 'numberInput',
           label = 'Translation',
           props = { min = 0 },
+          rules = {
+             set = true,
+          },
        },
        rotationSlowdown = {
           method = 'numberInput',
           label = 'Rotation',
           props = { min = 0 },
+          rules = {
+             set = true,
+          },
        },
     },
 }

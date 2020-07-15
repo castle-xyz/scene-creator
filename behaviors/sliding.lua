@@ -19,6 +19,9 @@ local SlidingBehavior =
        isRotationAllowed = {
           method = 'toggle',
           label = 'Rotates',
+          rules = {
+             set = true,
+          },
        },
     },
 }
