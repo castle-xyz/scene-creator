@@ -102,7 +102,7 @@ function Client:uiGlobalActions()
    ui.data(
       {
          performing = self.performing,
-         hasSelection = next(self.selectedActorIds) ~= nil,
+         selectedActorId = next(self.selectedActorIds),
          actionsAvailable = actionsAvailable,
          tools = tools,
          activeToolBehaviorId = self.activeToolBehaviorId,
