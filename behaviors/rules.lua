@@ -437,6 +437,75 @@ RulesBehavior.responses.wait = {
 
 -- Logic responses
 
+RulesBehavior.responses["set behavior property"] = {
+   description = "Set a behavior",
+   category = "general",
+   paramSpecs = {
+      name = {
+         label = "behavior name",
+         method = "dropdown",
+         initialValue = nil,
+      },
+      propertyName = {
+         label = "parameter",
+         method = "dropdown",
+         initialValue = nil,
+      },
+      setToValue = {
+         method = "numberInput",
+         label = "set to",
+         initialValue = 0,
+      },
+   },
+   initialParams = {
+      name = nil,
+      propertyName = nil,
+      setToValue = 0,
+   },
+   run = function(self, actorId, params, context)
+      local behavior = self.game.behaviorsByName[params.name]
+      behavior:sendSetProperties(actorId, params.propertyName, params.setToValue)
+   end
+}
+
+RulesBehavior.responses["change behavior property"] = {
+   description = "Adjust a behavior",
+   category = "general",
+   paramSpecs = {
+      name = {
+         label = "behavior name",
+         method = "dropdown",
+         initialValue = nil,
+      },
+      propertyName = {
+         label = "parameter",
+         method = "dropdown",
+         initialValue = nil,
+      },
+      changeBy = {
+         method = "numberInput",
+         label = "adjust by",
+         initialValue = 0,
+      },
+   },
+   initialParams = {
+      name = nil,
+      propertyName = nil,
+      changeBy = 0,
+   },
+   run = function(self, actorId, params, context)
+      local behavior = self.game.behaviorsByName[params.name]
+      local component = behavior.components[actorId]
+      local oldValue
+      if behavior.getters[params.propertyName] then
+         oldValue = behavior.getters[params.propertyName](behavior, component)
+      else
+         oldValue = component.properties[params.propertyName]
+      end
+      behavior:sendSetProperties(actorId, params.propertyName, oldValue + params.changeBy)
+   end
+}
+
 RulesBehavior.responses["if"] = {
     description = "Condition a response",
     category = "logic",
