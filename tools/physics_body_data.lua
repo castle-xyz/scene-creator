@@ -32,6 +32,21 @@ function PhysicsBodyData:serialize()
     return data
 end
 
+function PhysicsBodyData:getCenterOfShape(shape)
+    local handles = self:getHandlesForShape(shape)
+    local x = 0
+    local y = 0
+    local count = 0
+
+    for i = 1, #handles do
+        x = x + handles[i].x
+        y = y + handles[i].y
+        count = count + 1
+    end
+
+    return x / count, y / count
+end
+
 function PhysicsBodyData:getHandlesForShape(shape)
     local type = shape.type
     local points
@@ -396,6 +411,18 @@ function PhysicsBodyData:getTriangleShape(p1, p2)
         return shape
     else
         return nil
+    end
+end
+
+function PhysicsBodyData:rotatePivot(pivot)
+    if pivot == "p1xp2y" then
+        return "p1xp1y"
+    elseif pivot == "p2xp2y" then
+        return "p1xp2y"
+    elseif pivot == "p2xp1y" then
+        return "p2xp2y"
+    else
+        return "p2xp1y"
     end
 end
 

@@ -232,6 +232,7 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
                 y = touchY
             }
 
+            local grabbledHandle = false
             if _scaleRotateData.shape then
                 local handleTouchRadius = HANDLE_TOUCH_RADIUS * self.game:getPixelScale()
             
@@ -241,12 +242,24 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
                         _scaleRotateData.handle = handle
                         _scaleRotateData.shape = _physicsBodyData:removeShapeAtIndex(_scaleRotateData.index)
                         _scaleRotateData.isGrabbed = true
+                        grabbledHandle = true
+                        break
+                    end
+                end
+
+                if not grabbledHandle and _scaleRotateData.shape.type == "triangle" then
+                    local centerX, centerY = _physicsBodyData:getCenterOfShape(_scaleRotateData.shape)
+                    local distance = math.sqrt(math.pow(touchX - centerX, 2.0) + math.pow(touchY - centerY, 2.0))
+                    if distance < handleTouchRadius * 2.0 then
+                        _scaleRotateData.shape.pivot = _physicsBodyData:rotatePivot(_scaleRotateData.shape.pivot)
+                        self:saveDrawing("rotate", c)
+                        grabbledHandle = true
                     end
                 end
             end
 
             -- only allow choosing a new shape if we didn't find a handle
-            if _scaleRotateData.handle == nil then
+            if not grabbledHandle and _scaleRotateData.handle == nil then
                 local index = _physicsBodyData:getShapeIdxAtPoint(_initialCoord)
 
                 if index then
@@ -254,19 +267,6 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
                     _scaleRotateData.index = index
                 end
             end
-
-            --[[
-            local idx = _physicsBodyData:getShapeIdxAtPoint(_initialCoord)
-            if idx then
-                local shape = _physicsBodyData:getShapeAtIndex(idx)
-                if shape.type == "triangle" then
-                    shape.orientation = shape.orientation + 1
-                    if shape.orientation >= 4 then
-                        shape.orientation = 0
-                    end
-                    self:saveDrawing("rotate", c)
-                end
-            end]]--
         end
 
         if _scaleRotateData.shape and _scaleRotateData.isGrabbed then
