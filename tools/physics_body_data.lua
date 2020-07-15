@@ -102,8 +102,24 @@ function PhysicsBodyData:_pointsForShape(shape)
             p2.x, p1.y,
         }
 
-        table.remove(points, shape.orientation * 2 + 1)
-        table.remove(points, shape.orientation * 2 + 1)
+        local pivotIndex
+        if shape.pivot == "p1xp1y" then
+            pivotIndex = 1
+        elseif shape.pivot == "p1xp2y" then
+            pivotIndex = 2
+        elseif shape.pivot == "p2xp2y" then
+            pivotIndex = 3
+        else
+            pivotIndex = 4
+        end
+
+        pivotIndex = pivotIndex + 2
+        if pivotIndex > 4 then
+            pivotIndex = pivotIndex - 4
+        end
+
+        table.remove(points, pivotIndex * 2 - 1)
+        table.remove(points, pivotIndex * 2 - 1)
         return points
     end
 end
@@ -344,13 +360,36 @@ function PhysicsBodyData:getRectangleShape(p1, p2)
 end
 
 function PhysicsBodyData:getTriangleShape(p1, p2)
+    local pivotPoint = {
+        x = p2.x,
+        y = p1.y
+    }
+
     p1, p2 = sortPoints(p1, p2)
+
+    local points = {
+        p1.x, p1.y,
+        p1.x, p2.y,
+        p2.x, p2.y,
+        p2.x, p1.y,
+    }
+
+    local pivot
+    if floatEquals(points[1], pivotPoint.x) and floatEquals(points[2], pivotPoint.y) then
+        pivot = "p1xp1y"
+    elseif floatEquals(points[3], pivotPoint.x) and floatEquals(points[4], pivotPoint.y) then
+        pivot = "p1xp2y"
+    elseif floatEquals(points[5], pivotPoint.x) and floatEquals(points[6], pivotPoint.y) then
+        pivot = "p2xp2y"
+    else
+        pivot = "p2xp1y"
+    end
 
     local shape = {
         type = "triangle",
         p1 = p1,
         p2 = p2,
-        orientation = 0,
+        pivot = pivot,
     }
 
     if self:isShapeInBounds(shape) and not floatEquals(p1.x, p2.x) and not floatEquals(p1.y, p2.y) then

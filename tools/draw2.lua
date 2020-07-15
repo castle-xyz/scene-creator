@@ -284,7 +284,7 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
             elseif type == 'triangle' then
                 shape = _physicsBodyData:getTriangleShape(otherCoord, roundedCoord)
                 if shape then
-                    shape.orientation = _scaleRotateData.shape.orientation
+                    shape.pivot = _scaleRotateData.shape.pivot
                 end
             end
 
