@@ -9,21 +9,21 @@ local MovingBehavior =
     propertySpecs = {
        vx = {
           method = 'numberInput',
-          label = 'velocity x',
+          label = 'Velocity X',
           rules = {
              set = true,
           },
        },
        vy = {
           method = 'numberInput',
-          label = 'velocity y',
+          label = 'Velocity Y',
           rules = {
              set = true,
           },
        },
        angularVelocity = {
           method = 'numberInput',
-          label = 'rotation speed (degrees)',
+          label = 'Rotation speed (degrees)',
           rules = {
              set = true,
           },

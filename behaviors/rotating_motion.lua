@@ -11,21 +11,21 @@ local RotatingMotionBehavior = defineCoreBehavior {
     propertySpecs = {
        vx = {
           method = 'numberInput',
-          label = 'velocity x',
+          label = 'Velocity X',
           rules = {
              set = true,
           },
        },
        vy = {
           method = 'numberInput',
-          label = 'velocity y',
+          label = 'Velocity Y',
           rules = {
              set = true,
           },
        },
        rotationsPerSecond = {
           method = 'numberInput',
-          label = 'rotations per second',
+          label = 'Rotations per second',
           rules = {
              set = true,
           },
