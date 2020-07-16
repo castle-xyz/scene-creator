@@ -678,6 +678,7 @@ function RulesBehavior:getRuleEntries(kind, behaviorIds, props)
         for name, entry in pairs(behavior[kind .. "s"]) do
             if
                 (entry.returnType == props.returnType and
+                    not entry.migrate and
                     (not entry.triggerFilter or
                         props.triggerFilter == "all" or
                         entry.triggerFilter[props.triggerName]))
