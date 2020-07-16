@@ -51,7 +51,7 @@ end
 
 MovingBehavior.responses["add velocity"] = {
     description = "Adjust velocity (legacy)",
-    migrate = function(self, response)
+    migrate = function(self, actorId, response)
        local rules = self.game.behaviorsByName.Rules
        response.behaviorId = rules.behaviorId
        response.name = 'change behavior property'
@@ -86,7 +86,7 @@ MovingBehavior.responses["add velocity"] = {
 
 MovingBehavior.responses["add rotation speed"] = {
     description = "Adjust rotation speed (legacy)",
-    migrate = function(self, response)
+    migrate = function(self, actorId, response)
        local rules = self.game.behaviorsByName.Rules
        response.behaviorId = rules.behaviorId
        response.name = 'change behavior property'
@@ -111,7 +111,7 @@ MovingBehavior.responses["add rotation speed"] = {
 
 MovingBehavior.responses["set velocity"] = {
     description = "Set velocity (legacy)",
-    migrate = function(self, response)
+    migrate = function(self, actorId, response)
        local rules = self.game.behaviorsByName.Rules
        response.behaviorId = rules.behaviorId
        response.name = 'set behavior property'
@@ -145,7 +145,7 @@ MovingBehavior.responses["set velocity"] = {
 
 MovingBehavior.responses["set rotation speed"] = {
     description = "Set rotation speed (legacy)",
-    migrate = function(self, response)
+    migrate = function(self, actorId, response)
        local rules = self.game.behaviorsByName.Rules
        response.behaviorId = rules.behaviorId
        response.name = 'set behavior property'
