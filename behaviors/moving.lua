@@ -51,8 +51,26 @@ end
 
 MovingBehavior.responses["add velocity"] = {
     description = "Adjust velocity (legacy)",
-    -- migrate = function(self, actorId, params)
-    -- end,
+    migrate = function(self, response)
+       local rules = self.game.behaviorsByName.Rules
+       response.behaviorId = rules.behaviorId
+       response.name = 'change behavior property'
+       response.params = {
+          name = 'Moving',
+          propertyName = 'vx',
+          changeBy = response.params.x,
+          nextResponse = {
+             behaviorId = rules.behaviorId,
+             name = 'change behavior property',
+             params = {
+                name = 'Moving',
+                propertyName = 'vy',
+                changeBy = response.params.y,
+                nextResponse = response.params.nextResponse,
+             },
+          },
+       }
+    end,
     initialParams = {
         x = 0,
         y = 0
@@ -68,8 +86,17 @@ MovingBehavior.responses["add velocity"] = {
 
 MovingBehavior.responses["add rotation speed"] = {
     description = "Adjust rotation speed (legacy)",
-    -- migrate = function(self, actorId, params)
-    -- end,
+    migrate = function(self, response)
+       local rules = self.game.behaviorsByName.Rules
+       response.behaviorId = rules.behaviorId
+       response.name = 'change behavior property'
+       response.params = {
+          name = 'Moving',
+          propertyName = 'angularVelocity',
+          changeBy = response.params.speed,
+          nextResponse = response.params.nextResponse,
+       }
+    end,
     initialParams = {
         speed = 0
     },
@@ -118,8 +145,17 @@ MovingBehavior.responses["set velocity"] = {
 
 MovingBehavior.responses["set rotation speed"] = {
     description = "Set rotation speed (legacy)",
-    -- migrate = function(self, actorId, params)
-    -- end,
+    migrate = function(self, response)
+       local rules = self.game.behaviorsByName.Rules
+       response.behaviorId = rules.behaviorId
+       response.name = 'set behavior property'
+       response.params = {
+          name = 'Moving',
+          propertyName = 'angularVelocity',
+          setToValue = response.params.speed,
+          nextResponse = response.params.nextResponse,
+       }
+    end,
     initialParams = {
         speed = 0
     },
