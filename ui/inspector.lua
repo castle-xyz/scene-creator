@@ -36,7 +36,10 @@ end
 
 function Client:_checkDependentsForRemoval(component)
     local uiName = self.behaviors[component.behaviorId]:getUiName()
-    if next(component.dependents) ~= nil then -- Has dependents?
+    local message
+
+    -- check dependent behaviors
+    if next(component.dependents) ~= nil then
         local names = {}
         for dependentId in pairs(component.dependents) do
             local dependent = self.behaviors[dependentId]
@@ -53,10 +56,29 @@ function Client:_checkDependentsForRemoval(component)
             end
             list = list .. "'" .. names[i] .. "'"
         end
-        local message = (list .. ' need' .. (#names > 1 and '' or 's') .. " '" ..
+        message = (list .. ' need' .. (#names > 1 and '' or 's') .. " '" ..
             uiName .. "'.")
-        castle.system.alert("Cannot remove '" .. uiName .. "'", message)
-        return false
+    end
+
+    -- check whether any rules reference this behavior
+    local rules = self.behaviorsByName.Rules
+    local rulesComponent = rules.components[component.actorId]
+    if not message and rulesComponent then
+       local referenced, reason = rules:componentReferencesBehavior(rulesComponent, self.behaviors[component.behaviorId])
+       if referenced then
+          if reason == "trigger" then
+             message = "This actor has rule triggers which reference this behavior"
+          elseif reason == "response" then
+             message = "This actor has rule responses which reference this behavior"
+          else
+             message = "This actor has rules which reference this behavior"
+          end
+       end
+    end
+
+    if message then
+       castle.system.alert("Cannot remove '" .. uiName .. "'", message)
+       return false
     end
     return true
 end

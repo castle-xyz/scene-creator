@@ -79,6 +79,49 @@ function RulesBehavior.handlers.componentHasTrigger(component, triggerName)
    return component._rulesByTriggerName[triggerName] ~= nil
 end
 
+function RulesBehavior:_checkResponseReferencesBehavior(response, behavior)
+   if not response then return false end
+   
+   if response.params then
+      if self:_checkResponseReferencesBehavior(response.params.nextResponse, behavior) then
+         return true
+      end
+      if self:_checkResponseReferencesBehavior(response.params.body, behavior) then
+         return true
+      end
+      if self:_checkResponseReferencesBehavior(response.params["then"], behavior) then
+         return true
+      end
+      if self:_checkResponseReferencesBehavior(response.params["else"], behavior) then
+         return true
+      end
+   end
+
+   if response.behaviorId == behavior.behaviorId then
+      return true
+   elseif response.name == 'set behavior property' and response.params and respone.params.name == behavior.name then
+      return true
+   elseif response.name == 'change behavior property' and response.params and response.params.name == behavior.name then
+      return true
+   end
+   return false
+end
+
+function RulesBehavior:componentReferencesBehavior(component, behavior)
+   for _, rule in ipairs(component.properties.rules) do
+      if rule.trigger and rule.trigger.behaviorId == behavior.behaviorId then
+         return true, 'trigger'
+      end
+      if self:_checkResponseReferencesBehavior(
+         rule.response,
+         behavior
+      ) then
+         return true, 'response'
+      end
+   end
+   return false
+end
+
 -- Setters
 
 function RulesBehavior.setters:rules(component, newRules)
