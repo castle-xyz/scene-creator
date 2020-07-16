@@ -47,10 +47,12 @@ function RulesBehavior:migrateLegacy(component, rules)
          migrateResponses(response.params["else"])
       end
 
-      local behavior = self.game.behaviors[response.behaviorId]
-      local responseBp = behavior.responses[response.name]
-      if responseBp.migrate then
-         responseBp.migrate(behavior, component.actorId, response)
+      if response.behaviorId then
+         local behavior = self.game.behaviors[response.behaviorId]
+         local responseBp = behavior.responses[response.name]
+         if responseBp.migrate then
+            responseBp.migrate(behavior, component.actorId, response)
+         end
       end
    end
    
