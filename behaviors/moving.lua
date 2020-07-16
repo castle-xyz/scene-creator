@@ -50,17 +50,9 @@ end
 -- Responses
 
 MovingBehavior.responses["add velocity"] = {
-    description = "Adjust velocity",
-    paramSpecs = {
-       x = {
-          method = "numberInput",
-          initialValue = 0,
-       },
-       y = {
-          method = "numberInput",
-          initialValue = 0,
-       },
-    },
+    description = "Adjust velocity (legacy)",
+    -- migrate = function(self, actorId, params)
+    -- end,
     initialParams = {
         x = 0,
         y = 0
@@ -75,13 +67,9 @@ MovingBehavior.responses["add velocity"] = {
 }
 
 MovingBehavior.responses["add rotation speed"] = {
-    description = "Adjust rotation speed",
-    paramSpecs = {
-       speed = {
-          method = "numberInput",
-          initialValue = 0,
-       },
-    },
+    description = "Adjust rotation speed (legacy)",
+    -- migrate = function(self, actorId, params)
+    -- end,
     initialParams = {
         speed = 0
     },
@@ -95,17 +83,27 @@ MovingBehavior.responses["add rotation speed"] = {
 }
 
 MovingBehavior.responses["set velocity"] = {
-    description = "Set velocity",
-    paramSpecs = {
-       x = {
-          method = "numberInput",
-          initialValue = 0,
-       },
-       y = {
-          method = "numberInput",
-          initialValue = 0,
-       },
-    },
+    description = "Set velocity (legacy)",
+    migrate = function(self, response)
+       local rules = self.game.behaviorsByName.Rules
+       response.behaviorId = rules.behaviorId
+       response.name = 'set behavior property'
+       response.params = {
+          name = 'Moving',
+          propertyName = 'vx',
+          setToValue = response.params.x,
+          nextResponse = {
+             behaviorId = rules.behaviorId,
+             name = 'set behavior property',
+             params = {
+                name = 'Moving',
+                propertyName = 'vy',
+                setToValue = response.params.y,
+                nextResponse = response.params.nextResponse,
+             },
+          },
+       }
+    end,
     initialParams = {
         x = 0,
         y = 0
@@ -119,14 +117,9 @@ MovingBehavior.responses["set velocity"] = {
 }
 
 MovingBehavior.responses["set rotation speed"] = {
-    description = "Set rotation speed",
-    paramSpecs = {
-       speed = {
-          label = "rotation speed",
-          method = "numberInput",
-          initialValue = 0,
-       },
-    },
+    description = "Set rotation speed (legacy)",
+    -- migrate = function(self, actorId, params)
+    -- end,
     initialParams = {
         speed = 0
     },

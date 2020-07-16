@@ -34,8 +34,34 @@ end
 
 -- Component management
 
+function RulesBehavior:migrateLegacy(rules)
+   local result = util.deepCopyTable(rules)
+
+   local function migrateResponses(response)
+      if response == nil then return end
+
+      if response.params then
+         migrateResponses(response.params.nextResponse)
+         migrateResponses(response.params.body)
+         migrateResponses(response.params["then"])
+         migrateResponses(response.params["else"])
+      end
+
+      local behavior = self.game.behaviors[response.behaviorId]
+      local responseBp = behavior.responses[response.name]
+      if responseBp.migrate then
+         responseBp.migrate(behavior, response)
+      end
+   end
+   
+   for _, rule in ipairs(result) do
+      migrateResponses(rule.response)
+   end
+   return result
+end
+
 function RulesBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.rules = util.deepCopyTable(bp.rules or {EMPTY_RULE})
+    component.properties.rules = self:migrateLegacy(bp.rules or {EMPTY_RULE})
     self.setters.rules(self, component, component.properties.rules)
 end
 
