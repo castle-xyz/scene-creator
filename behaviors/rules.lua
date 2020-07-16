@@ -573,7 +573,17 @@ RulesBehavior.responses["change behavior property"] = {
       else
          oldValue = component.properties[params.propertyName]
       end
-      behavior:sendSetProperties(actorId, params.propertyName, oldValue + params.changeBy)
+      local newValue = oldValue + params.changeBy
+      local propertySpec = behavior.propertySpecs[params.propertyName]
+      if propertySpec.props then
+         if propertySpec.props.min and newValue < propertySpec.props.min then
+            newValue = propertySpec.props.min
+         end
+         if propertySpec.props.max and newValue > propertySpec.props.max then
+            newValue = propertySpec.props.max
+         end
+      end
+      behavior:sendSetProperties(actorId, params.propertyName, newValue)
    end
 }
 
