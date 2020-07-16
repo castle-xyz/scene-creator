@@ -16,6 +16,7 @@ BODY_RECTANGLE_SLOP = 2.01 * BODY_POLYGON_SKIN
 local BodyBehavior =
     defineCoreBehavior {
     name = "Body",
+    displayName = "Layout",
     propertyNames = {
         "worldId",
         "groundBodyId",
@@ -36,14 +37,23 @@ local BodyBehavior =
        x = {
           method = 'numberInput',
           label = 'X Position',
+          rules = {
+             set = true,
+          },
        },
        y = {
           method = 'numberInput',
           label = 'Y Position',
+          rules = {
+             set = true,
+          },
        },
        angle = {
           method = 'numberInput',
           label = 'Rotation',
+          rules = {
+             set = true,
+          },
        },
        width = {
           method = 'numberInput',
