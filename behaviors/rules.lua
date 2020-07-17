@@ -101,9 +101,9 @@ function RulesBehavior:_checkResponseReferencesBehavior(response, behavior)
 
    if response.behaviorId == behavior.behaviorId then
       return true
-   elseif response.name == 'set behavior property' and response.params and respone.params.name == behavior.name then
+   elseif response.name == 'set behavior property' and response.params and respone.params.behaviorId == behavior.behaviorId then
       return true
-   elseif response.name == 'change behavior property' and response.params and response.params.name == behavior.name then
+   elseif response.name == 'change behavior property' and response.params and response.params.behaviorId == behavior.behaviorId then
       return true
    end
    return false
@@ -512,8 +512,8 @@ RulesBehavior.responses["set behavior property"] = {
    description = "Set a behavior",
    category = "general",
    paramSpecs = {
-      name = {
-         label = "behavior name",
+      behaviorId = {
+         label = "behavior",
          method = "dropdown",
          initialValue = nil,
       },
@@ -529,12 +529,12 @@ RulesBehavior.responses["set behavior property"] = {
       },
    },
    initialParams = {
-      name = nil,
+      behaviorId = nil,
       propertyName = nil,
       setToValue = 0,
    },
    run = function(self, actorId, params, context)
-      local behavior = self.game.behaviorsByName[params.name]
+      local behavior = self.game.behaviors[params.behaviorId]
       behavior:sendSetProperties(actorId, params.propertyName, params.setToValue)
    end
 }
@@ -543,8 +543,8 @@ RulesBehavior.responses["change behavior property"] = {
    description = "Adjust a behavior",
    category = "general",
    paramSpecs = {
-      name = {
-         label = "behavior name",
+      behaviorId = {
+         label = "behavior",
          method = "dropdown",
          initialValue = nil,
       },
@@ -560,12 +560,12 @@ RulesBehavior.responses["change behavior property"] = {
       },
    },
    initialParams = {
-      name = nil,
+      behaviorId = nil,
       propertyName = nil,
       changeBy = 0,
    },
    run = function(self, actorId, params, context)
-      local behavior = self.game.behaviorsByName[params.name]
+      local behavior = self.game.behaviors[params.behaviorId]
       local component = behavior.components[actorId]
       local oldValue
       if behavior.getters[params.propertyName] then

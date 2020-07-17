@@ -259,6 +259,7 @@ function Client:uiInspector()
          
          ui.data(
             {
+               behaviorId = behavior.behaviorId,
                name = behaviorName,
                displayName = behavior.displayName,
                isActive = isActive,
