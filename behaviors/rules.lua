@@ -522,7 +522,7 @@ RulesBehavior.responses["set behavior property"] = {
          method = "dropdown",
          initialValue = nil,
       },
-      setToValue = {
+      value = {
          method = "numberInput",
          label = "set to",
          initialValue = 0,
@@ -531,11 +531,11 @@ RulesBehavior.responses["set behavior property"] = {
    initialParams = {
       behaviorId = nil,
       propertyName = nil,
-      setToValue = 0,
+      value= 0,
    },
    run = function(self, actorId, params, context)
       local behavior = self.game.behaviors[params.behaviorId]
-      behavior:sendSetProperties(actorId, params.propertyName, params.setToValue)
+      behavior:sendSetProperties(actorId, params.propertyName, params.value)
    end
 }
 
@@ -553,7 +553,7 @@ RulesBehavior.responses["change behavior property"] = {
          method = "dropdown",
          initialValue = nil,
       },
-      changeBy = {
+      value = {
          method = "numberInput",
          label = "adjust by",
          initialValue = 0,
@@ -562,7 +562,7 @@ RulesBehavior.responses["change behavior property"] = {
    initialParams = {
       behaviorId = nil,
       propertyName = nil,
-      changeBy = 0,
+      value = 0,
    },
    run = function(self, actorId, params, context)
       local behavior = self.game.behaviors[params.behaviorId]
@@ -573,7 +573,7 @@ RulesBehavior.responses["change behavior property"] = {
       else
          oldValue = component.properties[params.propertyName]
       end
-      local newValue = oldValue + params.changeBy
+      local newValue = oldValue + params.value
       local propertySpec = behavior.propertySpecs[params.propertyName]
       if propertySpec.props then
          if propertySpec.props.min and newValue < propertySpec.props.min then

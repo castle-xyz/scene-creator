@@ -58,14 +58,14 @@ MovingBehavior.responses["add velocity"] = {
        response.params = {
           behaviorId = self.behaviorId,
           propertyName = 'vx',
-          changeBy = response.params.x,
+          value = response.params.x,
           nextResponse = {
              behaviorId = rules.behaviorId,
              name = 'change behavior property',
              params = {
                 behaviorId = self.behaviorId,
                 propertyName = 'vy',
-                changeBy = response.params.y,
+                value = response.params.y,
                 nextResponse = response.params.nextResponse,
              },
           },
@@ -93,7 +93,7 @@ MovingBehavior.responses["add rotation speed"] = {
        response.params = {
           behaviorId = self.behaviorId,
           propertyName = 'angularVelocity',
-          changeBy = response.params.speed,
+          value = response.params.speed,
           nextResponse = response.params.nextResponse,
        }
     end,
@@ -118,14 +118,14 @@ MovingBehavior.responses["set velocity"] = {
        response.params = {
           behaviorId = self.behaviorId,
           propertyName = 'vx',
-          setToValue = response.params.x,
+          value = response.params.x,
           nextResponse = {
              behaviorId = rules.behaviorId,
              name = 'set behavior property',
              params = {
                 behaviorId = self.behaviorId,
                 propertyName = 'vy',
-                setToValue = response.params.y,
+                value = response.params.y,
                 nextResponse = response.params.nextResponse,
              },
           },
@@ -152,7 +152,7 @@ MovingBehavior.responses["set rotation speed"] = {
        response.params = {
           behaviorId = self.behaviorId,
           propertyName = 'angularVelocity',
-          setToValue = response.params.speed,
+          value = response.params.speed,
           nextResponse = response.params.nextResponse,
        }
     end,
