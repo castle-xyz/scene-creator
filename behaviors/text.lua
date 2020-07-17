@@ -1,6 +1,6 @@
 local TextBehavior = defineCoreBehavior {
     name = 'Text',
-    displayName = 'text',
+    displayName = 'Text',
     propertyNames = {
        'content',
        'visible',
@@ -10,11 +10,14 @@ local TextBehavior = defineCoreBehavior {
     propertySpecs = {
        content = {
           method = 'textArea',
-          label = 'content',
+          label = 'Content',
        },
        visible = {
-          method = 'checkbox',
-          label = 'visible',
+          method = 'toggle',
+          label = 'Visible',
+          rules = {
+             set = true,
+          },
        },
     },
 }
@@ -232,8 +235,18 @@ TextBehavior.triggers.tap = {
 -- Responses
 
 TextBehavior.responses["show"] = {
-   description = "Show this text",
-   category = 'visible',
+   description = "Show this text (legacy)",
+   migrate = function(self, actorId, response)
+      local rules = self.game.behaviorsByName.Rules
+      response.behaviorId = rules.behaviorId
+      response.name = 'set behavior property'
+      response.params = {
+         behaviorId = self.behaviorId,
+         propertyName = 'visible',
+         value = true,
+         nextResponse = response.params.nextResponse,
+      }
+   end,
    run = function(self, actorId, params, context)
       local component = self.components[actorId]
       component.properties.visible = true
@@ -241,8 +254,18 @@ TextBehavior.responses["show"] = {
 }
 
 TextBehavior.responses["hide"] = {
-   description = "Hide this text",
-   category = 'visible',
+   description = "Hide this text (legacy)",
+   migrate = function(self, actorId, response)
+      local rules = self.game.behaviorsByName.Rules
+      response.behaviorId = rules.behaviorId
+      response.name = 'set behavior property'
+      response.params = {
+         behaviorId = self.behaviorId,
+         propertyName = 'visible',
+         value = false,
+         nextResponse = response.params.nextResponse,
+      }
+   end,
    run = function(self, actorId, params, context)
       local component = self.components[actorId]
       component.properties.visible = false
