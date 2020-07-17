@@ -96,43 +96,47 @@ end
 -- Rules
 
 TagsBehavior.responses["add tag"] = {
-   description = "Add a tag to this actor",
+   description = "Add tags to this actor",
    category = "general",
    paramSpecs = {
       tag = {
          method = "textInput",
-         label = "Tag",
+         label = "Tags",
          initialValue = "",
       },
    },
    run = function(self, actorId, params, context)
       local component = self.components[actorId]
       if params.tag ~= nil and params.tag ~= '' then
-         component._tags[params.tag] = true
-         if not self._tagToActorIds[params.tag] then
-            self._tagToActorIds[params.tag] = {}
+         for tag in params.tag:gmatch("%S+") do
+            component._tags[tag] = true
+            if not self._tagToActorIds[tag] then
+               self._tagToActorIds[tag] = {}
+            end
+            self._tagToActorIds[tag][actorId] = true
          end
-         self._tagToActorIds[params.tag][actorId] = true
       end
    end,
 }
 
 TagsBehavior.responses["remove tag"] = {
-   description = "Remove a tag from this actor",
+   description = "Remove tags from this actor",
    category = "general",
    paramSpecs = {
       tag = {
          method = "textInput",
-         label = "Tag",
+         label = "Tags",
          initialValue = "",
       },
    },
    run = function(self, actorId, params, context)
       local component = self.components[actorId]
       if params.tag ~= nil and params.tag ~= '' then
-         component._tags[params.tag] = nil
-         if self._tagToActorIds[params.tag] then
-            self._tagToActorIds[params.tag][actorId] = nil
+         for tag in params.tag:gmatch("%S+") do
+            component._tags[tag] = nil
+            if self._tagToActorIds[tag] then
+               self._tagToActorIds[tag][actorId] = nil
+            end
          end
       end
    end,
