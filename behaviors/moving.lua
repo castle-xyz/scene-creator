@@ -168,6 +168,57 @@ MovingBehavior.responses["set rotation speed"] = {
     end
 }
 
+MovingBehavior.responses["move toward actor"] = {
+   description = "Move toward another actor",
+   category = "motion",
+   paramSpecs = {
+      tag = {
+         method = "textInput",
+         label = "Tag",
+      },
+      speed = {
+         method = "numberInput",
+         label = "Speed",
+         initialValue = 0,
+      },
+   },
+   initialParams = {
+      speed = 0,
+   },
+   run = function(self, actorId, params, context)
+      local members = self.game.behaviorsByName.Body:getMembers(actorId)
+      local x, y = 0, 0
+      if members.body then
+         x, y = members.body:getPosition()
+      end
+      
+      local closestActorId, minDistance, targetX, targetY = nil, math.huge, 0, 0
+      for otherActorId, actor in pairs(self.game.actors) do
+         if otherActorId ~= actorId
+         and ((not params.tag or params.tag == '') or self.game.behaviorsByName.Tags:actorHasTag(otherActorId, params.tag)) then
+            local members = self.game.behaviorsByName.Body:getMembers(otherActorId)
+            if members.body then
+               local otherX, otherY = members.body:getPosition()
+               local dx, dy = otherX - x, otherY - y
+               local dist = math.sqrt(dx * dx + dy * dy)
+               if dist < minDistance then
+                  minDistance = dist
+                  closestActorId = otherActorId
+                  targetX = otherX
+                  targetY = otherY
+               end
+            end
+         end
+      end
+
+      if members.body and closestActorId ~= nil then
+         local m = members.body:getMass()
+         local angle = math.atan2(targetY - y, targetX - x)
+         members.body:applyLinearImpulse(m * params.speed * math.cos(angle), m * params.speed * math.sin(angle))
+      end
+   end
+}
+
 function MovingBehavior.getters:vx(component)
    local actorId = component.actorId
    local members = self.dependencies.Body:getMembers(actorId)
