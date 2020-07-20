@@ -449,7 +449,7 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
                 {
                     threadKey = {},
                     filter = function(params)
-                        if params.tag == nil then
+                        if params.tag == nil or params.tag == '' then
                             return true
                         else
                             return self.game.behaviorsByName.Tags:actorHasTag(actorId2, params.tag)
@@ -487,7 +487,7 @@ function BodyBehavior:onContact(event, fixture1, fixture2, contact)
                 {
                     threadKey = {},
                     filter = function(params)
-                        if params.tag == nil then
+                        if params.tag == nil or params.tag == '' then
                             return true
                         else
                             return self.game.behaviorsByName.Tags:actorHasTag(actorId1, params.tag)
@@ -548,7 +548,7 @@ BodyBehavior.responses["is colliding"] = {
         local bodyId, body = self:getBody(actorId)
         if body then
             for _, contact in ipairs(body:getContacts()) do
-                if params.tag == nil then
+                if params.tag == nil or params.tag == '' then
                     return true
                 end
                 local f1, f2 = contact:getFixtures()

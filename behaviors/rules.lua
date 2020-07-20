@@ -632,7 +632,7 @@ RulesBehavior.responses["act on"] = {
        },
     },
     run = function(self, actorId, params, context)
-        if params.tag then
+        if params.tag and params.tag ~= '' then
             self.game.behaviorsByName.Tags:forEachActorWithTag(
                 params.tag,
                 function(otherActorId)
