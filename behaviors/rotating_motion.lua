@@ -85,9 +85,6 @@ RotatingMotionBehavior.responses["move toward actor"] = {
          initialValue = 0,
       },
    },
-   initialParams = {
-      speed = 0,
-   },
    run = function(self, actorId, params, context)
       local members = self.game.behaviorsByName.Body:getMembers(actorId)
       local x, y = 0, 0

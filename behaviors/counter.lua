@@ -92,10 +92,6 @@ CounterBehavior.triggers["counter reaches value"] = {
           initialValue = 0,
        },
     },
-    initialParams = {
-        comparison = "equal",
-        value = 0
-    },
 }
 
 CounterBehavior.triggers["counter changes"] = {
@@ -114,9 +110,6 @@ CounterBehavior.responses["change counter"] = {
           method = "numberInput",
           initialValue = 1,
        },
-    },
-    initialParams = {
-        changeBy = 1
     },
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
@@ -137,9 +130,6 @@ CounterBehavior.responses["set counter"] = {
           method = "numberInput",
           initialValue = 0,
        },
-    },
-    initialParams = {
-        setToValue = 0
     },
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
@@ -171,10 +161,6 @@ CounterBehavior.responses["counter meets condition"] = {
           method = "numberInput",
           initialValue = 0,
        },
-    },
-    initialParams = {
-        comparison = "equal",
-        value = 0
     },
     run = function(self, actorId, params, context)
         local component = self.components[actorId]

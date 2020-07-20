@@ -231,11 +231,6 @@ RulesBehavior.triggers["variable reaches value"] = {
           initialValue = 0,
        },
     },
-    initialParams = {
-        variableId = "(none)",
-        comparison = "equal",
-        value = 0
-    },
 }
 
 RulesBehavior.triggers["variable changes"] = {
@@ -250,9 +245,6 @@ RulesBehavior.triggers["variable changes"] = {
              showVariablesItems = true,
           },
        },
-    },
-    initialParams = {
-        variableId = "(none)"
     },
 }
 
@@ -275,10 +267,6 @@ RulesBehavior.responses["change variable"] = {
              showVariablesItems = true,
           },
        },
-    },
-    initialParams = {
-        changeBy = 1,
-        variableId = nil
     },
     run = function(self, actorId, params, context)
         -- self.game:send('updateVariables
@@ -310,10 +298,6 @@ RulesBehavior.responses["set variable"] = {
           method = "numberInput",
           initialValue = 0,
        },
-    },
-    initialParams = {
-        setToValue = 0,
-        variableId = nil
     },
     run = function(self, actorId, params, context)
         -- MULTIPLAYER TODO: figure out who should own variables
@@ -354,11 +338,6 @@ RulesBehavior.responses["variable meets condition"] = {
           method = "numberInput",
           initialValue = 0,
        },
-    },
-    initialParams = {
-        variableId = "(none)",
-        comparison = "equal",
-        value = 0
     },
     run = function(self, actorId, params, context)
         local value = self.game:variableIdToValue(params.variableId)
@@ -408,11 +387,6 @@ RulesBehavior.responses.create = {
           method = "numberInput",
           initialValue = 0,
        },
-    },
-    initialParams = {
-        xOffset = 0,
-        yOffset = 0,
-        entryId = nil
     },
     run = function(self, actorId, params, context)
         local entry = self.game.library[params.entryId]
@@ -492,9 +466,6 @@ RulesBehavior.responses.wait = {
           },
        },
     },
-    initialParams = {
-        duration = 1
-    },
     run = function(self, actorId, params, context)
         local timeLeft = params.duration
         while timeLeft > 0 do
@@ -525,11 +496,6 @@ RulesBehavior.responses["set behavior property"] = {
          initialValue = 0,
       },
    },
-   initialParams = {
-      behaviorId = nil,
-      propertyName = nil,
-      value= 0,
-   },
    run = function(self, actorId, params, context)
       local behavior = self.game.behaviors[params.behaviorId]
       behavior:sendSetProperties(actorId, params.propertyName, params.value)
@@ -555,11 +521,6 @@ RulesBehavior.responses["change behavior property"] = {
          label = "adjust by",
          initialValue = 0,
       },
-   },
-   initialParams = {
-      behaviorId = nil,
-      propertyName = nil,
-      value = 0,
    },
    run = function(self, actorId, params, context)
       local behavior = self.game.behaviors[params.behaviorId]
@@ -609,9 +570,6 @@ RulesBehavior.responses["repeat"] = {
              step = 1,
           },
        },
-    },
-    initialParams = {
-        count = 3
     },
     run = function(self, actorId, params, context)
         for i = 1, params.count do
@@ -668,9 +626,6 @@ RulesBehavior.responses["coin flip"] = {
              step = 0.1,
           },
        },
-    },
-    initialParams = {
-        probability = 0.5
     },
     run = function(self, actorId, params, context)
         return math.random() < params.probability

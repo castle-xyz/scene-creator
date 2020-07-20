@@ -26,7 +26,6 @@ function Rules.sanitizeEntries(categories)
             behaviorName = entry.behaviorName,
             category = entry.category,
             paramSpecs = entry.entry.paramSpecs,
-            initialParams = entry.entry.initialParams,
             returnType = entry.entry.returnType,
             triggerFilter = entry.entry.triggerFilter,
          }

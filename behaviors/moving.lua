@@ -70,10 +70,6 @@ MovingBehavior.responses["add velocity"] = {
           },
        }
     end,
-    initialParams = {
-        x = 0,
-        y = 0
-    },
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         if body then
@@ -96,9 +92,6 @@ MovingBehavior.responses["add rotation speed"] = {
           nextResponse = response.params.nextResponse,
        }
     end,
-    initialParams = {
-        speed = 0
-    },
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         if body then
@@ -130,10 +123,6 @@ MovingBehavior.responses["set velocity"] = {
           },
        }
     end,
-    initialParams = {
-        x = 0,
-        y = 0
-    },
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         if body then
@@ -155,9 +144,6 @@ MovingBehavior.responses["set rotation speed"] = {
           nextResponse = response.params.nextResponse,
        }
     end,
-    initialParams = {
-        speed = 0
-    },
     run = function(self, actorId, params, context)
         local bodyId, body = self.dependencies.Body:getBody(actorId)
         if body then
@@ -180,9 +166,6 @@ MovingBehavior.responses["move toward actor"] = {
          label = "Speed",
          initialValue = 0,
       },
-   },
-   initialParams = {
-      speed = 0,
    },
    run = function(self, actorId, params, context)
       local members = self.game.behaviorsByName.Body:getMembers(actorId)

@@ -279,9 +279,6 @@ TextBehavior.responses["send player to card"] = {
          initialValue = nil,
       },
    },
-   initialParams = {
-      card = nil,
-   },
    run = function(self, actorId, params, context)
       jsEvents.send("NAVIGATE_TO_CARD", { card = params.card })
    end
