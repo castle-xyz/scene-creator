@@ -2,11 +2,6 @@ local CounterBehavior =
     defineCoreBehavior {
     name = "Counter",
     displayName = "counter",
-    propertyNames = {
-        "value",
-        "minValue",
-        "maxValue"
-    },
     dependencies = {},
     propertySpecs = {
        value = {

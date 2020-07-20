@@ -17,22 +17,6 @@ local BodyBehavior =
     defineCoreBehavior {
     name = "Body",
     displayName = "Layout",
-    propertyNames = {
-        "worldId",
-        "groundBodyId",
-        "bodyId",
-        "fixtureId",
-        "x",
-        "y",
-        "angle",
-        "width",
-        "height",
-        "fixtures",
-        "isNewDrawingTool",
-        "friction",
-        "restitution",
-        "sensor",
-    },
     propertySpecs = {
        x = {
           method = 'numberInput',
@@ -65,6 +49,15 @@ local BodyBehavior =
           label = 'Height',
           props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
        },
+       worldId = {},
+       groundBodyId = {},
+       bodyId = {},
+       fixtureId = {},
+       fixtures = {},
+       isNewDrawingTool = {},
+       friction = {},
+       restitution = {},
+       sensor = {},
     },
 }
 

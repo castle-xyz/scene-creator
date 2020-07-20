@@ -1,16 +1,6 @@
 local ImageBehavior =
     defineCoreBehavior {
     name = "Image",
-    propertyNames = {
-        "url",
-        "color",
-        "filter",
-        "cropEnabled",
-        "cropX",
-        "cropY",
-        "cropWidth",
-        "cropHeight"
-    },
     dependencies = {
         "Body"
     },
@@ -32,6 +22,10 @@ local ImageBehavior =
           method = 'toggle',
           label = 'crop',
        },
+       cropX = {},
+       cropY = {},
+       cropWidth = {},
+       cropHeight = {},
     },
 }
 

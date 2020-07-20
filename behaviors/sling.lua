@@ -2,9 +2,6 @@ local SlingBehavior =
     defineCoreBehavior {
     name = "Sling",
     displayName = "Slingshot",
-    propertyNames = {
-        "speed"
-    },
     dependencies = {
         "Moving",
         "Body"

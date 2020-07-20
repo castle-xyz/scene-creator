@@ -2,9 +2,6 @@ local TagsBehavior =
     defineCoreBehavior {
     name = "Tags",
     displayName = "tags",
-    propertyNames = {
-        "tagsString" -- Space-separate tags string
-    },
     dependencies = {},
     propertySpecs = {
        tagsString = {

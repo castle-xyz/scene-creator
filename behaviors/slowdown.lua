@@ -1,10 +1,6 @@
 local SlowdownBehavior = defineCoreBehavior {
     name = "Slowdown",
     displayName = "Slow down",
-    propertyNames = {
-        "motionSlowdown",
-        "rotationSlowdown"
-    },
     dependencies = {
         "Moving",
         "Body"

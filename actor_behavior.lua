@@ -39,17 +39,17 @@ function BaseBehavior:sendSetProperties(opts, ...)
         sendOpts = "setProperties"
     end
 
-    local function propertyNamesToIds(name, value, ...)
-        if name ~= nil then
-            local id = self.propertyIds[name]
-            if not id then
-                error("behavior '" .. self.name .. "' has no property named '" .. name .. "'")
-            end
-            return id, value, propertyNamesToIds(...)
-        end
+    local function checkPropertyNames(name, value, ...)
+       if name ~= nil then
+          local spec = self.propertySpecs[name]
+          if not spec then
+             error("behavior '" .. self.name .. "' has no property named '" .. name .. "'")
+          end
+          return name, value, checkPropertyNames(...)
+       end
     end
-
-    self.game:send(sendOpts, self.game.clientId, actorId, self.behaviorId, propertyNamesToIds(...))
+    
+    self.game:send(sendOpts, self.game.clientId, actorId, self.behaviorId, checkPropertyNames(...))
 end
 
 function BaseBehavior:has(actorId)
@@ -103,7 +103,6 @@ local CORE_BEHAVIORS = {}
 
 function defineCoreBehavior(behaviorSpec)
     behaviorSpec.isCore = true
-    behaviorSpec.propertyNames = behaviorSpec.propertyNames or {}
     behaviorSpec.propertySpecs = behaviorSpec.propertySpecs or {}
     behaviorSpec.handlers = behaviorSpec.handlers or {}
     behaviorSpec.getters = behaviorSpec.getters or {}
@@ -272,14 +271,6 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     behavior.clientId = 0
     behavior.globals = {}
     behavior.components = {}
-
-    -- Copy property names
-    behavior.propertyIds = {}
-    behavior.propertyNames = {}
-    for propertyId, propertyName in ipairs(behaviorSpec.propertyNames) do
-        behavior.propertyIds[propertyName] = propertyId
-        behavior.propertyNames[propertyId] = propertyName
-    end
 
     -- Copy methods
     for methodName, method in pairs(behaviorSpec) do
@@ -483,8 +474,7 @@ function Common.receivers:setProperties(time, clientId, actorId, behaviorId, ...
     end
 
     for i = 1, select("#", ...), 2 do
-        local id, value = select(i, ...)
-        local name = behavior.propertyNames[id]
+        local name, value = select(i, ...)
         if not name then
             error("setProperties: bad property id")
         end

@@ -1,7 +1,6 @@
 local CircleShapeBehavior = defineCoreBehavior {
     name = "CircleShape",
     displayName = "circle",
-    propertyNames = { "radius" },
     dependencies = {
         "Body"
     },

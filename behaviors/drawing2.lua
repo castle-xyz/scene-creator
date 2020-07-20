@@ -4,14 +4,14 @@ require('tools.physics_body_data')
 local Drawing2Behavior =
     defineCoreBehavior {
     name = "Drawing2",
-    propertyNames = {
-        "hash",
-        "drawData",
-        "physicsBodyData"
-    },
     dependencies = {
         "Body"
-    }
+    },
+    propertySpecs = {
+       hash = {},
+       drawData = {},
+       physicsBodyData = {},
+    },
 }
 
 local ffi = require "ffi"

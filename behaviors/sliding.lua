@@ -2,10 +2,6 @@ local SlidingBehavior =
     defineCoreBehavior {
     name = "Sliding",
     displayName = "Axis Lock",
-    propertyNames = {
-       "direction",
-       "isRotationAllowed",
-    },
     dependencies = {
         "Moving",
         "Body"

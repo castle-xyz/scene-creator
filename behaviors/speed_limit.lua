@@ -2,9 +2,6 @@ local SpeedLimitBehavior =
     defineCoreBehavior {
     name = "SpeedLimit",
     displayName = "Speed Limit",
-    propertyNames = {
-        "maximumSpeed"
-    },
     dependencies = {
         "Body"
     },

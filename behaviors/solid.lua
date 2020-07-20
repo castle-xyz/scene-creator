@@ -2,7 +2,6 @@ local SolidBehavior =
     defineCoreBehavior {
     name = "Solid",
     displayName = "Solid",
-    propertyNames = {},
     dependencies = {
         "Body"
     }

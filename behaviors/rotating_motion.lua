@@ -1,10 +1,6 @@
 local RotatingMotionBehavior = defineCoreBehavior {
     name = "RotatingMotion",
     displayName = "Fixed Motion",
-    propertyNames = {
-       "vx", "vy",
-        "rotationsPerSecond"
-    },
     dependencies = {
         "Body"
     },

@@ -2,7 +2,6 @@ local FrictionBehavior =
     defineCoreBehavior {
     name = "Friction",
     displayName = "Friction",
-    propertyNames = { "friction" },
     dependencies = {
         "Body"
     },

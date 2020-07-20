@@ -1,10 +1,6 @@
 local DrawingBehavior =
     defineCoreBehavior {
     name = "Drawing",
-    propertyNames = {
-        "url",
-        "wobble"
-    },
     dependencies = {
         "Body"
     },

@@ -2,9 +2,6 @@ local RulesBehavior =
     defineCoreBehavior {
     name = "Rules",
     displayName = "rules",
-    propertyNames = {
-        "rules"
-    },
     dependencies = {},
     propertySpecs = {
        rules = {

@@ -1,11 +1,6 @@
 local TextBehavior = defineCoreBehavior {
     name = 'Text',
     displayName = 'Text',
-    propertyNames = {
-       'content',
-       'visible',
-       'order',
-    },
     dependencies = {},
     propertySpecs = {
        content = {
@@ -19,6 +14,7 @@ local TextBehavior = defineCoreBehavior {
              set = true,
           },
        },
+       order = {},
     },
 }
 

@@ -218,16 +218,18 @@ function Client:uiInspector()
          local component = actor.components[behavior.behaviorId]
          if component then
             isActive = true
-            for propertyName, _ in pairs(behavior.propertySpecs) do
-               -- current value of each property of the behavior
-               if behavior.getters[propertyName] then
-                  properties[propertyName] = behavior.getters[propertyName](behavior, component)
-               else
-                  properties[propertyName] = component.properties[propertyName]
-               end
-               -- actions to set value for each property of the behavior
-               actions['set:' .. propertyName] = function(value)
-                  self:_setProperty(actorId, behavior.behaviorId, propertyName, properties[propertyName], value)
+            for propertyName, propertySpec in pairs(behavior.propertySpecs) do
+               if propertySpec.method ~= nil then
+                  -- current value of each property of the behavior
+                  if behavior.getters[propertyName] then
+                     properties[propertyName] = behavior.getters[propertyName](behavior, component)
+                  else
+                     properties[propertyName] = component.properties[propertyName]
+                  end
+                  -- actions to set value for each property of the behavior
+                  actions['set:' .. propertyName] = function(value)
+                     self:_setProperty(actorId, behavior.behaviorId, propertyName, properties[propertyName], value)
+                  end
                end
             end
             -- action to remove behavior from this actor
