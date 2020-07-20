@@ -76,7 +76,7 @@ end
 -- Responses
 
 RotatingMotionBehavior.responses["move toward actor"] = {
-   description = "Move toward another actor",
+   description = "Move toward another actor (fixed motion)",
    category = "motion",
    paramSpecs = {
       tag = {

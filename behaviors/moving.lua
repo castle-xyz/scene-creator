@@ -169,7 +169,7 @@ MovingBehavior.responses["set rotation speed"] = {
 }
 
 MovingBehavior.responses["move toward actor"] = {
-   description = "Move toward another actor",
+   description = "Move toward another actor (dynamic motion)",
    category = "motion",
    paramSpecs = {
       tag = {
