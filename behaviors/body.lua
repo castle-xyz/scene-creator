@@ -564,6 +564,21 @@ BodyBehavior.responses["is colliding"] = {
     end
 }
 
+BodyBehavior.responses["face direction of motion"] = {
+   description = "Face direction of motion",
+   category = "motion",
+   run = function(self, actorId, params, context)
+      local members = self.game.behaviorsByName.Body:getMembers(actorId)
+      local x, y = 0, 0
+      if members.body and members.physics then
+         local vx, vy = members.body:getLinearVelocity()
+         local angle = math.atan2(vy, vx)
+         members.physics:setAngle(members.bodyId, angle)
+      end
+   end,
+}
+
+
 -- Setters
 
 function BodyBehavior.setters:x(component, value)
