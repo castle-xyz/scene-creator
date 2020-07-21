@@ -55,8 +55,6 @@ local BodyBehavior =
        fixtureId = {},
        fixtures = {},
        isNewDrawingTool = {},
-       friction = {},
-       restitution = {},
        sensor = {},
     },
 }
@@ -138,12 +136,6 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         self._physics:setFixedRotation(bodyId, true)
         self._physics:setGravityScale(bodyId, 0)
         
-        -- legacy props from older scenes - will be saved in a different component next time
-        component.properties.gravityScale = bp.gravityScale
-        component.properties.fixedRotation = bp.fixedRotation
-        component.properties.linearVelocity = bp.linearVelocity
-        component.properties.angularVelocity = bp.angularVelocity
-        
         local fixtureBps = bp.fixture and {bp.fixture} or bp.fixtures
         if fixtureBps then
             component.properties.fixtures = fixtureBps
@@ -161,28 +153,14 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         if fixtureBps and fixtureBps[1] then
             firstFixtureBp = fixtureBps[1]
         end
-
-        if bp.friction ~= nil then
-            component.properties.friction = bp.friction
-        elseif firstFixtureBp ~= nil and firstFixtureBp.friction ~= nil then
-            component.properties.friction = firstFixtureBp.friction
-        else
-            component.properties.friction = 0
-        end
-        if bp.restitution ~= nil then
-            component.properties.restitution = bp.restitution
-        elseif firstFixtureBp ~= nil and firstFixtureBp.restitution ~= nil then
-            component.properties.restitution = firstFixtureBp.restitution
-        else
-            component.properties.restitution = 0
-        end
-        if bp.sensor ~= nil then
-            component.properties.sensor = bp.sensor
-        elseif firstFixtureBp ~= nil and firstFixtureBp.sensor ~= nil then
-            component.properties.sensor = firstFixtureBp.sensor
-        else
-            component.properties.sensor = true
-        end
+        
+        -- legacy props from older scenes - will be saved in a different component next time
+        component.properties.gravityScale = bp.gravityScale
+        component.properties.fixedRotation = bp.fixedRotation
+        component.properties.linearVelocity = bp.linearVelocity
+        component.properties.angularVelocity = bp.angularVelocity
+        component.properties.friction = bp.friction
+        component.properties.restitution = bp.restitution
 
         -- Associate the component with the underlying body
         self._physics:setUserData(bodyId, component.actorId)
@@ -213,7 +191,7 @@ function BodyBehavior.handlers:disableComponent(component, opts)
     end
 end
 
-function BodyBehavior:serializeFixture(fixture)
+function BodyBehavior:serializeFixture(component, fixture)
     local fixtureBp = {}
 
     local shape = fixture:getShape()
@@ -235,9 +213,9 @@ function BodyBehavior:serializeFixture(fixture)
     end
 
     fixtureBp.density = fixture:getDensity()
-    fixtureBp.friction = fixture:getFriction()
-    fixtureBp.restitution = fixture:getRestitution()
-    fixtureBp.sensor = fixture:isSensor()
+    for behaviorId, dependentComponent in pairs(component.dependents) do
+       self.game.behaviors[behaviorId]:callHandler("blueprintFixture", dependentComponent, fixture, fixtureBp)
+    end
 
     return fixtureBp
 end
@@ -255,9 +233,6 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.fixtures = component.properties.fixtures
     bp.width = component.properties.width
     bp.height = component.properties.height
-    bp.friction = component.properties.friction
-    bp.restitution = component.properties.restitution
-    bp.sensor = component.properties.sensor
 end
 
 function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
@@ -625,9 +600,7 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
             end
 
             local fixtureId = self._physics:newFixture(bodyId, shapeId, fixtureBp.density or 1)
-            self._physics:setFriction(fixtureId, component.properties.friction)
-            self._physics:setRestitution(fixtureId, component.properties.restitution)
-            self._physics:setSensor(fixtureId, component.properties.sensor)
+            self:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
 
             self._physics:destroyObject(shapeId)
         end
@@ -637,12 +610,19 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
 
         local shapeId = self._physics:newRectangleShape(component.properties.width, component.properties.height)
         local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
-        self._physics:setFriction(fixtureId, component.properties.friction)
-        self._physics:setRestitution(fixtureId, component.properties.restitution)
-        self._physics:setSensor(fixtureId, component.properties.sensor)
+        self:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
 
         self._physics:destroyObject(shapeId)
     end
+end
+
+function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
+   -- defaults which could be overridden by behaviors later
+   self._physics:setSensor(fixtureId, true)
+   
+   for behaviorId, dependentComponent in pairs(component.dependents) do
+      self.game.behaviors[behaviorId]:callHandler("updateComponentFixture", dependentComponent, fixtureId)
+   end
 end
 
 -- TODO: this is inefficient. it should take serialized fixtures instead of
@@ -654,9 +634,6 @@ function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
     local component = self:getComponent(componentOrActorId)
 
     local density = 1 --todo: not sure what to do here
-    local friction = component.properties.friction
-    local restitution = component.properties.restitution
-    local sensor = component.properties.sensor
 
     for _, fixture in pairs(fixtures) do
         local fixtureId = self._physics:idForObject(fixture)
@@ -666,15 +643,12 @@ function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
     for _, newShapeId in pairs(newShapeIds) do
         local newFixtureId = self._physics:newFixture(bodyId, newShapeId, density)
         self._physics:destroyObject(newShapeId)
-
-        self._physics:setFriction(newFixtureId, friction)
-        self._physics:setRestitution(newFixtureId, restitution)
-        self._physics:setSensor(newFixtureId, sensor)
+        self:updatePhysicsFixtureFromDependentBehaviors(component, newFixtureId)
     end
 
     component.properties.fixtures = {}
     for _, fixture in ipairs(body:getFixtures()) do
-        table.insert(component.properties.fixtures, self:serializeFixture(fixture))
+        table.insert(component.properties.fixtures, self:serializeFixture(component, fixture))
     end
 
     self:updatePhysicsFixturesFromProperties(componentOrActorId)

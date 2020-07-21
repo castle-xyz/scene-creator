@@ -19,16 +19,26 @@ local FrictionBehavior =
 
 -- Component management
 
-function FrictionBehavior.handlers:enableComponent(component, opts)
-    if opts.interactive then
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        local fixtures = body:getFixtures()
-        for _, fixture in pairs(fixtures) do
-            fixture:setFriction(0.2)
-        end
+function FrictionBehavior.handlers:addComponent(component, bp, opts)
+   if bp.friction ~= nil then
+      component.properties.friction = bp.friction
+   else
+      -- old scenes stored this prop in the body blueprint
+      local bodyComponent = self.dependencies.Body.components[component.actorId]
+      if bodyComponent and bodyComponent.properties.friction ~= nil then
+         component.properties.friction = bodyComponent.properties.friction
+      else
+         component.properties.friction = 0.2
+      end
+   end
+end
 
-        self.dependencies.Body:sendSetProperties(component.actorId, "friction", 0.2)
-    end
+function FrictionBehavior.handlers:enableComponent(component, opts)
+   local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+   local fixtures = body:getFixtures()
+   for _, fixture in pairs(fixtures) do
+      fixture:setFriction(component.properties.friction)
+   end
 end
 
 function FrictionBehavior.handlers:disableComponent(component, opts)
@@ -38,26 +48,25 @@ function FrictionBehavior.handlers:disableComponent(component, opts)
         for _, fixture in pairs(fixtures) do
             fixture:setFriction(0)
         end
-
-        self.dependencies.Body:sendSetProperties(component.actorId, "friction", 0)
     end
 end
 
-function FrictionBehavior.getters:friction(component)
-   local actorId = component.actorId
+function FrictionBehavior.handlers:updateComponentFixture(component, fixtureId)
    local members = self.dependencies.Body:getMembers(actorId)
-   if members.firstFixture then
-      return members.firstFixture:getFriction()
+   if component.disabled then
+      members.physics:setFriction(fixtureId, 0)
+   else
+      members.physics:setFriction(fixtureId, component.properties.friction)
    end
-   return 0
+end
+
+function FrictionBehavior.handlers:blueprintFixture(component, fixture, fixtureBp)
+   fixtureBp.friction = fixture:getFriction()
 end
 
 function FrictionBehavior.setters:friction(component, value)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   for _, fixtureId in pairs(members.fixtureIds) do
-      members.physics:setFriction(fixtureId, value)
+   component.properties.friction = value
+   if not component.disabled then
+      self.handlers:enableComponent(self, component)
    end
-
-   self.dependencies.Body:sendSetProperties(component.actorId, "friction", value)
 end

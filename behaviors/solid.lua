@@ -28,8 +28,6 @@ function SolidBehavior.handlers:enableComponent(component, opts)
         fixture:setSensor(false)
         wakeBodyAndColliders(body)
     end
-
-   self.dependencies.Body:sendSetProperties(component.actorId, "sensor", false)
 end
 
 function SolidBehavior.handlers:disableComponent(component, opts)
@@ -40,7 +38,14 @@ function SolidBehavior.handlers:disableComponent(component, opts)
             fixture:setSensor(true)
             wakeBodyAndColliders(body)
         end
-
-        self.dependencies.Body:sendSetProperties(component.actorId, "sensor", true)
     end
+end
+
+function SolidBehavior.handlers:updateComponentFixture(component, fixtureId)
+   local members = self.dependencies.Body:getMembers(actorId)
+   members.physics:setSensor(fixtureId, not (not component.disabled))
+end
+
+function SolidBehavior.handlers:blueprintFixture(component, fixture, fixtureBp)
+   fixtureBp.sensor = fixture:isSensor()
 end
