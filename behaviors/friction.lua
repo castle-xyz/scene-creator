@@ -33,6 +33,10 @@ function FrictionBehavior.handlers:addComponent(component, bp, opts)
    end
 end
 
+function FrictionBehavior.handlers:blueprintComponent(component, bp)
+   bp.friction = component.properties.friction
+end
+
 function FrictionBehavior.handlers:enableComponent(component, opts)
    local bodyId, body = self.dependencies.Body:getBody(component.actorId)
    local fixtures = body:getFixtures()
@@ -67,6 +71,6 @@ end
 function FrictionBehavior.setters:friction(component, value)
    component.properties.friction = value
    if not component.disabled then
-      self.handlers:enableComponent(self, component)
+      self.handlers.enableComponent(self, component)
    end
 end

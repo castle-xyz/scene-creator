@@ -204,18 +204,17 @@ function Common.receivers:removeActor(time, clientId, actorId, opts)
     for i = #order, 1, -1 do
         local behavior = order[i]
         behavior:callHandler(
-            "preRemoveComponent",
+            "preRemoveActor",
             behavior.components[actorId],
             {
                 isOrigin = self.clientId == clientId,
-                removeActor = true
             }
         )
     end
     for i = #order, 1, -1 do
         local behavior = order[i]
         behavior:callHandler(
-            "removeComponent",
+            "disableComponent",
             behavior.components[actorId],
             {
                 isOrigin = self.clientId == clientId,
@@ -474,7 +473,6 @@ function Common.receivers:enableComponent(time, clientId, actorId, behaviorId)
                 isOrigin = self.clientId == clientId
             }
         )
-        actor.components[dependency.behaviorId].disabled = false
     end
 
     component.disabled = false
@@ -502,7 +500,6 @@ function Common.receivers:disableComponent(time, clientId, actorId, behaviorId)
                 isOrigin = self.clientId == clientId
             }
         )
-        actor.components[dependency.behaviorId].disabled = true
     end
 
     component.disabled = true

@@ -67,10 +67,8 @@ function RulesBehavior.handlers:enableComponent(component, opts)
    self.setters.rules(self, component, component.properties.rules)
 end
 
-function RulesBehavior.handlers:preRemoveComponent(component, opts)
-    if opts.removeActor then
-        self:fireTrigger("destroy", component.actorId)
-    end
+function RulesBehavior.handlers:preRemoveActor(component, opts)
+   self:fireTrigger("destroy", component.actorId)
 end
 
 function RulesBehavior.handlers:blueprintComponent(component, bp)
@@ -155,7 +153,7 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context, opts)
     local applies = false
 
     local component = self.components[actorId]
-    if component and not component.disabled then
+    if component then
         context = context or {}
 
         if context.isOwner == nil then
@@ -193,15 +191,10 @@ function RulesBehavior:runResponse(response, actorId, context)
         if behavior then
             local responseEntry = behavior.responses[response.name]
             if responseEntry then
-                local component = behavior.components[actorId]
-                if not component.disabled then
-                    local result = responseEntry.run(behavior, actorId, response.params, context)
-                    if responseEntry.returnType ~= nil then
-                       return result
-                    end
+                local result = responseEntry.run(behavior, actorId, response.params, context)
+                if responseEntry.returnType ~= nil then
+                   return result
                 end
-                -- continue running next response, regardless of whether prev response
-                -- was disabled/skipped
                 self:runResponse(response.params.nextResponse, actorId, context)
             end
         end

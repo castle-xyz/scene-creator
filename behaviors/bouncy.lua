@@ -34,6 +34,10 @@ function BouncyBehavior.handlers:addComponent(component, bp, opts)
    end
 end
 
+function BouncyBehavior.handlers:blueprintComponent(component, bp)
+   bp.bounciness = component.properties.bounciness
+end
+
 function BouncyBehavior.handlers:enableComponent(component, opts)
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)
     local fixtures = body:getFixtures()
@@ -69,6 +73,6 @@ end
 function BouncyBehavior.setters:bounciness(component, value)
    component.properties.bounciness = value
    if not component.disabled then
-      self.handlers:enableComponent(self, component)
+      self.handlers.enableComponent(self, component)
    end
 end
