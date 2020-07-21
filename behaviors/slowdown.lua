@@ -57,10 +57,13 @@ end
 function SlowdownBehavior.handlers:addComponent(component, bp, opts)
     component.properties.motionSlowdown = bp.motionSlowdown or 5
     component.properties.rotationSlowdown = bp.rotationSlowdown or 5
-    self:updateJoint(component)
 end
 
-function SlowdownBehavior.handlers:removeComponent(component, opts)
+function SlowdownBehavior.handlers:enableComponent(component, opts)
+   self:updateJoint(component)
+end
+
+function SlowdownBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         if component._joint then
             component._joint:destroy()

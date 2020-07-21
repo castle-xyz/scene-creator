@@ -22,10 +22,13 @@ end
 function TagsBehavior.handlers:addComponent(component, bp, opts)
     component.properties.tagsString = bp.tagsString or ""
     component._tags = {}
-    self.setters.tagsString(self, component, component.properties.tagsString)
 end
 
-function TagsBehavior.handlers:removeComponent(component, opts)
+function TagsBehavior.handlers:enableComponent(component, opts)
+   self.setters.tagsString(self, component, component.properties.tagsString)
+end
+
+function TagsBehavior.handlers:disableComponent(component, opts)
     for tag in pairs(component._tags) do
         self._tagToActorIds[tag][component.actorId] = nil
         if not next(self._tagToActorIds[tag]) then

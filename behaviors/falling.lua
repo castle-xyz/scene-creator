@@ -27,14 +27,14 @@ end
 
 -- Component management
 
-function FallingBehavior.handlers:addComponent(component, bp, opts)
+function FallingBehavior.handlers:enableComponent(component, opts)
     if opts.interactive then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         body:setGravityScale(1)
     end
 end
 
-function FallingBehavior.handlers:removeComponent(component, opts)
+function FallingBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         body:setGravityScale(0)

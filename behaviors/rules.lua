@@ -61,7 +61,10 @@ end
 
 function RulesBehavior.handlers:addComponent(component, bp, opts)
     component.properties.rules = self:migrateLegacy(component, bp.rules or {EMPTY_RULE})
-    self.setters.rules(self, component, component.properties.rules)
+end
+
+function RulesBehavior.handlers:enableComponent(component, opts)
+   self.setters.rules(self, component, component.properties.rules)
 end
 
 function RulesBehavior.handlers:preRemoveComponent(component, opts)
@@ -152,7 +155,7 @@ function RulesBehavior.handlers:trigger(triggerName, actorId, context, opts)
     local applies = false
 
     local component = self.components[actorId]
-    if component then
+    if component and not component.disabled then
         context = context or {}
 
         if context.isOwner == nil then
@@ -190,12 +193,16 @@ function RulesBehavior:runResponse(response, actorId, context)
         if behavior then
             local responseEntry = behavior.responses[response.name]
             if responseEntry then
-                local result = responseEntry.run(behavior, actorId, response.params, context)
-                if responseEntry.returnType ~= nil then
-                    return result
-                else
-                    self:runResponse(response.params.nextResponse, actorId, context)
+                local component = behavior.components[actorId]
+                if not component.disabled then
+                    local result = responseEntry.run(behavior, actorId, response.params, context)
+                    if responseEntry.returnType ~= nil then
+                       return result
+                    end
                 end
+                -- continue running next response, regardless of whether prev response
+                -- was disabled/skipped
+                self:runResponse(response.params.nextResponse, actorId, context)
             end
         end
     end

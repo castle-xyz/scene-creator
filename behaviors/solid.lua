@@ -21,7 +21,7 @@ end
 
 -- Component management
 
-function SolidBehavior.handlers:addComponent(component, bp, opts)
+function SolidBehavior.handlers:enableComponent(component, opts)
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)
     local fixtures = body:getFixtures()
     for _, fixture in pairs(fixtures) do
@@ -32,7 +32,7 @@ function SolidBehavior.handlers:addComponent(component, bp, opts)
    self.dependencies.Body:sendSetProperties(component.actorId, "sensor", false)
 end
 
-function SolidBehavior.handlers:removeComponent(component, opts)
+function SolidBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         local fixtures = body:getFixtures()

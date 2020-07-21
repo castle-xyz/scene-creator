@@ -19,7 +19,7 @@ local FrictionBehavior =
 
 -- Component management
 
-function FrictionBehavior.handlers:addComponent(component, bp, opts)
+function FrictionBehavior.handlers:enableComponent(component, opts)
     if opts.interactive then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         local fixtures = body:getFixtures()
@@ -31,7 +31,7 @@ function FrictionBehavior.handlers:addComponent(component, bp, opts)
     end
 end
 
-function FrictionBehavior.handlers:removeComponent(component, opts)
+function FrictionBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         local fixtures = body:getFixtures()

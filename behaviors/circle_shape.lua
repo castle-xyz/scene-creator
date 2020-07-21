@@ -26,7 +26,7 @@ function CircleShapeBehavior.handlers:addComponent(component, bp, opts)
     end
 end
 
-function CircleShapeBehavior.handlers:removeComponent(component, opts)
+function CircleShapeBehavior.handlers:disableComponent(component, opts)
     if opts.isOrigin and not opts.removeActor then
         self.dependencies.Body:resetShapes(component.actorId)
     end

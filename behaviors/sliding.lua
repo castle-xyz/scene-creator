@@ -84,10 +84,13 @@ end
 
 function SlidingBehavior.handlers:addComponent(component, bp, opts)
     component.properties.direction = bp.direction or "both"
-    self:updateJoint(component)
 end
 
-function SlidingBehavior.handlers:removeComponent(component, opts)
+function SlidingBehavior.handlers:enableComponent(component, opts)
+   self:updateJoint(component)
+end
+
+function SlidingBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         if component._joint then
             component._joint:destroy()

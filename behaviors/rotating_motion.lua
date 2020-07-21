@@ -43,7 +43,7 @@ function RotatingMotionBehavior.handlers:addComponent(component, bp, opts)
     component.properties.vy = bp.vy or 0
 end
 
-function RotatingMotionBehavior.handlers:removeComponent(component, opts)
+function RotatingMotionBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         body:setLinearVelocity(0, 0)

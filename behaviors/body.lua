@@ -212,7 +212,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
     end
 end
 
-function BodyBehavior.handlers:removeComponent(component, opts)
+function BodyBehavior.handlers:disableComponent(component, opts)
     if opts.isOrigin then
         -- At the origin, destroy the body. Associated fixtures and shapes will automatically be
         -- destroyed. Other hosts will receive the destructions through sync.

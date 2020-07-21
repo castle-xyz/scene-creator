@@ -381,6 +381,7 @@ end
 
 function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp, opts)
     opts = opts or {}
+    bp = bp or {}
 
     local actor = assert(self.actors[actorId], "addComponent: no such actor")
     local behavior = assert(self.behaviors[behaviorId], "addComponent: no such behavior")
@@ -398,6 +399,7 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp, 
     local component = {}
     component.actorId = actorId
     component.behaviorId = behaviorId
+    component.disabled = bp.disabled or false
     component.properties = {}
     component.dependents = {}
     if behavior.tool then
@@ -422,12 +424,16 @@ function Common.receivers:addComponent(time, clientId, actorId, behaviorId, bp, 
     behavior:callHandler(
         "addComponent",
         component,
-        bp or {},
+        bp,
         {
             isOrigin = self.clientId == clientId,
             interactive = opts.interactive
         }
     )
+
+    if not component.disabled then
+       self.receivers.enableComponent(self, time, clientId, actorId, behaviorId)
+    end
 end
 
 function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
@@ -440,28 +446,66 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
         error("removeComponent: cannot remove '" .. behavior.name .. "' because it has dependents in this actor")
     end
 
+    self.receivers.disableComponent(self, time, clientId, actorId, behaviorId)
+    
+    actor.components[behaviorId] = nil
+    behavior.components[actorId] = nil
+end
+
+function Common.receivers:enableComponent(time, clientId, actorId, behaviorId)
+    local actor = assert(self.actors[actorId], "enableComponent: no such actor")
+    local behavior = assert(self.behaviors[behaviorId], "enableComponent: no such behavior")
+
+    local component = actor.components[behaviorId]
+
     behavior:callHandler(
-        "removeComponent",
+        "enableComponent",
         component,
         {
             isOrigin = self.clientId == clientId,
-            removeActor = false
         }
     )
 
     for _, dependency in pairs(behavior.dependencies) do
         dependency:callHandler(
-            "removeDependentComponent",
+            "enableDependentComponent",
             component,
             {
                 isOrigin = self.clientId == clientId
             }
         )
-        actor.components[dependency.behaviorId].dependents[behaviorId] = nil
+        actor.components[dependency.behaviorId].disabled = false
     end
 
-    actor.components[behaviorId] = nil
-    behavior.components[actorId] = nil
+    component.disabled = false
+end
+
+function Common.receivers:disableComponent(time, clientId, actorId, behaviorId)
+    local actor = assert(self.actors[actorId], "disableComponent: no such actor")
+    local behavior = assert(self.behaviors[behaviorId], "disableComponent: no such behavior")
+
+    local component = actor.components[behaviorId]
+
+    behavior:callHandler(
+        "disableComponent",
+        component,
+        {
+            isOrigin = self.clientId == clientId,
+        }
+    )
+
+    for _, dependency in pairs(behavior.dependencies) do
+        dependency:callHandler(
+            "disableDependentComponent",
+            component,
+            {
+                isOrigin = self.clientId == clientId
+            }
+        )
+        actor.components[dependency.behaviorId].disabled = true
+    end
+
+    component.disabled = true
 end
 
 function Common.receivers:setProperties(time, clientId, actorId, behaviorId, ...)
@@ -581,6 +625,7 @@ function Common:blueprintActor(actorId)
             local behavior = self.behaviors[component.behaviorId]
             local componentBp = {}
             behavior:callHandler("blueprintComponent", component, componentBp)
+            componentBp.disabled = component.disabled or false
             bp.components[behavior.name] = componentBp
         end
     end

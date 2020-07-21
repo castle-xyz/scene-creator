@@ -38,7 +38,7 @@ end
 
 -- Component management
 
-function MovingBehavior.handlers:removeComponent(component, opts)
+function MovingBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         body:setLinearVelocity(0, 0)

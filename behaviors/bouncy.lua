@@ -20,7 +20,7 @@ local BouncyBehavior =
 
 -- Component management
 
-function BouncyBehavior.handlers:addComponent(component, bp, opts)
+function BouncyBehavior.handlers:enableComponent(component, opts)
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)
     local fixtures = body:getFixtures()
     local shouldUpdateProperty = false
@@ -37,7 +37,7 @@ function BouncyBehavior.handlers:addComponent(component, bp, opts)
     end
 end
 
-function BouncyBehavior.handlers:removeComponent(component, opts)
+function BouncyBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         local fixtures = body:getFixtures()
