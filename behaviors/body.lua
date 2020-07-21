@@ -123,22 +123,9 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
 
             self._physics:setMassData(bodyId, unpack(massData))
         end
-        if bp.fixedRotation ~= nil then
-            self._physics:setFixedRotation(bodyId, bp.fixedRotation)
-        else
-            self._physics:setFixedRotation(bodyId, true)
-        end
+
         if bp.angle ~= nil then
             self._physics:setAngle(bodyId, bp.angle)
-        end
-        if bp.linearVelocity ~= nil then
-            self._physics:setLinearVelocity(bodyId, unpack(bp.linearVelocity))
-        end
-        if bp.angularVelocity ~= nil then
-            self._physics:setAngularVelocity(bodyId, bp.angularVelocity)
-        end
-        if bp.linearDamping ~= nil then
-            self._physics:setLinearDamping(bodyId, bp.linearDamping)
         end
         if bp.angularDamping ~= nil then
             self._physics:setAngularDamping(bodyId, bp.angularDamping)
@@ -146,12 +133,17 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         if bp.bullet ~= nil then
             self._physics:setBullet(bodyId, bp.bullet)
         end
-        if bp.gravityScale ~= nil then
-            self._physics:setGravityScale(bodyId, bp.gravityScale)
-        else
-            self._physics:setGravityScale(bodyId, 0)
-        end
 
+        -- defaults which could be overridden by behaviors later
+        self._physics:setFixedRotation(bodyId, true)
+        self._physics:setGravityScale(bodyId, 0)
+        
+        -- legacy props from older scenes - will be saved in a different component next time
+        component.properties.gravityScale = bp.gravityScale
+        component.properties.fixedRotation = bp.fixedRotation
+        component.properties.linearVelocity = bp.linearVelocity
+        component.properties.angularVelocity = bp.angularVelocity
+        
         local fixtureBps = bp.fixture and {bp.fixture} or bp.fixtures
         if fixtureBps then
             component.properties.fixtures = fixtureBps
@@ -256,14 +248,9 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.y = body:getY()
     bp.bodyType = body:getType()
     bp.massData = {body:getMassData()}
-    bp.fixedRotation = body:isFixedRotation()
     bp.angle = body:getAngle()
-    bp.linearVelocity = {body:getLinearVelocity()}
-    bp.angularVelocity = body:getAngularVelocity()
-    bp.linearDamping = body:getLinearDamping()
     bp.angularDamping = body:getAngularDamping()
     bp.bullet = body:isBullet()
-    bp.gravityScale = body:getGravityScale()
 
     bp.fixtures = component.properties.fixtures
     bp.width = component.properties.width

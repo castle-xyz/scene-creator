@@ -61,11 +61,13 @@ end
 
 function RotatingMotionBehavior.handlers:perform(dt)
     for actorId, component in pairs(self.components) do
-        local bodyId, body = self.dependencies.Body:getBody(actorId)
+        if not component.disabled then
+            local bodyId, body = self.dependencies.Body:getBody(actorId)
 
-        -- Physics bodies are automatically synced by the server, so just set locally
-        body:setLinearVelocity(component.properties.vx, component.properties.vy)
-        body:setAngularVelocity(2 * math.pi * component.properties.rotationsPerSecond)
+            -- Physics bodies are automatically synced by the server, so just set locally
+            body:setLinearVelocity(component.properties.vx, component.properties.vy)
+            body:setAngularVelocity(2 * math.pi * component.properties.rotationsPerSecond)
+        end
     end
 end
 

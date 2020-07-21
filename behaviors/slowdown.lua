@@ -39,15 +39,15 @@ function SlowdownBehavior:updateJoint(component)
 end
 
 function SlowdownBehavior.setters:motionSlowdown(component, newMotionSlowdown)
-    if component.properties.motionSlowdown ~= newMotionSlowdown then
-        component.properties.motionSlowdown = newMotionSlowdown
+    component.properties.motionSlowdown = newMotionSlowdown
+    if component.properties.motionSlowdown ~= newMotionSlowdown and not component.disabled then
         self:updateJoint(component)
     end
 end
 
 function SlowdownBehavior.setters:rotationSlowdown(component, newRotationSlowdown)
-    if component.properties.rotationSlowdown ~= newRotationSlowdown then
-        component.properties.rotationSlowdown = newRotationSlowdown
+    component.properties.rotationSlowdown = newRotationSlowdown
+    if component.properties.rotationSlowdown ~= newRotationSlowdown and not component.disabled then
         self:updateJoint(component)
     end
 end
@@ -82,7 +82,9 @@ function SlowdownBehavior.handlers:setPerforming(newPerforming)
     -- Bodies may have moved -- update joints
     if newPerforming then
         for actorId, component in pairs(self.components) do
-            self:updateJoint(component)
+           if not component.disabled then
+              self:updateJoint(component)
+           end
         end
     end
 end

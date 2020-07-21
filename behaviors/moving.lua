@@ -38,6 +38,44 @@ end
 
 -- Component management
 
+function MovingBehavior.handlers:addComponent(component, bp, opts)
+   local bodyComponent = self.dependencies.Body.components[component.actorId]
+   if bp.vx ~= nil and bp.vy ~= nil then
+      component.properties.vx = bp.vx
+      component.properties.vy = bp.vy
+   else
+      -- old scenes stored this prop in the body blueprint
+      if bodyComponent and bodyComponent.properties.linearVelocity ~= nil then
+         component.properties.vx, component.properties.vy = unpack(bodyComponent.properties.linearVelocity)
+      else
+         component.properties.vx = 0
+         component.properties.vy = 0
+      end
+   end
+   if bp.angularVelocity ~= nil then
+      component.properties.angularVelocity = bp.angularVelocity
+   else
+      -- old scenes stored this prop in the body blueprint
+      if bodyComponent and bodyComponent.properties.angularVelocity ~= nil then
+         component.properties.angularVelocity = bodyComponent.properties.angularVelocity * 180 / math.pi
+      else
+         component.properties.angularVelocity = 0
+      end
+   end
+end
+
+function MovingBehavior.handlers:blueprintComponent(component, bp)
+   bp.vx = component.properties.vx
+   bp.vy = component.properties.vy
+   bp.angularVelocity = component.properties.angularVelocity
+end
+
+function MovingBehavior.handlers:enableComponent(component, opts)
+   local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+   body:setLinearVelocity(component.properties.vx, component.properties.vy)
+   body:setAngularVelocity(component.properties.angularVelocity * math.pi / 180)
+end
+
 function MovingBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
@@ -201,42 +239,28 @@ MovingBehavior.responses["move toward actor"] = {
    end
 }
 
-function MovingBehavior.getters:vx(component)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   local vx, vy = members.body:getLinearVelocity()
-   return vx
-end
-
-function MovingBehavior.getters:vy(component)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   local vx, vy = members.body:getLinearVelocity()
-   return vy
-end
-
-function MovingBehavior.getters:angularVelocity(component)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   return members.body:getAngularVelocity() * 180 / math.pi
-end
-
 function MovingBehavior.setters:vx(component, value)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   local vx, vy = members.body:getLinearVelocity()
-   members.physics:setLinearVelocity(members.bodyId, value, vy)
+   component.properties.vx = value
+   if not component.disabled then
+      local members = self.dependencies.Body:getMembers(component.actorId)
+      local vx, vy = members.body:getLinearVelocity()
+      members.physics:setLinearVelocity(members.bodyId, value, vy)
+   end
 end
 
 function MovingBehavior.setters:vy(component, value)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   local vx, vy = members.body:getLinearVelocity()
-   members.physics:setLinearVelocity(members.bodyId, vx, value)
+   component.properties.vy = value
+   if not component.disabled then
+      local members = self.dependencies.Body:getMembers(component.actorId)
+      local vx, vy = members.body:getLinearVelocity()
+      members.physics:setLinearVelocity(members.bodyId, vx, value)
+   end
 end
 
 function MovingBehavior.setters:angularVelocity(component, value)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   members.physics:setAngularVelocity(members.bodyId, value * math.pi / 180)
+   component.properties.angularVelocity = value
+   if not component.disabled then
+      local members = self.dependencies.Body:getMembers(component.actorId)
+      members.physics:setAngularVelocity(members.bodyId, value * math.pi / 180)
+   end
 end

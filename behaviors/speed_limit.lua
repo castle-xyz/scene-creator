@@ -27,27 +27,34 @@ function SpeedLimitBehavior.handlers:blueprintComponent(component, bp)
     bp.maximumSpeed = component.properties.maximumSpeed
 end
 
+function SpeedLimitBehavior.handlers:disableComponent(component, opts)
+   local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+   body:setLinearDamping(0)
+end
+
 -- Perform
 
 function SpeedLimitBehavior.handlers:perform(dt)
     for actorId, component in pairs(self.components) do
-        local bodyId, body = self.dependencies.Body:getBody(actorId)
+        if not component.disabled then
+            local bodyId, body = self.dependencies.Body:getBody(actorId)
 
-        local maximumSpeed = component.properties.maximumSpeed
-        local maximumSpeedSquared = maximumSpeed * maximumSpeed
+            local maximumSpeed = component.properties.maximumSpeed
+            local maximumSpeedSquared = maximumSpeed * maximumSpeed
 
-        -- Physics bodies are automatically synced by the server, so just set locally
-        local vx, vy = body:getLinearVelocity()
-        local speedSquared = vx * vx + vy * vy
-        if speedSquared > maximumSpeedSquared then
-            -- Box2D uses the equation (from b2Island.cpp, `h` is `dt`):
-            --   v *= 1.0f / (1.0f + h * b->m_linearDamping);
-            -- We solve for the damping that reduces us to the maximum speed in one update:
-            --   d = (v / newV - 1) / h
-            local speed = math.sqrt(speedSquared)
-            body:setLinearDamping((speed / maximumSpeed - 1) / dt)
-        else
-            body:setLinearDamping(0)
+            -- Physics bodies are automatically synced by the server, so just set locally
+            local vx, vy = body:getLinearVelocity()
+            local speedSquared = vx * vx + vy * vy
+            if speedSquared > maximumSpeedSquared then
+                -- Box2D uses the equation (from b2Island.cpp, `h` is `dt`):
+                --   v *= 1.0f / (1.0f + h * b->m_linearDamping);
+                -- We solve for the damping that reduces us to the maximum speed in one update:
+                --   d = (v / newV - 1) / h
+                local speed = math.sqrt(speedSquared)
+                body:setLinearDamping((speed / maximumSpeed - 1) / dt)
+            else
+                body:setLinearDamping(0)
+            end
         end
     end
 end

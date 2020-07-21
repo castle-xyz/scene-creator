@@ -56,21 +56,14 @@ function SlidingBehavior:updateJoint(component)
     end
 end
 
--- Getters
-
-function SlidingBehavior.getters:isRotationAllowed(component)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   local isFixedRotation = members.body:isFixedRotation()
-   return not isFixedRotation
-end
-
 -- Setters
 
 function SlidingBehavior.setters:isRotationAllowed(component, value)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   members.physics:setFixedRotation(members.bodyId, not value)
+   component.properties.isRotationAllowed = value
+   if not component.disabled then
+      local members = self.dependencies.Body:getMembers(component.actorId)
+      members.physics:setFixedRotation(members.bodyId, not value)
+   end
 end
 
 function SlidingBehavior.setters:direction(component, newLimitType)
@@ -83,11 +76,25 @@ end
 -- Component management
 
 function SlidingBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.direction = bp.direction or "both"
+   component.properties.direction = bp.direction or "both"
+
+   if bp.isRotationAllowed ~= nil then
+      component.properties.isRotationAllowed = bp.isRotationAllowed
+   else
+      -- old scenes stored this prop in the body blueprint
+      local bodyComponent = self.dependencies.Body.components[component.actorId]
+      if bodyComponent and bodyComponent.properties.fixedRotation ~= nil then
+         component.properties.isRotationAllowed = not bodyComponent.properties.fixedRotation
+      else
+         component.properties.isRotationAllowed = true
+      end
+   end
 end
 
 function SlidingBehavior.handlers:enableComponent(component, opts)
    self:updateJoint(component)
+   local members = self.dependencies.Body:getMembers(component.actorId)
+   members.physics:setFixedRotation(members.bodyId, not component.properties.isRotationAllowed)
 end
 
 function SlidingBehavior.handlers:disableComponent(component, opts)
@@ -95,11 +102,14 @@ function SlidingBehavior.handlers:disableComponent(component, opts)
         if component._joint then
             component._joint:destroy()
         end
+        local members = self.dependencies.Body:getMembers(component.actorId)
+        members.physics:setFixedRotation(members.bodyId, false)
     end
 end
 
 function SlidingBehavior.handlers:blueprintComponent(component, bp)
     bp.direction = component.properties.direction
+    bp.isRotationAllowed = component.properties.isRotationAllowed
 end
 
 -- Setting performing

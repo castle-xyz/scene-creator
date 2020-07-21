@@ -27,11 +27,23 @@ end
 
 -- Component management
 
+function FallingBehavior.handlers:addComponent(component, bp, opts)
+   if bp.gravity ~= nil then
+      component.properties.gravity = bp.gravity
+   else
+      -- old scenes stored this prop in the body blueprint
+      local bodyComponent = self.dependencies.Body.components[component.actorId]
+      if bodyComponent and bodyComponent.properties.gravityScale ~= nil then
+         component.properties.gravity = bodyComponent.properties.gravityScale
+      else
+         component.properties.gravity = 1
+      end
+   end
+end
+
 function FallingBehavior.handlers:enableComponent(component, opts)
-    if opts.interactive then
-        local bodyId, body = self.dependencies.Body:getBody(component.actorId)
-        body:setGravityScale(1)
-    end
+   local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+   body:setGravityScale(component.properties.gravity)
 end
 
 function FallingBehavior.handlers:disableComponent(component, opts)
@@ -41,14 +53,15 @@ function FallingBehavior.handlers:disableComponent(component, opts)
     end
 end
 
-function FallingBehavior.setters:gravity(component, value)
-   local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   members.physics:setGravityScale(members.bodyId, value)
+function FallingBehavior.handlers:blueprintComponent(component, bp)
+   bp.gravity = component.properties.gravity
 end
 
-function FallingBehavior.getters:gravity(component)
+function FallingBehavior.setters:gravity(component, value)
    local actorId = component.actorId
-   local members = self.dependencies.Body:getMembers(actorId)
-   return members.body:getGravityScale()
+   component.properties.gravity = value
+   if not component.disabled then
+      local members = self.dependencies.Body:getMembers(actorId)
+      members.physics:setGravityScale(members.bodyId, value)
+   end
 end
