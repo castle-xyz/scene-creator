@@ -6,6 +6,7 @@ local SlingBehavior =
         "Moving",
         "Body"
     },
+    allowsDisableWithoutRemoval = true,
     propertySpecs = {
        speed = {
           method = 'numberInput',
@@ -47,7 +48,7 @@ function SlingBehavior.handlers:postPerform(dt)
     end
 
     -- Make sure we have some actors
-    if not next(self.components) then
+    if not self:hasAnyEnabledComponent() then
         return
     end
 
@@ -65,13 +66,15 @@ function SlingBehavior.handlers:postPerform(dt)
             end
 
             for actorId, component in pairs(self.components) do
-                -- Own the body, then just set velocity locally and the physics system will sync it
-                local bodyId, body = self.dependencies.Body:getBody(actorId)
-                if physics:getOwner(bodyId) ~= self.game.clientId then
-                    physics:setOwner(bodyId, self.game.clientId, true, 0)
+                if not component.disabled then
+                    -- Own the body, then just set velocity locally and the physics system will sync it
+                    local bodyId, body = self.dependencies.Body:getBody(actorId)
+                    if physics:getOwner(bodyId) ~= self.game.clientId then
+                        physics:setOwner(bodyId, self.game.clientId, true, 0)
+                    end
+                    body:setLinearVelocity(component.properties.speed * dragX, component.properties.speed * dragY)
+                    self:fireTrigger("sling", actorId)
                 end
-                body:setLinearVelocity(component.properties.speed * dragX, component.properties.speed * dragY)
-                self:fireTrigger("sling", actorId)
             end
         end
     end
@@ -90,7 +93,7 @@ function SlingBehavior.handlers:drawOverlay()
     end
 
     -- Make sure we have some actors
-    if not next(self.components) then
+    if not self:hasAnyEnabledComponent() then
         return
     end
 

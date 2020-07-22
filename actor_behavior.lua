@@ -89,6 +89,15 @@ function BaseBehavior:getActor(actorId)
     return self.game.actors[actorId]
 end
 
+function BaseBehavior:hasAnyEnabledComponent()
+   for _, component in pairs(self.components) do
+      if not component.disabled then
+         return true
+      end
+   end
+   return false
+end
+
 function BaseBehavior:command(description, opts, doFunc, undoFunc)
     self.game:command(description, setmetatable({behaviorId = self.behaviorId}, {__index = opts}), doFunc, undoFunc)
 end
@@ -265,6 +274,7 @@ function Common.receivers:addBehavior(time, clientId, behaviorId, behaviorSpec)
     behavior.isCore = behaviorSpec.isCore
     behavior.name = behaviorSpec.name
     behavior.displayName = behaviorSpec.displayName
+    behavior.allowsDisableWithoutRemoval = behaviorSpec.allowsDisableWithoutRemoval
     behavior.description = helps.behaviors[behavior.name] and helps.behaviors[behavior.name].description
     behavior.game = self
     behavior.clientId = 0

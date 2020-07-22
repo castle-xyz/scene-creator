@@ -205,6 +205,38 @@ function Client:_setProperty(actorId, behaviorId, propertyName, oldValue, newVal
    )
 end
 
+function Client:_enableComponent(actorId, behavior)
+   local behaviorId = behavior.behaviorId
+   self:command(
+      'enable ' .. behavior:getUiName(),
+      {
+         params = { "behaviorId", "actorId" },
+      },
+      function()
+         self:send('enableComponent', self.clientId, actorId, behaviorId)
+      end,
+      function()
+         self:send('disableComponent', self.clientId, actorId, behaviorId)
+      end
+   )
+end
+
+function Client:_disableComponent(actorId, behavior)
+   local behaviorId = behavior.behaviorId
+   self:command(
+      'disable ' .. behavior:getUiName(),
+      {
+         params = { "behaviorId", "actorId" },
+      },
+      function()
+         self:send('disableComponent', self.clientId, actorId, behaviorId)
+      end,
+      function()
+         self:send('enableComponent', self.clientId, actorId, behaviorId)
+      end
+   )
+end
+
 function Client:uiInspector()
    local actorId = next(self.selectedActorIds)
    if actorId then
@@ -214,10 +246,11 @@ function Client:uiInspector()
       for behaviorName, behavior in pairs(self.behaviorsByName) do
          local actions = {}
          local properties = {}
-         local isActive = false
+         local isActive, isDisabled = false, false
          local component = actor.components[behavior.behaviorId]
          if component then
             isActive = true
+            isDisabled = not (not component.disabled)
             for propertyName, propertySpec in pairs(behavior.propertySpecs) do
                if propertySpec.method ~= nil then
                   -- current value of each property of the behavior
@@ -242,6 +275,15 @@ function Client:uiInspector()
                local newBehaviorId = self.behaviorsByName[newBehaviorName].behaviorId
                self:_swapBehavior(actor, component, newBehaviorId, newBlueprint)
             end
+            -- actions to enable/disable this behavior for this actor
+            if behavior.allowsDisableWithoutRemoval then
+               actions['enable'] = function()
+                  self:_enableComponent(actorId, behavior)
+               end
+               actions['disable'] = function()
+                  self:_disableComponent(actorId, behavior)
+               end
+            end
          elseif self.tools[behavior.behaviorId] then
             -- action to use tool
             actions['setActiveTool'] = function()
@@ -264,7 +306,9 @@ function Client:uiInspector()
                behaviorId = behavior.behaviorId,
                name = behaviorName,
                displayName = behavior.displayName,
+               allowsDisableWithoutRemoval = behavior.allowsDisableWithoutRemoval,
                isActive = isActive,
+               isDisabled = isDisabled,
                dependencies = dependencies,
                propertySpecs = behavior.propertySpecs,
                properties = properties,
