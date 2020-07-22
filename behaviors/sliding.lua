@@ -6,6 +6,7 @@ local SlidingBehavior =
         "Moving",
         "Body"
     },
+    allowsDisableWithoutRemoval = true,
     propertySpecs = {
        direction = {
           method = 'dropdown',
@@ -69,7 +70,9 @@ end
 function SlidingBehavior.setters:direction(component, newLimitType)
     if component.properties.direction ~= newLimitType then
         component.properties.direction = newLimitType
-        self:updateJoint(component)
+        if not component.disabled then
+            self:updateJoint(component)
+        end
     end
 end
 
@@ -118,7 +121,9 @@ function SlidingBehavior.handlers:setPerforming(newPerforming)
     -- Bodies may have moved -- recreate joints
     if newPerforming then
         for actorId, component in pairs(self.components) do
-            self:updateJoint(component)
+            if not component.disabled then
+                self:updateJoint(component)
+            end
         end
     end
 end

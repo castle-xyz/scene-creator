@@ -5,6 +5,7 @@ local SlowdownBehavior = defineCoreBehavior {
         "Moving",
         "Body"
     },
+    allowsDisableWithoutRemoval = true,
     propertySpecs = {
        motionSlowdown = {
           method = 'numberInput',
@@ -39,16 +40,20 @@ function SlowdownBehavior:updateJoint(component)
 end
 
 function SlowdownBehavior.setters:motionSlowdown(component, newMotionSlowdown)
-    component.properties.motionSlowdown = newMotionSlowdown
-    if component.properties.motionSlowdown ~= newMotionSlowdown and not component.disabled then
-        self:updateJoint(component)
+    if component.properties.motionSlowdown ~= newMotionSlowdown then
+        component.properties.motionSlowdown = newMotionSlowdown
+        if not component.disabled then
+            self:updateJoint(component)
+        end
     end
 end
 
 function SlowdownBehavior.setters:rotationSlowdown(component, newRotationSlowdown)
-    component.properties.rotationSlowdown = newRotationSlowdown
-    if component.properties.rotationSlowdown ~= newRotationSlowdown and not component.disabled then
-        self:updateJoint(component)
+    if component.properties.rotationSlowdown ~= newRotationSlowdown then
+        component.properties.rotationSlowdown = newRotationSlowdown
+        if not component.disabled then
+            self:updateJoint(component)
+        end
     end
 end
 
