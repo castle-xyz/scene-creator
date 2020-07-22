@@ -545,6 +545,40 @@ RulesBehavior.responses["change behavior property"] = {
    end
 }
 
+RulesBehavior.responses["disable behavior"] = {
+   description = "Disable a behavior",
+   category = "general",
+   paramSpecs = {
+      behaviorId = {
+         label = "behavior",
+         method = "dropdown",
+         initialValue = nil,
+      },
+   },
+   run = function(self, actorId, params, context)
+      if params.behaviorId ~= nil then
+         self.game:send("disableComponent", self.clientId, actorId, params.behaviorId)
+      end
+   end
+}
+
+RulesBehavior.responses["enable behavior"] = {
+   description = "Enable a behavior",
+   category = "general",
+   paramSpecs = {
+      behaviorId = {
+         label = "behavior",
+         method = "dropdown",
+         initialValue = nil,
+      },
+   },
+   run = function(self, actorId, params, context)
+      if params.behaviorId ~= nil then
+         self.game:send("enableComponent", self.clientId, actorId, params.behaviorId)
+      end
+   end
+}
+
 RulesBehavior.responses["if"] = {
     description = "Condition a response",
     category = "logic",
