@@ -466,6 +466,10 @@ function Common.receivers:enableComponent(time, clientId, actorId, behaviorId)
     local behavior = assert(self.behaviors[behaviorId], "enableComponent: no such behavior")
 
     local component = actor.components[behaviorId]
+    if not component then
+       -- can be called by a rule even after the behavior was removed
+       return
+    end
 
     behavior:callHandler(
         "enableComponent",
@@ -493,6 +497,10 @@ function Common.receivers:disableComponent(time, clientId, actorId, behaviorId)
     local behavior = assert(self.behaviors[behaviorId], "disableComponent: no such behavior")
 
     local component = actor.components[behaviorId]
+    if not component then
+       -- can be called by a rule even after the behavior was removed
+       return
+    end
 
     behavior:callHandler(
         "disableComponent",
