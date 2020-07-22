@@ -5,6 +5,7 @@ local SpeedLimitBehavior =
     dependencies = {
         "Body"
     },
+    allowsDisableWithoutRemoval = true,
     propertySpecs = {
        maximumSpeed = {
           method = 'numberInput',

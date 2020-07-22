@@ -2,6 +2,7 @@ local DragBehavior =
     defineCoreBehavior {
     name = "Drag",
     displayName = "Drag",
+    allowsDisableWithoutRemoval = true,
     dependencies = {
         "Moving",
         "Body"
@@ -17,11 +18,39 @@ function DragBehavior.handlers:addComponent(component, bp, opts)
     component._clientId = nil
 end
 
+function DragBehavior.handlers:disableComponent(component, opts)
+   if not opts.removeActor then
+      -- immediately release any touches corresponding to this component
+      local touchData = self:getTouchData()
+      for touchId, touch in pairs(touchData.touches) do
+         if self.components[touch.actorId] == component then
+            self:_releaseComponentTouch(component, touch)
+         end
+      end
+   end
+end
+
+function DragBehavior:_releaseComponentTouch(component, touch)
+   if component then
+      component._numTouches = math.max(0, component._numTouches - 1)
+      if component._numTouches == 0 then
+         component._clientId = nil
+      end
+   end
+   if not touch._mouseJoint:isDestroyed() then
+      touch._mouseJoint:destroy()
+   end
+end
+
 -- Perform
 
 function DragBehavior.handlers:prePerform(dt)
     -- Client-only
     if not self.game.clientId then
+        return
+    end
+
+    if not self:hasAnyEnabledComponent() then
         return
     end
 
@@ -32,7 +61,7 @@ function DragBehavior.handlers:prePerform(dt)
             local hits = self.dependencies.Body:getActorsAtPoint(touch.x, touch.y)
             for actorId in pairs(hits) do
                 local component = self.components[actorId]
-                if component then
+                if component and not component.disabled then
                     touch.used = true
                     touch.dragging = true
                     touch.actorId = actorId
@@ -58,7 +87,7 @@ function DragBehavior.handlers:perform(dt)
     local physics = self.dependencies.Body:getPhysics()
 
     for actorId, component in pairs(self.components) do
-        if component._clientId == self.game.clientId then
+        if component._clientId == self.game.clientId and not component.disabled then
             local bodyId, body = self.dependencies.Body:getBody(actorId)
             if physics:getOwner(bodyId) ~= self.game.clientId then
                 physics:setOwner(bodyId, self.game.clientId, true)
@@ -72,15 +101,7 @@ function DragBehavior.handlers:perform(dt)
             if touch.released then
                 -- Released, unmark
                 local component = self.components[touch.actorId]
-                if component then
-                    component._numTouches = math.max(0, component._numTouches - 1)
-                    if component._numTouches == 0 then
-                        component._clientId = nil
-                    end
-                end
-                if not touch._mouseJoint:isDestroyed() then
-                    touch._mouseJoint:destroy()
-                end
+                self:_releaseComponentTouch(component, touch)
             else
                 if not touch._mouseJoint:isDestroyed() then
                     -- Drag, move
@@ -98,6 +119,10 @@ function DragBehavior.handlers:drawOverlay()
         return
     end
 
+    if not self:hasAnyEnabledComponent() then
+        return
+    end
+    
     local touchData = self:getTouchData()
     for touchId, touch in pairs(touchData.touches) do
         if touch.dragging and not touch.released then

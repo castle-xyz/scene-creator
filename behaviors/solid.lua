@@ -2,6 +2,7 @@ local SolidBehavior =
     defineCoreBehavior {
     name = "Solid",
     displayName = "Solid",
+    allowsDisableWithoutRemoval = true,
     dependencies = {
         "Body"
     }

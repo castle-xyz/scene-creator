@@ -5,6 +5,7 @@ local FrictionBehavior =
     dependencies = {
         "Body"
     },
+    allowsDisableWithoutRemoval = true,
     propertySpecs = {
        friction = {
           method = 'numberInput',

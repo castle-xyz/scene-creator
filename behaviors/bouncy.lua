@@ -6,6 +6,7 @@ local BouncyBehavior =
         "Solid",
         "Body"
     },
+    allowsDisableWithoutRemoval = true,
     propertySpecs = {
        bounciness = {
           method = 'numberInput',

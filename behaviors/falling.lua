@@ -5,6 +5,7 @@ local FallingBehavior = defineCoreBehavior {
         "Moving",
         "Body"
     },
+    allowsDisableWithoutRemoval = true,
     propertySpecs = {
       gravity = {
          method = 'numberInput',
