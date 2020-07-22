@@ -750,8 +750,10 @@ function BodyBehavior:getMembers(componentOrActorId)
     local firstFixture = fixtures and fixtures[1]
     local fixtureIds = {}
 
-    for _, fixture in pairs(fixtures) do
-        table.insert(fixtureIds, physics:idForObject(fixture))
+    if fixtures then
+        for _, fixture in pairs(fixtures) do
+            table.insert(fixtureIds, physics:idForObject(fixture))
+        end
     end
 
     return {
