@@ -5,7 +5,7 @@ GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
 
 DRAW_DATA_SCALE = 10.0
 
-BACKGROUND_COLOR = {r = 0.95, g = 0.95, b = 0.95}
+BACKGROUND_COLOR = {r = 0.0, g = 0.0, b = 0.0}
 
 local HANDLE_TOUCH_RADIUS = 30
 local HANDLE_DRAW_RADIUS = 12
@@ -575,17 +575,17 @@ function DrawTool:updateDrawTool(c, touch)
             _drawData:resetGraphics()
             self:saveDrawing("fill", c)
         end
-    elseif _subtool == 'erase line' then
+    elseif _subtool == 'erase' then
         for i = 1, #_drawData.pathDataList do
             if _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
                 removePathData(_drawData.pathDataList[i])
                 _drawData:resetFill()
                 _drawData:resetGraphics()
-                self:saveDrawing("erase line", c)
+                self:saveDrawing("erase", c)
                 break
             end
         end
-    elseif _subtool == 'erase fill' then
+
         _FACE_POINTS = {}
         local newFaces = {}
         local newColoredSubpathIds = {}
@@ -612,7 +612,7 @@ function DrawTool:updateDrawTool(c, touch)
 
         if didChange then
             _drawData:resetGraphics()
-            self:saveDrawing("erase fill", c)
+            self:saveDrawing("erase", c)
         end
     end
 end
@@ -663,6 +663,16 @@ local function drawShapes()
     end
 end
 
+local function drawPoints(points, radius)
+    if radius == nil then
+        radius = 0.07
+    end
+
+    for i = 1, #points, 2 do
+        love.graphics.circle("fill", points[i], points[i + 1], radius)
+    end
+end
+
 function DrawTool.handlers:drawOverlay()
     if not self:isActive() then
         return
@@ -688,7 +698,7 @@ function DrawTool.handlers:drawOverlay()
 
     if _tool ~= 'draw' or (_subtool == 'draw' or _subtool == 'pencil' or _subtool == 'move') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
-        love.graphics.setPointSize(10.0)
+        --love.graphics.setPointSize(10.0)
 
         local points = {}
 
@@ -700,7 +710,7 @@ function DrawTool.handlers:drawOverlay()
             end
         end
 
-        love.graphics.points(points)
+        drawPoints(points)
     end
 
     if _tool == 'draw' then
@@ -767,6 +777,54 @@ function DrawTool.handlers:drawOverlay()
 end
 
 -- UI
+
+function DrawTool.handlers:uiData()
+    if not self:isActive() then
+        return
+    end
+
+    local c = self:getSingleComponent()
+    if not c then
+        return
+    end
+
+    local actions = {}
+    actions['onSelectArtwork'] = function()
+        _tool = 'draw'
+    end
+
+    actions['onSelectCollision'] = function()
+        _tool = 'physics_body'
+    end
+
+    actions['onSelectArtworkSubtool'] = function(name)
+        _subtool = name
+    end
+
+    actions['onSelectCollisionSubtool'] = function(name)
+        _physicsBodySubtool = name
+    end
+
+    actions['updateFillColor'] = function(opts)
+        _drawData:updateFillColor(opts.r, opts.g, opts.b)
+        self:saveDrawing("update fill color", c)
+    end
+
+    actions['updateLineColor'] = function(opts)
+        _drawData:updateLineColor(opts.r, opts.g, opts.b)
+        self:saveDrawing("update line color", c)
+    end
+
+    ui.data({
+        currentMode = (_tool == 'draw' and 'artwork' or 'collision'),
+        fillColor = _drawData.fillColor,
+        lineColor = _drawData.lineColor,
+        artworkSubtool = _subtool,
+        collisionSubtool = _physicsBodySubtool,
+    }, {
+        actions = actions,
+    })
+end
 
 function DrawTool.handlers:uiPanel()
     if not self:isActive() then
