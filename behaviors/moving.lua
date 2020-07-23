@@ -81,8 +81,34 @@ function MovingBehavior.handlers:disableComponent(component, opts)
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         body:setLinearVelocity(0, 0)
         body:setAngularVelocity(0)
+        self:fireTrigger("velocity changes", actorId) -- fire this once, stop polling afterward
+        component._prevVelocity = nil
     end
 end
+
+function MovingBehavior.handlers:postPerform(dt)
+   for actorId, component in pairs(self.components) do
+      if not component.disabled then
+         local members = self.dependencies.Body:getMembers(actorId)
+         local vx, vy = members.body:getLinearVelocity()
+         if math.abs(vx) < 0.0001 then vx = 0 end
+         if math.abs(vy) < 0.0001 then vy = 0 end
+         if component._prevVelocity == nil or component._prevVelocity.x ~= vx or component._prevVelocity.y ~= vy then
+            self:fireTrigger("velocity changes", actorId)
+         end
+         component._prevVelocity = component._prevVelocity or {}
+         component._prevVelocity.x = vx
+         component._prevVelocity.y = vy
+      end
+   end
+end
+
+-- Triggers
+
+MovingBehavior.triggers["velocity changes"] = {
+   description = "When x or y velocity changes",
+   category = "motion",
+}
 
 -- Responses
 
