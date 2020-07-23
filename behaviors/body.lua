@@ -133,7 +133,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         end
 
         -- defaults which could be overridden by behaviors later
-        self._physics:setFixedRotation(bodyId, true)
+        self._physics:setFixedRotation(bodyId, false)
         self._physics:setGravityScale(bodyId, 0)
         
         local fixtureBps = bp.fixture and {bp.fixture} or bp.fixtures
