@@ -477,8 +477,8 @@ RulesBehavior.responses.wait = {
 -- Logic responses
 
 RulesBehavior.responses["set behavior property"] = {
-   description = "Set a behavior",
-   category = "general",
+   description = "Set a behavior property",
+   category = "behavior",
    paramSpecs = {
       behaviorId = {
          label = "behavior",
@@ -503,8 +503,8 @@ RulesBehavior.responses["set behavior property"] = {
 }
 
 RulesBehavior.responses["change behavior property"] = {
-   description = "Adjust a behavior",
-   category = "general",
+   description = "Adjust a behavior property",
+   category = "behavior",
    paramSpecs = {
       behaviorId = {
          label = "behavior",
@@ -547,7 +547,7 @@ RulesBehavior.responses["change behavior property"] = {
 
 RulesBehavior.responses["disable behavior"] = {
    description = "Disable a behavior",
-   category = "general",
+   category = "behavior",
    paramSpecs = {
       behaviorId = {
          label = "behavior",
@@ -564,7 +564,7 @@ RulesBehavior.responses["disable behavior"] = {
 
 RulesBehavior.responses["enable behavior"] = {
    description = "Enable a behavior",
-   category = "general",
+   category = "behavior",
    paramSpecs = {
       behaviorId = {
          label = "behavior",
