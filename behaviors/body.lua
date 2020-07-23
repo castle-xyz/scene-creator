@@ -168,13 +168,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
             firstFixtureBp = fixtureBps[1]
         end
         
-        -- legacy props from older scenes - will be saved in a different component next time
-        component.properties.gravityScale = bp.gravityScale
-        component.properties.fixedRotation = bp.fixedRotation
-        component.properties.linearVelocity = bp.linearVelocity
-        component.properties.angularVelocity = bp.angularVelocity
-        component.properties.friction = bp.friction
-        component.properties.restitution = bp.restitution
+        self:_assignLegacyComponentProps(component, bp, firstFixtureBp)
 
         -- Associate the component with the underlying body
         self._physics:setUserData(bodyId, component.actorId)
@@ -194,6 +188,29 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         component.properties.height = height
         component.properties.isNewDrawingTool = false
     end
+end
+
+function BodyBehavior:_assignLegacyComponentProps(component, bp, firstFixtureBp)
+   -- legacy props from older scenes - will be saved in a different component next time
+   component.properties.gravityScale = bp.gravityScale
+   component.properties.fixedRotation = bp.fixedRotation
+   component.properties.linearVelocity = bp.linearVelocity
+   component.properties.angularVelocity = bp.angularVelocity
+   if bp.friction ~= nil then
+      component.properties.friction = bp.friction
+   elseif firstFixtureBp ~= nil and firstFixtureBp.friction ~= nil then
+      component.properties.friction = firstFixtureBp.friction
+   end
+   if bp.restitution ~= nil then
+      component.properties.restitution = bp.restitution
+   elseif firstFixtureBp ~= nil and firstFixtureBp.restitution ~= nil then
+      component.properties.restitution = firstFixtureBp.restitution
+   end
+   if bp.sensor ~= nil then
+      component.properties.sensor = bp.sensor
+   elseif firstFixtureBp ~= nil and firstFixtureBp.sensor ~= nil then
+      component.properties.sensor = firstFixtureBp.sensor
+   end
 end
 
 function BodyBehavior.handlers:disableComponent(component, opts)
@@ -633,6 +650,7 @@ function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixt
    -- defaults which could be overridden by behaviors later
    self._physics:setSensor(fixtureId, true)
    self._physics:setFriction(fixtureId, 0)
+   self._physics:setRestitution(fixtureId, 0)
    
    for behaviorId, dependentComponent in pairs(component.dependents) do
       self.game.behaviors[behaviorId]:callHandler("updateComponentFixture", dependentComponent, fixtureId)
