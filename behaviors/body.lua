@@ -103,6 +103,21 @@ end
 
 -- Component management
 
+function BodyBehavior.handlers:postAddActor(actorId)
+   -- this is needed in case we picked up any dependent behaviors during the actor's
+   -- construction which could modify our fixtures
+   if self.components[actorId] ~= nil then
+      local component = self.components[actorId]
+      local bodyId, body = self:getBody(component)
+      local bodyFixtures = body:getFixtures()
+
+      for _, fixture in pairs(bodyFixtures) do
+         local fixtureId = self._physics:idForObject(fixture)
+         self:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
+      end
+   end
+end
+
 function BodyBehavior.handlers:addComponent(component, bp, opts)
     if opts.isOrigin then
         -- At the origin, create the physics body and fixtures and shapes. Other hosts will receive

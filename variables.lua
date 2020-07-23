@@ -155,7 +155,7 @@ function Common.receivers:updateVariables(time, variables)
     self._initialVariables = util.deepCopyTable(variables or {})
 end
 
-function Common.receivers:postAddActor(time, actorId)
+function Common:variablesUpdatePostAddActor(actorId)
     for i = 1, #self.variables do
         variableReachesValueTrigger(self, actorId, self.variables[i].id, self.variables[i].value)
     end

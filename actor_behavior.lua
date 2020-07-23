@@ -181,6 +181,11 @@ function Common.receivers:addActor(time, clientId, actorId, parentEntryId)
     self.actorsByDrawOrder[actor.drawOrder] = actor
 end
 
+function Common.receivers:postAddActor(time, actorId)
+   self:variablesUpdatePostAddActor(actorId)
+   self:callHandlers("postAddActor", actorId)
+end
+
 function Common.receivers:removeActor(time, clientId, actorId, opts)
     opts = opts or {}
 
