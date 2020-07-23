@@ -632,6 +632,7 @@ end
 function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
    -- defaults which could be overridden by behaviors later
    self._physics:setSensor(fixtureId, true)
+   self._physics:setFriction(fixtureId, 0)
    
    for behaviorId, dependentComponent in pairs(component.dependents) do
       self.game.behaviors[behaviorId]:callHandler("updateComponentFixture", dependentComponent, fixtureId)
