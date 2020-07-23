@@ -125,14 +125,13 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         if bp.angle ~= nil then
             self._physics:setAngle(bodyId, bp.angle)
         end
-        if bp.angularDamping ~= nil then
-            self._physics:setAngularDamping(bodyId, bp.angularDamping)
-        end
         if bp.bullet ~= nil then
             self._physics:setBullet(bodyId, bp.bullet)
         end
 
         -- defaults which could be overridden by behaviors later
+        self._physics:setAngularDamping(bodyId, 0)
+        self._physics:setLinearDamping(bodyId, 0)
         self._physics:setFixedRotation(bodyId, false)
         self._physics:setGravityScale(bodyId, 0)
         
@@ -227,7 +226,6 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.bodyType = body:getType()
     bp.massData = {body:getMassData()}
     bp.angle = body:getAngle()
-    bp.angularDamping = body:getAngularDamping()
     bp.bullet = body:isBullet()
 
     bp.fixtures = component.properties.fixtures
