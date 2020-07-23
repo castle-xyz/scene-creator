@@ -497,7 +497,16 @@ RulesBehavior.responses["set behavior property"] = {
       },
    },
    run = function(self, actorId, params, context)
+      if params.behaviorId == nil or params.propertyName == nil then
+         -- incomplete rule
+         return
+      end
       local behavior = self.game.behaviors[params.behaviorId]
+      local component = behavior.components[actorId]
+      if component == nil then
+         -- actor doesn't have this behavior (possibly removed)
+         return
+      end
       behavior:sendSetProperties(actorId, params.propertyName, params.value)
    end
 }
@@ -523,8 +532,16 @@ RulesBehavior.responses["change behavior property"] = {
       },
    },
    run = function(self, actorId, params, context)
+      if params.behaviorId == nil or params.propertyName == nil then
+         -- incomplete rule
+         return
+      end
       local behavior = self.game.behaviors[params.behaviorId]
       local component = behavior.components[actorId]
+      if component == nil then
+         -- actor doesn't have this behavior (possibly removed)
+         return
+      end
       local oldValue
       if behavior.getters[params.propertyName] then
          oldValue = behavior.getters[params.propertyName](behavior, component)
