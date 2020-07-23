@@ -91,10 +91,13 @@ function MovingBehavior.handlers:postPerform(dt)
       if not component.disabled then
          local members = self.dependencies.Body:getMembers(actorId)
          local vx, vy = members.body:getLinearVelocity()
-         if math.abs(vx) < 0.0001 then vx = 0 end
-         if math.abs(vy) < 0.0001 then vy = 0 end
+         if math.abs(vx) < 0.000001 then vx = 0 end
+         if math.abs(vy) < 0.000001 then vy = 0 end
          if component._prevVelocity == nil or component._prevVelocity.x ~= vx or component._prevVelocity.y ~= vy then
             self:fireTrigger("velocity changes", actorId)
+            if vx == 0 and vy == 0 then
+               self:fireTrigger("stops moving", actorId)
+            end
          end
          component._prevVelocity = component._prevVelocity or {}
          component._prevVelocity.x = vx
@@ -107,6 +110,11 @@ end
 
 MovingBehavior.triggers["velocity changes"] = {
    description = "When x or y velocity changes",
+   category = "motion",
+}
+
+MovingBehavior.triggers["stops moving"] = {
+   description = "When this stops moving",
    category = "motion",
 }
 
