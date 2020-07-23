@@ -459,14 +459,36 @@ function PhysicsBodyData:getShapesForBody(physics, width, height)
     local convertYCoord = function (y)
         return (y * 1.0 / self.scale - 1.0 / 2.0) * height
     end
-    local convertScale = function (s)
+    local convertWidthScale = function (s)
         return (s / self.scale) * width
+    end
+    local convertHeightScale = function (s)
+        return (s / self.scale) * height
     end
 
     for _, shape in pairs(self.shapes) do
         local ty = shape.type
         if ty == "circle" then
-            table.insert(shapes, physics:newCircleShape(convertXCoord(shape.x), convertYCoord(shape.y), convertScale(shape.radius)))
+            if floatEquals(width, height) then
+                table.insert(shapes, physics:newCircleShape(convertXCoord(shape.x), convertYCoord(shape.y), convertWidthScale(shape.radius)))
+            else
+                -- approximate a stretched circle with a polygon
+                local centerX = convertXCoord(shape.x)
+                local centerY = convertYCoord(shape.y)
+
+                local angle = 0
+                local points = {}
+                for i = 1, 8 do
+                    local diffX = convertWidthScale(shape.radius * math.cos(angle))
+                    local diffY = convertHeightScale(shape.radius * math.sin(angle))
+                    table.insert(points, centerX + diffX)
+                    table.insert(points, centerY + diffY)
+
+                    angle = angle - math.pi * 2.0 / 8.0
+                end
+
+                table.insert(shapes, physics:newPolygonShape(points))
+            end
         else
             local points = self:_pointsForShape(shape)
             local newPoints = {}
