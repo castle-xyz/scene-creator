@@ -412,7 +412,7 @@ function DrawData:new(obj)
         floodFillColoredSubpathIds = obj.floodFillColoredSubpathIds or {},
         nextPathId = obj.nextPathId or 0,
         fillColor = obj.fillColor or {hexStringToRgb(DEFAULT_PALETTE[7])},
-        lineColor = obj.lineColor or {0.0, 0.0, 0.0},
+        lineColor = obj.lineColor or {hexStringToRgb("a866ee")},
         gridSize = obj.gridSize or 15,
         scale = obj.scale or DRAW_DATA_SCALE,
     }
