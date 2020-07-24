@@ -154,6 +154,8 @@ function DrawData:updatePathDataRendering(pathData)
     local p1 = pathData.points[1]
     local p2 = pathData.points[2]
     local style = pathData.style
+
+    --[[
     local bendPoint = pathData.bendPoint
 
     if not bendPoint or bendPoint == nil then
@@ -209,8 +211,8 @@ function DrawData:updatePathDataRendering(pathData)
     else
         addCircleSubpathData(pathData, circleCenterX, circleCenterY, radius, angle2, angle1)
     end
+    ]]--
 
-    --[[
     if style == 1 then
         addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
         makeSubpathsFromSubpathData(pathData)
@@ -344,7 +346,7 @@ function DrawData:updatePathDataRendering(pathData)
         end
 
         addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
-    end]]--
+    end
 
     makeSubpathsFromSubpathData(pathData)
 end
