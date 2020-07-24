@@ -12,7 +12,7 @@ function Common:setLastSuccessfulSaveSnapshot(snapshot)
 end
 
 function Common:restoreSnapshot(snapshot)
-    self:callHandlers("clearScene")
+    self:send("clearScene")
 
     -- Clear existing library entries
     for entryId, entry in pairs(self.library) do

@@ -717,10 +717,12 @@ function RulesBehavior.handlers:setPerforming(newPerforming)
     self.game:variablesReset()
 end
 
-function RulesBehavior.handlers:clearScene()
+function RulesBehavior.handlers:clearScene(paused)
     -- Clear coroutines when scene is cleared
     self._coroutines = {}
-    self.game:variablesReset()
+    if not paused then
+        self.game:variablesReset()
+    end
 end
 
 -- Rule management

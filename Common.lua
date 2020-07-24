@@ -153,7 +153,7 @@ function Common.receivers:setPaused(time, paused)
 end
 
 function Common.receivers:clearScene(time)
-    self:callHandlers("clearScene", paused)
+    self:callHandlers("clearScene", self.paused)
 end
 --
 
