@@ -288,7 +288,10 @@ function Client:uiInspectorActions()
     actions['setActiveTool'] = function(id) self:setActiveTool(id) end
     actions['closeInspector'] = function() self:deselectAllActors() end
 
-    local tools = {}
+    -- there is a bug with diffing arrays right now. this prevents it from being sent as an array
+    -- so that we can handle it consistently in js
+    local tools = {blah = "blah"}
+
     for _, tool in pairs(self.applicableTools) do
        table.insert(
           tools,

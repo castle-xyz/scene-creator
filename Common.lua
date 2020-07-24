@@ -57,18 +57,13 @@ require "behaviors.tags"
 require "behaviors.counter"
 require "behaviors.text"
 
-if NEW_DRAW_TOOL then
-    require "behaviors.drawing2"
-end
+require "behaviors.drawing2"
 
 require "tools.grab"
 
 require "tools.drawUtils"
-if NEW_DRAW_TOOL then
-    require "tools.draw2"
-else
-    require "tools.draw"
-end
+require "tools.draw"
+require "tools.draw2"
 
 require "tools.scale_rotate"
 

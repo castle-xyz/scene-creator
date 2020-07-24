@@ -15,7 +15,7 @@ require('tools.draw_data')
 
 local DrawTool =
     defineCoreBehavior {
-    name = "Draw",
+    name = "Draw2",
     propertyNames = {},
     dependencies = {
         "Body",
