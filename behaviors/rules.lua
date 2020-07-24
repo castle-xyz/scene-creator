@@ -250,6 +250,24 @@ RulesBehavior.triggers["variable changes"] = {
 
 -- Variables responses
 
+RulesBehavior.responses["reset variable"] = {
+    description = "Reset a variable to its initial value",
+    category = "state",
+    paramSpecs = {
+       variableId = {
+          label = "variable",
+          method = "dropdown",
+          initialValue = "(none)",
+          props = {
+             showVariablesItems = true,
+          },
+       },
+    },
+    run = function(self, actorId, params)
+       self.game:variableReset(params.variableId)
+    end
+}
+
 RulesBehavior.responses["change variable"] = {
     description = "Adjust the value of a variable",
     category = "state",

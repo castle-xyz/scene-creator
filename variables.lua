@@ -121,6 +121,15 @@ local function fireVariableTriggers(self, variableId, newValue)
     end
 end
 
+function Common:variableReset(id)
+   for i = 1, #self.variables do
+      if self.variables[i].id == id then
+         self.variables[i].value = self._initialVariables[i].value
+         fireVariableTriggers(self, id, self.variables[i].value)
+      end
+   end
+end
+
 function Common:variableSetToValue(variableId, value)
     for i = 1, #self.variables do
         if self.variables[i].id == variableId then
