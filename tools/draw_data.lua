@@ -1,4 +1,5 @@
 DrawData = {}
+local FILL_CANVAS_SIZE = 256
 
 function DrawData:gridCellSize()
     return self.scale / (self.gridSize - 1)
@@ -88,6 +89,7 @@ local function makeSubpathsFromSubpathData(pathData)
         local subpathData = pathData.subpathDataList[i]
         local subpath = tove.newSubpath()
         pathData.tovePath:addSubpath(subpath)
+        pathData.tovePathThin:addSubpath(subpath)
 
         if subpathData.type == 'line' then
             subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
@@ -143,12 +145,19 @@ function DrawData:updatePathDataRendering(pathData)
     end
 
     local path = tove.newPath()
-
     path:setLineColor(self.lineColor[1], self.lineColor[2], self.lineColor[3], 1.0)
     path:setLineWidth(0.2)
     path:setMiterLimit(1)
     path:setLineJoin("round")
     pathData.tovePath = path
+
+    local pathThin = tove.newPath()
+    pathThin:setLineColor(1.0, 1.0, 1.0, 1.0)
+    pathThin:setLineWidth(0.05)
+    pathThin:setMiterLimit(1)
+    pathThin:setLineJoin("round")
+    pathData.tovePathThin = pathThin
+
     pathData.subpathDataList = {}
 
     local p1 = pathData.points[1]
@@ -409,6 +418,8 @@ function DrawData:new(obj)
     local newObj = {
         _graphics = nil,
         _graphicsNeedsReset = true,
+        _graphicsForPathsCanvas = nil,
+        _graphicsForPathsCanvasNeedsReset = true,
         pathDataList = obj.pathDataList or {},
         floodFillFaceDataList = obj.floodFillFaceDataList or {},
         floodFillColoredSubpathIds = obj.floodFillColoredSubpathIds or {},
@@ -417,6 +428,11 @@ function DrawData:new(obj)
         lineColor = obj.lineColor or {hexStringToRgb("a866ee")},
         gridSize = obj.gridSize or 15,
         scale = obj.scale or DRAW_DATA_SCALE,
+        pathsCanvas = nil,
+        fillImageData = nil,
+        fillImage = nil,
+        fillCanvasSize = obj.fillCanvasSize or FILL_CANVAS_SIZE,
+        fillPng = obj.fillPng or nil,
     }
 
     setmetatable(newObj, self)
@@ -430,11 +446,18 @@ function DrawData:new(obj)
 
     newObj:graphics()
 
+    if obj.fillPng then
+        local fileDataString = love.data.decode("string", "base64", obj.fillPng)
+        local fileData = love.filesystem.newFileData(fileDataString, "fill.png")
+        newObj.fillImageData = love.image.newImageData(fileData)
+    end
+
     return newObj
 end
 
 function DrawData:resetGraphics()
     self._graphicsNeedsReset = true
+    self._graphicsForPathsCanvasNeedsReset = true
 end
 
 function DrawData:serialize()
@@ -447,6 +470,7 @@ function DrawData:serialize()
         lineColor = self.lineColor,
         gridSize = self.gridSize,
         scale = self.scale,
+        fillCanvasSize = self.fillCanvasSize,
     }
 
     for i = 1, #self.pathDataList do
@@ -467,7 +491,56 @@ function DrawData:serialize()
         })
     end
 
+    if self.fillImageData then
+        local fileData = self.fillImageData:encode("png")
+        data.fillPng = love.data.encode("string", "base64", fileData:getString())
+    end
+
     return data
+end
+
+function DrawData:fill(x, y)
+    local pathsImageData = self.pathsCanvas:newImageData()
+    self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.fillColor[1], self.fillColor[2], self.fillColor[3], 1.0)
+    self.fillImage:replacePixels(self.fillImageData)
+end
+
+function DrawData:renderFill()
+    if self.pathsCanvas == nil then
+        self.pathsCanvas = love.graphics.newCanvas(
+            self.fillCanvasSize,
+            self.fillCanvasSize,
+            {
+                dpiscale = 1,
+                msaa = 4
+            }
+        )
+    end
+
+    if self.fillImageData == nil then
+        self.fillImageData = love.image.newImageData(self.fillCanvasSize, self.fillCanvasSize)
+    end
+
+    if self.fillImage == nil then
+        self.fillImage = love.graphics.newImage(self.fillImageData)
+    end
+
+    self.pathsCanvas:renderTo(
+        function()
+            love.graphics.push("all")
+
+            love.graphics.origin()
+            love.graphics.scale(self.fillCanvasSize / self.scale)
+
+            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
+            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+            self:graphicsForPathsCanvas():draw()
+
+            love.graphics.pop()
+        end
+    )
+
+    love.graphics.draw(self.fillImage, 0.0, 0.0, 0.0, self.scale / self.fillCanvasSize, self.scale / self.fillCanvasSize)
 end
 
 function DrawData:graphics()
@@ -481,7 +554,7 @@ function DrawData:graphics()
 
         if not DEBUG_FLOOD_FILL then
             for i = 1, #self.floodFillFaceDataList do
-                self._graphics:addPath(self.floodFillFaceDataList[i].tovePath)
+                --self._graphics:addPath(self.floodFillFaceDataList[i].tovePath)
             end
         end
 
@@ -491,7 +564,7 @@ function DrawData:graphics()
 
         if DEBUG_FLOOD_FILL then
             for i = 1, #self.floodFillFaceDataList do
-                self._graphics:addPath(self.floodFillFaceDataList[i].tovePath)
+                --self._graphics:addPath(self.floodFillFaceDataList[i].tovePath)
             end
         end
     end
@@ -499,12 +572,31 @@ function DrawData:graphics()
     return self._graphics
 end
 
+function DrawData:graphicsForPathsCanvas()
+    if self._graphicsForPathsCanvasNeedsReset then
+        self._graphicsForPathsCanvasNeedsReset = false
+        self:cleanUpPathsAndFaces()
+
+        self._graphicsForPathsCanvas = tove.newGraphics()
+        self._graphicsForPathsCanvas:setDisplay("mesh", 1024)
+        _SLABS = findAllSlabs(self.pathDataList)
+
+        for i = 1, #self.pathDataList do
+            self._graphicsForPathsCanvas:addPath(self.pathDataList[i].tovePathThin)
+        end
+    end
+
+    return self._graphicsForPathsCanvas
+end
+
 function DrawData:clearGraphics()
     self._graphics = nil
     self._graphicsNeedsReset = true
+    self._graphicsForPathsCanvasNeedsReset = true
 
     for i = 1, #self.pathDataList do
         self.pathDataList[i].tovePath = nil
+        self.pathDataList[i].tovePathThin = nil
         self.pathDataList[i].subpathDataList = nil
     end
 

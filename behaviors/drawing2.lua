@@ -124,6 +124,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
 
     -- Draw!
     love.graphics.setColor(1, 1, 1, 1)
+    drawData:renderFill()
     drawData:graphics():draw()
 
     -- Pop transform

@@ -524,33 +524,9 @@ function DrawTool:updateDrawTool(c, touch)
             end
         end
     elseif _subtool == 'fill' then
------- create set of all verices added for an entire flood fill and use that as the key. check for the same 3 verteces in a row
+        _drawData:fill(touchX, touchY)
 
-
-        --_FACE_POINTS = {}
-        local newFaces = {}
-        local newColoredSubpathIds = {}
-        local currentFaces = {}
-
-        for i = 1, #_drawData.floodFillFaceDataList do
-            currentFaces[_drawData.floodFillFaceDataList[i].id] = true
-        end
-
-        findFaceForPoint(_SLABS, _drawData.pathDataList, -0.01, 0.01 + _drawData.scale, {
-            x = touchX,
-            y = touchY
-        }, newFaces, newColoredSubpathIds, currentFaces, _drawData.scale / _drawData.gridSize)
-
-        if #newFaces > 0 then
-            for i = 1, #newFaces do
-                table.insert(_drawData.floodFillFaceDataList, newFaces[i])
-            end
-
-            for i = 1, #newColoredSubpathIds do
-                _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
-            end
-
-            _drawData:resetGraphics()
+        if touch.released then
             self:saveDrawing("fill", c)
         end
     elseif _subtool == 'erase' then
@@ -670,7 +646,9 @@ function DrawTool.handlers:drawOverlay()
 
     if _tool == 'draw' then
         _physicsBodyData:draw()
+        _drawData:renderFill()
     else
+        _drawData:renderFill()
         drawShapes()
     end
 
