@@ -499,10 +499,20 @@ function DrawData:serialize()
     return data
 end
 
-function DrawData:fill(x, y)
+function DrawData:floodFill(x, y)
     local pathsImageData = self.pathsCanvas:newImageData()
-    self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.fillColor[1], self.fillColor[2], self.fillColor[3], 1.0)
+    local pixelCount = self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.fillColor[1], self.fillColor[2], self.fillColor[3], 1.0)
     self.fillImage:replacePixels(self.fillImageData)
+
+    return pixelCount > 0
+end
+
+function DrawData:floodClear(x, y)
+    local pathsImageData = self.pathsCanvas:newImageData()
+    local pixelCount = self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, 0.0, 0.0, 0.0, 0.0)
+    self.fillImage:replacePixels(self.fillImageData)
+
+    return pixelCount > 0
 end
 
 function DrawData:renderFill()

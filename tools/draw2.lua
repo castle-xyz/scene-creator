@@ -64,6 +64,8 @@ local _subtool
 local _physicsBodySubtool
 local _grabbedPaths
 
+local _didChange
+
 function DrawTool.handlers:addBehavior(opts)
     
 end
@@ -144,6 +146,7 @@ function DrawTool.handlers:onSetActive()
     _grabbedPaths = nil
     _initialCoord = nil
     _tempGraphics = nil
+    _didChange = false
     _tool = 'draw'
     _subtool = 'pencil'
     _physicsBodySubtool = 'rectangle'
@@ -524,10 +527,15 @@ function DrawTool:updateDrawTool(c, touch)
             end
         end
     elseif _subtool == 'fill' then
-        _drawData:fill(touchX, touchY)
+        if _drawData:floodFill(touchX, touchY) then
+            _didChange = true
+        end
 
         if touch.released then
-            self:saveDrawing("fill", c)
+            if _didChange then
+                self:saveDrawing("fill", c)
+            end
+            _didChange = false
         end
     elseif _subtool == 'erase' then
         for i = 1, #_drawData.pathDataList do
@@ -535,38 +543,21 @@ function DrawTool:updateDrawTool(c, touch)
                 removePathData(_drawData.pathDataList[i])
                 _drawData:resetFill()
                 _drawData:resetGraphics()
-                self:saveDrawing("erase", c)
+                _didChange = true
                 break
             end
         end
 
-        _FACE_POINTS = {}
-        local newFaces = {}
-        local newColoredSubpathIds = {}
-        local currentFaces = {}
+        if _drawData:floodClear(touchX, touchY) then
+            _didChange = true
+        end
 
-        findFaceForPoint(_SLABS, _drawData.pathDataList, 0, 0 + _drawData.scale, {
-            x = touchX,
-            y = touchY
-        }, newFaces, newColoredSubpathIds, currentFaces, _drawData.scale / _drawData.gridSize)
-
-        local didChange = false
-        for i = 1, #newFaces do
-            for j = #_drawData.floodFillFaceDataList, 1, -1 do
-                if _drawData.floodFillFaceDataList[j].id == newFaces[i].id then
-                    didChange = true
-                    table.remove(_drawData.floodFillFaceDataList, j)
-                end
+        if touch.released then
+            if _didChange then
+                _drawData:resetGraphics()
+                self:saveDrawing("erase", c)
             end
-        end
-
-        for i = 1, #newColoredSubpathIds do
-            _drawData.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = nil
-        end
-
-        if didChange then
-            _drawData:resetGraphics()
-            self:saveDrawing("erase", c)
+            _didChange = false
         end
     end
 end
