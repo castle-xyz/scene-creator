@@ -332,7 +332,62 @@ function DrawTool:updateDrawTool(c, touch)
     local roundedCoord = {x = roundedX, y = roundedY}
 
     if _subtool == 'pencil_no_grid' then
+        local clampedX, clampedY = _drawData:clampGlobalCoordinates(touchX, touchY)
 
+        if _initialCoord == nil then
+            _initialCoord = {
+                x = clampedX,
+                y = clampedY,
+            }
+            _currentPathData = nil
+            _currentPathDataList = {}
+        end
+
+        local newCoord = {
+            x = clampedX,
+            y = clampedY,
+        }
+
+        _currentPathData = {}
+        _currentPathData.points = {_initialCoord, newCoord}
+        _currentPathData.style = 1
+        _currentPathData.isFreehand = true
+        _drawData:updatePathDataRendering(_currentPathData)
+
+        local dist = math.sqrt(math.pow(_initialCoord.x - clampedX, 2.0) + math.pow(_initialCoord.y - clampedY, 2.0))
+        if dist > 0.2 then
+            _initialCoord = newCoord
+            table.insert(_currentPathDataList, _currentPathData)
+            _currentPathData = nil
+        end
+
+        if touch.released then
+            if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
+                table.insert(_currentPathDataList, _currentPathData)
+            end
+
+            for i = 1, #_currentPathDataList do
+                _currentPathDataList[i].tovePath = nil
+                addPathData(_currentPathDataList[i])
+            end
+            _drawData:resetGraphics()
+            _drawData:resetFill()
+            self:saveDrawing("freehand pencil", c)
+
+            _initialCoord = nil
+            _currentPathData = nil
+            _currentPathDataList = {}
+            _tempGraphics = nil
+        else
+            resetTempGraphics()
+            for i = 1, #_currentPathDataList do
+                _tempGraphics:addPath(_currentPathDataList[i].tovePath)
+            end
+
+            if _currentPathData ~= nil then
+                _tempGraphics:addPath(_currentPathData.tovePath)
+            end
+        end
     elseif _subtool == 'line' then
         if _initialCoord == nil then
             _initialCoord = roundedCoord
@@ -426,11 +481,13 @@ function DrawTool:updateDrawTool(c, touch)
             _grabbedPaths = {}
 
             for i = 1, #_drawData.pathDataList do
-                for p = 1, 2 do
-                    if floatEquals(roundedX, _drawData.pathDataList[i].points[p].x) and floatEquals(roundedY, _drawData.pathDataList[i].points[p].y) then
-                        _drawData.pathDataList[i].grabPointIndex = p
-                        table.insert(_grabbedPaths, _drawData.pathDataList[i])
-                        break
+                if not _drawData.pathDataList[i].isFreehand then
+                    for p = 1, 2 do
+                        if floatEquals(roundedX, _drawData.pathDataList[i].points[p].x) and floatEquals(roundedY, _drawData.pathDataList[i].points[p].y) then
+                            _drawData.pathDataList[i].grabPointIndex = p
+                            table.insert(_grabbedPaths, _drawData.pathDataList[i])
+                            break
+                        end
                     end
                 end
             end
@@ -441,36 +498,38 @@ function DrawTool:updateDrawTool(c, touch)
 
             if #_grabbedPaths == 0 then
                 for i = 1, #_drawData.pathDataList do
-                    local pathData = _drawData.pathDataList[i]
-                    local distance, t, subpath = pathData.tovePath:nearest(touchX, touchY, 0.5)
-                    if subpath then
-                        local pointX, pointY = subpath:position(t)
-                        removePathData(pathData)
-                        local touchPoint = {x = touchX, y = touchY}
+                    if not _drawData.pathDataList[i].isFreehand then
+                        local pathData = _drawData.pathDataList[i]
+                        local distance, t, subpath = pathData.tovePath:nearest(touchX, touchY, 0.5)
+                        if subpath then
+                            local pointX, pointY = subpath:position(t)
+                            removePathData(pathData)
+                            local touchPoint = {x = touchX, y = touchY}
 
-                        -- todo: figure out path ids here
-                        local newPathData1 = {
-                            points = {
-                                pathData.points[1],
-                                touchPoint
-                            },
-                            style = pathData.style,
-                            grabPointIndex = 2
-                        }
+                            -- todo: figure out path ids here
+                            local newPathData1 = {
+                                points = {
+                                    pathData.points[1],
+                                    touchPoint
+                                },
+                                style = pathData.style,
+                                grabPointIndex = 2
+                            }
 
-                        local newPathData2 = {
-                            points = {
-                                touchPoint,
-                                pathData.points[2]
-                            },
-                            style = pathData.style,
-                            grabPointIndex = 1
-                        }
+                            local newPathData2 = {
+                                points = {
+                                    touchPoint,
+                                    pathData.points[2]
+                                },
+                                style = pathData.style,
+                                grabPointIndex = 1
+                            }
 
-                        table.insert(_grabbedPaths, newPathData1)
-                        table.insert(_grabbedPaths, newPathData2)
+                            table.insert(_grabbedPaths, newPathData1)
+                            table.insert(_grabbedPaths, newPathData2)
 
-                        break
+                            break
+                        end
                     end
                 end
             end
@@ -511,7 +570,7 @@ function DrawTool:updateDrawTool(c, touch)
     elseif _subtool == 'bend' then
         if touch.released then
             for i = 1, #_drawData.pathDataList do
-                if _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
+                if not _drawData.pathDataList[i].isFreehand and _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
                     _drawData.pathDataList[i].style = _drawData.pathDataList[i].style + 1
                     if _drawData.pathDataList[i].style > 3 then
                         _drawData.pathDataList[i].style = 1
@@ -670,9 +729,11 @@ function DrawTool.handlers:drawOverlay()
         local movePoints = {}
 
         for i = 1, #_drawData.pathDataList do
-            for p = 1, 2 do
-                table.insert(movePoints, _drawData.pathDataList[i].points[p].x)
-                table.insert(movePoints, _drawData.pathDataList[i].points[p].y)
+            if not _drawData.pathDataList[i].isFreehand then
+                for p = 1, 2 do
+                    table.insert(movePoints, _drawData.pathDataList[i].points[p].x)
+                    table.insert(movePoints, _drawData.pathDataList[i].points[p].y)
+                end
             end
         end
 

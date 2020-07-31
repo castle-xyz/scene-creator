@@ -47,6 +47,22 @@ function DrawData:roundGlobalCoordinatesToGrid(x, y)
     return self:gridToGlobalCoordinates(gridX, gridY)
 end
 
+function DrawData:clampGlobalCoordinates(x, y)
+    if x < 0 then
+        x = 0
+    elseif x > self.scale then
+        x = self.scale
+    end
+
+    if y < 0 then
+        y = 0
+    elseif y > self.scale then
+        y = self.scale
+    end
+
+    return x, y
+end
+
 function DrawData:roundGlobalDistanceToGrid(d)
     local x, y = self:roundGlobalCoordinatesToGrid(d, 0)
     return x
@@ -432,6 +448,7 @@ function DrawData:serialize()
             style = pathData.style,
             bendPoint = pathData.bendPoint,
             id = pathData.id,
+            isFreehand = pathData.isFreehand,
         })
     end
 
@@ -444,6 +461,7 @@ function DrawData:serialize()
 end
 
 function DrawData:floodFill(x, y)
+    self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
     local pixelCount = self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.fillColor[1], self.fillColor[2], self.fillColor[3], 1.0)
     self.fillImage:replacePixels(self.fillImageData)
@@ -452,6 +470,7 @@ function DrawData:floodFill(x, y)
 end
 
 function DrawData:floodClear(x, y)
+    self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
     local pixelCount = self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, 0.0, 0.0, 0.0, 0.0)
     self.fillImage:replacePixels(self.fillImageData)
