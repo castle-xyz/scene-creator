@@ -344,8 +344,8 @@ function DrawTool:updateDrawTool(c, touch)
 
         if touch.released then
             addPathData(pathData)
-            _drawData:resetFill()
             _drawData:resetGraphics()
+            _drawData:resetFill()
             self:saveDrawing("line", c)
 
             _initialCoord = nil
@@ -406,8 +406,8 @@ function DrawTool:updateDrawTool(c, touch)
                 newPathDataList[i].tovePath = nil
                 addPathData(newPathDataList[i])
             end
-            _drawData:resetFill()
             _drawData:resetGraphics()
+            _drawData:resetFill()
             self:saveDrawing("pencil", c)
 
             _initialCoord = nil
@@ -493,8 +493,8 @@ function DrawTool:updateDrawTool(c, touch)
                     addPathData(_grabbedPaths[i])
                 end
 
-                _drawData:resetFill()
                 _drawData:resetGraphics()
+                _drawData:resetFill()
                 self:saveDrawing("move", c)
             end
 
@@ -518,8 +518,8 @@ function DrawTool:updateDrawTool(c, touch)
                     end
                     _drawData.pathDataList[i].tovePath = nil -- reset rendering
 
-                    _drawData:resetFill()
                     _drawData:resetGraphics()
+                    _drawData:resetFill()
                     self:saveDrawing("bend", c)
 
                     break
@@ -541,7 +541,6 @@ function DrawTool:updateDrawTool(c, touch)
         for i = 1, #_drawData.pathDataList do
             if _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
                 removePathData(_drawData.pathDataList[i])
-                _drawData:resetFill()
                 _drawData:resetGraphics()
                 _didChange = true
                 break
@@ -555,6 +554,7 @@ function DrawTool:updateDrawTool(c, touch)
         if touch.released then
             if _didChange then
                 _drawData:resetGraphics()
+                _drawData:resetFill()
                 self:saveDrawing("erase", c)
             end
             _didChange = false

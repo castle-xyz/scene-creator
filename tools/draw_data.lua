@@ -388,20 +388,25 @@ end
 
 function DrawData:resetFill()
     self:cleanUpPathsAndFaces()
-    _SLABS = findAllSlabs(self.pathDataList)
 
-    _FACE_POINTS = {}
-    local facesToColor = {}
+    self.pathsCanvas:renderTo(
+        function()
+            love.graphics.push("all")
 
-    local newFaces = {}
-    local newColoredSubpathIds = {}
-    colorAllSlabs(_SLABS, self.pathDataList, 0, self.gridSize, self.floodFillColoredSubpathIds, newFaces, newColoredSubpathIds, self.scale / self.gridSize)
-    self.floodFillFaceDataList = newFaces
+            love.graphics.origin()
+            love.graphics.scale(self.fillCanvasSize / self.scale)
 
-    self.floodFillColoredSubpathIds = {}
-    for i = 1, #newColoredSubpathIds do
-        self.floodFillColoredSubpathIds[newColoredSubpathIds[i]] = true
-    end
+            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
+            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+            self:graphicsForPathsCanvas():draw()
+
+            love.graphics.pop()
+        end
+    )
+
+    local pathsImageData = self.pathsCanvas:newImageData()
+    self.fillImageData:updateFloodFillForNewPaths(pathsImageData)
+    self.fillImage:replacePixels(self.fillImageData)
 end
 
 function DrawData:clone()
