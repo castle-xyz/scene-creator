@@ -18,7 +18,7 @@ local SlowdownBehavior = defineCoreBehavior {
        rotationSlowdown = {
           method = 'numberInput',
           label = 'Rotation',
-          props = { min = 0 },
+          props = { min = 0, step = 0.1 },
           rules = {
              set = true,
           },
@@ -61,7 +61,7 @@ end
 
 function SlowdownBehavior.handlers:addComponent(component, bp, opts)
     component.properties.motionSlowdown = bp.motionSlowdown or 5
-    component.properties.rotationSlowdown = bp.rotationSlowdown or 5
+    component.properties.rotationSlowdown = bp.rotationSlowdown or 0.5
 end
 
 function SlowdownBehavior.handlers:enableComponent(component, opts)
