@@ -331,7 +331,9 @@ function DrawTool:updateDrawTool(c, touch)
     local roundedX, roundedY = _drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
     local roundedCoord = {x = roundedX, y = roundedY}
 
-    if _subtool == 'draw' then
+    if _subtool == 'pencil_no_grid' then
+
+    elseif _subtool == 'line' then
         if _initialCoord == nil then
             _initialCoord = roundedCoord
         end
@@ -641,7 +643,7 @@ function DrawTool.handlers:drawOverlay()
         drawShapes()
     end
 
-    if _tool ~= 'draw' or (_subtool == 'draw' or _subtool == 'pencil' or _subtool == 'move') then
+    if _tool ~= 'draw' or (_subtool == 'line' or _subtool == 'pencil' or _subtool == 'move') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
         --love.graphics.setPointSize(10.0)
 

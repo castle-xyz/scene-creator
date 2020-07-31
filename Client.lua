@@ -2,7 +2,6 @@ jsEvents = require "__ghost__.jsEvents"
 
 -- Initial params
 
-NEW_DRAW_TOOL = true
 SHOW_TEXT_ACTORS = true
 DEBUG_PHYSICS_BODIES = false
 
