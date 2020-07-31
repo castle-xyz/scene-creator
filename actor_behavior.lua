@@ -461,7 +461,17 @@ function Common.receivers:removeComponent(time, clientId, actorId, behaviorId)
     end
 
     self.receivers.disableComponent(self, time, clientId, actorId, behaviorId)
-    
+
+    for _, dependency in pairs(behavior.dependencies) do
+        dependency:callHandler(
+            "removeDependentComponent",
+            component,
+            {
+                isOrigin = self.clientId == clientId
+            }
+        )
+        actor.components[dependency.behaviorId].dependents[behaviorId] = nil
+    end
     actor.components[behaviorId] = nil
     behavior.components[actorId] = nil
 end
