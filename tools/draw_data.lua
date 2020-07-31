@@ -52,38 +52,6 @@ function DrawData:roundGlobalDistanceToGrid(d)
     return x
 end
 
-function DrawData:updateFloodFillFaceDataRendering(floodFillFaceData)
-    if floodFillFaceData.tovePath and floodFillFaceData.tovePath ~= nil then
-        return
-    end
-
-    local fillSubpath = tove.newSubpath()
-    local fillPath = tove.newPath()
-    fillPath:addSubpath(fillSubpath)
-    fillPath:setFillColor(self.fillColor[1], self.fillColor[2], self.fillColor[3], 1.0)
-
-    if DEBUG_FLOOD_FILL then
-        fillPath:setLineColor(1.0, 0.0, 1.0, 1.0)
-        fillPath:setLineWidth(0.02)
-        fillPath:setMiterLimit(1)
-        fillPath:setLineJoin("round")
-    end
-
-    floodFillFaceData.tovePath = fillPath
-
-    if #floodFillFaceData.points < 3 then
-        return
-    end
-
-    fillSubpath:moveTo(floodFillFaceData.points[1].x, floodFillFaceData.points[1].y)
-
-    for i = 2, #floodFillFaceData.points do
-        fillSubpath:lineTo(floodFillFaceData.points[i].x, floodFillFaceData.points[i].y)
-    end
-
-    fillSubpath.isClosed = true
-end
-
 local function makeSubpathsFromSubpathData(pathData)
     for i = 1, #pathData.subpathDataList do
         local subpathData = pathData.subpathDataList[i]
@@ -375,11 +343,7 @@ function DrawData:updatePathDataIds(pathData)
     end
 end
 
-function DrawData:cleanUpPathsAndFaces()
-    for i = 1, #self.floodFillFaceDataList do
-        self:updateFloodFillFaceDataRendering(self.floodFillFaceDataList[i])
-    end
-
+function DrawData:cleanUpPaths()
     for i = 1, #self.pathDataList do
         self:updatePathDataRendering(self.pathDataList[i])
         self:updatePathDataIds(self.pathDataList[i])
@@ -387,7 +351,7 @@ function DrawData:cleanUpPathsAndFaces()
 end
 
 function DrawData:resetFill()
-    self:cleanUpPathsAndFaces()
+    self:cleanUpPaths()
 
     self:updatePathsCanvas()
 
@@ -413,8 +377,6 @@ function DrawData:new(obj)
         _graphicsForPathsCanvas = nil,
         _graphicsForPathsCanvasNeedsReset = true,
         pathDataList = obj.pathDataList or {},
-        floodFillFaceDataList = obj.floodFillFaceDataList or {},
-        floodFillColoredSubpathIds = obj.floodFillColoredSubpathIds or {},
         nextPathId = obj.nextPathId or 0,
         fillColor = obj.fillColor or {hexStringToRgb(DEFAULT_PALETTE[7])},
         lineColor = obj.lineColor or {hexStringToRgb("a866ee")},
@@ -455,8 +417,6 @@ end
 function DrawData:serialize()
     local data = {
         pathDataList = {},
-        floodFillFaceDataList = {},
-        floodFillColoredSubpathIds = self.floodFillColoredSubpathIds,
         nextPathId = self.nextPathId,
         fillColor = self.fillColor,
         lineColor = self.lineColor,
@@ -472,14 +432,6 @@ function DrawData:serialize()
             style = pathData.style,
             bendPoint = pathData.bendPoint,
             id = pathData.id,
-        })
-    end
-
-    for i = 1, #self.floodFillFaceDataList do
-        local floodFillFaceData = self.floodFillFaceDataList[i]
-        table.insert(data.floodFillFaceDataList, {
-            points = floodFillFaceData.points,
-            id = floodFillFaceData.id,
         })
     end
 
@@ -550,26 +502,13 @@ end
 function DrawData:graphics()
     if self._graphicsNeedsReset then
         self._graphicsNeedsReset = false
-        self:cleanUpPathsAndFaces()
+        self:cleanUpPaths()
 
         self._graphics = tove.newGraphics()
         self._graphics:setDisplay("mesh", 1024)
-        _SLABS = findAllSlabs(self.pathDataList)
-
-        if not DEBUG_FLOOD_FILL then
-            for i = 1, #self.floodFillFaceDataList do
-                --self._graphics:addPath(self.floodFillFaceDataList[i].tovePath)
-            end
-        end
 
         for i = 1, #self.pathDataList do
             self._graphics:addPath(self.pathDataList[i].tovePath)
-        end
-
-        if DEBUG_FLOOD_FILL then
-            for i = 1, #self.floodFillFaceDataList do
-                --self._graphics:addPath(self.floodFillFaceDataList[i].tovePath)
-            end
         end
     end
     
@@ -579,11 +518,10 @@ end
 function DrawData:graphicsForPathsCanvas()
     if self._graphicsForPathsCanvasNeedsReset then
         self._graphicsForPathsCanvasNeedsReset = false
-        self:cleanUpPathsAndFaces()
+        self:cleanUpPaths()
 
         self._graphicsForPathsCanvas = tove.newGraphics()
         self._graphicsForPathsCanvas:setDisplay("mesh", 1024)
-        _SLABS = findAllSlabs(self.pathDataList)
 
         for i = 1, #self.pathDataList do
             self._graphicsForPathsCanvas:addPath(self.pathDataList[i].tovePathThin)
@@ -602,10 +540,6 @@ function DrawData:clearGraphics()
         self.pathDataList[i].tovePath = nil
         self.pathDataList[i].tovePathThin = nil
         self.pathDataList[i].subpathDataList = nil
-    end
-
-    for i = 1, #self.floodFillFaceDataList do
-        self.floodFillFaceDataList[i].tovePath = nil
     end
 end
 

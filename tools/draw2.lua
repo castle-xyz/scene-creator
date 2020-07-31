@@ -90,8 +90,6 @@ local function removePathData(pathData)
     end
 end
 
-_SLABS = {}
-
 local function resetTempGraphics()
     _tempGraphics = tove.newGraphics()
     _tempGraphics:setDisplay("mesh", 1024)
@@ -679,27 +677,6 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.setColor(1.0, 0.6, 0.6, 1.0)
         love.graphics.setPointSize(30.0)
         love.graphics.points(movePoints)
-    end
-
-    if DEBUG_FLOOD_FILL then
-        love.graphics.setColor(0.0, 1.0, 0.0, 1.0)
-        love.graphics.setLineWidth(0.1)
-        local slabPoints = {}
-        for i = 1, #_SLABS do
-            love.graphics.line(_SLABS[i].x, 0, _SLABS[i].x, 0 + _drawData.scale)
-            for j = 1, #_SLABS[i].points do
-                table.insert(slabPoints, _SLABS[i].x)
-                table.insert(slabPoints, _SLABS[i].points[j].y)
-            end
-        end
-
-        love.graphics.setColor(0.0, 0.0, 1.0, 1.0)
-        love.graphics.setPointSize(20.0)
-        love.graphics.points(slabPoints)
-
-        love.graphics.setColor(1.0, 0.0, 0.0, 1.0)
-        love.graphics.setPointSize(30.0)
-        love.graphics.points(_FACE_POINTS)
     end
 
     if _tool == 'physics_body' then
