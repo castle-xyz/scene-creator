@@ -747,7 +747,7 @@ function DrawTool.handlers:uiData()
     actions['onSelectArtworkSubtool'] = function(name)
         _subtool = name
 
-        if _subtool == 'fill' then
+        if _subtool == 'fill' or _subtool == 'erase' then
             _drawData:updatePathsCanvas()
         end
     end

@@ -508,6 +508,17 @@ function DrawData:floodClear(x, y)
 end
 
 function DrawData:updatePathsCanvas()
+    if self.pathsCanvas == nil then
+        self.pathsCanvas = love.graphics.newCanvas(
+            self.fillCanvasSize,
+            self.fillCanvasSize,
+            {
+                dpiscale = 1,
+                msaa = 4
+            }
+        )
+    end
+
     self.pathsCanvas:renderTo(
         function()
             love.graphics.push("all")
@@ -525,17 +536,6 @@ function DrawData:updatePathsCanvas()
 end
 
 function DrawData:renderFill()
-    if self.pathsCanvas == nil then
-        self.pathsCanvas = love.graphics.newCanvas(
-            self.fillCanvasSize,
-            self.fillCanvasSize,
-            {
-                dpiscale = 1,
-                msaa = 4
-            }
-        )
-    end
-
     if self.fillImageData == nil then
         self.fillImageData = love.image.newImageData(self.fillCanvasSize, self.fillCanvasSize)
     end
