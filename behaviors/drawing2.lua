@@ -62,7 +62,12 @@ end
 function Drawing2Behavior:updateBodyShape(component, physicsBodyData)
     local physics = self.dependencies.Body:getPhysics()
     local width, height = self.dependencies.Body:getComponentSize(component.actorId)
-    self.dependencies.Body:setShapes(component.actorId, physicsBodyData:getShapesForBody(physics, width, height))
+    local shapes, numShapes = physicsBodyData:getShapesForBody(physics, width, height)
+
+    if numShapes > 0 then
+        self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
+        self.dependencies.Body:setShapes(component.actorId, shapes)
+    end
 end
 
 -- Component management
@@ -77,8 +82,6 @@ end
 function Drawing2Behavior.handlers:enableComponent(component, opts)
     local data = self:cacheDrawing(component.properties)
     self:updateBodyShape(component, data.physicsBodyData)
-
-    self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
 end
 
 function Drawing2Behavior.handlers:disableComponent(component, opts)

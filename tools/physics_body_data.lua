@@ -484,9 +484,10 @@ function PhysicsBodyData:getShapesForBody(physics, width, height)
         end
     end
 
+    local numShapes = #shapes
     if #shapes == 0 then
         table.insert(shapes, physics:newCircleShape(0, 0, math.min(width, height) * 0.5))
     end
 
-    return shapes
+    return shapes, numShapes
 end
