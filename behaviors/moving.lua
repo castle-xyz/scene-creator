@@ -86,22 +86,36 @@ function MovingBehavior.handlers:disableComponent(component, opts)
     end
 end
 
+local STOPS_MOVING_THRESHOLD = 0.0005
+
 function MovingBehavior.handlers:postPerform(dt)
    for actorId, component in pairs(self.components) do
       if not component.disabled then
          local members = self.dependencies.Body:getMembers(actorId)
          local vx, vy = members.body:getLinearVelocity()
-         if math.abs(vx) < 0.000001 then vx = 0 end
-         if math.abs(vy) < 0.000001 then vy = 0 end
          if component._prevVelocity == nil or component._prevVelocity.x ~= vx or component._prevVelocity.y ~= vy then
             self:fireTrigger("velocity changes", actorId)
-            if vx == 0 and vy == 0 then
-               self:fireTrigger("stops moving", actorId)
-            end
          end
          component._prevVelocity = component._prevVelocity or {}
          component._prevVelocity.x = vx
          component._prevVelocity.y = vy
+
+         local x, y = members.body:getX(), members.body:getY()
+         if component._prevPosition ~= nil then
+            if component._startsMovingTriggerFired and
+               (math.abs(component._prevPosition.x - x) < STOPS_MOVING_THRESHOLD and
+                math.abs(component._prevPosition.y - y) < STOPS_MOVING_THRESHOLD) then
+                  component._startsMovingTriggerFired = false
+                  self:fireTrigger("stops moving", actorId)
+            elseif not component._startsMovingTriggerFired and
+               (math.abs(component._prevPosition.x - x) >= STOPS_MOVING_THRESHOLD or
+                math.abs(component._prevPosition.y - y) >= STOPS_MOVING_THRESHOLD) then
+                  component._startsMovingTriggerFired = true
+            end
+         end
+         component._prevPosition = component._prevPosition or {}
+         component._prevPosition.x = x
+         component._prevPosition.y = y
       end
    end
 end
