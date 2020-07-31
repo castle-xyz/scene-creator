@@ -746,6 +746,10 @@ function DrawTool.handlers:uiData()
 
     actions['onSelectArtworkSubtool'] = function(name)
         _subtool = name
+
+        if _subtool == 'fill' then
+            _drawData:updatePathsCanvas()
+        end
     end
 
     actions['onSelectCollisionSubtool'] = function(name)

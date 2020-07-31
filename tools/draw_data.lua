@@ -389,20 +389,7 @@ end
 function DrawData:resetFill()
     self:cleanUpPathsAndFaces()
 
-    self.pathsCanvas:renderTo(
-        function()
-            love.graphics.push("all")
-
-            love.graphics.origin()
-            love.graphics.scale(self.fillCanvasSize / self.scale)
-
-            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
-            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
-            self:graphicsForPathsCanvas():draw()
-
-            love.graphics.pop()
-        end
-    )
+    self:updatePathsCanvas()
 
     local pathsImageData = self.pathsCanvas:newImageData()
     self.fillImageData:updateFloodFillForNewPaths(pathsImageData)
@@ -520,6 +507,23 @@ function DrawData:floodClear(x, y)
     return pixelCount > 0
 end
 
+function DrawData:updatePathsCanvas()
+    self.pathsCanvas:renderTo(
+        function()
+            love.graphics.push("all")
+
+            love.graphics.origin()
+            love.graphics.scale(self.fillCanvasSize / self.scale)
+
+            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
+            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+            self:graphicsForPathsCanvas():draw()
+
+            love.graphics.pop()
+        end
+    )
+end
+
 function DrawData:renderFill()
     if self.pathsCanvas == nil then
         self.pathsCanvas = love.graphics.newCanvas(
@@ -539,21 +543,6 @@ function DrawData:renderFill()
     if self.fillImage == nil then
         self.fillImage = love.graphics.newImage(self.fillImageData)
     end
-
-    self.pathsCanvas:renderTo(
-        function()
-            love.graphics.push("all")
-
-            love.graphics.origin()
-            love.graphics.scale(self.fillCanvasSize / self.scale)
-
-            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
-            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
-            self:graphicsForPathsCanvas():draw()
-
-            love.graphics.pop()
-        end
-    )
 
     love.graphics.draw(self.fillImage, 0.0, 0.0, 0.0, self.scale / self.fillCanvasSize, self.scale / self.fillCanvasSize)
 end
