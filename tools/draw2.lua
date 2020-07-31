@@ -237,24 +237,28 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
             if _scaleRotateData.shape then
                 local handleTouchRadius = HANDLE_TOUCH_RADIUS * self.game:getPixelScale()
             
-                for _, handle in ipairs(_physicsBodyData:getHandlesForShape(_scaleRotateData.shape)) do
+                local handles = _physicsBodyData:getHandlesForShape(_scaleRotateData.shape)
+                for i = 1, #handles do
+                    local handle = handles[i]
                     local distance = math.sqrt(math.pow(touchX - handle.x, 2.0) + math.pow(touchY - handle.y, 2.0))
                     if distance < handleTouchRadius then
                         _scaleRotateData.handle = handle
                         _scaleRotateData.shape = _physicsBodyData:removeShapeAtIndex(_scaleRotateData.index)
                         _scaleRotateData.isGrabbed = true
                         grabbledHandle = true
-                        break
-                    end
-                end
 
-                if not grabbledHandle and _scaleRotateData.shape.type == "triangle" then
-                    local centerX, centerY = _physicsBodyData:getCenterOfShape(_scaleRotateData.shape)
-                    local distance = math.sqrt(math.pow(touchX - centerX, 2.0) + math.pow(touchY - centerY, 2.0))
-                    if distance < handleTouchRadius * 2.0 then
-                        _scaleRotateData.shape.pivot = _physicsBodyData:rotatePivot(_scaleRotateData.shape.pivot)
-                        self:saveDrawing("rotate", c)
-                        grabbledHandle = true
+                        if _scaleRotateData.shape.type == 'triangle' then
+                            _scaleRotateData.otherPoints = {}
+                            for j = 1, #handles do
+                                if j ~= i then
+                                    table.insert(_scaleRotateData.otherPoints, {
+                                        x = handles[j].x,
+                                        y = handles[j].y,
+                                    })
+                                end
+                            end
+                        end
+                        break
                     end
                 end
             end
@@ -283,10 +287,7 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
             elseif type == 'circle' then
                 shape = _physicsBodyData:getCircleShape(otherCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'))
             elseif type == 'triangle' then
-                shape = _physicsBodyData:getTriangleShape(otherCoord, roundedCoord)
-                if shape then
-                    shape.pivot = _scaleRotateData.shape.pivot
-                end
+                shape = _physicsBodyData:getTriangleShape(roundedCoord, _scaleRotateData.otherPoints[1], _scaleRotateData.otherPoints[2])
             end
 
             if shape then

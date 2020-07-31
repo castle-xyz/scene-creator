@@ -85,8 +85,10 @@ function PhysicsBodyData:_centerOfShape(shape)
 
     if type == "circle" then
         return shape.x, shape.y
-    else
+    elseif type == "rectangle" then
         return (shape.p1.x + shape.p2.x) / 2.0, (shape.p1.y + shape.p2.y) / 2.0
+    elseif type == "triangle" then
+        return (shape.p1.x + shape.p2.x + shape.p3.x) / 3.0, (shape.p1.y + shape.p2.y + shape.p3.y) / 3.0
     end
 end
 
@@ -110,31 +112,22 @@ function PhysicsBodyData:_pointsForShape(shape)
             p2.x, p1.y,
         }
     elseif type == "triangle" then
+        local p3 = shape.p3
         local points = {
             p1.x, p1.y,
-            p1.x, p2.y,
             p2.x, p2.y,
-            p2.x, p1.y,
+            p3.x, p3.y,
         }
 
-        local pivotIndex
-        if shape.pivot == "p1xp1y" then
-            pivotIndex = 1
-        elseif shape.pivot == "p1xp2y" then
-            pivotIndex = 2
-        elseif shape.pivot == "p2xp2y" then
-            pivotIndex = 3
-        else
-            pivotIndex = 4
+        local isCounterclockwise = (p2.x - p1.x) * (p3.y - p1.y) - (p3.x - p1.x) * (p2.y - p1.y) > 0
+        if not isCounterclockwise then
+            points = {
+                p3.x, p3.y,
+                p2.x, p2.y,
+                p1.x, p1.y,
+            }
         end
 
-        pivotIndex = pivotIndex + 2
-        if pivotIndex > 4 then
-            pivotIndex = pivotIndex - 4
-        end
-
-        table.remove(points, pivotIndex * 2 - 1)
-        table.remove(points, pivotIndex * 2 - 1)
         return points
     end
 end
@@ -219,8 +212,10 @@ end
 function PhysicsBodyData:isShapeInBounds(shape)
     local type = shape.type
 
-    if type == "rectangle" or type == "triangle" then
+    if type == "rectangle" then
         return self:isPointInBounds(shape.p1) and self:isPointInBounds(shape.p2)
+    elseif type == "triangle" then
+        return self:isPointInBounds(shape.p1) and self:isPointInBounds(shape.p2) and self:isPointInBounds(shape.p3)
     elseif type == "circle" then
         return self:isPointInBounds({
             x = shape.x + shape.radius,
@@ -252,11 +247,18 @@ function PhysicsBodyData:moveShapeByIgnoreBounds(shape, diffX, diffY)
     local type = shape.type
 
     local result = util.deepCopyTable(shape)
-    if type == "rectangle" or type == "triangle" then
+    if type == "rectangle" then
         result.p1.x = shape.p1.x + diffX
         result.p2.x = shape.p2.x + diffX
         result.p1.y = shape.p1.y + diffY
         result.p2.y = shape.p2.y + diffY
+    elseif type == "triangle" then
+        result.p1.x = shape.p1.x + diffX
+        result.p2.x = shape.p2.x + diffX
+        result.p3.x = shape.p3.x + diffX
+        result.p1.y = shape.p1.y + diffY
+        result.p2.y = shape.p2.y + diffY
+        result.p3.y = shape.p3.y + diffY
     elseif type == "circle" then
         result.x = shape.x + diffX
         result.y = shape.y + diffY
@@ -374,55 +376,25 @@ function PhysicsBodyData:getRectangleShape(p1, p2)
     end
 end
 
-function PhysicsBodyData:getTriangleShape(p1, p2)
-    local pivotPoint = {
-        x = p2.x,
-        y = p1.y
-    }
-
-    p1, p2 = sortPoints(p1, p2)
-
-    local points = {
-        p1.x, p1.y,
-        p1.x, p2.y,
-        p2.x, p2.y,
-        p2.x, p1.y,
-    }
-
-    local pivot
-    if floatEquals(points[1], pivotPoint.x) and floatEquals(points[2], pivotPoint.y) then
-        pivot = "p1xp1y"
-    elseif floatEquals(points[3], pivotPoint.x) and floatEquals(points[4], pivotPoint.y) then
-        pivot = "p1xp2y"
-    elseif floatEquals(points[5], pivotPoint.x) and floatEquals(points[6], pivotPoint.y) then
-        pivot = "p2xp2y"
-    else
-        pivot = "p2xp1y"
+function PhysicsBodyData:getTriangleShape(p1, p2, p3)
+    if not p3 then
+        p3 = {
+            x = p1.x,
+            y = p2.y,
+        }
     end
 
     local shape = {
         type = "triangle",
         p1 = p1,
         p2 = p2,
-        pivot = pivot,
+        p3 = p3
     }
 
     if self:isShapeInBounds(shape) and not floatEquals(p1.x, p2.x) and not floatEquals(p1.y, p2.y) then
         return shape
     else
         return nil
-    end
-end
-
-function PhysicsBodyData:rotatePivot(pivot)
-    if pivot == "p1xp2y" then
-        return "p1xp1y"
-    elseif pivot == "p2xp2y" then
-        return "p1xp2y"
-    elseif pivot == "p2xp1y" then
-        return "p2xp2y"
-    else
-        return "p2xp1y"
     end
 end
 
