@@ -72,6 +72,7 @@ function SlowdownBehavior.handlers:disableComponent(component, opts)
     if not opts.removeActor then
         if component._joint then
             component._joint:destroy()
+            component._joint = nil
         end
     end
 end
