@@ -795,6 +795,15 @@ function DrawTool.handlers:uiData()
 
     actions['onSelectCollisionSubtool'] = function(name)
         _physicsBodySubtool = name
+
+        if _physicsBodySubtool == 'scale-rotate' then
+            if _physicsBodyData:getNumShapes() > 0 then
+                _scaleRotateData.shape = _physicsBodyData:getShapeAtIndex(_physicsBodyData:getNumShapes())
+                _scaleRotateData.index = _physicsBodyData:getNumShapes()
+            else
+                _scaleRotateData = {}
+            end
+        end
     end
 
     actions['updateFillColor'] = function(opts)
