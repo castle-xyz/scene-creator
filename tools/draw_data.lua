@@ -588,9 +588,6 @@ function DrawData:updateLineColor(r, g, b)
     return true
 end
 
-
-
-
 function DrawData:isPointInBounds(point)
     return point.x >= -0.001 and point.x <= self.scale and point.y >= -0.001 and point.y <= self.scale
 end
