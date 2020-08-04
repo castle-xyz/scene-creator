@@ -185,7 +185,10 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
         if _physicsBodySubtool == 'rectangle' then
             shape = _physicsBodyData:getRectangleShape(_initialCoord, roundedCoord)
         elseif _physicsBodySubtool == 'circle' then
-            shape = _physicsBodyData:getCircleShape(_initialCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'))
+            local roundDx = floatUnit(_initialCoord.x - touchX)
+            local roundDy = floatUnit(_initialCoord.y - touchY)
+
+            shape = _physicsBodyData:getCircleShape(_initialCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'), roundDx, roundDy)
         elseif _physicsBodySubtool == 'triangle' then
             shape = _physicsBodyData:getTriangleShape(_initialCoord, roundedCoord)
         end
@@ -284,7 +287,10 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
             if type == 'rectangle' then
                 shape = _physicsBodyData:getRectangleShape(otherCoord, roundedCoord)
             elseif type == 'circle' then
-                shape = _physicsBodyData:getCircleShape(otherCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'))
+                local roundDx = floatUnit(_scaleRotateData.handle.oppositeX - touchX)
+                local roundDy = floatUnit(_scaleRotateData.handle.oppositeY - touchY)
+
+                shape = _physicsBodyData:getCircleShape(otherCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'), roundDx, roundDy)
             elseif type == 'triangle' then
                 shape = _physicsBodyData:getTriangleShape(roundedCoord, _scaleRotateData.otherPoints[1], _scaleRotateData.otherPoints[2])
             end

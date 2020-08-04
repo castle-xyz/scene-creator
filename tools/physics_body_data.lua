@@ -68,13 +68,14 @@ function PhysicsBodyData:getHandlesForShape(shape)
     for i = 1, #points, 2 do
         local x = points[i]
         local y = points[i + 1]
-
-        table.insert(results, {
+        local handle = {
             x = x,
             y = y,
             oppositeX = x - (x - centerX) * 2.0,
             oppositeY = y - (y - centerY) * 2.0,
-        })
+        }
+
+        table.insert(results, handle)
     end
 
     return results
@@ -404,7 +405,7 @@ function PhysicsBodyData:getTriangleShape(p1, p2, p3)
     end
 end
 
-function PhysicsBodyData:getCircleShape(p1, p2, roundFn, roundDistFn)
+function PhysicsBodyData:getCircleShape(p1, p2, roundFn, roundDistFn, roundDx, roundDy)
     local shape = {
         type = "circle",
         x = (p1.x + p2.x) / 2.0,
@@ -412,14 +413,21 @@ function PhysicsBodyData:getCircleShape(p1, p2, roundFn, roundDistFn)
         radius = math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0)) / 2.0
     }
 
-    local leftX = shape.x - shape.radius
-    local leftY = shape.y
+    if not roundDx then
+        roundDx = -1
+    end
+    if not roundDy then
+        roundDy = 0
+    end
+
+    local leftX = shape.x + roundDx * shape.radius
+    local leftY = shape.y + roundDy * shape.radius
 
     leftX, leftY = roundFn(leftX, leftY)
 
     shape.radius = roundDistFn(shape.radius)
-    shape.x = leftX + shape.radius
-    shape.y = leftY
+    shape.x = leftX - roundDx * shape.radius
+    shape.y = leftY - roundDy * shape.radius
 
     if self:isShapeInBounds(shape) and shape.radius > 0 then
         return shape

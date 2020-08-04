@@ -4,6 +4,16 @@ function floatEquals(f1, f2)
     return f1 > f2 - 0.001 and f1 < f2 + 0.001
 end
 
+function floatUnit(f)
+    if floatEquals(f, 0) then
+        return 0
+    elseif f > 0 then
+        return 1
+    else
+        return -1
+    end
+end
+
 function idToSubpath(pathDataList, id)
     return pathDataList[id.pathIdx].subpathDataList[id.subpathIdx]
 end
