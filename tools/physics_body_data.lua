@@ -322,6 +322,10 @@ function PhysicsBodyData:removeShapeAtIndex(idx)
     return result
 end
 
+function PhysicsBodyData:updateShapeAtIdx(idx, shape)
+    self.shapes[idx] = shape
+end
+
 function PhysicsBodyData:commitTempShape()
     if self.tempShape then
         table.insert(self.shapes, self.tempShape)
