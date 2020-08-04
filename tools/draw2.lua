@@ -51,6 +51,8 @@ we use the same system but in radians
 
 -- Behavior management
 
+local TEST_POINT = nil
+
 local _viewTransform = love.math.newTransform()
 local _drawData
 local _physicsBodyData
@@ -279,6 +281,7 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
                 x = _scaleRotateData.handle.oppositeX,
                 y = _scaleRotateData.handle.oppositeY,
             }
+
             local type = _scaleRotateData.shape.type
             local shape
 
@@ -749,7 +752,7 @@ function DrawTool.handlers:drawOverlay()
         if _physicsBodySubtool == 'scale-rotate' and _scaleRotateData.shape then
             love.graphics.setColor(1.0, 0.0, 0.0, 1.0)
             love.graphics.setPointSize(30.0)
-            love.graphics.points()
+            --love.graphics.points()
 
             local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
             for _, handle in ipairs(_physicsBodyData:getHandlesForShape(_scaleRotateData.shape)) do
@@ -759,6 +762,13 @@ function DrawTool.handlers:drawOverlay()
                 end
             end
         end
+    end
+
+    if TEST_POINT ~= nil then
+        love.graphics.setColor(0.0, 1.0, 0.0, 1.0)
+        love.graphics.setPointSize(30.0)
+
+        love.graphics.points(TEST_POINT.x, TEST_POINT.y)
     end
 
     love.graphics.pop()
