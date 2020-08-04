@@ -331,7 +331,49 @@ function DrawTool:updateDrawTool(c, touch)
     local roundedX, roundedY = _drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
     local roundedCoord = {x = roundedX, y = roundedY}
 
-    if _subtool == 'pencil_no_grid' then
+    if _subtool == 'rectangle' or _subtool == 'circle' or _subtool == 'triangle' then
+        if _initialCoord == nil then
+            _initialCoord = roundedCoord
+            _currentPathDataList = {}
+        end
+
+        local shape
+        if _subtool == 'rectangle' then
+            shape = _drawData:getRectangleShape(_initialCoord, roundedCoord)
+        elseif _subtool == 'circle' then
+            local roundDx = floatUnit(_initialCoord.x - touchX)
+            local roundDy = floatUnit(_initialCoord.y - touchY)
+
+            shape = _drawData:getCircleShape(_initialCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'), roundDx, roundDy)
+        elseif _subtool == 'triangle' then
+            shape = _drawData:getTriangleShape(_initialCoord, roundedCoord)
+        end
+
+        if shape then
+            _currentPathDataList = shape
+        end
+
+        if touch.released then
+            for i = 1, #_currentPathDataList do
+                _currentPathDataList[i].tovePath = nil
+                addPathData(_currentPathDataList[i])
+            end
+
+            _drawData:resetGraphics()
+            _drawData:resetFill()
+            self:saveDrawing('add ' .. _subtool, c)
+
+            _initialCoord = nil
+            _currentPathDataList = {}
+            _tempGraphics = nil
+        else
+            resetTempGraphics()
+            for i = 1, #_currentPathDataList do
+                _drawData:updatePathDataRendering(_currentPathDataList[i])
+                _tempGraphics:addPath(_currentPathDataList[i].tovePath)
+            end
+        end
+    elseif _subtool == 'pencil_no_grid' then
         local clampedX, clampedY = _drawData:clampGlobalCoordinates(touchX, touchY)
 
         if _initialCoord == nil then
@@ -706,7 +748,8 @@ function DrawTool.handlers:drawOverlay()
         drawShapes()
     end
 
-    if _tool ~= 'draw' or (_subtool == 'line' or _subtool == 'pencil' or _subtool == 'move') then
+    -- grid
+    if _tool ~= 'draw' or (_subtool == 'line' or _subtool == 'pencil' or _subtool == 'move' or _subtool == 'rectangle' or _subtool == 'circle' or _subtool == 'triangle') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
         --love.graphics.setPointSize(10.0)
 

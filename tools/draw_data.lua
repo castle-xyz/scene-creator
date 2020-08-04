@@ -587,3 +587,135 @@ function DrawData:updateLineColor(r, g, b)
     self:clearGraphics()
     return true
 end
+
+
+
+
+function DrawData:isPointInBounds(point)
+    return point.x >= -0.001 and point.x <= self.scale and point.y >= -0.001 and point.y <= self.scale
+end
+
+function DrawData:_pointsToPaths(points)
+    local paths = {}
+
+    for i = 1, #points, 2 do
+        local nextI = i + 2
+        if nextI > #points then
+            nextI = nextI - #points
+        end
+
+        table.insert(paths, {
+            points = {
+                {
+                    x = points[i],
+                    y = points[i + 1],
+                },
+                {
+                    x = points[nextI],
+                    y = points[nextI + 1],
+                },
+            },
+            style = 1,
+        })
+    end
+
+    return paths
+end
+
+function DrawData:getRectangleShape(p1, p2)
+    if self:isPointInBounds(p1) and self:isPointInBounds(p2) and not floatEquals(p1.x, p2.x) and not floatEquals(p1.y, p2.y) then
+        return self:_pointsToPaths({
+            p1.x, p1.y,
+            p1.x, p2.y,
+            p2.x, p2.y,
+            p2.x, p1.y,
+        })
+    else
+        return nil
+    end
+end
+
+function DrawData:getTriangleShape(p1, p2, p3)
+    if not p3 then
+        p3 = {
+            x = p1.x,
+            y = p2.y,
+        }
+    end
+
+    local isColinear = math.abs((p2.x - p1.x) * (p3.y - p1.y) - (p3.x - p1.x) * (p2.y - p1.y)) < 0.01
+
+    if self:isPointInBounds(p1) and self:isPointInBounds(p2) and self:isPointInBounds(p3) and isColinear == false then
+        return self:_pointsToPaths({
+            p1.x, p1.y,
+            p2.x, p2.y,
+            p3.x, p3.y,
+        })
+    else
+        return nil
+    end
+end
+
+function DrawData:getCircleShape(p1, p2, roundFn, roundDistFn, roundDx, roundDy)
+    local shape = {
+        x = (p1.x + p2.x) / 2.0,
+        y = (p1.y + p2.y) / 2.0,
+        radius = math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0)) / 2.0
+    }
+
+    if not roundDx then
+        roundDx = -1
+    end
+    if not roundDy then
+        roundDy = 0
+    end
+
+    local leftX = shape.x + roundDx * shape.radius
+    local leftY = shape.y + roundDy * shape.radius
+
+    leftX, leftY = roundFn(leftX, leftY)
+
+    shape.radius = roundDistFn(shape.radius)
+    shape.x = leftX - roundDx * shape.radius
+    shape.y = leftY - roundDy * shape.radius
+
+    local topPoint = {
+        x = shape.x,
+        y = shape.y - shape.radius,
+    }
+    local bottomPoint = {
+        x = shape.x,
+        y = shape.y + shape.radius,
+    }
+    local rightPoint = {
+        x = shape.x + shape.radius,
+        y = shape.y,
+    }
+    local leftPoint = {
+        x = shape.x - shape.radius,
+        y = shape.y,
+    }
+
+    if self:isPointInBounds(topPoint) and self:isPointInBounds(bottomPoint) and self:isPointInBounds(leftPoint) and self:isPointInBounds(rightPoint) and shape.radius > 0 then
+        return {
+            {
+                points = {topPoint, rightPoint},
+                style = 2,
+            },
+            {
+                points = {rightPoint, bottomPoint},
+                style = 3,
+            },
+            {
+                points = {bottomPoint, leftPoint},
+                style = 3,
+            },
+            {
+                points = {leftPoint, topPoint},
+                style = 2,
+            },
+        }
+    else
+        return nil
+    end
+end
