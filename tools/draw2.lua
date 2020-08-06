@@ -801,7 +801,8 @@ function DrawTool.handlers:drawOverlay()
         drawShapes()
 
         love.graphics.setColor(0, 0, 0, 0.5)
-        love.graphics.rectangle('fill', 0, 0, _drawData.scale, _drawData.scale)
+        local padding = 0.1
+        love.graphics.rectangle('fill', -padding, -padding, _drawData.scale + padding * 2.0, _drawData.scale + padding * 2.0)
     end
 
     -- grid
