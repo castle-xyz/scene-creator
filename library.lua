@@ -44,10 +44,40 @@ local CORE_LIBRARY = {
         actorBlueprint = {
             components = {
                 Text = {
-                    content = ""
+                    content = "To be?"
                 }
             }
         }
+    },
+    {
+       entryType = "actorBlueprint",
+       title = "button",
+       description = "A button that can send the player to another card.",
+       actorBlueprint = {
+          components = {
+             Text = {
+                content = "Press here to go to the card given in my Rules.",
+             },
+             Rules = {
+                rules = {
+                   {
+                      trigger = {
+                         name = "tap",
+                         behaviorId = 19, -- TODO: fix when we fix behaviorId
+                         params = {},
+                      },
+                      response = {
+                         name = "send player to card",
+                         behaviorId = 19, -- TODO: fix when we fix behaviorId
+                         params = {
+                            card = nil,
+                         },
+                      },
+                   },
+                },
+             },
+          },
+       },
     },
 }
 
