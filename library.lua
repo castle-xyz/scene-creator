@@ -36,26 +36,20 @@ local CORE_LIBRARY = {
                 Falling = {}
             }
         }
-    }
-}
-
-if SHOW_TEXT_ACTORS then
-    table.insert(
-        CORE_LIBRARY,
-        {
-            entryType = "actorBlueprint",
-            title = "text",
-            description = "A humble block of text, pinned to the bottom of the card.",
-            actorBlueprint = {
-                components = {
-                    Text = {
-                        content = ""
-                    }
+    },
+    {
+        entryType = "actorBlueprint",
+        title = "text",
+        description = "A humble block of text, pinned to the bottom of the card.",
+        actorBlueprint = {
+            components = {
+                Text = {
+                    content = ""
                 }
             }
         }
-    )
-end
+    },
+}
 
 local assetNames = require "asset_names"
 for _, assetName in ipairs(assetNames) do

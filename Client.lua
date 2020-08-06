@@ -2,7 +2,6 @@ jsEvents = require "__ghost__.jsEvents"
 
 -- Initial params
 
-SHOW_TEXT_ACTORS = true
 DEBUG_PHYSICS_BODIES = false
 
 function castle.onQuit()
