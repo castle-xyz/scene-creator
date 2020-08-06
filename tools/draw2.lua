@@ -75,14 +75,21 @@ end
 
 -- Methods
 
-
-
-
-
 local function addPathData(pathData)
     if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
+        if not pathData.color then
+            pathData.color = util.deepCopyTable(_drawData.color)
+        end
         table.insert(_drawData.pathDataList, pathData)
     end
+end
+
+local function addTempPathData(pathData)
+    if not pathData.color then
+        pathData.color = util.deepCopyTable(_drawData.color)
+    end
+    _drawData:updatePathDataRendering(pathData)
+    _tempGraphics:addPath(pathData.tovePath)
 end
 
 local function removePathData(pathData)
@@ -370,8 +377,7 @@ function DrawTool:updateDrawTool(c, touch)
         else
             resetTempGraphics()
             for i = 1, #_currentPathDataList do
-                _drawData:updatePathDataRendering(_currentPathDataList[i])
-                _tempGraphics:addPath(_currentPathDataList[i].tovePath)
+                addTempPathData(_currentPathDataList[i])
             end
         end
     elseif _subtool == 'pencil_no_grid' then
@@ -395,7 +401,6 @@ function DrawTool:updateDrawTool(c, touch)
         _currentPathData.points = {_initialCoord, newCoord}
         _currentPathData.style = 1
         _currentPathData.isFreehand = true
-        _drawData:updatePathDataRendering(_currentPathData)
 
         local dist = math.sqrt(math.pow(_initialCoord.x - clampedX, 2.0) + math.pow(_initialCoord.y - clampedY, 2.0))
         if dist > 0.2 then
@@ -424,11 +429,11 @@ function DrawTool:updateDrawTool(c, touch)
         else
             resetTempGraphics()
             for i = 1, #_currentPathDataList do
-                _tempGraphics:addPath(_currentPathDataList[i].tovePath)
+                addTempPathData(_currentPathDataList[i])
             end
 
             if _currentPathData ~= nil then
-                _tempGraphics:addPath(_currentPathData.tovePath)
+                addTempPathData(_currentPathData)
             end
         end
     elseif _subtool == 'line' then
@@ -450,8 +455,7 @@ function DrawTool:updateDrawTool(c, touch)
             _tempGraphics = nil
         else
             resetTempGraphics()
-            _drawData:updatePathDataRendering(pathData)
-            _tempGraphics:addPath(pathData.tovePath)
+            addTempPathData(pathData)
         end
     elseif _subtool == 'pencil' then
         if _initialCoord == nil then
@@ -491,7 +495,6 @@ function DrawTool:updateDrawTool(c, touch)
             y = newRoundedY,
         }}
         _currentPathData.style = 1
-        _drawData:updatePathDataRendering(_currentPathData)
 
         if touch.released then
             if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
@@ -515,9 +518,9 @@ function DrawTool:updateDrawTool(c, touch)
         else
             resetTempGraphics()
             for i = 1, #_currentPathDataList do
-                _tempGraphics:addPath(_currentPathDataList[i].tovePath)
+                addTempPathData(_currentPathDataList[i])
             end
-            _tempGraphics:addPath(_currentPathData.tovePath)
+            addTempPathData(_currentPathData)
         end
     elseif _subtool == 'move' then
         if _grabbedPaths == nil then
@@ -558,6 +561,7 @@ function DrawTool:updateDrawTool(c, touch)
                                     touchPoint
                                 },
                                 style = pathData.style,
+                                color = pathData.color,
                                 grabPointIndex = 2
                             }
 
@@ -567,6 +571,7 @@ function DrawTool:updateDrawTool(c, touch)
                                     pathData.points[2]
                                 },
                                 style = pathData.style,
+                                color = pathData.color,
                                 grabPointIndex = 1
                             }
 
@@ -608,8 +613,7 @@ function DrawTool:updateDrawTool(c, touch)
             resetTempGraphics()
 
             for i = 1, #_grabbedPaths do
-                _drawData:updatePathDataRendering(_grabbedPaths[i])
-                _tempGraphics:addPath(_grabbedPaths[i].tovePath)
+                addTempPathData(_grabbedPaths[i])
             end
         end
     elseif _subtool == 'bend' then
@@ -673,8 +677,7 @@ function DrawTool:updateDrawTool(c, touch)
         else
             if #_grabbedPaths > 0 then
                 resetTempGraphics()
-                _drawData:updatePathDataRendering(_grabbedPaths[1])
-                _tempGraphics:addPath(_grabbedPaths[1].tovePath)
+                addTempPathData(_grabbedPaths[1])
             end
         end
     elseif _subtool == 'fill' then
@@ -907,20 +910,14 @@ function DrawTool.handlers:uiData()
         end
     end
 
-    actions['updateFillColor'] = function(opts)
-        _drawData:updateFillColor(opts.r, opts.g, opts.b)
-        self:saveDrawing("update fill color", c)
-    end
-
-    actions['updateLineColor'] = function(opts)
-        _drawData:updateLineColor(opts.r, opts.g, opts.b)
-        self:saveDrawing("update line color", c)
+    actions['updateColor'] = function(opts)
+        _drawData:updateColor(opts.r, opts.g, opts.b)
+        self:saveDrawing("update color", c)
     end
 
     ui.data({
         currentMode = (_tool == 'draw' and 'artwork' or 'collision'),
-        fillColor = _drawData.fillColor,
-        lineColor = _drawData.lineColor,
+        color = _drawData.color,
         artworkSubtool = _subtool,
         collisionSubtool = _physicsBodySubtool,
     }, {

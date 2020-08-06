@@ -129,7 +129,11 @@ function DrawData:updatePathDataRendering(pathData)
     end
 
     local path = tove.newPath()
-    path:setLineColor(self.lineColor[1], self.lineColor[2], self.lineColor[3], 1.0)
+    if pathData.color then
+        path:setLineColor(pathData.color[1], pathData.color[2], pathData.color[3], 1.0)
+    else
+        path:setLineColor(self.lineColor[1], self.lineColor[2], self.lineColor[3], 1.0)
+    end
     path:setLineWidth(0.2)
     path:setMiterLimit(1)
     path:setLineJoin("round")
@@ -448,7 +452,7 @@ function DrawData:new(obj)
         _graphicsForPathsCanvasNeedsReset = true,
         pathDataList = obj.pathDataList or {},
         nextPathId = obj.nextPathId or 0,
-        fillColor = obj.fillColor or {hexStringToRgb(DEFAULT_PALETTE[7])},
+        color = obj.color or obj.fillColor or {hexStringToRgb(DEFAULT_PALETTE[7])},
         lineColor = obj.lineColor or {hexStringToRgb("a866ee")},
         gridSize = obj.gridSize or 15,
         scale = obj.scale or DRAW_DATA_SCALE,
@@ -488,7 +492,7 @@ function DrawData:serialize()
     local data = {
         pathDataList = {},
         nextPathId = self.nextPathId,
-        fillColor = self.fillColor,
+        color = self.color,
         lineColor = self.lineColor,
         gridSize = self.gridSize,
         scale = self.scale,
@@ -503,6 +507,7 @@ function DrawData:serialize()
             bendPoint = pathData.bendPoint,
             id = pathData.id,
             isFreehand = pathData.isFreehand,
+            color = pathData.color,
         })
     end
 
@@ -517,7 +522,7 @@ end
 function DrawData:floodFill(x, y)
     self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
-    local pixelCount = self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.fillColor[1], self.fillColor[2], self.fillColor[3], 1.0)
+    local pixelCount = self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.color[1], self.color[2], self.color[3], 1.0)
     self.fillImage:replacePixels(self.fillImageData)
 
     return pixelCount > 0
@@ -616,29 +621,15 @@ function DrawData:clearGraphics()
     end
 end
 
-function DrawData:updateFillColor(r, g, b)
-    if r == self.fillColor[1] and g == self.fillColor[2] and b == self.fillColor[3] then
+function DrawData:updateColor(r, g, b)
+    if r == self.color[1] and g == self.color[2] and b == self.color[3] then
         return false
     end
 
-    self.fillColor[1] = r
-    self.fillColor[2] = g
-    self.fillColor[3] = b
+    self.color[1] = r
+    self.color[2] = g
+    self.color[3] = b
 
-    self:clearGraphics()
-    return true
-end
-
-function DrawData:updateLineColor(r, g, b)
-    if r == self.lineColor[1] and g == self.lineColor[2] and b == self.lineColor[3] then
-        return false
-    end
-
-    self.lineColor[1] = r
-    self.lineColor[2] = g
-    self.lineColor[3] = b
-
-    self:clearGraphics()
     return true
 end
 
