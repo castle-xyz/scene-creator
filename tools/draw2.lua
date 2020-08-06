@@ -799,6 +799,9 @@ function DrawTool.handlers:drawOverlay()
     else
         _drawData:renderFill()
         drawShapes()
+
+        love.graphics.setColor(0, 0, 0, 0.5)
+        love.graphics.rectangle('fill', 0, 0, _drawData.scale, _drawData.scale)
     end
 
     -- grid
