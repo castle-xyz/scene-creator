@@ -65,6 +65,7 @@ local _tool
 local _subtool
 local _physicsBodySubtool
 local _grabbedPaths
+local _isUsingBendPoint
 
 local _didChange
 
@@ -525,7 +526,9 @@ function DrawTool:updateDrawTool(c, touch)
             for i = 1, #_drawData.pathDataList do
                 if not _drawData.pathDataList[i].isFreehand then
                     for p = 1, 2 do
-                        if floatEquals(roundedX, _drawData.pathDataList[i].points[p].x) and floatEquals(roundedY, _drawData.pathDataList[i].points[p].y) then
+                        local distance = math.sqrt(math.pow(touchX - _drawData.pathDataList[i].points[p].x, 2.0) + math.pow(touchY - _drawData.pathDataList[i].points[p].y, 2.0))
+
+                        if distance < _drawData.scale * 0.05 then
                             _drawData.pathDataList[i].grabPointIndex = p
                             table.insert(_grabbedPaths, _drawData.pathDataList[i])
                             break
@@ -610,21 +613,68 @@ function DrawTool:updateDrawTool(c, touch)
             end
         end
     elseif _subtool == 'bend' then
-        if touch.released then
+        if _grabbedPaths == nil then
+            _grabbedPaths = {}
+            _initialCoord = {
+                x = touchX,
+                y = touchY,
+            }
+            _isUsingBendPoint = false
+
             for i = 1, #_drawData.pathDataList do
                 if not _drawData.pathDataList[i].isFreehand and _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
-                    _drawData.pathDataList[i].style = _drawData.pathDataList[i].style + 1
-                    if _drawData.pathDataList[i].style > 3 then
-                        _drawData.pathDataList[i].style = 1
-                    end
-                    _drawData.pathDataList[i].tovePath = nil -- reset rendering
-
+                    table.insert(_grabbedPaths, _drawData.pathDataList[i])
+                    removePathData(_drawData.pathDataList[i])
                     _drawData:resetGraphics()
-                    _drawData:resetFill()
-                    self:saveDrawing("bend", c)
-
                     break
                 end
+            end
+        end
+
+        local distance = math.sqrt(math.pow(_initialCoord.x - touchX, 2.0) + math.pow(_initialCoord.y - touchY, 2.0))
+        if distance > 0.1 then
+            _isUsingBendPoint = true
+        end
+
+        if #_grabbedPaths > 0 then
+            if _isUsingBendPoint then
+                _grabbedPaths[1].style = 1
+                _grabbedPaths[1].bendPoint = {
+                    x = touchX,
+                    y = touchY,
+                }
+            end
+            _grabbedPaths[1].tovePath = nil
+        end
+
+        if touch.released then
+            if #_grabbedPaths > 0 then
+                if not _isUsingBendPoint then
+                    if _grabbedPaths[1].bendPoint then
+                        _grabbedPaths[1].style = 1
+                        _grabbedPaths[1].bendPoint = nil
+                    else
+                        _grabbedPaths[1].style = _grabbedPaths[1].style + 1
+                        if _grabbedPaths[1].style > 3 then
+                            _grabbedPaths[1].style = 1
+                        end
+                    end
+                end
+
+                addPathData(_grabbedPaths[1])
+
+                _drawData:resetFill()
+                _drawData:resetGraphics()
+                self:saveDrawing("bend", c)
+            end
+
+            _grabbedPaths = nil
+            _tempGraphics = nil
+        else
+            if #_grabbedPaths > 0 then
+                resetTempGraphics()
+                _drawData:updatePathDataRendering(_grabbedPaths[1])
+                _tempGraphics:addPath(_grabbedPaths[1].tovePath)
             end
         end
     elseif _subtool == 'fill' then

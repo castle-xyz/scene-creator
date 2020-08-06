@@ -147,214 +147,252 @@ function DrawData:updatePathDataRendering(pathData)
     local p1 = pathData.points[1]
     local p2 = pathData.points[2]
     local style = pathData.style
-
-    --[[
     local bendPoint = pathData.bendPoint
 
-    if not bendPoint or bendPoint == nil then
-        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
-        makeSubpathsFromSubpathData(pathData)
-        return
-    end
-
-    local p1NormalVector = {
-        dx = -(bendPoint.y - p1.y),
-        dy = bendPoint.x - p1.x
-    }
-    local p2NormalVector = {
-        dx = -(bendPoint.y - p2.y),
-        dy = bendPoint.x - p2.x
-    }
-    local p1Midpoint = {
-        x = (bendPoint.x + p1.x) / 2.0,
-        y = (bendPoint.y + p1.y) / 2.0,
-    }
-    local p2Midpoint = {
-        x = (bendPoint.x + p2.x) / 2.0,
-        y = (bendPoint.y + p2.y) / 2.0,
-    }
-
-    local circleCenterX, circleCenterY = rayRayIntersection(
-        p1Midpoint.x, p1Midpoint.y,
-        p1Midpoint.x + p1NormalVector.dx, p1Midpoint.y + p1NormalVector.dy,
-        p2Midpoint.x, p2Midpoint.y,
-        p2Midpoint.x + p2NormalVector.dx, p2Midpoint.y + p2NormalVector.dy
-    )
-
-    if circleCenterX == nil then
-        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
-        makeSubpathsFromSubpathData(pathData)
-        return
-    end
-
-    local radius = math.sqrt(math.pow(p1.y - circleCenterY, 2.0) + math.pow(p1.x - circleCenterX, 2.0))
-
-    if radius > 50 then
-        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
-        makeSubpathsFromSubpathData(pathData)
-        return
-    end
-
-    local angle1 = math.atan2(p1.y - circleCenterY, p1.x - circleCenterX)
-    local angleBendPoint = math.atan2(bendPoint.y - circleCenterY, bendPoint.x - circleCenterX)
-    local angle2 = math.atan2(p2.y - circleCenterY, p2.x - circleCenterX)
-
-    if isAngleBetween(angleBendPoint, angle1, angle2) then
-        addCircleSubpathData(pathData, circleCenterX, circleCenterY, radius, angle1, angle2)
-    else
-        addCircleSubpathData(pathData, circleCenterX, circleCenterY, radius, angle2, angle1)
-    end
-    ]]--
-
-    if style == 1 then
-        addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
-        makeSubpathsFromSubpathData(pathData)
-        return
-    end
-
-    local isOver = style == 2
-
-    if p1.x > p2.x or (p1.x == p2.x and p1.y > p2.y) then
-        local t = p1
-        p1 = p2
-        p2 = t
-    end
-
-    local radius = math.min(math.abs(p2.x - p1.x), math.abs(p2.y - p1.y))
-    local xIsLonger = math.abs(p2.x - p1.x) > math.abs(p2.y - p1.y)
-
-    if radius == 0 then
-        radius = math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0)) / 2.0
-        local circleCenter = {
-            x = (p2.x + p1.x) / 2.0,
-            y = (p2.y + p1.y) / 2.0,
+    if bendPoint then
+        local midpointP1P2 = {
+            x = (p1.x + p2.x) / 2.0,
+            y = (p1.y + p2.y) / 2.0,
         }
+        local radiusP1P2 = math.sqrt(math.pow(p1.x - p2.x, 2.0) + math.pow(p1.y - p2.y, 2.0)) / 2.0
+        local distFromMidpointToBendPoint = math.sqrt(math.pow(midpointP1P2.x - bendPoint.x, 2.0) + math.pow(midpointP1P2.y - bendPoint.y, 2.0))
+    
+        if distFromMidpointToBendPoint > radiusP1P2 then
+            local scaleAmt = radiusP1P2 / distFromMidpointToBendPoint
 
-        local startAngle
+            bendPoint = {
+                x = (bendPoint.x - midpointP1P2.x) * scaleAmt + midpointP1P2.x,
+                y = (bendPoint.y - midpointP1P2.y) * scaleAmt + midpointP1P2.y,
+            }
+        end
 
-        if p1.x == p2.x then
-            if isOver then
-                startAngle = math.pi * 3.0 / 2.0
+        local p1NormalVector = {
+            dx = -(bendPoint.y - p1.y),
+            dy = bendPoint.x - p1.x
+        }
+        local p2NormalVector = {
+            dx = -(bendPoint.y - p2.y),
+            dy = bendPoint.x - p2.x
+        }
+        local p1Midpoint = {
+            x = (bendPoint.x + p1.x) / 2.0,
+            y = (bendPoint.y + p1.y) / 2.0,
+        }
+        local p2Midpoint = {
+            x = (bendPoint.x + p2.x) / 2.0,
+            y = (bendPoint.y + p2.y) / 2.0,
+        }
+    
+        local circleCenterX, circleCenterY = rayRayIntersection(
+            p1Midpoint.x, p1Midpoint.y,
+            p1Midpoint.x + p1NormalVector.dx, p1Midpoint.y + p1NormalVector.dy,
+            p2Midpoint.x, p2Midpoint.y,
+            p2Midpoint.x + p2NormalVector.dx, p2Midpoint.y + p2NormalVector.dy
+        )
+    
+        if circleCenterX == nil then
+            addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+            makeSubpathsFromSubpathData(pathData)
+            return
+        end
+    
+        local radius = math.sqrt(math.pow(p1.y - circleCenterY, 2.0) + math.pow(p1.x - circleCenterX, 2.0))
+    
+        if radius > 50 then
+            addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+            makeSubpathsFromSubpathData(pathData)
+            return
+        end
+    
+        local angle1 = math.atan2(p1.y - circleCenterY, p1.x - circleCenterX)
+        local angleBendPoint = math.atan2(bendPoint.y - circleCenterY, bendPoint.x - circleCenterX)
+        local angle2 = math.atan2(p2.y - circleCenterY, p2.x - circleCenterX)
+        local startAngle, endAngle
+    
+        if isAngleBetween(angleBendPoint, angle1, angle2) then
+            startAngle = angle1
+            endAngle = angle2
+        else
+            startAngle = angle2
+            endAngle = angle1
+        end
+
+        addCircleSubpathData(pathData, circleCenterX, circleCenterY, radius, startAngle, endAngle)
+        makeSubpathsFromSubpathData(pathData)
+
+        --[[
+        for i = 1, pathData.tovePath.subpaths.count do
+            local subpath = pathData.tovePath.subpaths[i]
+            local numPoints, pointsPtr = subpath:getPoints()
+
+            for j = 0, numPoints - 1, 3 do
+                local testPoint = {
+                    x = pointsPtr[2 * j + 0],
+                    y = pointsPtr[2 * j + 1]
+                }
+
+                if not self:isPointInBounds(testPoint) then
+                    pathData.style = 1
+                    local tempBendPoint = pathData.bendPoint
+                    pathData.bendPoint = nil
+                    pathData.tovePath = nil
+                    self:updatePathDataRendering(pathData)
+                    pathData.bendPoint = tempBendPoint
+                    return
+                end
+            end
+        end]]--
+    else
+        if style == 1 then
+            addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+            makeSubpathsFromSubpathData(pathData)
+            return
+        end
+
+        local isOver = style == 2
+
+        if p1.x > p2.x or (p1.x == p2.x and p1.y > p2.y) then
+            local t = p1
+            p1 = p2
+            p2 = t
+        end
+
+        local radius = math.min(math.abs(p2.x - p1.x), math.abs(p2.y - p1.y))
+        local xIsLonger = math.abs(p2.x - p1.x) > math.abs(p2.y - p1.y)
+
+        if radius == 0 then
+            radius = math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0)) / 2.0
+            local circleCenter = {
+                x = (p2.x + p1.x) / 2.0,
+                y = (p2.y + p1.y) / 2.0,
+            }
+
+            local startAngle
+
+            if p1.x == p2.x then
+                if isOver then
+                    startAngle = math.pi * 3.0 / 2.0
+                else
+                    startAngle = math.pi / 2.0
+                end
+            else
+                if isOver then
+                    startAngle = math.pi
+                else
+                    startAngle = 0.0
+                end
+            end
+
+            local testPoint = {
+                x = circleCenter.x + math.cos(startAngle + math.pi / 2.0) * radius,
+                y = circleCenter.y + math.sin(startAngle + math.pi / 2.0) * radius,
+            }
+
+            if not self:isPointInBounds(testPoint) then
+                pathData.style = pathData.style + 1
+                if pathData.style > 3 then
+                    pathData.style = 1
+                end
+
+                pathData.tovePath = nil
+                self:updatePathDataRendering(pathData)
+                return 
+            end
+
+            addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
+            addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle + math.pi / 2.0, startAngle + math.pi)
+        else
+            local circleCenter = {}
+            local startAngle
+
+            if p1.y > p2.y then
+                startAngle = 0.0
+                if isOver then
+                    startAngle = startAngle + math.pi
+                end
+
+                if xIsLonger then
+                    --
+                    --             .
+                    -- .
+                    --
+                    if isOver then
+                        circleCenter.x = p1.x + radius
+                        circleCenter.y = p2.y + radius
+
+                        self:drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
+                    else
+                        circleCenter.x = p2.x - radius
+                        circleCenter.y = p1.y - radius
+
+                        self:drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
+                    end
+                else
+                    --
+                    --   .
+                    --
+                    --
+                    --
+                    -- .
+                    --
+                    if isOver then
+                        circleCenter.x = p1.x + radius
+                        circleCenter.y = p2.y + radius
+
+                        self:drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y + radius)
+                    else
+                        circleCenter.x = p2.x - radius
+                        circleCenter.y = p1.y - radius
+
+                        self:drawEndOfArc(pathData, p2.x, p1.y - radius, p2.x, p2.y)
+                    end
+                end
             else
                 startAngle = math.pi / 2.0
+                if isOver then
+                    startAngle = startAngle + math.pi
+                end
+
+                if xIsLonger then
+                    --
+                    -- .
+                    --             .
+                    --
+                    if isOver then
+                        circleCenter.x = p2.x - radius
+                        circleCenter.y = p1.y + radius
+
+                        self:drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
+                    else
+                        circleCenter.x = p1.x + radius
+                        circleCenter.y = p2.y - radius
+
+                        self:drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
+                    end
+                else
+                    --
+                    -- .
+                    --
+                    --
+                    --
+                    --   .
+                    --
+                    if isOver then
+                        circleCenter.x = p2.x - radius
+                        circleCenter.y = p1.y + radius
+
+                        self:drawEndOfArc(pathData, p2.x, p1.y + radius, p2.x, p2.y)
+                    else
+                        circleCenter.x = p1.x + radius
+                        circleCenter.y = p2.y - radius
+
+                        self:drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y - radius)
+                    end
+                end
             end
-        else
-            if isOver then
-                startAngle = math.pi
-            else
-                startAngle = 0.0
-            end
+
+            addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
         end
-
-        local testPoint = {
-            x = circleCenter.x + math.cos(startAngle + math.pi / 2.0) * radius,
-            y = circleCenter.y + math.sin(startAngle + math.pi / 2.0) * radius,
-        }
-
-        if not self:isPointInBounds(testPoint) then
-            pathData.style = pathData.style + 1
-            if pathData.style > 3 then
-                pathData.style = 1
-            end
-
-            pathData.tovePath = nil
-            self:updatePathDataRendering(pathData)
-            return 
-        end
-
-        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
-        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle + math.pi / 2.0, startAngle + math.pi)
-    else
-        local circleCenter = {}
-        local startAngle
-
-        if p1.y > p2.y then
-            startAngle = 0.0
-            if isOver then
-                startAngle = startAngle + math.pi
-            end
-
-            if xIsLonger then
-                --
-                --             .
-                -- .
-                --
-                if isOver then
-                    circleCenter.x = p1.x + radius
-                    circleCenter.y = p2.y + radius
-
-                    self:drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
-                else
-                    circleCenter.x = p2.x - radius
-                    circleCenter.y = p1.y - radius
-
-                    self:drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
-                end
-            else
-                --
-                --   .
-                --
-                --
-                --
-                -- .
-                --
-                if isOver then
-                    circleCenter.x = p1.x + radius
-                    circleCenter.y = p2.y + radius
-
-                    self:drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y + radius)
-                else
-                    circleCenter.x = p2.x - radius
-                    circleCenter.y = p1.y - radius
-
-                    self:drawEndOfArc(pathData, p2.x, p1.y - radius, p2.x, p2.y)
-                end
-            end
-        else
-            startAngle = math.pi / 2.0
-            if isOver then
-                startAngle = startAngle + math.pi
-            end
-
-            if xIsLonger then
-                --
-                -- .
-                --             .
-                --
-                if isOver then
-                    circleCenter.x = p2.x - radius
-                    circleCenter.y = p1.y + radius
-
-                    self:drawEndOfArc(pathData, p1.x, p1.y, p2.x - radius, p1.y)
-                else
-                    circleCenter.x = p1.x + radius
-                    circleCenter.y = p2.y - radius
-
-                    self:drawEndOfArc(pathData, p1.x + radius, p2.y, p2.x, p2.y)
-                end
-            else
-                --
-                -- .
-                --
-                --
-                --
-                --   .
-                --
-                if isOver then
-                    circleCenter.x = p2.x - radius
-                    circleCenter.y = p1.y + radius
-
-                    self:drawEndOfArc(pathData, p2.x, p1.y + radius, p2.x, p2.y)
-                else
-                    circleCenter.x = p1.x + radius
-                    circleCenter.y = p2.y - radius
-
-                    self:drawEndOfArc(pathData, p1.x, p1.y, p1.x, p2.y - radius)
-                end
-            end
-        end
-
-        addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
     end
 
     makeSubpathsFromSubpathData(pathData)
