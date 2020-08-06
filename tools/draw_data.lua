@@ -246,6 +246,22 @@ function DrawData:updatePathDataRendering(pathData)
             end
         end
 
+        local testPoint = {
+            x = circleCenter.x + math.cos(startAngle + math.pi / 2.0) * radius,
+            y = circleCenter.y + math.sin(startAngle + math.pi / 2.0) * radius,
+        }
+
+        if not self:isPointInBounds(testPoint) then
+            pathData.style = pathData.style + 1
+            if pathData.style > 3 then
+                pathData.style = 1
+            end
+
+            pathData.tovePath = nil
+            self:updatePathDataRendering(pathData)
+            return 
+        end
+
         addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
         addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle + math.pi / 2.0, startAngle + math.pi)
     else
