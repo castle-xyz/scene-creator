@@ -806,7 +806,7 @@ function DrawTool.handlers:drawOverlay()
     end
 
     -- grid
-    if _tool ~= 'draw' or (_subtool == 'line' or _subtool == 'pencil' or _subtool == 'move' or _subtool == 'rectangle' or _subtool == 'circle' or _subtool == 'triangle') then
+    --if _tool ~= 'draw' or (_subtool == 'line' or _subtool == 'pencil' or _subtool == 'move' or _subtool == 'rectangle' or _subtool == 'circle' or _subtool == 'triangle') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
         --love.graphics.setPointSize(10.0)
 
@@ -821,7 +821,7 @@ function DrawTool.handlers:drawOverlay()
         end
 
         drawPoints(points)
-    end
+    --end
 
     if _tool == 'draw' then
         drawShapes()
