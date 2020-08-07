@@ -452,7 +452,7 @@ function DrawData:new(obj)
         _graphicsForPathsCanvasNeedsReset = true,
         pathDataList = obj.pathDataList or {},
         nextPathId = obj.nextPathId or 0,
-        color = obj.color or obj.fillColor or {hexStringToRgb(DEFAULT_PALETTE[7])},
+        color = obj.color or obj.fillColor or {hexStringToRgb("249fde")},
         lineColor = obj.lineColor or {hexStringToRgb("a866ee")},
         gridSize = obj.gridSize or 15,
         scale = obj.scale or DRAW_DATA_SCALE,
