@@ -243,7 +243,6 @@ function BodyBehavior:serializeFixture(component, fixture)
         fixtureBp.nextVertex = {shape:getNextVertex()}
     end
 
-    fixtureBp.density = fixture:getDensity()
     for behaviorId, dependentComponent in pairs(component.dependents) do
        self.game.behaviors[behaviorId]:callHandler("blueprintFixture", dependentComponent, fixture, fixtureBp)
     end
@@ -629,7 +628,7 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
                 self._physics:setNextVertex(unpack(assert(fixtureBp.nextVertex)))
             end
 
-            local fixtureId = self._physics:newFixture(bodyId, shapeId, fixtureBp.density or 1)
+            local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
             self:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
 
             self._physics:destroyObject(shapeId)
@@ -651,10 +650,13 @@ function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixt
    self._physics:setSensor(fixtureId, true)
    self._physics:setFriction(fixtureId, 0)
    self._physics:setRestitution(fixtureId, 0)
+   self._physics:setDensity(fixtureId, 1)
    
    for behaviorId, dependentComponent in pairs(component.dependents) do
       self.game.behaviors[behaviorId]:callHandler("updateComponentFixture", dependentComponent, fixtureId)
    end
+   local bodyId, body = self:getBody(component)
+   body:resetMassData()
 end
 
 -- TODO: this is inefficient. it should take serialized fixtures instead of
@@ -665,7 +667,7 @@ function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
 
     local component = self:getComponent(componentOrActorId)
 
-    local density = 1 --todo: not sure what to do here
+    local density = 1 -- default density may get overridden by motion component
 
     for _, fixture in pairs(fixtures) do
         local fixtureId = self._physics:idForObject(fixture)

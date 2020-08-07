@@ -57,7 +57,7 @@ function FrictionBehavior.handlers:disableComponent(component, opts)
 end
 
 function FrictionBehavior.handlers:updateComponentFixture(component, fixtureId)
-   local members = self.dependencies.Body:getMembers(actorId)
+   local members = self.dependencies.Body:getMembers(component.actorId)
    if component.disabled then
       members.physics:setFriction(fixtureId, 0)
    else

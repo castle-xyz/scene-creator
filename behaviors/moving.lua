@@ -27,6 +27,14 @@ local MovingBehavior =
              set = true,
           },
        },
+       density = {
+          method = 'numberInput',
+          label = 'Density',
+          props = { min = 0.1, step = 0.1 },
+          rules = {
+             set = true,
+          },
+       },
     },
 }
 
@@ -62,18 +70,33 @@ function MovingBehavior.handlers:addComponent(component, bp, opts)
          component.properties.angularVelocity = 0
       end
    end
+   if bp.density ~= nil then
+      component.properties.density = bp.density
+   else
+      component.properties.density = 1
+   end
 end
 
 function MovingBehavior.handlers:blueprintComponent(component, bp)
    bp.vx = component.properties.vx
    bp.vy = component.properties.vy
    bp.angularVelocity = component.properties.angularVelocity
+   bp.density = component.properties.density
+end
+
+function MovingBehavior.handlers:blueprintFixture(component, fixture, fixtureBp)
+   fixtureBp.density = fixture:getDensity()
 end
 
 function MovingBehavior.handlers:enableComponent(component, opts)
    local bodyId, body = self.dependencies.Body:getBody(component.actorId)
    body:setLinearVelocity(component.properties.vx, component.properties.vy)
    body:setAngularVelocity(component.properties.angularVelocity * math.pi / 180)
+   local fixtures = body:getFixtures()
+   for _, fixture in pairs(fixtures) do
+      fixture:setDensity(component.properties.density)
+   end
+   body:resetMassData()
 end
 
 function MovingBehavior.handlers:disableComponent(component, opts)
@@ -83,7 +106,22 @@ function MovingBehavior.handlers:disableComponent(component, opts)
         body:setAngularVelocity(0)
         self:fireTrigger("velocity changes", actorId) -- fire this once, stop polling afterward
         component._prevVelocity = nil
+        component._prevPosition = nil
+        local fixtures = body:getFixtures()
+        for _, fixture in pairs(fixtures) do
+           fixture:setDensity(1)
+        end
+        body:resetMassData()
     end
+end
+
+function MovingBehavior.handlers:updateComponentFixture(component, fixtureId)
+   local members = self.dependencies.Body:getMembers(component.actorId)
+   if component.disabled then
+      members.physics:setDensity(fixtureId, 1)
+   else
+      members.physics:setDensity(fixtureId, component.properties.density)
+   end
 end
 
 local STOPS_MOVING_THRESHOLD = 0.0005
@@ -310,5 +348,13 @@ function MovingBehavior.setters:angularVelocity(component, value)
    if not component.disabled then
       local members = self.dependencies.Body:getMembers(component.actorId)
       members.physics:setAngularVelocity(members.bodyId, value * math.pi / 180)
+   end
+end
+
+function MovingBehavior.setters:density(component, value)
+   component.properties.density = value
+   local members = self.dependencies.Body:getMembers(component.actorId)
+   for _, fixture in pairs(members.fixtures) do
+      fixture:setDensity(component.properties.density)
    end
 end
