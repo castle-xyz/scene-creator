@@ -4,7 +4,7 @@ local CORE_LIBRARY = {
     {
         entryType = "actorBlueprint",
         title = "Wall",
-        description = "A rectangular solid that doesn't move.",
+        description = "Solid square that doesn't move",
         actorBlueprint = {
             components = {
                 Drawing2 = {
@@ -86,7 +86,7 @@ local CORE_LIBRARY = {
     {
         entryType = "actorBlueprint",
         title = "Ball",
-        description = "A circular solid that falls.",
+        description = "Solid circle that obeys gravity",
         actorBlueprint = {
             components = {
                 Drawing2 = {
@@ -164,8 +164,8 @@ local CORE_LIBRARY = {
     },
     {
         entryType = "actorBlueprint",
-        title = "Text",
-        description = "A humble block of text, pinned to the bottom of the card.",
+        title = "Text box",
+        description = "Block of text, pinned to the bottom of the card",
         actorBlueprint = {
             components = {
                 Text = {
@@ -176,12 +176,12 @@ local CORE_LIBRARY = {
     },
     {
        entryType = "actorBlueprint",
-       title = "Button",
-       description = "A button that can send the player to another card.",
+       title = "Navigation button",
+       description = "Text box that sends the player to another card when tapped",
        actorBlueprint = {
           components = {
              Text = {
-                content = "Press here to go to the card given in my Rules.",
+                content = "Tap here to go to the card specified in my Rules.",
              },
              Rules = {
                 rules = {
