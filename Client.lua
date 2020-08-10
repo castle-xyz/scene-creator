@@ -425,10 +425,11 @@ function Client:drawScene(opts)
     opts = opts or {}
 
     do -- Background
+        local bgColor = self.sceneProperties.backgroundColor
         if opts.boundary then
-            love.graphics.clear(0.749, 0.773, 0.788)
+            love.graphics.clear(0.8, 0.8, 0.8)
             love.graphics.push("all")
-            love.graphics.setColor(0.82, 0.749, 0.639)
+            love.graphics.setColor(bgColor.r, bgColor.g, bgColor.b)
             love.graphics.rectangle(
                 "fill",
                 -0.5 * DEFAULT_VIEW_WIDTH,
@@ -438,7 +439,7 @@ function Client:drawScene(opts)
             )
             love.graphics.pop()
         else
-            love.graphics.clear(0.82, 0.749, 0.639)
+            love.graphics.clear(bgColor.r, bgColor.g, bgColor.b)
         end
     end
 

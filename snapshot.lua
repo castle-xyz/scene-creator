@@ -42,6 +42,9 @@ function Common:restoreSnapshot(snapshot)
                 }
             )
         end
+
+        -- Load scene properties
+        self:sendSetSceneProperties(snapshot.sceneProperties or {})
     end
 end
 
@@ -72,6 +75,9 @@ function Common:createSnapshot()
         end
     )
 
+    -- Save scene properties
+    snapshot.sceneProperties = self.sceneProperties
+    
     return snapshot
 end
 

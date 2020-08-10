@@ -71,12 +71,14 @@ require "library"
 require "snapshot"
 require "command"
 require "variables"
+require "scene_properties"
 
 function Common:start()
     self.onEndOfFrames = {}
 
     self._nextIdSuffix = 1
 
+    self:startSceneProperties()
     self:startActorBehavior()
     self:startLibrary()
     self:startSnapshot()
