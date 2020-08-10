@@ -3,13 +3,10 @@
 local CORE_LIBRARY = {
     {
         entryType = "actorBlueprint",
-        title = "wall",
+        title = "Wall",
         description = "A rectangular solid that doesn't move.",
         actorBlueprint = {
             components = {
-                Drawing = {
-                    url = "assets/rectangle.svg"
-                },
                 Drawing2 = {
                     data = {}
                 },
@@ -20,13 +17,10 @@ local CORE_LIBRARY = {
     },
     {
         entryType = "actorBlueprint",
-        title = "ball",
+        title = "Ball",
         description = "A circular solid that falls.",
         actorBlueprint = {
             components = {
-                Drawing = {
-                    url = "assets/circle.svg"
-                },
                 Drawing2 = {
                     data = {}
                 },
@@ -39,7 +33,7 @@ local CORE_LIBRARY = {
     },
     {
         entryType = "actorBlueprint",
-        title = "text",
+        title = "Text",
         description = "A humble block of text, pinned to the bottom of the card.",
         actorBlueprint = {
             components = {
@@ -51,7 +45,7 @@ local CORE_LIBRARY = {
     },
     {
        entryType = "actorBlueprint",
-       title = "button",
+       title = "Button",
        description = "A button that can send the player to another card.",
        actorBlueprint = {
           components = {
