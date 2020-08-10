@@ -155,7 +155,6 @@ local CORE_LIBRARY = {
                     }
                 },
                 Body = {gravityScale = 1},
-                CircleShape = {},
                 Solid = {},
                 Falling = {}
             }
