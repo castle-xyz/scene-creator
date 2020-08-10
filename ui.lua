@@ -117,11 +117,23 @@ end
 
 function Client:uiSettings()
    local actions, data = {}, {}
+
+   -- tools (e.g. grab and scale)
    for behaviorId, tool in pairs(self.tools) do
       if tool.handlers.uiSettings then
          tool:callHandler('uiSettings', data, actions)
       end
    end
+
+   -- scene properties
+   data.sceneProperties = {}
+   for k, v in pairs(self.sceneProperties) do
+      data.sceneProperties[k] = v
+      actions['set:' .. k] = function(newValue)
+         self:sendSetSceneProperty(k, newValue)
+      end
+   end
+   
    ui.data(data, { actions = actions })
 end
 

@@ -10,8 +10,16 @@ function Common:sendSetSceneProperties(properties)
    self:send("setSceneProperties", self.clientId, properties)
 end
 
+function Common:sendSetSceneProperty(name, val)
+   self:send("setSceneProperty", self.clientId, name, val)
+end
+
 function Common.receivers:setSceneProperties(time, clientId, properties)
    for k, v in pairs(properties) do
       self.sceneProperties[k] = util.deepCopyTable(v)
    end
+end
+
+function Common.receivers:setSceneProperty(time, clientId, name, val)
+   self.sceneProperties[name] = util.deepCopyTable(val)
 end
