@@ -190,23 +190,14 @@ end
 
 -- UI
 
-function GrabTool.handlers:uiSettings()
-    -- Grid
-    ui.box(
-        "drag grid box",
-        {flexDirection = "row"},
-        function()
-            self._gridEnabled = ui.toggle("Drag grid snap", "Drag grid snap", self._gridEnabled)
-        end
-    )
+function GrabTool.handlers:uiSettings(data, actions)
+   data.dragGridEnabled = self._gridEnabled
+   actions.setDragGridEnabled = function(enabled)
+      self._gridEnabled = enabled
+   end
 
-    if self._gridEnabled then
-        ui.box(
-            "Drag grid size box",
-            { flex = 1 },
-            function()
-                self._gridSize = ui.numberInput("Drag grid size", self._gridSize, {min = 0, step = 0.5 * UNIT})
-            end
-        )
-    end
+   data.dragGridSize = self._gridSize
+   actions.setDragGridSize = function(size)
+      self._gridSize = size -- TODO: * UNIT
+   end
 end

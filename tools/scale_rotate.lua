@@ -431,45 +431,24 @@ end
 
 -- UI
 
-function ScaleRotateTool.handlers:uiSettings()
-    -- Grid
-    ui.box(
-        "resize grid box",
-        {flexDirection = "row"},
-        function()
-            self._gridEnabled = ui.toggle("Resize grid snap", "Resize grid snap", self._gridEnabled)
-        end
-    )
+function ScaleRotateTool.handlers:uiSettings(data, actions)
+   data.scaleGridEnabled = self._gridEnabled
+   actions.setScaleGridEnabled = function(enabled)
+      self._gridEnabled = enabled
+   end
 
-    if self._gridEnabled then
-        ui.box(
-            "resize grid size box",
-            { flex = 1 },
-            function()
-                self._gridSize = ui.numberInput("Resize grid size", self._gridSize, {min = 0, step = 0.5 * UNIT})
-            end
-        )
-    end
+   data.scaleGridSize = self._gridSize
+   actions.setScaleGridSize = function(size)
+      self._gridSize = size -- TODO:
+   end
 
-    -- Rotate increment
-    ui.box(
-        "rotate increment box",
-        {flexDirection = "row"},
-        function()
-            self._rotateIncrementEnabled = ui.toggle("Rotation snap", "Rotation snap", self._rotateIncrementEnabled)
-        end
-    )
+   data.rotateIncrementEnabled = self._rotateIncrementEnabled
+   actions.setRotateIncrementEnabled = function(enabled)
+      self._rotateIncrementEnabled = enabled
+   end
 
-    if self._rotateIncrementEnabled then
-        ui.box(
-            "rotate increment value box",
-            {
-                flex = 1
-            },
-            function()
-                self._rotateIncrementDegrees =
-                    ui.numberInput("Increment (degrees)", self._rotateIncrementDegrees, {min = 0, step = 5})
-            end
-        )
-    end
+   data.rotateIncrementDegrees = self._rotateIncrementDegrees
+   actions.setRotateIncrementDegrees = function(increment)
+      self._rotateIncrementDegrees = increment
+   end
 end

@@ -116,11 +116,13 @@ function Client:uiGlobalActions()
 end
 
 function Client:uiSettings()
+   local actions, data = {}, {}
    for behaviorId, tool in pairs(self.tools) do
       if tool.handlers.uiSettings then
-         tool:callHandler('uiSettings')
+         tool:callHandler('uiSettings', data, actions)
       end
    end
+   ui.data(data, { actions = actions })
 end
 
 function Client:uiupdate()
