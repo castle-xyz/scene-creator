@@ -577,10 +577,13 @@ function DrawData:renderPreviewPng(size)
 
     previewCanvas:renderTo(
         function()
+            local padding = self.scale * 0.025
+
             love.graphics.push("all")
 
             love.graphics.origin()
-            love.graphics.scale(size / self.scale)
+            love.graphics.scale(size / (self.scale * 1.05))
+            love.graphics.translate(padding, padding)
 
             love.graphics.clear(0.0, 0.0, 0.0, 0.0)
             love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
