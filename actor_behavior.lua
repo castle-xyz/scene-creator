@@ -663,6 +663,21 @@ function Common:blueprintActor(actorId)
     return bp
 end
 
+function Common:actorBlueprintPng(actorId)
+    local actor = assert(self.actors[actorId], "blueprintActor: no such actor")
+
+    for behaviorId, component in pairs(actor.components) do
+        if not self.tools[behaviorId] then
+            local behavior = self.behaviors[component.behaviorId]
+            if behavior.name == 'Drawing2' then
+                return behavior:callHandler("blueprintPng", component)
+            end
+        end
+    end
+
+    return nil
+end
+
 function Common:callHandlers(handlerName, ...)
     local behaviors = self.behaviorsByHandler[handlerName]
     if behaviors then

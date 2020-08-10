@@ -36,11 +36,13 @@ function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
     if newActorBp.components.Body then
         newActorBp.components.Body.x, newActorBp.components.Body.y = nil, nil
     end
+    local base64Png = self:actorBlueprintPng(actor.actorId)
     local newEntry = {
         entryType = 'actorBlueprint',
         title = saveBlueprintData.title,
         description = saveBlueprintData.description,
         actorBlueprint = newActorBp,
+        base64Png = base64Png,
     }
 
     self:command('update blueprint', {
@@ -64,11 +66,13 @@ function Client:_addBlueprint(actor, saveBlueprintData)
     if newActorBp.components.Body then
         newActorBp.components.Body.x, newActorBp.components.Body.y = nil, nil
     end
+    local base64Png = self:actorBlueprintPng(actor.actorId)
     self:send('addLibraryEntry', newEntryId, {
         entryType = 'actorBlueprint',
         title = saveBlueprintData.title,
         description = saveBlueprintData.description,
         actorBlueprint = newActorBp,
+        base64Png = base64Png,
     })
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
 end

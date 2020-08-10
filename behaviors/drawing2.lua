@@ -97,6 +97,10 @@ function Drawing2Behavior.handlers:blueprintComponent(component, bp)
     bp.physicsBodyData = component.properties.physicsBodyData
 end
 
+function Drawing2Behavior.handlers:blueprintPng(component)
+    local data = self:cacheDrawing(component.properties)
+    return data.drawData:renderPreviewPng(256)
+end
 
 -- Draw
 

@@ -565,6 +565,36 @@ function DrawData:updatePathsCanvas()
     )
 end
 
+function DrawData:renderPreviewPng(size)
+    local previewCanvas = love.graphics.newCanvas(
+        size,
+        size,
+        {
+            dpiscale = 1,
+            msaa = 4
+        }
+    )
+
+    previewCanvas:renderTo(
+        function()
+            love.graphics.push("all")
+
+            love.graphics.origin()
+            love.graphics.scale(size / self.scale)
+
+            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
+            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+            self:renderFill()
+            self:graphics():draw()
+
+            love.graphics.pop()
+        end
+    )
+
+    local fileData = previewCanvas:newImageData():encode("png")
+    return love.data.encode("string", "base64", fileData:getString())
+end
+
 function DrawData:renderFill()
     if self.fillImageData == nil then
         self.fillImageData = love.image.newImageData(self.fillCanvasSize, self.fillCanvasSize)
