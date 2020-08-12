@@ -17,7 +17,7 @@ local GrabTool =
 
 function GrabTool.handlers:addBehavior(opts)
     self._gridEnabled = true
-    self._gridSize, self._gridSize = 0.5 * UNIT, 0.5 * UNIT
+    self._gridSize, self._gridSize = 0.25 * UNIT, 0.25 * UNIT
 end
 
 -- Methods
@@ -161,7 +161,7 @@ function GrabTool:drawGrid()
         local windowWidth, windowHeight = love.graphics.getDimensions()
 
         local dpiScale = love.graphics.getDPIScale()
-        gridShader:send("gridSize", dpiScale * self._gridSize * self.game:getViewScale())
+        gridShader:send("gridSize", dpiScale * self._gridSize * 2 * self.game:getViewScale())
         gridShader:send("dotRadius", dpiScale * 2)
         gridShader:send(
             "offset",
