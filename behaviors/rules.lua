@@ -99,7 +99,7 @@ function RulesBehavior:_checkResponseReferencesBehavior(response, behavior)
 
    if response.behaviorId == behavior.behaviorId then
       return true
-   elseif response.name == 'set behavior property' and response.params and respone.params.behaviorId == behavior.behaviorId then
+   elseif response.name == 'set behavior property' and response.params and response.params.behaviorId == behavior.behaviorId then
       return true
    elseif response.name == 'change behavior property' and response.params and response.params.behaviorId == behavior.behaviorId then
       return true
