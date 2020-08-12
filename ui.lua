@@ -43,20 +43,9 @@ function Client:uiTextActorsData()
 end
 
 function Client:uiActiveTool()
-   -- Does the active tool have a panel?
    local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
-
    if activeTool and activeTool.handlers.uiData then
       activeTool:callHandler('uiData')
-   elseif activeTool and activeTool.handlers.uiPanel then
-      local uiName = activeTool:getUiName()
-      ui.scrollBox('inspector-tool-' .. uiName, {
-            padding = 2,
-            margin = 2,
-            flex = 1,
-      }, function()
-            activeTool:callHandler('uiPanel')
-      end)
    else
       ui.data({})
    end
@@ -94,7 +83,6 @@ function Client:uiGlobalActions()
           {
              name = tool.name,
              behaviorId = tool.behaviorId,
-             hasUi = not (not tool.handlers.uiPanel),
           }
        )
     end
