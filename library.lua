@@ -168,7 +168,7 @@ local CORE_LIBRARY = {
         actorBlueprint = {
             components = {
                 Text = {
-                    content = "To be?"
+                    content = "Your text goes here"
                 }
             }
         },
@@ -181,7 +181,7 @@ local CORE_LIBRARY = {
        actorBlueprint = {
           components = {
              Text = {
-                content = "Tap here to go to the card specified in my Rules.",
+                content = "Tap me to go to the card specified in my rules",
              },
              Rules = {
                 rules = {
