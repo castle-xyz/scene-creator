@@ -30,6 +30,7 @@ end
 
 function TagsBehavior.handlers:disableComponent(component, opts)
     for tag in pairs(component._tags) do
+        tag = tag:lower()
         self._tagToActorIds[tag][component.actorId] = nil
         if not next(self._tagToActorIds[tag]) then
             self._tagToActorIds[tag] = nil
@@ -48,17 +49,20 @@ function TagsBehavior.setters:tagsString(component, newTagsString)
 
     -- Update indices
     for tag in pairs(component._tags) do
-        self._tagToActorIds[tag][component.actorId] = nil
+       tag = tag:lower()
+       self._tagToActorIds[tag][component.actorId] = nil
         if not next(self._tagToActorIds[tag]) then
             self._tagToActorIds[tag] = nil
         end
     end
     component._tags = {}
     for tag in component.properties.tagsString:gmatch("%S+") do
-        component._tags[tag] = true
+       tag = tag:lower()
+       component._tags[tag] = true
     end
     for tag in pairs(component._tags) do
-        if not self._tagToActorIds[tag] then
+       tag = tag:lower()
+       if not self._tagToActorIds[tag] then
             self._tagToActorIds[tag] = {}
         end
         self._tagToActorIds[tag][component.actorId] = true
@@ -72,11 +76,13 @@ function TagsBehavior:actorHasTag(actorId, tag)
     if not component then
         return false
     end
+    tag = tag:lower()
     return component._tags[tag] ~= nil
 end
 
 function TagsBehavior:getActorsWithTag(tag)
     local result = {}
+    tag = tag:lower()
     if self._tagToActorIds[tag] then
         for actorId in pairs(self._tagToActorIds[tag]) do
             result[actorId] = true
@@ -86,6 +92,7 @@ function TagsBehavior:getActorsWithTag(tag)
 end
 
 function TagsBehavior:forEachActorWithTag(tag, func)
+    tag = tag:lower()
     if self._tagToActorIds[tag] then
         for actorId in pairs(self._tagToActorIds[tag]) do
             func(actorId)
@@ -103,12 +110,14 @@ TagsBehavior.responses["add tag"] = {
          method = "textInput",
          label = "Tags",
          initialValue = "",
+         props = { autoCapitalize = 'none' },
       },
    },
    run = function(self, actorId, params, context)
       local component = self.components[actorId]
       if params.tag ~= nil and params.tag ~= '' then
          for tag in params.tag:gmatch("%S+") do
+            tag = tag:lower()
             component._tags[tag] = true
             if not self._tagToActorIds[tag] then
                self._tagToActorIds[tag] = {}
@@ -127,12 +136,14 @@ TagsBehavior.responses["remove tag"] = {
          method = "textInput",
          label = "Tags",
          initialValue = "",
+         props = { autoCapitalize = 'none' },
       },
    },
    run = function(self, actorId, params, context)
       local component = self.components[actorId]
       if params.tag ~= nil and params.tag ~= '' then
          for tag in params.tag:gmatch("%S+") do
+            tag = tag:lower()
             component._tags[tag] = nil
             if self._tagToActorIds[tag] then
                self._tagToActorIds[tag][actorId] = nil

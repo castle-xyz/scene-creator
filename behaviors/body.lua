@@ -502,6 +502,7 @@ BodyBehavior.triggers.collide = {
        tag = {
           label = "colliding with tag",
           method = "textInput",
+          props = { autoCapitalize = 'none' },
        },
     },
 }
@@ -526,6 +527,7 @@ BodyBehavior.responses["is colliding"] = {
        tag = {
           label = "colliding with tag",
           method = "textInput",
+          props = { autoCapitalize = 'none' },
        },
     },
     run = function(self, actorId, params, context)

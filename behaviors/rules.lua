@@ -653,6 +653,7 @@ RulesBehavior.responses["act on"] = {
     paramSpecs = {
        tag = {
           method = "textInput",
+          props = { autoCapitalize = 'none' },
        },
     },
     run = function(self, actorId, params, context)

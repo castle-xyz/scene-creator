@@ -284,6 +284,7 @@ MovingBehavior.responses["move toward actor"] = {
       tag = {
          method = "textInput",
          label = "Tag",
+         props = { autoCapitalize = 'none' },
       },
       speed = {
          method = "numberInput",
