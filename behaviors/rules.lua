@@ -480,7 +480,7 @@ RulesBehavior.responses.wait = {
           props = {
              min = 0,
              max = 30,
-             step = 0.2,
+             step = 0.1,
           },
        },
     },
