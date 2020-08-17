@@ -615,7 +615,7 @@ RulesBehavior.responses["enable behavior"] = {
 }
 
 RulesBehavior.responses["if"] = {
-    description = "Condition a response",
+    description = "If a condition is met, run a response",
     category = "logic",
     run = function(self, actorId, params, context)
         if self:runResponse(params["condition"], actorId, context) then
