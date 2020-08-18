@@ -97,6 +97,13 @@ function MovingBehavior.handlers:enableComponent(component, opts)
       fixture:setDensity(component.properties.density)
    end
    body:resetMassData()
+   body:setAwake(true)
+end
+
+function MovingBehavior.handlers:enableDependentComponent(component)
+   -- if we enable anything that depends on Moving, awaken the body
+   local bodyId, body = self.dependencies.Body:getBody(component.actorId)
+   body:setAwake(true)
 end
 
 function MovingBehavior.handlers:disableComponent(component, opts)
