@@ -11,7 +11,8 @@ local CORE_LIBRARY = {
             components = {
                 Drawing2 = DrawingData.Wall.Drawing2,
                 Body = {},
-                Solid = {}
+                Solid = {},
+                Tags = {},
             }
         },
         base64Png = DrawingData.Wall.base64Png,
@@ -25,7 +26,8 @@ local CORE_LIBRARY = {
                 Drawing2 = DrawingData.Ball.Drawing2,
                 Body = {gravityScale = 1},
                 Solid = {},
-                Falling = {}
+                Falling = {},
+                Tags = {},
             }
         },
         base64Png = DrawingData.Ball.base64Png,
@@ -38,7 +40,8 @@ local CORE_LIBRARY = {
             components = {
                 Text = {
                     content = "Your text goes here"
-                }
+                },
+                Tags = {},
             }
         },
         base64Png = DrawingData.TextBox.base64Png,
@@ -52,6 +55,7 @@ local CORE_LIBRARY = {
              Text = {
                 content = "Tap me to go to the card specified in my rules",
              },
+             Tags = {},
              Rules = {
                 rules = {
                    {

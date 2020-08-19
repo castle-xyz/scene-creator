@@ -632,10 +632,19 @@ function Common:sendAddActor(bp, opts)
 
         self:send("addComponent", self.clientId, actorId, behavior.behaviorId, componentBp)
     end
+    local hasTags = false
     for behaviorName, componentBp in pairs(bp.components) do
+        if behaviorName == 'Tags' then
+            hasTags = true
+        end
         visit(behaviorName, componentBp)
     end
 
+    -- legacy: if the actor doesn't have tags behavior, add it
+    if not hasTags then
+        self:send("addComponent", self.clientId, actorId, self.behaviorsByName.Tags.behaviorId, {})
+    end
+    
     if self.performing then
         self:send("postAddActor", actorId)
     end
