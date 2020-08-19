@@ -478,9 +478,10 @@ RulesBehavior.responses.wait = {
           method = "numberInput",
           initialValue = 1,
           props = {
-             min = 0,
+             min = 0.0625,
              max = 30,
              step = 0.1,
+             decimalDigits = 4,
           },
        },
     },
