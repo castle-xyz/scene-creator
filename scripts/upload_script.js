@@ -12,12 +12,17 @@ if (!token) {
   var token = fs.readFileSync(tokenFilename, "utf8");
 }
 
+let version = SCENE_CREATOR_API_VERSION;
+if (process.env["API_VERSION"]) {
+  version = process.env["API_VERSION"];
+}
+
 request.post(
   {
     url: "https://api.castle.games/api/scene-creator/upload",
     headers: {
       "X-Auth-Token": token,
-      "scene-creator-api-version": SCENE_CREATOR_API_VERSION,
+      "scene-creator-api-version": version,
     },
     formData: {
       file: fs.createReadStream("../scene_creator.love"),

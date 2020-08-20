@@ -5,6 +5,7 @@
   "main": "upload_script.js",
   "scripts": {
     "upload": "./generate_zip.sh && node upload_script.js",
+    "upload-dev": "./generate_zip.sh && API_VERSION=dev node upload_script.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
