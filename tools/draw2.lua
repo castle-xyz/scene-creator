@@ -674,6 +674,7 @@ function DrawTool:updateDrawTool(c, touch)
 
             _grabbedPaths = nil
             _tempGraphics = nil
+            _initialCoord = nil
         else
             if #_grabbedPaths > 0 then
                 resetTempGraphics()
