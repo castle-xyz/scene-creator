@@ -6,6 +6,9 @@ local TextBehavior = defineCoreBehavior {
        content = {
           method = 'textArea',
           label = 'Content',
+          rules = {
+             set = true,
+          },
        },
        visible = {
           method = 'toggle',
