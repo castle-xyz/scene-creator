@@ -22,7 +22,10 @@ local DEFAULT_DATA = ''
 
 -- Loading
 
-local cache = setmetatable({}, {__mode = "v"})
+-- TODO: we should use a weak map in edit mode but not in play mode. using a weak map in play mode causes stutters
+-- because drawing get garage collected too aggressively
+--local cache = setmetatable({}, {__mode = "v"})
+local cache = setmetatable({}, {})
 
 function Drawing2Behavior:cacheDrawing(data)
     local hash = data.hash
