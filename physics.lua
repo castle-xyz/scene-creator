@@ -609,9 +609,16 @@ function Physics:updateWorld(worldId, dt)
 
     -- Catch up world to current time
     worldData.updateTimeRemaining = worldData.updateTimeRemaining + dt
-    while worldData.updateTimeRemaining >= 1 / self.updateRate do
+    local worldTicks, maxWorldTicks = 0, 60
+    while worldData.updateTimeRemaining >= 1 / self.updateRate
+       and worldTicks < maxWorldTicks -- don't block on excessive updates
+    do
         self:_tickWorld(world, worldData)
         worldData.updateTimeRemaining = worldData.updateTimeRemaining - 1 / self.updateRate
+        worldTicks = worldTicks + 1
+        if worldTicks >= maxWorldTicks then
+           worldData.updateTimeRemaining = 0
+        end
     end
 
     -- Restore bodies that weren't actually rewound
