@@ -123,7 +123,7 @@ function Client:touchToShowHints()
    if self.numTouches > 0 then
       local anyTouchUsed = false
       for touchId, touch in pairs(self.touches) do
-         if touch.used then
+         if touch.used or touch.sling then
             anyTouchUsed = true
          end
       end

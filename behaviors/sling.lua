@@ -59,25 +59,30 @@ function SlingBehavior.handlers:postPerform(dt)
     local physics = self.dependencies.Body:getPhysics()
 
     local touchData = self:getTouchData()
-    if touchData.maxNumTouches == 1 and touchData.allTouchesReleased then
+    if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
-            local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
-            local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
-            if dragLen > MAX_DRAG_LENGTH then
-                dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
-                dragLen = MAX_DRAG_LENGTH
-            end
+           touch.sling = true -- mark the touch without `used` so we detect player interaction
+        end
+        if touchData.allTouchesReleased then
+            if not touch.used and touch.movedNear then
+                local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
+                local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+                if dragLen > MAX_DRAG_LENGTH then
+                    dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
+                    dragLen = MAX_DRAG_LENGTH
+                end
 
-            for actorId, component in pairs(self.components) do
-                if not component.disabled then
-                    -- Own the body, then just set velocity locally and the physics system will sync it
-                    local bodyId, body = self.dependencies.Body:getBody(actorId)
-                    if physics:getOwner(bodyId) ~= self.game.clientId then
-                        physics:setOwner(bodyId, self.game.clientId, true, 0)
+                for actorId, component in pairs(self.components) do
+                    if not component.disabled then
+                        -- Own the body, then just set velocity locally and the physics system will sync it
+                        local bodyId, body = self.dependencies.Body:getBody(actorId)
+                        if physics:getOwner(bodyId) ~= self.game.clientId then
+                            physics:setOwner(bodyId, self.game.clientId, true, 0)
+                        end
+                        body:setLinearVelocity(component.properties.speed * dragX, component.properties.speed * dragY)
+                        self:fireTrigger("sling", actorId)
                     end
-                    body:setLinearVelocity(component.properties.speed * dragX, component.properties.speed * dragY)
-                    self:fireTrigger("sling", actorId)
                 end
             end
         end
