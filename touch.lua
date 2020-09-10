@@ -5,6 +5,8 @@ local NoTouchState = {
 
 -- Start / stop
 
+local overlayShader
+
 function Client:startTouch()
     self.touches = {} -- `touchId` -> touch
     self.numTouches = 0 -- Number of current touches (including 'just released' ones)
@@ -16,6 +18,18 @@ function Client:startTouch()
        counter = 0,
        state = NoTouchState.INACTIVE,
     }
+    overlayShader = love.graphics.newShader(
+       [[
+        extern vec4 tint;
+        extern number strength;
+        vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords )
+        {
+              color = Texel(texture, texture_coords);
+              number luma = dot(vec3(0.299, 0.587, 0.114), color.rgb);
+              return mix(color, tint * luma, strength);
+        }
+       ]]
+    )
 end
 
 -- Update
@@ -164,6 +178,9 @@ function Client:drawNoTouchesHintOverlay()
       love.graphics.pop()
 
       -- draw interactive actors only
+      love.graphics.setShader(overlayShader)
+      overlayShader:send("strength", overlayAlpha)
+      overlayShader:send("tint", { 1, 1, 1, overlayAlpha })
       local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
       self:forEachActorByDrawOrder(
          function(actor)
@@ -177,5 +194,6 @@ function Client:drawNoTouchesHintOverlay()
             end
          end
       )
+      love.graphics.setShader()
    end
 end
