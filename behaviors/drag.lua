@@ -42,6 +42,10 @@ function DragBehavior:_releaseComponentTouch(component, touch)
    end
 end
 
+function DragBehavior.getters:isInteractive(component)
+   return not component.disabled
+end
+
 -- Perform
 
 function DragBehavior.handlers:prePerform(dt)

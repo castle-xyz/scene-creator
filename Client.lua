@@ -366,6 +366,10 @@ function Client:update(dt)
         self:twoFingerPan()
     end
 
+    if self.performing then
+       self:touchToShowHints()
+    end
+    
     self:callHandlers("update", dt)
     self:callHandlers("postUpdate", dt)
 
@@ -473,6 +477,10 @@ function Client:drawScene(opts)
                 end
             end
         )
+    end
+
+    do -- Hint overlay
+       self:drawNoTouchesHintOverlay()
     end
 end
 

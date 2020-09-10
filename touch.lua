@@ -1,3 +1,8 @@
+local NoTouchState = {
+   INACTIVE = 0,
+   ACTIVE = 1,
+}
+
 -- Start / stop
 
 function Client:startTouch()
@@ -7,6 +12,10 @@ function Client:startTouch()
     self.allTouchesReleased = false -- Whether we are at the end of a gesture
     self.gestureId = nil -- Unique id for this gesture
     self.gestureStolen = false
+    self.noTouchesUsed = {
+       counter = 0,
+       state = NoTouchState.INACTIVE,
+    }
 end
 
 -- Update
@@ -105,4 +114,68 @@ function Client:updateTouches()
         self.gestureId = nil
         self.gestureStolen = false
     end
+end
+
+-- if the player repeatedly touches stuff that's non-interactive,
+-- highlight interactive objects in the scene
+function Client:touchToShowHints()
+   local triggered = false
+   if self.numTouches > 0 then
+      local anyTouchUsed = false
+      for touchId, touch in pairs(self.touches) do
+         if touch.used then
+            anyTouchUsed = true
+         end
+      end
+      if not anyTouchUsed then
+         triggered = true
+         self.noTouchesUsed.counter = self.noTouchesUsed.counter + 1
+         if self.noTouchesUsed.counter > 45 and self.noTouchesUsed.state ~= NoTouchState.ACTIVE then
+            self.noTouchesUsed.state = NoTouchState.ACTIVE
+         end
+         if self.noTouchesUsed.counter > 60 then
+            self.noTouchesUsed.counter = 60
+         end
+      end
+   end
+
+   if not triggered then
+      self.noTouchesUsed.counter = self.noTouchesUsed.counter - 2
+      if self.noTouchesUsed.counter < 0 then
+         self.noTouchesUsed.counter = 0
+         self.noTouchesUsed.state = NoTouchState.INACTIVE
+      end
+   end
+end
+
+function Client:drawNoTouchesHintOverlay()
+   if self.noTouchesUsed.state == NoTouchState.ACTIVE then
+      -- darken the whole card
+      local overlayAlpha = (math.max(0, self.noTouchesUsed.counter - 45) / 15) * 0.7
+      love.graphics.push("all")
+      love.graphics.setColor(0, 0, 0, overlayAlpha)
+      love.graphics.rectangle(
+         "fill",
+            -0.5 * DEFAULT_VIEW_WIDTH,
+            -0.5 * DEFAULT_VIEW_WIDTH,
+         DEFAULT_VIEW_WIDTH,
+         DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
+      )
+      love.graphics.pop()
+
+      -- draw interactive actors only
+      local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
+      self:forEachActorByDrawOrder(
+         function(actor)
+            if self:isActorInteractive(actor.actorId) then
+               for behaviorId, behavior in pairs(drawBehaviors) do
+                  local component = actor.components[behaviorId]
+                  if component then
+                     behavior:callHandler("drawComponent", component)
+                  end
+               end
+            end
+         end
+      )
+   end
 end

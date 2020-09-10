@@ -37,6 +37,10 @@ function SlingBehavior.handlers:blueprintComponent(component, bp)
     bp.speed = component.properties.speed
 end
 
+function SlingBehavior.getters:isInteractive(component)
+   return not component.disabled
+end
+
 -- Perform
 
 function SlingBehavior.handlers:postPerform(dt)

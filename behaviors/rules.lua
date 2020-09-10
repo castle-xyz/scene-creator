@@ -79,6 +79,20 @@ function RulesBehavior.handlers.componentHasTrigger(component, triggerName)
    return component._rulesByTriggerName[triggerName] ~= nil
 end
 
+-- TODO: might want to specify this in the trigger config instead
+local interactiveTriggers = {
+   'tap',
+   'press',
+}
+function RulesBehavior.getters:isInteractive(component)
+   for _, triggerName in ipairs(interactiveTriggers) do
+      if self.handlers.componentHasTrigger(component, triggerName) then
+         return true
+      end
+   end
+   return false
+end
+
 function RulesBehavior:_checkResponseReferencesBehavior(response, behavior)
    if not response then return false end
    

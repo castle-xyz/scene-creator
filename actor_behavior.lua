@@ -98,6 +98,13 @@ function BaseBehavior:hasAnyEnabledComponent()
    return false
 end
 
+function BaseBehavior:isInteractive(component)
+   if self.getters.isInteractive ~= nil then
+      return self.getters.isInteractive(self, component)
+   end
+   return false
+end
+
 function BaseBehavior:command(description, opts, doFunc, undoFunc)
     self.game:command(description, setmetatable({behaviorId = self.behaviorId}, {__index = opts}), doFunc, undoFunc)
 end
@@ -650,6 +657,17 @@ function Common:sendAddActor(bp, opts)
     end
 
     return actorId
+end
+
+function Common:isActorInteractive(actorId)
+   local actor = assert(self.actors[actorId], "isActorInteractive: no such actor")
+   for behaviorId, component in pairs(actor.components) do
+      local behavior = self.behaviors[component.behaviorId]
+      if behavior:isInteractive(component) then
+         return true
+      end
+   end
+   return false
 end
 
 function Common:blueprintActor(actorId)
