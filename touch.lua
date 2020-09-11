@@ -20,12 +20,17 @@ function Client:startTouch()
     }
     overlayShader = love.graphics.newShader(
        [[
-        extern vec4 tint;
+        extern number transition;
         vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords )
         {
               color = Texel(texture, texture_coords);
-              number luma = dot(vec3(0.299, 0.587, 0.114), color.rgb);
-              return mix(color, tint * luma, 1.0);
+              number a;
+              if (color.a > 0.0) {
+                a = transition;
+              } else {
+                a = 0.0;
+              }
+              return vec4(1.0, 1.0, 1.0, a);
         }
        ]]
     )
@@ -164,9 +169,9 @@ end
 function Client:drawNoTouchesHintOverlay()
    if self.noTouchesUsed.state == NoTouchState.ACTIVE then
       -- darken the whole card
-      local overlayAlpha = (math.max(0, self.noTouchesUsed.counter - 45) / 15) * 0.7
+      local overlayAlpha = (math.max(0, self.noTouchesUsed.counter - 45) / 15)
       love.graphics.push("all")
-      love.graphics.setColor(0, 0, 0, overlayAlpha)
+      love.graphics.setColor(0, 0, 0, overlayAlpha * 0.7)
       love.graphics.rectangle(
          "fill",
             -0.5 * DEFAULT_VIEW_WIDTH,
@@ -179,7 +184,7 @@ function Client:drawNoTouchesHintOverlay()
       -- draw interactive actors only
       love.graphics.push("all")
       love.graphics.setShader(overlayShader)
-      overlayShader:send("tint", { 1, 1, 1, overlayAlpha })
+      overlayShader:send("transition", overlayAlpha)
       local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
       self:forEachActorByDrawOrder(
          function(actor)
