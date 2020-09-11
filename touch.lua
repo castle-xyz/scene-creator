@@ -178,6 +178,7 @@ function Client:drawNoTouchesHintOverlay()
       love.graphics.pop()
 
       -- draw interactive actors only
+      love.graphics.push("all")
       love.graphics.setShader(overlayShader)
       overlayShader:send("strength", overlayAlpha)
       overlayShader:send("tint", { 1, 1, 1, overlayAlpha })
@@ -194,6 +195,6 @@ function Client:drawNoTouchesHintOverlay()
             end
          end
       )
-      love.graphics.setShader()
+      love.graphics.pop()
    end
 end

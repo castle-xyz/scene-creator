@@ -126,7 +126,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
     local graphicsSize = drawData.scale or 10
 
     -- Push transform
-    love.graphics.push()
+    love.graphics.push("all")
     love.graphics.translate(bodyX, bodyY)
     love.graphics.rotate(bodyAngle)
     love.graphics.translate(-bodyWidth / 2.0, -bodyHeight / 2.0)
