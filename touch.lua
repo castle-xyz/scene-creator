@@ -17,20 +17,17 @@ function Client:startTouch()
     self.noTouchesUsed = {
        counter = 0,
        state = NoTouchState.INACTIVE,
+       startTime = 0,
     }
     overlayShader = love.graphics.newShader(
        [[
         extern number transition;
+        extern number intensity;
         vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords )
         {
               color = Texel(texture, texture_coords);
-              number a;
-              if (color.a > 0.0) {
-                a = transition;
-              } else {
-                a = 0.0;
-              }
-              return vec4(1.0, 1.0, 1.0, a);
+              number a = (1.0 - step(0.0, -color.a)) * transition;
+              return vec4(intensity, intensity, intensity, a);
         }
        ]]
     )
@@ -152,6 +149,7 @@ function Client:touchToShowHints()
          self.noTouchesUsed.counter = self.noTouchesUsed.counter + 1
          if self.noTouchesUsed.counter > 45 and self.noTouchesUsed.state ~= NoTouchState.ACTIVE then
             self.noTouchesUsed.state = NoTouchState.ACTIVE
+            self.noTouchesUsed.startTime = love.timer.getTime()
          end
          if self.noTouchesUsed.counter > 60 then
             self.noTouchesUsed.counter = 60
@@ -225,6 +223,10 @@ function Client:drawNoTouchesHintOverlay()
       love.graphics.setColor(1, 1, 1, 1)
       love.graphics.setShader(overlayShader)
       overlayShader:send("transition", overlayAlpha)
+      overlayShader:send(
+         "intensity",
+         0.7 + 0.3 * math.cos((love.timer.getTime() - self.noTouchesUsed.startTime) * 6)
+      )
       love.graphics.draw(hintOverlayCanvas)
       love.graphics.pop()
    end
