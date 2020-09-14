@@ -14,8 +14,9 @@ function Client:startTouch()
     self.allTouchesReleased = false -- Whether we are at the end of a gesture
     self.gestureId = nil -- Unique id for this gesture
     self.gestureStolen = false
-    self.noTouchesUsed = {
+    self.hintState = {
        counter = 0,
+       consecutiveUselessTaps = 0,
        state = NoTouchState.INACTIVE,
        startTime = 0,
     }
@@ -133,35 +134,58 @@ end
 
 local hintOverlayCanvas
 
+function Client:_triggerNoTouchOverlay(count)
+   self.hintState.counter = self.hintState.counter + count
+   if self.hintState.counter > 45 and self.hintState.state ~= NoTouchState.ACTIVE then
+      self.hintState.state = NoTouchState.ACTIVE
+      self.hintState.startTime = love.timer.getTime()
+   end
+   if self.hintState.counter > 240 then
+      self.hintState.counter = 240
+   end
+end
+
 -- if the player repeatedly touches stuff that's non-interactive,
 -- highlight interactive objects in the scene
 function Client:touchToShowHints()
    local triggered = false
+   local time = love.timer.getTime()
    if self.numTouches > 0 then
       local anyTouchUsed = false
+      local anyTapDidNothing = false
       for touchId, touch in pairs(self.touches) do
          if touch.used or touch.sling then
             anyTouchUsed = true
          end
+         if not touch.used and not touch.sling and touch.released
+         and not touch.movedNear and time - touch.pressTime < 0.2 then
+            anyTapDidNothing = true
+         end
       end
-      if not anyTouchUsed then
+      if anyTapDidNothing then
+         -- bring up the hint overlay after 4 or more taps in the scene that did nothing
+         self.hintState.consecutiveUselessTaps = self.hintState.consecutiveUselessTaps + 1
+         if self.hintState.consecutiveUselessTaps >= 4 then
+            self:_triggerNoTouchOverlay(180)
+         end
          triggered = true
-         self.noTouchesUsed.counter = self.noTouchesUsed.counter + 1
-         if self.noTouchesUsed.counter > 45 and self.noTouchesUsed.state ~= NoTouchState.ACTIVE then
-            self.noTouchesUsed.state = NoTouchState.ACTIVE
-            self.noTouchesUsed.startTime = love.timer.getTime()
-         end
-         if self.noTouchesUsed.counter > 60 then
-            self.noTouchesUsed.counter = 60
-         end
+      elseif not anyTouchUsed then
+         -- bring up the hint overlay if people press/drag/hold in empty space for long enough
+         self:_triggerNoTouchOverlay(1)
+         triggered = true
+      else
+         -- user succeeded in interacting, reset touch counter
+         self.hintState.consecutiveUselessTaps = 0
       end
    end
 
    if not triggered then
-      self.noTouchesUsed.counter = self.noTouchesUsed.counter - 2
-      if self.noTouchesUsed.counter < 0 then
-         self.noTouchesUsed.counter = 0
-         self.noTouchesUsed.state = NoTouchState.INACTIVE
+      -- 'cool down' the hint overlay if the user is successfully interacting with the scene
+      -- or is idling with no touches at all
+      self.hintState.counter = self.hintState.counter - 1
+      if self.hintState.counter < 0 then
+         self.hintState.counter = 0
+         self.hintState.state = NoTouchState.INACTIVE
          if hintOverlayCanvas ~= nil then
             hintOverlayCanvas:release()
             hintOverlayCanvas = nil
@@ -171,9 +195,9 @@ function Client:touchToShowHints()
 end
 
 function Client:drawNoTouchesHintOverlay()
-   if self.noTouchesUsed.state == NoTouchState.ACTIVE then
+   if self.hintState.state == NoTouchState.ACTIVE then
       -- darken the whole card
-      local overlayAlpha = (math.max(0, self.noTouchesUsed.counter - 45) / 15)
+      local overlayAlpha = math.min(math.max(0, self.hintState.counter - 45) / 15, 1)
       love.graphics.push("all")
       love.graphics.setColor(0, 0, 0, overlayAlpha * 0.7)
       love.graphics.rectangle(
@@ -225,7 +249,7 @@ function Client:drawNoTouchesHintOverlay()
       overlayShader:send("transition", overlayAlpha)
       overlayShader:send(
          "intensity",
-         0.7 + 0.3 * math.cos((love.timer.getTime() - self.noTouchesUsed.startTime) * 6)
+         0.7 + 0.3 * math.cos((love.timer.getTime() - self.hintState.startTime) * 6)
       )
       love.graphics.draw(hintOverlayCanvas)
       love.graphics.pop()
