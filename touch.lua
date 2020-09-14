@@ -134,6 +134,8 @@ function Client:updateTouches()
     end
 end
 
+local hintOverlayCanvas
+
 -- if the player repeatedly touches stuff that's non-interactive,
 -- highlight interactive objects in the scene
 function Client:touchToShowHints()
@@ -162,6 +164,10 @@ function Client:touchToShowHints()
       if self.noTouchesUsed.counter < 0 then
          self.noTouchesUsed.counter = 0
          self.noTouchesUsed.state = NoTouchState.INACTIVE
+         if hintOverlayCanvas ~= nil then
+            hintOverlayCanvas:release()
+            hintOverlayCanvas = nil
+         end
       end
    end
 end
@@ -181,23 +187,45 @@ function Client:drawNoTouchesHintOverlay()
       )
       love.graphics.pop()
 
-      -- draw interactive actors only
-      love.graphics.push("all")
-      love.graphics.setShader(overlayShader)
-      overlayShader:send("transition", overlayAlpha)
-      local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
-      self:forEachActorByDrawOrder(
-         function(actor)
-            if self:isActorInteractive(actor.actorId) then
-               for behaviorId, behavior in pairs(drawBehaviors) do
-                  local component = actor.components[behaviorId]
-                  if component then
-                     behavior:callHandler("drawComponent", component)
+      if hintOverlayCanvas == nil then
+         hintOverlayCanvas = love.graphics.newCanvas()
+      end
+
+      -- draw interactive actors to overlay canvas
+      hintOverlayCanvas:renderTo(
+         function()
+            love.graphics.push("all")
+            love.graphics.origin()
+            love.graphics.scale(hintOverlayCanvas:getWidth() / DEFAULT_VIEW_WIDTH)
+            love.graphics.translate(0, 0)
+            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, 0.5 * DEFAULT_VIEW_WIDTH)
+            love.graphics.clear(0, 0, 0, 0)
+
+            local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
+            self:forEachActorByDrawOrder(
+               function(actor)
+                  if self:isActorInteractive(actor.actorId) then
+                     for behaviorId, behavior in pairs(drawBehaviors) do
+                        local component = actor.components[behaviorId]
+                        if component then
+                           behavior:callHandler("drawComponent", component)
+                        end
+                     end
                   end
                end
-            end
+            )
+
+            love.graphics.pop()
          end
       )
+
+      -- render actor overlay with silhouette shader
+      love.graphics.push("all")
+      love.graphics.origin()
+      love.graphics.setColor(1, 1, 1, 1)
+      love.graphics.setShader(overlayShader)
+      overlayShader:send("transition", overlayAlpha)
+      love.graphics.draw(hintOverlayCanvas)
       love.graphics.pop()
    end
 end
