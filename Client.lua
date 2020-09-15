@@ -1,4 +1,5 @@
 jsEvents = require "__ghost__.jsEvents"
+require('profiler')
 
 -- Initial params
 
@@ -132,7 +133,11 @@ function Client:load(isEditing, snapshot, variables)
 end
 
 function castle.uiupdate(...)
-    currentInstance():uiupdate(...)
+    local varArgs = {...}
+
+    return profileFunction('castle.uiupdate', function()
+        currentInstance():uiupdate(unpack(varArgs))
+    end)
 end
 
 -- Begin / end editing
@@ -344,7 +349,9 @@ function Client:twoFingerPan()
 end
 
 function love.update(dt)
-    currentInstance():update(dt)
+    profileFunction('love.update', function()
+        currentInstance():update(dt)
+    end)
 end
 
 function Client:update(dt)
@@ -388,6 +395,8 @@ function Client:update(dt)
 
         REQUEST_EDIT_STATUS_CHANGE = nil
     end
+
+    profilerUpdate(dt)
 end
 
 -- Draw
@@ -446,42 +455,49 @@ end
 function Client:drawScene(opts)
     opts = opts or {}
 
-    do -- Background
-        local bgColor = self.sceneProperties.backgroundColor
-        if opts.boundary then
-            love.graphics.clear(0.8, 0.8, 0.8)
-            love.graphics.push("all")
-            love.graphics.setColor(bgColor.r, bgColor.g, bgColor.b)
-            love.graphics.rectangle(
-                "fill",
-                -0.5 * DEFAULT_VIEW_WIDTH,
-                -0.5 * DEFAULT_VIEW_WIDTH,
-                DEFAULT_VIEW_WIDTH,
-                DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
-            )
-            love.graphics.pop()
-        else
-            love.graphics.clear(bgColor.r, bgColor.g, bgColor.b)
+    profileFunction('drawScene.background', function()
+        do -- Background
+            local bgColor = self.sceneProperties.backgroundColor
+            if opts.boundary then
+                love.graphics.clear(0.8, 0.8, 0.8)
+                love.graphics.push("all")
+                love.graphics.setColor(bgColor.r, bgColor.g, bgColor.b)
+                love.graphics.rectangle(
+                    "fill",
+                    -0.5 * DEFAULT_VIEW_WIDTH,
+                    -0.5 * DEFAULT_VIEW_WIDTH,
+                    DEFAULT_VIEW_WIDTH,
+                    DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
+                )
+                love.graphics.pop()
+            else
+                love.graphics.clear(bgColor.r, bgColor.g, bgColor.b)
+            end
         end
-    end
+    end)
 
-    do -- Behaviors
-        local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
-        self:forEachActorByDrawOrder(
-            function(actor)
-                for behaviorId, behavior in pairs(drawBehaviors) do
-                    local component = actor.components[behaviorId]
-                    if component then
-                        behavior:callHandler("drawComponent", component)
+    profileFunction('drawScene.behaviors', function()
+        do -- Behaviors
+            local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
+            self:forEachActorByDrawOrder(
+                function(actor)
+                    for behaviorId, behavior in pairs(drawBehaviors) do
+                        local component = actor.components[behaviorId]
+                        if component then
+                            behavior:callHandler("drawComponent", component)
+                        end
                     end
                 end
-            end
-        )
-    end
+            )
+        end
+    end)
 
-    do -- Hint overlay
-       self:drawNoTouchesHintOverlay()
-    end
+
+    profileFunction('drawScene.hintOverlay', function()
+        do -- Hint overlay
+        self:drawNoTouchesHintOverlay()
+        end
+    end)
 end
 
 function _createScreenshotCanvas()
@@ -564,7 +580,9 @@ function Client:saveScreenshot()
 end
 
 function love.draw()
-    currentInstance():draw()
+    profileFunction('love.draw', function()
+        currentInstance():draw()
+    end)
 end
 
 function Client:draw()
@@ -615,11 +633,14 @@ function Client:draw()
             love.graphics.applyTransform(self.viewTransform)
         end
 
-        self:drawScene(
-            {
-                boundary = not self.performing
-            }
-        )
+
+        profileFunction('draw.drawScene', function()
+            self:drawScene(
+                {
+                    boundary = not self.performing
+                }
+            )
+        end)
     else
         self.viewTransform:reset()
         self.viewTransform:scale(windowWidth / DEFAULT_VIEW_WIDTH)
@@ -716,7 +737,7 @@ function Client:draw()
         self:drawNotify()
     end
 
-    if false then -- Debug overlay
+    if true then -- Debug overlay
         local networkText = ""
         if self.connected then
             networkText = networkText .. "    ping: " .. self.client.getPing() .. "ms"
@@ -724,11 +745,13 @@ function Client:draw()
         end
 
         love.graphics.setFont(debugFont)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("fill", windowWidth - 110, 0, 110, 50)
         love.graphics.setColor(0, 0, 0)
         love.graphics.print(
             "fps: " .. love.timer.getFPS() .. networkText,
-            16,
-            windowHeight - debugFont:getHeight() - 16
+            windowWidth - 100,
+            16
         )
     end
 

@@ -20,7 +20,12 @@ end
 function BaseBehavior:callHandler(handlerName, ...)
     local handler = self.handlers[handlerName]
     if handler then
-        return handler(self, ...)
+        local behaviorSelf = self
+        local varArgs = {...}
+
+        return profileFunction(handlerName .. ' ' .. self.name, function()
+            return handler(behaviorSelf, unpack(varArgs))
+        end)
     end
 end
 

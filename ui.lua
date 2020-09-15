@@ -126,49 +126,69 @@ function Client:uiSettings()
 end
 
 function Client:uiupdate()
-    -- Refresh tools first to make sure selections and applicable tool set are valid
-    self:applySelections() 
+   local uiSelf = self
 
-    -- Global actions
-    ui.pane('sceneCreatorGlobalActions', function()
-        self:uiGlobalActions()
-    end)
+   profileFunction('uiupdate.uiTextActorsData', function()
+      -- Text actors
+      ui.pane('sceneCreatorTextActors', function()
+         uiSelf:uiTextActorsData()
+      end)
+   end)
 
-    -- Blueprints
-    ui.pane('sceneCreatorBlueprints', function()
-        self:uiBlueprints()
-    end)
+   profileFunction('uiupdate.applySelections', function()
+      -- Refresh tools first to make sure selections and applicable tool set are valid
+      uiSelf:applySelections() 
+   end)
 
-    -- Inspector
-    ui.pane('sceneCreatorInspectorActions', function()
-        self:uiInspectorActions()
-    end)
+   profileFunction('uiupdate.uiGlobalActions', function()
+      -- Global actions
+      ui.pane('sceneCreatorGlobalActions', function()
+         uiSelf:uiGlobalActions()
+      end)
+   end)
 
-    local sceneCreatorInspectorProps = {}
-    local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+   profileFunction('uiupdate.uiBlueprints', function()
+      -- Blueprints
+      ui.pane('sceneCreatorBlueprints', function()
+         uiSelf:uiBlueprints()
+      end)
+   end)
 
-    if activeTool and activeTool.handlers.contentHeight then
-        sceneCreatorInspectorProps.contentHeight = activeTool.handlers.contentHeight()
-    end
+   profileFunction('uiupdate.uiInspectorActions', function()
+      -- Inspector
+      ui.pane('sceneCreatorInspectorActions', function()
+         uiSelf:uiInspectorActions()
+      end)
+   end)
 
-    ui.pane('sceneCreatorInspector', sceneCreatorInspectorProps, function()
-        self:uiInspector()
-    end)
+   local sceneCreatorInspectorProps = {}
+   local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
 
-    ui.pane('sceneCreatorRules', function()
-        self:uiRules()
-    end)
+   if activeTool and activeTool.handlers.contentHeight then
+      sceneCreatorInspectorProps.contentHeight = activeTool.handlers.contentHeight()
+   end
 
-    -- Settings
-    ui.pane('sceneCreatorSettings', function()
-        self:uiSettings()
-    end)
+   profileFunction('uiupdate.uiInspector', function()
+      ui.pane('sceneCreatorInspector', sceneCreatorInspectorProps, function()
+         uiSelf:uiInspector()
+      end)
+   end)
 
-    -- Text actors
-    ui.pane('sceneCreatorTextActors', function()
-        self:uiTextActorsData()
-    end)
+   profileFunction('uiupdate.uiRules', function()
+      ui.pane('sceneCreatorRules', function()
+         uiSelf:uiRules()
+      end)
+   end)
 
-    -- Active "tool" ui (only drawing at time of writing)
-    ui.pane('sceneCreatorTool', function() self:uiActiveTool() end)
+   profileFunction('uiupdate.uiSettings', function()
+      -- Settings
+      ui.pane('sceneCreatorSettings', function()
+         uiSelf:uiSettings()
+      end)
+   end)
+
+   profileFunction('uiupdate.uiActiveTool', function()
+      -- Active "tool" ui (only drawing at time of writing)
+      ui.pane('sceneCreatorTool', function() uiSelf:uiActiveTool() end)
+   end)
 end

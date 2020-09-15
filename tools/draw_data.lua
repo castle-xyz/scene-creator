@@ -598,6 +598,16 @@ function DrawData:renderPreviewPng(size)
     return love.data.encode("string", "base64", fileData:getString())
 end
 
+function DrawData:render(width, height)
+    if not self.printedSize then
+        print(width .. ' ' .. height)
+        self.printedSize = true
+    end
+
+    self:renderFill()
+    self:graphics():draw()
+end
+
 function DrawData:renderFill()
     if self.fillImageData == nil then
         self.fillImageData = love.image.newImageData(self.fillCanvasSize, self.fillCanvasSize)
