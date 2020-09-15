@@ -156,7 +156,7 @@ function DrawTool.handlers:onSetActive()
     _tempGraphics = nil
     _didChange = false
     _tool = 'draw'
-    _subtool = 'pencil'
+    _subtool = 'pencil_no_grid'
     _physicsBodySubtool = 'rectangle'
 end
 
