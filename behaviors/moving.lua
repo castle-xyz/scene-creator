@@ -184,18 +184,20 @@ MovingBehavior.responses["add velocity"] = {
     migrate = function(self, actorId, response)
        local rules = self.game.behaviorsByName.Rules
        response.behaviorId = rules.behaviorId
-       response.name = 'change behavior property'
+       response.name = 'set behavior property'
        response.params = {
           behaviorId = self.behaviorId,
           propertyName = 'vx',
           value = response.params.x,
+          relative = true,
           nextResponse = {
              behaviorId = rules.behaviorId,
-             name = 'change behavior property',
+             name = 'set behavior property',
              params = {
                 behaviorId = self.behaviorId,
                 propertyName = 'vy',
                 value = response.params.y,
+                relative = true,
                 nextResponse = response.params.nextResponse,
              },
           },
@@ -215,11 +217,12 @@ MovingBehavior.responses["add rotation speed"] = {
     migrate = function(self, actorId, response)
        local rules = self.game.behaviorsByName.Rules
        response.behaviorId = rules.behaviorId
-       response.name = 'change behavior property'
+       response.name = 'set behavior property'
        response.params = {
           behaviorId = self.behaviorId,
           propertyName = 'angularVelocity',
           value = response.params.speed,
+          relative = true,
           nextResponse = response.params.nextResponse,
        }
     end,

@@ -528,6 +528,11 @@ RulesBehavior.responses["set behavior property"] = {
          label = "set to",
          initialValue = 0,
       },
+      relative = {
+         method = "toggle",
+         label = "relative",
+         initialValue = false,
+      },
    },
    run = function(self, actorId, params, context)
       if params.behaviorId == nil or params.propertyName == nil then
@@ -540,30 +545,43 @@ RulesBehavior.responses["set behavior property"] = {
          -- actor doesn't have this behavior (possibly removed)
          return
       end
-      behavior:sendSetProperties(actorId, params.propertyName, params.value)
+
+      local newValue
+      if params.relative then
+         local oldValue
+         if behavior.getters[params.propertyName] then
+            oldValue = behavior.getters[params.propertyName](behavior, component)
+         else
+            oldValue = component.properties[params.propertyName]
+         end
+         newValue = oldValue + params.value
+      else
+         -- absolute
+         newValue = params.value
+      end
+
+      local propertySpec = behavior.propertySpecs[params.propertyName]
+      if propertySpec.props then
+         if propertySpec.props.min and newValue < propertySpec.props.min then
+            newValue = propertySpec.props.min
+         end
+         if propertySpec.props.max and newValue > propertySpec.props.max then
+            newValue = propertySpec.props.max
+         end
+      end
+
+      behavior:sendSetProperties(actorId, params.propertyName, newValue)
    end
 }
 
 RulesBehavior.responses["change behavior property"] = {
-   description = "Adjust a behavior property",
-   category = "behavior",
-   paramSpecs = {
-      behaviorId = {
-         label = "behavior",
-         method = "dropdown",
-         initialValue = nil,
-      },
-      propertyName = {
-         label = "parameter",
-         method = "dropdown",
-         initialValue = nil,
-      },
-      value = {
-         method = "numberInput",
-         label = "adjust by",
-         initialValue = 0,
-      },
-   },
+   description = "Adjust a behavior property (legacy)",
+   migrate = function(self, actorId, response)
+       response.name = "set behavior property"
+
+       -- keep all params the same, except enable relative flag
+       response.params.relative = true
+   end,
    run = function(self, actorId, params, context)
       if params.behaviorId == nil or params.propertyName == nil then
          -- incomplete rule
