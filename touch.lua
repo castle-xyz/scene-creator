@@ -19,6 +19,7 @@ function Client:startTouch()
        consecutiveUselessTaps = 0,
        state = NoTouchState.INACTIVE,
        startTime = 0,
+       lastUselessTapTime = 0,
     }
     overlayShader = love.graphics.newShader(
        [[
@@ -176,7 +177,9 @@ function Client:touchToShowHints()
             touch.stepsUnused = touch.stepsUnused + 1
          end
          if not touch.used and not touch.sling and touch.released
-         and not touch.movedNear and time - touch.pressTime < 0.2 then
+            and not touch.movedNear and time - touch.pressTime < 0.2 -- it's a tap
+            and touch.pressTime - self.hintState.lastUselessTapTime > 0.5 -- it's been some time since last tap
+         then
             anyTapDidNothing = true
          end
       end
@@ -186,6 +189,7 @@ function Client:touchToShowHints()
          if self.hintState.consecutiveUselessTaps >= 4 then
             self:_heatUpNoTouchOverlay(180)
          end
+         self.hintState.lastUselessTapTime = time
          triggered = true
       elseif not anyTouchUsed then
          -- bring up the hint overlay if people press/drag/hold in empty space for long enough
