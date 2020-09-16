@@ -134,7 +134,7 @@ end
 
 local hintOverlayCanvas
 
-function Client:_triggerNoTouchOverlay(count)
+function Client:_heatUpNoTouchOverlay(count)
    self.hintState.counter = self.hintState.counter + count
    if self.hintState.counter > 45 and self.hintState.state ~= NoTouchState.ACTIVE then
       self.hintState.state = NoTouchState.ACTIVE
@@ -142,6 +142,18 @@ function Client:_triggerNoTouchOverlay(count)
    end
    if self.hintState.counter > 240 then
       self.hintState.counter = 240
+   end
+end
+
+function Client:_coolDownNoTouchOverlay(count)
+   self.hintState.counter = self.hintState.counter - count
+   if self.hintState.counter < 0 then
+      self.hintState.counter = 0
+      self.hintState.state = NoTouchState.INACTIVE
+      if hintOverlayCanvas ~= nil then
+         hintOverlayCanvas:release()
+         hintOverlayCanvas = nil
+      end
    end
 end
 
@@ -153,9 +165,15 @@ function Client:touchToShowHints()
    if self.numTouches > 0 then
       local anyTouchUsed = false
       local anyTapDidNothing = false
+      local cumulativeCooldown = 0
       for touchId, touch in pairs(self.touches) do
          if touch.used or touch.sling then
             anyTouchUsed = true
+            cumulativeCooldown = cumulativeCooldown + (touch.stepsUnused or 0)
+            touch.stepsUnused = 0
+         else
+            touch.stepsUnused = touch.stepsUnused or 0
+            touch.stepsUnused = touch.stepsUnused + 1
          end
          if not touch.used and not touch.sling and touch.released
          and not touch.movedNear and time - touch.pressTime < 0.2 then
@@ -166,31 +184,23 @@ function Client:touchToShowHints()
          -- bring up the hint overlay after 4 or more taps in the scene that did nothing
          self.hintState.consecutiveUselessTaps = self.hintState.consecutiveUselessTaps + 1
          if self.hintState.consecutiveUselessTaps >= 4 then
-            self:_triggerNoTouchOverlay(180)
+            self:_heatUpNoTouchOverlay(180)
          end
          triggered = true
       elseif not anyTouchUsed then
          -- bring up the hint overlay if people press/drag/hold in empty space for long enough
-         self:_triggerNoTouchOverlay(1)
+         self:_heatUpNoTouchOverlay(1)
          triggered = true
       else
-         -- user succeeded in interacting, reset touch counter
+         -- user succeeded in interacting, reset touch counter and cool down faster
          self.hintState.consecutiveUselessTaps = 0
+         self:_coolDownNoTouchOverlay(cumulativeCooldown + 2)
       end
    end
 
    if not triggered then
-      -- 'cool down' the hint overlay if the user is successfully interacting with the scene
-      -- or is idling with no touches at all
-      self.hintState.counter = self.hintState.counter - 1
-      if self.hintState.counter < 0 then
-         self.hintState.counter = 0
-         self.hintState.state = NoTouchState.INACTIVE
-         if hintOverlayCanvas ~= nil then
-            hintOverlayCanvas:release()
-            hintOverlayCanvas = nil
-         end
-      end
+      -- cool down when the user is doing nothing at all
+      self:_coolDownNoTouchOverlay(1)
    end
 end
 
