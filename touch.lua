@@ -259,7 +259,7 @@ function Client:drawNoTouchesHintOverlay()
       overlayShader:send("transition", overlayAlpha)
       overlayShader:send(
          "intensity",
-         0.7 + 0.3 * math.cos((love.timer.getTime() - self.hintState.startTime) * 6)
+         0.8 + 0.2 * math.cos((love.timer.getTime() - self.hintState.startTime) * 6)
       )
       love.graphics.draw(hintOverlayCanvas)
       love.graphics.pop()
