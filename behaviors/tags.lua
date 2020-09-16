@@ -8,6 +8,9 @@ local TagsBehavior =
           method = 'textInput',
           label = 'tags (separated by spaces)',
        },
+       tagToActorIds = {
+          method = 'data',
+       },
     },
 }
 
@@ -42,6 +45,15 @@ function TagsBehavior.handlers:blueprintComponent(component, bp)
     bp.tagsString = component.properties.tagsString
 end
 
+-- Getters
+
+function TagsBehavior.getters:tagToActorIds()
+   if self._tagToActorIds then
+      return self._tagToActorIds
+   end
+   return {}
+end
+
 -- Setters
 
 function TagsBehavior.setters:tagsString(component, newTagsString)
@@ -67,6 +79,10 @@ function TagsBehavior.setters:tagsString(component, newTagsString)
         end
         self._tagToActorIds[tag][component.actorId] = true
     end
+end
+
+function TagsBehavior.setters:tagToActorIds()
+   -- noop, use other setter
 end
 
 -- Methods
