@@ -30,6 +30,7 @@ require "notify"
 -- Start / stop
 
 local isEditing
+local isEditable
 local playInstance
 local editInstance
 local currentSnapshot
@@ -58,6 +59,18 @@ function love.load()
 
     currentSnapshot = snapshot
     currentVariables = variables
+
+    if initialParams.isDebug then
+        DEBUG = true
+    else
+        DEBUG = false
+    end
+
+    if initialParams.isEditable then
+        isEditable = true
+    else
+        isEditable = false
+    end
 
     if initialParams.isEditing then
         isEditing = true
@@ -106,6 +119,8 @@ end
 
 function Client:load(isEditing, snapshot, variables)
     self.clientId = 0
+    self.isEditable = isEditable
+
     self:start()
 
     --self.photoImages = {}
@@ -737,7 +752,7 @@ function Client:draw()
         self:drawNotify()
     end
 
-    if true then -- Debug overlay
+    if DEBUG then -- Debug overlay
         local networkText = ""
         if self.connected then
             networkText = networkText .. "    ping: " .. self.client.getPing() .. "ms"

@@ -4,10 +4,24 @@ local DISPLAY_INTERVAL = 5.0
 local timeSinceLastDisplay = 0.0
 local categoryStats = {}
 
-function profileFunction(category, fn)
-    if not PROFILER_ENABLED then
-        fn()
+local functionsRanThisFrame = nil
+
+function runOnProfilerFrame(name, fn)
+    if not DEBUG or not PROFILER_ENABLED then
         return
+    end
+
+    if functionsRanThisFrame then
+        if not functionsRanThisFrame[name] then
+            functionsRanThisFrame[name] = true
+            fn()
+        end
+    end
+end
+
+function profileFunction(category, fn)
+    if not DEBUG or not PROFILER_ENABLED then
+        return fn()
     end
 
     local startTime = love.timer.getTime()
@@ -35,7 +49,7 @@ local function round(num, numDecimalPlaces)
 end
 
 function profilerUpdate(dt)
-    if not PROFILER_ENABLED then
+    if not DEBUG or not PROFILER_ENABLED then
         return
     end
 
@@ -61,7 +75,7 @@ function profilerUpdate(dt)
     table.sort(
         sortedCategoryStats,
         function(entry1, entry2)
-            return entry1.totalTime > entry2.totalTime
+            return entry1.avgTime > entry2.avgTime
         end
     )
 
@@ -77,4 +91,5 @@ function profilerUpdate(dt)
     print('')
 
     categoryStats = {}
+    functionsRanThisFrame = {}
 end

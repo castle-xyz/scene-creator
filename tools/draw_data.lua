@@ -599,9 +599,11 @@ function DrawData:renderPreviewPng(size)
 end
 
 function DrawData:render(width, height)
-    if not self.printedSize then
-        print(width .. ' ' .. height)
-        self.printedSize = true
+    if DEBUG then
+        if not self.printedSize then
+            print(width .. ' ' .. height)
+            self.printedSize = true
+        end
     end
 
     self:renderFill()

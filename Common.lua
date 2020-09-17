@@ -20,6 +20,13 @@ jsBridge = require "__ghost__.bridge"
 cjson = require "cjson"
 copas = require "copas"
 
+function printObject(obj)
+    local result = inspect(obj)
+    for s in result:gmatch("[^\r\n]+") do
+        print(s)
+    end
+end
+
 -- Modules
 
 if not castle.system.isRemoteServer() then

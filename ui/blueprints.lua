@@ -80,6 +80,10 @@ end
 function Client:uiBlueprints()
    local data = { library = self.library }
    local actions = {}
+
+    --runOnProfilerFrame("uiBlueprints data", function ()
+    --    printObject(data)
+   --end)
    
    local actorId = next(self.selectedActorIds)
    if actorId then
