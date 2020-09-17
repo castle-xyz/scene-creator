@@ -501,8 +501,8 @@ BodyBehavior.triggers.collide = {
     paramSpecs = {
        tag = {
           label = "colliding with tag",
-          method = "textInput",
-          props = { autoCapitalize = 'none' },
+          method = "tagPicker",
+          props = { singleSelect = true },
        },
     },
 }
@@ -526,8 +526,8 @@ BodyBehavior.responses["is colliding"] = {
     paramSpecs = {
        tag = {
           label = "colliding with tag",
-          method = "textInput",
-          props = { autoCapitalize = 'none' },
+          method = "tagPicker",
+          props = { singleSelect = true },
        },
     },
     run = function(self, actorId, params, context)

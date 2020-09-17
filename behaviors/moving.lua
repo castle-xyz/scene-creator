@@ -292,9 +292,9 @@ MovingBehavior.responses["move toward actor"] = {
    category = "motion",
    paramSpecs = {
       tag = {
-         method = "textInput",
+         method = "tagPicker",
          label = "Tag",
-         props = { autoCapitalize = 'none' },
+         props = { singleSelect = true },
       },
       speed = {
          method = "numberInput",

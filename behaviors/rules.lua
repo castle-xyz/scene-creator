@@ -685,8 +685,8 @@ RulesBehavior.responses["act on"] = {
     category = "interaction",
     paramSpecs = {
        tag = {
-          method = "textInput",
-          props = { autoCapitalize = 'none' },
+          method = "tagPicker",
+          props = { singleSelect = true },
        },
     },
     run = function(self, actorId, params, context)
