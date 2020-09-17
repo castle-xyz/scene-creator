@@ -135,9 +135,13 @@ function Client:uiupdate()
       end)
    end)
 
+   if not self.isEditable then
+      return
+   end
+
    profileFunction('uiupdate.applySelections', function()
       -- Refresh tools first to make sure selections and applicable tool set are valid
-      uiSelf:applySelections() 
+      uiSelf:applySelections()
    end)
 
    profileFunction('uiupdate.uiGlobalActions', function()
