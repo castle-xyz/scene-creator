@@ -510,7 +510,7 @@ RulesBehavior.responses.wait = {
 -- Logic responses
 
 RulesBehavior.responses["set behavior property"] = {
-   description = "Set a behavior property",
+   description = "Modify a behavior property",
    category = "behavior",
    paramSpecs = {
       behaviorId = {
