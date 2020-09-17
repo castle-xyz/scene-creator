@@ -5,8 +5,8 @@ local TagsBehavior =
     dependencies = {},
     propertySpecs = {
        tagsString = {
-          method = 'textInput',
-          label = 'tags (separated by spaces)',
+          method = 'tagPicker',
+          label = 'tags',
        },
        tagToActorIds = {
           method = 'data',
@@ -123,10 +123,9 @@ TagsBehavior.responses["add tag"] = {
    category = "general",
    paramSpecs = {
       tag = {
-         method = "textInput",
+         method = "tagPicker",
          label = "Tags",
          initialValue = "",
-         props = { autoCapitalize = 'none' },
       },
    },
    run = function(self, actorId, params, context)
@@ -149,10 +148,9 @@ TagsBehavior.responses["remove tag"] = {
    category = "general",
    paramSpecs = {
       tag = {
-         method = "textInput",
+         method = "tagPicker",
          label = "Tags",
          initialValue = "",
-         props = { autoCapitalize = 'none' },
       },
    },
    run = function(self, actorId, params, context)
