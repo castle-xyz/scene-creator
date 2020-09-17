@@ -401,7 +401,7 @@ RulesBehavior.triggers.destroy = {
 -- Lifetime responses
 
 RulesBehavior.responses.create = {
-    description = "Create a new actor",
+    description = "Create a new actor from blueprint",
     category = "general",
     paramSpecs = {
        entryId = {
