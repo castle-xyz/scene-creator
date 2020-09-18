@@ -1,4 +1,4 @@
-local PROFILER_ENABLED = true
+local PROFILER_ENABLED = false
 local DISPLAY_INTERVAL = 5.0
 
 local timeSinceLastDisplay = 0.0
