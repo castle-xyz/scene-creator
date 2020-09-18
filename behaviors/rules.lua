@@ -674,8 +674,13 @@ RulesBehavior.responses["repeat"] = {
        },
     },
     run = function(self, actorId, params, context)
-        for i = 1, params.count do
-            self:runResponse(params["body"], actorId, context)
+       for i = 1, params.count do
+          self:runResponse(params["body"], actorId, context)
+          local members = self.game.behaviorsByName.Body:getMembers(actorId)
+          if not (members.bodyId and members.body) then
+             -- actor was destroyed, abandon remaining iterations
+             break
+          end
         end
     end
 }
