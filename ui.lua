@@ -139,16 +139,20 @@ function Client:uiupdate()
       return
    end
 
-   profileFunction('uiupdate.applySelections', function()
-      -- Refresh tools first to make sure selections and applicable tool set are valid
-      uiSelf:applySelections()
-   end)
-
    profileFunction('uiupdate.uiGlobalActions', function()
       -- Global actions
       ui.pane('sceneCreatorGlobalActions', function()
          uiSelf:uiGlobalActions()
       end)
+   end)
+
+   if self.performing then
+      return
+   end
+
+   profileFunction('uiupdate.applySelections', function()
+      -- Refresh tools first to make sure selections and applicable tool set are valid
+      uiSelf:applySelections()
    end)
 
    profileFunction('uiupdate.uiBlueprints', function()

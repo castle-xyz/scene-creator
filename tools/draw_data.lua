@@ -443,8 +443,6 @@ function DrawData:new(obj)
         obj = {}
     end
 
-    --print(inspect(obj))
-
     local newObj = {
         _graphics = nil,
         _graphicsNeedsReset = true,
@@ -462,6 +460,28 @@ function DrawData:new(obj)
         fillCanvasSize = obj.fillCanvasSize or FILL_CANVAS_SIZE,
         fillPng = obj.fillPng or nil,
     }
+
+    local newPathDataList = {}
+    for i = 1, #newObj.pathDataList do
+        local pathData = newObj.pathDataList[i]
+        if #pathData.points > 2 then
+            local pathData = util.deepCopyTable(pathData)
+            pathData.subpathDataList = nil
+            pathData.tovePath = nil
+            pathData.tovePathThin = nil
+
+            for j = 1, #pathData.points - 1 do
+                local newPathData = util.deepCopyTable(pathData)
+                newPathData.points = {pathData.points[j], pathData.points[j + 1]}
+
+                table.insert(newPathDataList, newPathData)
+            end
+        else
+            table.insert(newPathDataList, pathData)
+        end
+    end
+
+    newObj.pathDataList = newPathDataList
 
     setmetatable(newObj, self)
     self.__index = self
@@ -488,6 +508,81 @@ function DrawData:resetGraphics()
     self._graphicsForPathsCanvasNeedsReset = true
 end
 
+local function round(num, numDecimalPlaces)
+    local mult = 10^(numDecimalPlaces or 0)
+    return math.floor(num * mult + 0.5) / mult
+end
+
+local function roundFloatArray(a)
+    if a == nil then
+        return a
+    end
+
+    for i = 1, #a do
+        a[i] = round(a[i], 4)
+    end
+
+    return a
+end
+
+local function floatArrayEquals(a1, a2)
+    if a1 == nil and a2 == nil then
+        return true
+    end
+
+    if a1 == nil or a2 == nil then
+        return false
+    end
+
+    if #a1 ~= #a2 then
+        return false
+    end
+
+    for i = 1, #a1 do
+        if not floatEquals(a1[i], a2[i]) then
+            return false
+        end
+    end
+
+    return true
+end
+
+local function coordinatesEqual(c1, c2)
+    if not floatEquals(c1.x, c2.x) then
+        return false
+    end
+
+    if not floatEquals(c1.y, c2.y) then
+        return false
+    end
+
+    return true
+end
+
+local function arePathDatasMergable(pd1, pd2)
+    if not coordinatesEqual(pd1.points[#pd1.points], pd2.points[1]) then
+        return false
+    end
+
+    if pd1.style ~= pd2.style then
+        return false
+    end
+
+    if not floatArrayEquals(pd1.bendPoint, pd2.bendPoint) then
+        return false
+    end
+
+    if pd1.isFreehand ~= pd2.isFreehand then
+        return false
+    end
+
+    if not floatArrayEquals(pd1.color, pd2.color) then
+        return false
+    end
+
+    return true
+end
+
 function DrawData:serialize()
     local data = {
         pathDataList = {},
@@ -499,16 +594,30 @@ function DrawData:serialize()
         fillCanvasSize = self.fillCanvasSize,
     }
 
+    local lastSerializedPathData = nil
     for i = 1, #self.pathDataList do
         local pathData = self.pathDataList[i]
-        table.insert(data.pathDataList, {
-            points = pathData.points,
+
+        local serializedPathData = {
+            points = util.deepCopyTable(pathData.points),
             style = pathData.style,
-            bendPoint = pathData.bendPoint,
+            bendPoint = roundFloatArray(pathData.bendPoint),
             id = pathData.id,
             isFreehand = pathData.isFreehand,
-            color = pathData.color,
-        })
+            color = roundFloatArray(pathData.color),
+        }
+
+        for j = 1, #serializedPathData.points do
+            serializedPathData.points[j].x = round(serializedPathData.points[j].x, 4)
+            serializedPathData.points[j].y = round(serializedPathData.points[j].y, 4)
+        end
+
+        if lastSerializedPathData ~= nil and arePathDatasMergable(lastSerializedPathData, serializedPathData) then
+            table.insert(lastSerializedPathData.points, serializedPathData.points[2])
+        else
+            table.insert(data.pathDataList, serializedPathData)
+            lastSerializedPathData = serializedPathData
+        end
     end
 
     if self.fillImageData then
@@ -598,14 +707,11 @@ function DrawData:renderPreviewPng(size)
     return love.data.encode("string", "base64", fileData:getString())
 end
 
-function DrawData:render(width, height)
-    if DEBUG then
-        if not self.printedSize then
-            print(width .. ' ' .. height)
-            self.printedSize = true
-        end
-    end
+function DrawData:preload()
+    self:graphics()
+end
 
+function DrawData:render(width, height)
     self:renderFill()
     self:graphics():draw()
 end

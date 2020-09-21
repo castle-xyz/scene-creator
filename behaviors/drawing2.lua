@@ -27,6 +27,16 @@ local DEFAULT_DATA = ''
 --local cache = setmetatable({}, {__mode = "v"})
 local cache = setmetatable({}, {})
 
+function Drawing2Behavior:preloadDrawing(data)
+    if not data.hash then
+        data.hash = self:hash(data.drawData, data.physicsBodyData)
+    end
+
+    local cacheData = self:cacheDrawing(data)
+    local drawData = cacheData.drawData
+    drawData:preload()
+end
+
 function Drawing2Behavior:cacheDrawing(data)
     local hash = data.hash
 
@@ -79,7 +89,7 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
     -- NOTE: All of this must be pure w.r.t the arguments since we're directly setting and not sending
     component.properties.drawData = bp.drawData or DEFAULT_DATA
     component.properties.physicsBodyData = bp.physicsBodyData or DEFAULT_DATA
-    component.properties.hash = self:hash(component.properties.drawData, component.properties.physicsBodyData)
+    component.properties.hash = bp.hash or self:hash(component.properties.drawData, component.properties.physicsBodyData)
 end
 
 function Drawing2Behavior.handlers:enableComponent(component, opts)
@@ -98,6 +108,7 @@ end
 function Drawing2Behavior.handlers:blueprintComponent(component, bp)
     bp.drawData = component.properties.drawData
     bp.physicsBodyData = component.properties.physicsBodyData
+    bp.hash = component.properties.hash
 end
 
 function Drawing2Behavior.handlers:blueprintPng(component)

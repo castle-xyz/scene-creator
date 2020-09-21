@@ -118,6 +118,10 @@ function Common.receivers:addLibraryEntry(time, entryId, entry)
     local entryCopy = util.deepCopyTable(entry)
     entryCopy.entryId = entryId
     self.library[entryId] = entryCopy
+
+    if entryCopy and entryCopy.actorBlueprint and entryCopy.actorBlueprint.components and entryCopy.actorBlueprint.components.Drawing2 then
+        self.behaviorsByName.Drawing2:preloadDrawing(entryCopy.actorBlueprint.components.Drawing2)
+    end
 end
 
 function Common.receivers:removeLibraryEntry(time, entryId)
