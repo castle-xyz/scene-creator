@@ -11,6 +11,9 @@ local Drawing2Behavior =
        hash = {},
        drawData = {},
        physicsBodyData = {},
+       base64Png = {  -- derived from drawData
+          method = 'data',
+       },
     },
 }
 
@@ -64,9 +67,12 @@ function Drawing2Behavior:deserialize(payload)
     if payload == nil then
         result.drawData = DrawData:new({})
         result.physicsBodyData = PhysicsBodyData:new({})
+        result.base64Png = nil
     else
         result.drawData = DrawData:new(payload.drawData or {})
         result.physicsBodyData = PhysicsBodyData:new(payload.physicsBodyData or {})
+        result.base64Png = result.drawData:renderPreviewPng(256)
+        print('deserialize and render base64png')
     end
 
     return result
@@ -109,11 +115,25 @@ function Drawing2Behavior.handlers:blueprintComponent(component, bp)
     bp.drawData = component.properties.drawData
     bp.physicsBodyData = component.properties.physicsBodyData
     bp.hash = component.properties.hash
+    -- don't blueprint base64Png, derive from drawing data
 end
 
 function Drawing2Behavior.handlers:blueprintPng(component)
     local data = self:cacheDrawing(component.properties)
     return data.drawData:renderPreviewPng(256)
+end
+
+function Drawing2Behavior.getters:base64Png(component)
+   if self.game.activeToolBehaviorId == self.game.behaviorsByName.Draw2.behaviorId then
+      -- no need to render drawing previews when the draw tool is active
+      return nil
+   end
+   local data = self:cacheDrawing(component.properties)
+   return data.base64Png
+end
+
+function Drawing2Behavior.setters:base64Png(component, ...)
+   -- noop, this is derived from drawData
 end
 
 -- Draw
