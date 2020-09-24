@@ -419,6 +419,19 @@ RulesBehavior.responses.create = {
           method = "numberInput",
           initialValue = 0,
        },
+       depth = {
+          label = "depth",
+          method = "dropdown",
+          initialValue = "in front of all actors",
+          props = {
+             items = {
+                "behind all actors",
+                "behind this actor",
+                "in front of this actor",
+                "in front of all actors",
+             },
+          },
+       },
     },
     run = function(self, actorId, params, context)
         local entry = self.game.library[params.entryId]
@@ -439,11 +452,22 @@ RulesBehavior.responses.create = {
                     bp.components.Body.y = y + params.yOffset
                 end
                 local newActorId = self.game:generateActorId()
+
+                local drawOrder = nil
+                if params.depth == "behind all actors" then
+                   drawOrder = 1
+                elseif params.depth == "behind this actor" then
+                   drawOrder = self.game.actors[actorId].drawOrder - 1
+                elseif params.depth == "in front of this actor" then
+                   drawOrder = self.game.actors[actorId].drawOrder + 1
+                end
+
                 self.game:sendAddActor(
                     bp,
                     {
                         actorId = self.game:generateActorId(),
-                        parentEntryId = entry.entryId
+                        parentEntryId = entry.entryId,
+                        drawOrder = drawOrder,
                     }
                 )
             end
