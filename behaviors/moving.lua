@@ -131,36 +131,43 @@ function MovingBehavior.handlers:updateComponentFixture(component, fixtureId)
    end
 end
 
-local STOPS_MOVING_THRESHOLD = 0.0005
+local STOPS_TRANSLATING_THRESHOLD = 0.0005
+local STOPS_ROTATING_THRESHOLD = 0.001
 
 function MovingBehavior.handlers:postPerform(dt)
    for actorId, component in pairs(self.components) do
       if not component.disabled then
          local members = self.dependencies.Body:getMembers(actorId)
          local vx, vy = members.body:getLinearVelocity()
-         if component._prevVelocity == nil or component._prevVelocity.x ~= vx or component._prevVelocity.y ~= vy then
+         local va = members.body:getAngularVelocity()
+         if component._prevVelocity == nil or component._prevVelocity.x ~= vx or component._prevVelocity.y ~= vy or component._prevVelocity.a ~= va then
             self:fireTrigger("velocity changes", actorId)
          end
          component._prevVelocity = component._prevVelocity or {}
          component._prevVelocity.x = vx
          component._prevVelocity.y = vy
+         component._prevVelocity.a = va
 
          local x, y = members.body:getX(), members.body:getY()
+         local a = members.body:getAngle()
          if component._prevPosition ~= nil then
             if component._startsMovingTriggerFired and
-               (math.abs(component._prevPosition.x - x) < STOPS_MOVING_THRESHOLD and
-                math.abs(component._prevPosition.y - y) < STOPS_MOVING_THRESHOLD) then
+               (math.abs(component._prevPosition.x - x) < STOPS_TRANSLATING_THRESHOLD and
+                math.abs(component._prevPosition.y - y) < STOPS_TRANSLATING_THRESHOLD and
+                math.abs(component._prevPosition.a - a) < STOPS_ROTATING_THRESHOLD) then
                   component._startsMovingTriggerFired = false
                   self:fireTrigger("stops moving", actorId)
             elseif not component._startsMovingTriggerFired and
-               (math.abs(component._prevPosition.x - x) >= STOPS_MOVING_THRESHOLD or
-                math.abs(component._prevPosition.y - y) >= STOPS_MOVING_THRESHOLD) then
+               (math.abs(component._prevPosition.x - x) >= STOPS_TRANSLATING_THRESHOLD or
+                math.abs(component._prevPosition.y - y) >= STOPS_TRANSLATING_THRESHOLD or
+                math.abs(component._prevPosition.a - a) >= STOPS_ROTATING_THRESHOLD) then
                   component._startsMovingTriggerFired = true
             end
          end
          component._prevPosition = component._prevPosition or {}
          component._prevPosition.x = x
          component._prevPosition.y = y
+         component._prevPosition.a = a
       end
    end
 end
@@ -168,7 +175,7 @@ end
 -- Triggers
 
 MovingBehavior.triggers["velocity changes"] = {
-   description = "When x or y velocity changes",
+   description = "When velocity changes",
    category = "motion",
 }
 
