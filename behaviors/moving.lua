@@ -369,3 +369,15 @@ function MovingBehavior.setters:density(component, value)
       fixture:setDensity(component.properties.density)
    end
 end
+
+function MovingBehavior.getters:vx(component)
+   local members = self.dependencies.Body:getMembers(component.actorId)
+   local vx, vy = members.body:getLinearVelocity()
+   return vx
+end
+
+function MovingBehavior.getters:vy(component)
+   local members = self.dependencies.Body:getMembers(component.actorId)
+   local vx, vy = members.body:getLinearVelocity()
+   return vy
+end
