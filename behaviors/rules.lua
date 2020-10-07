@@ -283,26 +283,15 @@ RulesBehavior.responses["reset variable"] = {
 }
 
 RulesBehavior.responses["change variable"] = {
-    description = "Adjust the value of a variable",
-    category = "state",
-    paramSpecs = {
-       changeBy = {
-          label = "adjust by",
-          method = "numberInput",
-          initialValue = 1,
-       },
-       variableId = {
-          label = "variable",
-          method = "dropdown",
-          initialValue = "(none)",
-          props = {
-             showVariablesItems = true,
-          },
-       },
-    },
-    run = function(self, actorId, params, context)
-        -- self.game:send('updateVariables
+    description = "Adjust the value of a variable (legacy)",
+    migrate = function(self, actorId, response)
+       response.name = "set variable"
 
+       response.params.relative = true
+       response.params.setToValue = response.params.changeBy
+       response.params.changeBy = nil
+    end,
+    run = function(self, actorId, params, context)
         -- MULTIPLAYER TODO: figure out who should own variables
         --if context.isOwner then -- Only owning host should fire variable updates
         local component = self.components[actorId]
@@ -330,15 +319,21 @@ RulesBehavior.responses["set variable"] = {
           method = "numberInput",
           initialValue = 0,
        },
+       relative = {
+          method = "toggle",
+          label = "relative",
+          initialValue = false,
+       },
     },
     run = function(self, actorId, params, context)
-        -- MULTIPLAYER TODO: figure out who should own variables
-        --if context.isOwner then
         local component = self.components[actorId]
         if component and self.game.performing then
-            self.game:variableSetToValue(params.variableId, params.setToValue)
+            if params.relative then
+                self.game:variableChangeByValue(params.variableId, params.setToValue)
+            else
+                self.game:variableSetToValue(params.variableId, params.setToValue)
+            end
         end
-        --end
     end
 }
 
