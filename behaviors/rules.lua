@@ -457,7 +457,7 @@ RulesBehavior.responses.create = {
                 if params.depth == "behind all actors" then
                    drawOrder = 1
                 elseif params.depth == "behind this actor" then
-                   drawOrder = self.game.actors[actorId].drawOrder - 1
+                   drawOrder = self.game.actors[actorId].drawOrder
                 elseif params.depth == "in front of this actor" then
                    drawOrder = self.game.actors[actorId].drawOrder + 1
                 end
