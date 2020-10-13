@@ -409,6 +409,17 @@ RulesBehavior.responses.create = {
           method = "blueprint",
           initialValue = nil,
        },
+       coordinateSystem = {
+          label = "coordinate system",
+          method = "dropdown",
+          initialValue = "position",
+          props = {
+             items = {
+                "position",
+                "angle and distance",
+             },
+          },
+       },
        xOffset = {
           label = "relative x position",
           method = "numberInput",
@@ -416,6 +427,16 @@ RulesBehavior.responses.create = {
        },
        yOffset = {
           label = "relative y position",
+          method = "numberInput",
+          initialValue = 0,
+       },
+       angle = {
+          label = "angle (degrees)",
+          method = "numberInput",
+          initialValue = 0,
+       },
+       distance = {
+          label = "distance",
           method = "numberInput",
           initialValue = 0,
        },
@@ -436,20 +457,27 @@ RulesBehavior.responses.create = {
     run = function(self, actorId, params, context)
         local entry = self.game.library[params.entryId]
         if entry then
-            local x = 0
-            local y = 0
+            local x, y, a = 0, 0, 0
             local members = self.game.behaviorsByName.Body:getMembers(actorId)
             if members.bodyId and members.body and context.isOwner then
                 x, y = members.body:getPosition()
+                a = members.body:getAngle()
             elseif context.x and context.y and context.isOwner then
-                x, y = context.x, context.y -- Actor was destroyed but left a position in `context`
+                x, y, a = context.x, context.y, context.a -- Actor was destroyed but left a position in `context`
             end
 
             if x and y then
                 local bp = util.deepCopyTable(entry.actorBlueprint)
                 if bp.components.Body then
-                    bp.components.Body.x = x + params.xOffset
-                    bp.components.Body.y = y + params.yOffset
+                   local coordinateSystem = params.coordinateSystem or "position"
+                   if coordinateSystem == "position" then
+                      bp.components.Body.x = x + params.xOffset
+                      bp.components.Body.y = y + params.yOffset
+                   else
+                      local angle, distance = math.rad(params.angle or 0) + a, params.distance or 0
+                      bp.components.Body.x = x + distance * math.cos(angle)
+                      bp.components.Body.y = y + distance * math.sin(angle)
+                   end
                 end
                 local newActorId = self.game:generateActorId()
 
@@ -484,6 +512,7 @@ RulesBehavior.responses.destroy = {
             if members.bodyId and members.body then
                 -- Save a few things in `context` for use in responses after 'wait's
                 context.x, context.y = members.body:getPosition()
+                context.a = members.body:getAngle()
             end
             self:onEndOfFrame(
                 function()
