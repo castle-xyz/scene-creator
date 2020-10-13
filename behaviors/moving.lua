@@ -294,6 +294,26 @@ MovingBehavior.responses["set rotation speed"] = {
     end
 }
 
+MovingBehavior.responses["move toward own angle"] = {
+   description = "Move toward my own angle",
+   category = "motion",
+   paramSpecs = {
+      speed = {
+         method = "numberInput",
+         label = "Speed",
+         initialValue = 0,
+      },
+   },
+   run = function(self, actorId, params, context)
+      local members = self.game.behaviorsByName.Body:getMembers(actorId)
+      if members.body then
+         local angle = members.body:getAngle()
+         local m = members.body:getMass()
+         members.body:applyLinearImpulse(m * params.speed * math.cos(angle), m * params.speed * math.sin(angle))
+      end
+   end,
+}
+
 MovingBehavior.responses["move toward actor"] = {
    description = "Move toward another actor (dynamic motion)",
    category = "motion",
