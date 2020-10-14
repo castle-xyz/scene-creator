@@ -19,7 +19,7 @@ if (process.env["API_VERSION"]) {
 
 request.post(
   {
-    url: "https://api.castle.games/api/scene-creator/upload",
+    url: "https://api.castle.xyz/api/scene-creator/upload",
     headers: {
       "X-Auth-Token": token,
       "scene-creator-api-version": version,
