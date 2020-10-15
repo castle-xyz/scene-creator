@@ -53,18 +53,23 @@ function Client:buildSoundPool()
    end
 end
 
+function Client:addSound(params)
+   local key = Sound.makeKey(params)
+   if not Sound.sources[key] then
+      Sound.sources[key] = {
+         params = params,
+         source = Sound.makeSource(params),
+      }
+   end
+end
+
 function Client:_addResponseToSoundPool(response, keyUsed)
    if not response then return end
 
    if response.name == "play sound" then
       local key = Sound.makeKey(response.params)
       keyUsed[key] = true
-      if not Sound.sources[key] then
-         Sound.sources[key] = {
-               params = response.params,
-               source = Sound.makeSource(response.params),
-         }
-      end
+      self:addSound(response.params)
    end
    
    if response.params then

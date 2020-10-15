@@ -797,8 +797,6 @@ RulesBehavior.responses["play sound"] = {
          },
       },
    },
-   -- TODO: need a way of playing the sound just from the rules editor
-   -- TODO: need a way of randomizing and inserting into the pool the first time played
    run = function(self, actorId, params, context)
       self.game:playSound(params)
    end,

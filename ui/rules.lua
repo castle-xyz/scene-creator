@@ -25,6 +25,17 @@ function Rules.sanitizeEntries(categories)
    return result
 end
 
+function Client:_addSoundActions(actions)
+   -- TODO: we could generalize to an onChange callback on responses
+   -- and diff old -> new rules to see what changed.
+   -- right now sound is the only thing that needs this.
+   actions['changeSound'] = function(params)
+      self:addSound(params)
+      self:playSound(params)
+      self:buildSoundPool() -- release any unreferenced previous sound
+   end
+end
+
 function Client:uiRules()
    local actorId = next(self.selectedActorIds)
    if actorId then
@@ -47,6 +58,7 @@ function Client:uiRules()
                end
             )
          end
+         self:_addSoundActions(actions)
          rules = component.properties.rules
       else
          actions['add'] = function(blueprint)
