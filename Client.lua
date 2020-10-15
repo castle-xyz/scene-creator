@@ -24,6 +24,7 @@ require "Common"
 
 require "select"
 require "touch"
+require "sound"
 require "ui"
 require "notify"
 
@@ -136,15 +137,12 @@ function Client:load(isEditing, snapshot, variables)
     self:resetView()
     self.viewTransform = love.math.newTransform()
 
-    if isEditing then
-        self:send("setPerforming", false)
-    end
-
-    self:send("updateVariables", variables)
-
     if snapshot then
         self:restoreSnapshot(snapshot)
     end
+
+    self:send("setPerforming", not isEditing)
+    self:send("updateVariables", variables)
 end
 
 function castle.uiupdate(...)
@@ -450,6 +448,9 @@ function Client.receivers:setPerforming(time, performing)
             width = self.viewWidth
         }
         self:resetView()
+    end
+    if performing then
+       self:buildSoundPool()
     end
 
     -- Exiting perform?

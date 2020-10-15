@@ -765,6 +765,45 @@ RulesBehavior.responses["act on other"] = {
     end
 }
 
+-- Sound
+
+RulesBehavior.responses["play sound"] = {
+   description = "Play a sound",
+   category = "sound",
+   paramSpecs = {
+      category = {
+         label = "category", -- sfxr randomization category last used to generate the sound
+         method = "dropdown",
+         initialValue = "random",
+         props = {
+            items = {
+               "pickup",
+               "laser",
+               "explosion",
+               "powerup",
+               "hit",
+               "jump",
+               "blip",
+               "random",
+            },
+         },
+      },
+      seed = {
+         method = "numberInput",
+         label = "random seed",
+         initialValue = 1337,
+         props = {
+            min = 0,
+         },
+      },
+   },
+   -- TODO: need a way of playing the sound just from the rules editor
+   -- TODO: need a way of randomizing and inserting into the pool the first time played
+   run = function(self, actorId, params, context)
+      self.game:playSound(params)
+   end,
+}
+
 -- Random responses
 
 RulesBehavior.responses["coin flip"] = {

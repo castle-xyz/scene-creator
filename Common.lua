@@ -14,6 +14,7 @@ CHECKERBOARD_IMAGE_URL =
 serpent = require "vendor.serpent"
 bitser = require "vendor.bitser"
 inspect = require "vendor.inspect"
+sfxr = require "vendor.sfxr"
 
 jsEvents = require "__ghost__.jsEvents"
 jsBridge = require "__ghost__.bridge"
