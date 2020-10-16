@@ -93,7 +93,11 @@ end
 function Client:playSound(params)
    local key = Sound.makeKey(params)
    if Sound.sources[key] then
-      Sound.sources[key].source:play()
+      local source = Sound.sources[key].source
+      if source:isPlaying() then
+         source:stop()
+      end
+      source:play()
    else
       print('Tried to play a sound that is not in the sound pool')
    end
