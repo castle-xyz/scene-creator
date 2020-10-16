@@ -3,11 +3,26 @@ local Sound = {
    sources = {},
 }
 
+local SOUND_MAX_DUR = 1
+
 function Sound.makeKey(params)
    return 'sound-' .. tostring(params.category)
       .. tostring(params.seed) .. '-'
       .. tostring(params.mutationSeed) .. '-'
       .. tostring(params.mutationAmount)
+end
+
+function Sound.clampLength(sound)
+   local dur = sound.envelope.attack
+      + sound.envelope.sustain
+      + sound.envelope.decay
+   if dur > SOUND_MAX_DUR then
+      local ratio = SOUND_MAX_DUR / dur
+      sound.envelope.attack = sound.envelope.attack * ratio
+      sound.envelope.sustain = sound.envelope.sustain * ratio
+      sound.envelope.decay = sound.envelope.decay * ratio
+      print('clamped sound with original dur: ' .. dur)
+   end
 end
 
 function Sound.makeSource(params)
@@ -35,6 +50,8 @@ function Sound.makeSource(params)
    if mutationSeed ~= 0 then
       sound:mutate(mutationAmount, params.seed + mutationSeed)
    end
+
+   Sound.clampLength(sound)
    
    local sounddata = sound:generateSoundData()
    local source = love.audio.newSource(sounddata)
