@@ -4,7 +4,10 @@ local Sound = {
 }
 
 function Sound.makeKey(params)
-   return 'sound-' .. tostring(params.category) .. tostring(params.seed)
+   return 'sound-' .. tostring(params.category)
+      .. tostring(params.seed) .. '-'
+      .. tostring(params.mutationSeed) .. '-'
+      .. tostring(params.mutationAmount)
 end
 
 function Sound.makeSource(params)
@@ -26,6 +29,13 @@ function Sound.makeSource(params)
    else
       sound:randomize(params.seed)
    end
+
+   local mutationSeed = params.mutationSeed or 0
+   local mutationAmount = params.mutationAmount or 5
+   if mutationSeed ~= 0 then
+      sound:mutate(mutationAmount, params.seed + mutationSeed)
+   end
+   
    local sounddata = sound:generateSoundData()
    local source = love.audio.newSource(sounddata)
    source:setVolume(1)

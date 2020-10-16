@@ -771,8 +771,9 @@ RulesBehavior.responses["play sound"] = {
    description = "Play a sound",
    category = "sound",
    paramSpecs = {
+      -- sfxr randomization category last used to generate the sound
       category = {
-         label = "category", -- sfxr randomization category last used to generate the sound
+         label = "category",
          method = "dropdown",
          initialValue = "random",
          props = {
@@ -788,12 +789,29 @@ RulesBehavior.responses["play sound"] = {
             },
          },
       },
+      -- seed passed to sfxr randomizer
       seed = {
          method = "numberInput",
          label = "random seed",
          initialValue = 1337,
          props = {
             min = 0,
+         },
+      },
+      -- if nonzero, mutate the sound once by [seed + mutationSeed]
+      mutationSeed = {
+         method = "numberInput",
+         label = "mutation seed",
+         initialValue = 0,
+      },
+      -- magnitude passed to sfxr mutation call (if applicable)
+      mutationAmount = {
+         method = "numberInput",
+         label = "mutation amount",
+         initialValue = 5,
+         props = {
+            min = 0,
+            max = 20,
          },
       },
    },
