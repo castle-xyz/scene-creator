@@ -83,10 +83,10 @@ function Client:_addResponseToSoundPool(response, keyUsed)
    end
    
    if response.params then
-      self:_addResponseToSoundPool(response.params.nextResponse)
-      self:_addResponseToSoundPool(response.params.body)
-      self:_addResponseToSoundPool(response.params["then"])
-      self:_addResponseToSoundPool(response.params["else"])
+      self:_addResponseToSoundPool(response.params.nextResponse, keyUsed)
+      self:_addResponseToSoundPool(response.params.body, keyUsed)
+      self:_addResponseToSoundPool(response.params["then"], keyUsed)
+      self:_addResponseToSoundPool(response.params["else"], keyUsed)
    end
 end
 
