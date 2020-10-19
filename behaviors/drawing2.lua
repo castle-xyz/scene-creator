@@ -47,6 +47,10 @@ function Drawing2Behavior:cacheDrawing(data)
         cache[hash] = self:deserialize(data)
     end
 
+    if not cache[hash].base64Png and not self.game.isPerforming then
+       cache[hash].base64Png = cache[hash].drawData:renderPreviewPng(256)
+    end
+
     return cache[hash]
 end
 
@@ -71,12 +75,6 @@ function Drawing2Behavior:deserialize(payload)
     else
         result.drawData = DrawData:new(payload.drawData or {})
         result.physicsBodyData = PhysicsBodyData:new(payload.physicsBodyData or {})
-        if self.game.performing then
-            result.base64Png = nil
-        else
-            result.base64Png = result.drawData:renderPreviewPng(256)
-            print('deserialize and render base64png')
-        end
     end
 
     return result
