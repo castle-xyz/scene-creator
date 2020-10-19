@@ -730,7 +730,7 @@ function DrawTool.handlers:update(dt)
 
     local drawingComponent = self.dependencies.Drawing2:get(c.actorId)
     if c._lastHash ~= drawingComponent.properties.hash then
-        local data = self.dependencies.Drawing2:cacheDrawing(drawingComponent.properties)
+        local data = self.dependencies.Drawing2:cacheDrawing(drawingComponent, drawingComponent.properties)
 
         c._lastHash = drawingComponent.properties.hash
         _drawData = data.drawData:clone()

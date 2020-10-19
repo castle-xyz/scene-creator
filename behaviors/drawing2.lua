@@ -35,12 +35,12 @@ function Drawing2Behavior:preloadDrawing(data)
         data.hash = self:hash(data.drawData, data.physicsBodyData)
     end
 
-    local cacheData = self:cacheDrawing(data)
+    local cacheData = self:cacheDrawing(nil, data)
     local drawData = cacheData.drawData
     drawData:preload()
 end
 
-function Drawing2Behavior:cacheDrawing(data)
+function Drawing2Behavior:cacheDrawing(component, data)
     local hash = data.hash
 
     if not cache[hash] then
@@ -48,7 +48,10 @@ function Drawing2Behavior:cacheDrawing(data)
     end
 
     if not cache[hash].base64Png and not self.game.isPerforming then
-       cache[hash].base64Png = cache[hash].drawData:renderPreviewPng(256)
+       local selectedActorId = next(self.game.selectedActorIds)
+       if component ~= nil and component.actorId == selectedActorId then
+          cache[hash].base64Png = cache[hash].drawData:renderPreviewPng(256)
+       end
     end
 
     return cache[hash]
@@ -101,7 +104,7 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
 end
 
 function Drawing2Behavior.handlers:enableComponent(component, opts)
-    local data = self:cacheDrawing(component.properties)
+    local data = self:cacheDrawing(component, component.properties)
     self:updateBodyShape(component, data.physicsBodyData)
 end
 
@@ -121,7 +124,7 @@ function Drawing2Behavior.handlers:blueprintComponent(component, bp)
 end
 
 function Drawing2Behavior.handlers:blueprintPng(component)
-    local data = self:cacheDrawing(component.properties)
+    local data = self:cacheDrawing(component, component.properties)
     return data.drawData:renderPreviewPng(256)
 end
 
@@ -130,7 +133,7 @@ function Drawing2Behavior.getters:base64Png(component)
       -- no need to render drawing previews when the draw tool is active
       return nil
    end
-   local data = self:cacheDrawing(component.properties)
+   local data = self:cacheDrawing(component, component.properties)
    return data.base64Png
 end
 
@@ -147,7 +150,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
     local bodyX, bodyY = body:getPosition()
     local bodyAngle = body:getAngle()
 
-    local data = self:cacheDrawing(component.properties)
+    local data = self:cacheDrawing(component, component.properties)
     local drawData = data.drawData
 
     if component._hash ~= component.properties.hash then
