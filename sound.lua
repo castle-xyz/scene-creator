@@ -71,6 +71,16 @@ function Client:buildSoundPool()
       end
    end
 
+   for entryId, entry in pairs(self.library) do
+      if entry.actorBlueprint and entry.actorBlueprint.components
+      and entry.actorBlueprint.components.Rules then
+         local blueprintRules = entry.actorBlueprint.components.Rules
+         for _, rule in ipairs(blueprintRules.rules) do
+            self:_addResponseToSoundPool(rule.response, keyUsed)
+         end
+      end
+   end
+
    -- clear unreferenced sounds by keyUsed
    for key, sound in pairs(Sound.sources) do
       if not keyUsed[key] then
