@@ -771,7 +771,7 @@ RulesBehavior.responses["repeat"] = {
 }
 
 RulesBehavior.responses["act on"] = {
-    description = "Tell other actors with a specific tag",
+    description = "Tell actors with tag to perform a response",
     category = "tell other actors",
     paramSpecs = {
        tag = {
@@ -792,7 +792,7 @@ RulesBehavior.responses["act on"] = {
 }
 
 RulesBehavior.responses["act on other"] = {
-    description = "Tell the other actor this collided with",
+    description = "Tell the colliding actor to perform a response",
     category = "tell other actors",
     triggerFilter = {collide = true},
     run = function(self, actorId, params, context)
