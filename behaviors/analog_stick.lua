@@ -19,11 +19,11 @@ local AnalogStickBehavior =
     },
 }
 
-local MAX_DRAG_LENGTH = 3 * UNIT
+local MAX_DRAG_LENGTH = 2 * UNIT
 
 local DRAW_MULTIPLIER = 0.8
 
-local CIRCLE_RADIUS = 18 * UNIT
+local TOUCH_RADIUS = 38 * UNIT
 local TRIANGLE_LENGTH = 25 * UNIT
 local TRIANGLE_WIDTH = 10 * UNIT
 
@@ -105,44 +105,37 @@ function AnalogStickBehavior.handlers:drawOverlay()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
-            local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
+            local touchX, touchY = touch.x, touch.y
+            local dragX, dragY = touchX - touch.initialX, touchY - touch.initialY
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then
                 if dragLen > MAX_DRAG_LENGTH then
                     dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
                     dragLen = MAX_DRAG_LENGTH
+                    local dragAngle = math.atan2(dragY, dragX)
+                    touchX = touch.initialX + dragLen * math.cos(dragAngle)
+                    touchY = touch.initialY + dragLen * math.sin(dragAngle)
                 end
 
                 love.graphics.setColor(1, 1, 1, 0.8)
                 love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
 
-                local circleRadius = CIRCLE_RADIUS * self.game:getPixelScale()
-                local triangleLength = TRIANGLE_LENGTH * self.game:getPixelScale()
-                local triangleWidth = TRIANGLE_WIDTH * self.game:getPixelScale()
+                local touchRadius = TOUCH_RADIUS * self.game:getPixelScale()
+                local maxRadius = MAX_DRAG_LENGTH + touchRadius
 
-                -- Circle with solid outline and transparent fill
-                love.graphics.circle("line", touch.initialX, touch.initialY, circleRadius)
+                -- At the center of the analog stick,
+                -- a circle with solid outline and transparent fill
+                love.graphics.circle("line", touch.initialX, touch.initialY, maxRadius)
                 love.graphics.setColor(1, 1, 1, 0.3)
-                love.graphics.circle("fill", touch.initialX, touch.initialY, circleRadius)
+                love.graphics.circle("fill", touch.initialX, touch.initialY, maxRadius)
                 love.graphics.setColor(1, 1, 1, 0.8)
 
-                -- Line and triangle
-                local endX, endY = touch.initialX + DRAW_MULTIPLIER * dragX, touch.initialY + DRAW_MULTIPLIER * dragY
-                love.graphics.line(
-                    touch.initialX,
-                    touch.initialY,
-                    endX - triangleLength * dragX / dragLen,
-                    endY - triangleLength * dragY / dragLen
-                )
-                love.graphics.polygon(
-                    "fill",
-                    endX,
-                    endY,
-                    endX - triangleLength * dragX / dragLen - triangleWidth * dragY / dragLen,
-                    endY - triangleLength * dragY / dragLen + triangleWidth * dragX / dragLen,
-                    endX - triangleLength * dragX / dragLen + triangleWidth * dragY / dragLen,
-                    endY - triangleLength * dragY / dragLen - triangleWidth * dragX / dragLen
-                )
+                -- Under the (clamped) touch,
+                -- a circle with solid outline and transparent fill
+                love.graphics.circle("line", touchX, touchY, touchRadius)
+                love.graphics.setColor(1, 1, 1, 0.3)
+                love.graphics.circle("fill", touchX, touchY, touchRadius)
+                love.graphics.setColor(1, 1, 1, 0.8)
             end
         end
     end
