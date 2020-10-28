@@ -724,6 +724,12 @@ RulesBehavior.responses["repeat"] = {
     run = function(self, actorId, params, context)
        for i = 1, params.count do
           self:runResponse(params["body"], actorId, context)
+
+          -- yield every 5 repeats
+          if math.fmod(i, 5) < 1 then
+            coroutine.yield()
+          end
+
           local members = self.game.behaviorsByName.Body:getMembers(actorId)
           if not (members.bodyId and members.body) then
              -- actor was destroyed, abandon remaining iterations

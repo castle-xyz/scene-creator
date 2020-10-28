@@ -101,6 +101,9 @@ function beginEditing()
     end
 
     isEditing = true
+    if playInstance ~= nil then
+        playInstance:send("clearScene")
+    end
     playInstance = nil
 end
 
@@ -398,6 +401,7 @@ function Client:update(dt)
     self:updateNotify(dt)
 
     self:updateAutoSaveScene()
+    self:sendVariableUpdate()
 
     if REQUEST_EDIT_STATUS_CHANGE and EDIT_LOCK == 0 then
         if REQUEST_EDIT_STATUS_CHANGE == "begin" then

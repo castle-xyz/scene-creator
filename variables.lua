@@ -2,6 +2,8 @@
 
 function Common:startVariables()
     self.variables = {}
+    self._updateQueued = false
+    self._framesSinceUpdate = 0
 end
 
 -- Message kind definitions
@@ -95,15 +97,7 @@ local function variableReachesValueTrigger(self, actorId, variableId, newValue)
 end
 
 local function fireVariableTriggers(self, variableId, newValue)
-    jsEvents.send(
-        "GHOST_MESSAGE",
-        {
-            messageType = "CHANGE_DECK_STATE",
-            data = {
-                variables = self.variables
-            }
-        }
-    )
+    self._updateQueued = true
 
     for actorId, actor in pairs(self.actors) do
         self.behaviorsByName.Rules:fireTrigger(
@@ -124,8 +118,10 @@ end
 function Common:variableReset(id)
    for i = 1, #self.variables do
       if self.variables[i].id == id then
-         self.variables[i].value = self._initialVariables[i].value
-         fireVariableTriggers(self, id, self.variables[i].value)
+        if self._initialVariables[i].value ~= self.variables[i].value then
+            self.variables[i].value = self._initialVariables[i].value
+            fireVariableTriggers(self, id, self.variables[i].value)
+        end
       end
    end
 end
@@ -133,14 +129,20 @@ end
 function Common:variableSetToValue(variableId, value)
     for i = 1, #self.variables do
         if self.variables[i].id == variableId then
-            self.variables[i].value = value
+            if self.variables[i].value ~= value then
+                self.variables[i].value = value
 
-            fireVariableTriggers(self, variableId, self.variables[i].value)
+                fireVariableTriggers(self, variableId, self.variables[i].value)
+            end
         end
     end
 end
 
 function Common:variableChangeByValue(variableId, changeBy)
+    if changeBy == 0 then
+        return
+    end
+
     for i = 1, #self.variables do
         if self.variables[i].id == variableId then
             self.variables[i].value = self.variables[i].value + changeBy
@@ -150,6 +152,24 @@ function Common:variableChangeByValue(variableId, changeBy)
     end
 end
 
+function Common:sendVariableUpdate()
+    if self._updateQueued and self._framesSinceUpdate > 4 then
+        self._updateQueued = false
+        self._framesSinceUpdate = 0
+
+        jsEvents.send(
+            "GHOST_MESSAGE",
+            {
+                messageType = "CHANGE_DECK_STATE",
+                data = {
+                    variables = self.variables
+                }
+            }
+        )
+    else
+        self._framesSinceUpdate = self._framesSinceUpdate + 1
+    end
+end
 
 -- Message receivers
 
