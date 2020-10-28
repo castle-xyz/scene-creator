@@ -153,7 +153,7 @@ function Common:variableChangeByValue(variableId, changeBy)
 end
 
 function Common:sendVariableUpdate()
-    if self._updateQueued and self._framesSinceUpdate > 4 then
+    if self._updateQueued and self._framesSinceUpdate > 10 then
         self._updateQueued = false
         self._framesSinceUpdate = 0
 
