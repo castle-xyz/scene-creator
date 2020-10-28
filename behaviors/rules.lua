@@ -284,6 +284,7 @@ RulesBehavior.responses["reset variable"] = {
 
 RulesBehavior.responses["change variable"] = {
     description = "Adjust the value of a variable (legacy)",
+    isDeprecated = true,
     migrate = function(self, actorId, response)
        response.name = "set variable"
 
@@ -397,6 +398,13 @@ RulesBehavior.triggers.destroy = {
 
 RulesBehavior.responses.create = {
     description = "Create a new actor from blueprint",
+    migrate = function(self, actorId, response)
+      if response.params.coordinateSystem == "position" then
+         response.params.coordinateSystem = "relative position"
+      elseif response.params.coordinateSystem == "angle and distance" then
+         response.params.coordinateSystem = "relative angle and distance"
+      end
+    end,
     category = "general",
     paramSpecs = {
        entryId = {
@@ -407,11 +415,12 @@ RulesBehavior.responses.create = {
        coordinateSystem = {
           label = "coordinate system",
           method = "dropdown",
-          initialValue = "position",
+          initialValue = "relative position",
           props = {
              items = {
-                "position",
-                "angle and distance",
+                "relative position",
+                "relative angle and distance",
+                "absolute position",
              },
           },
        },
@@ -425,6 +434,16 @@ RulesBehavior.responses.create = {
           method = "numberInput",
           initialValue = 0,
        },
+       xAbsolute = {
+         label = "absolute x position",
+         method = "numberInput",
+         initialValue = 0,
+      },
+      yAbsolute = {
+         label = "absolute y position",
+         method = "numberInput",
+         initialValue = 0,
+      },
        angle = {
           label = "angle (degrees)",
           method = "numberInput",
@@ -464,15 +483,18 @@ RulesBehavior.responses.create = {
             if x and y then
                 local bp = util.deepCopyTable(entry.actorBlueprint)
                 if bp.components.Body then
-                   local coordinateSystem = params.coordinateSystem or "position"
-                   if coordinateSystem == "position" then
+                   local coordinateSystem = params.coordinateSystem or "relative position"
+                   if coordinateSystem == "relative position" then
                       bp.components.Body.x = x + params.xOffset
                       bp.components.Body.y = y + params.yOffset
-                   else
+                   elseif coordinateSystem == "relative angle and distance" then
                       local angle, distance = math.rad(params.angle or 0) + a, params.distance or 0
                       bp.components.Body.x = x + distance * math.cos(angle)
                       bp.components.Body.y = y + distance * math.sin(angle)
-                   end
+                  else
+                     bp.components.Body.x = params.xAbsolute
+                     bp.components.Body.y = params.yAbsolute
+                  end
                 end
                 local newActorId = self.game:generateActorId()
 
@@ -624,6 +646,7 @@ RulesBehavior.responses["set behavior property"] = {
 
 RulesBehavior.responses["change behavior property"] = {
    description = "Adjust a behavior property (legacy)",
+   isDeprecated = true,
    migrate = function(self, actorId, response)
        response.name = "set behavior property"
 
@@ -904,7 +927,7 @@ function RulesBehavior:getRuleEntries(kind, behaviorIds, props)
         for name, entry in pairs(behavior[kind .. "s"]) do
             if
                 (entry.returnType == props.returnType and
-                    not entry.migrate and
+                    not entry.isDeprecated and
                     (not entry.triggerFilter or
                         props.triggerFilter == "all" or
                         entry.triggerFilter[props.triggerName]))
