@@ -126,6 +126,15 @@ function Common:variableReset(id)
    end
 end
 
+function Common:variableResetAll()
+    for i = 1, #self.variables do
+        if self._initialVariables[i].value ~= self.variables[i].value then
+            self.variables[i].value = self._initialVariables[i].value
+            fireVariableTriggers(self, id, self.variables[i].value)
+        end
+    end
+ end
+
 function Common:variableSetToValue(variableId, value)
     for i = 1, #self.variables do
         if self.variables[i].id == variableId then

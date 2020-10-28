@@ -282,6 +282,14 @@ RulesBehavior.responses["reset variable"] = {
     end
 }
 
+RulesBehavior.responses["reset all variables"] = {
+   description = "Reset all variables to their initial values",
+   category = "state",
+   run = function(self, actorId, params)
+      self.game:variableResetAll()
+   end
+}
+
 RulesBehavior.responses["change variable"] = {
     description = "Adjust the value of a variable (legacy)",
     isDeprecated = true,
