@@ -1,7 +1,7 @@
-local SlingBehavior =
+local AnalogStickBehavior =
     defineCoreBehavior {
-    name = "Sling",
-    displayName = "Slingshot",
+    name = "AnalogStick",
+    displayName = "Analog Stick",
     dependencies = {
         "Moving",
         "Body"
@@ -11,7 +11,7 @@ local SlingBehavior =
        speed = {
           method = 'numberInput',
           label = 'Speed',
-          props = { min = 0, max = 10, step = 0.5 },
+          props = { min = 0, max = 15, step = 0.5 },
           rules = {
              set = true,
           },
@@ -29,21 +29,21 @@ local TRIANGLE_WIDTH = 10 * UNIT
 
 -- Component management
 
-function SlingBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.speed = bp.speed or 3.5
+function AnalogStickBehavior.handlers:addComponent(component, bp, opts)
+    component.properties.speed = bp.speed or 3
 end
 
-function SlingBehavior.handlers:blueprintComponent(component, bp)
+function AnalogStickBehavior.handlers:blueprintComponent(component, bp)
     bp.speed = component.properties.speed
 end
 
-function SlingBehavior.getters:isInteractive(component)
+function AnalogStickBehavior.getters:isInteractive(component)
    return not component.disabled
 end
 
 -- Perform
 
-function SlingBehavior.handlers:postPerform(dt)
+function AnalogStickBehavior.handlers:postPerform(dt)
     -- Do this in `postPerform` to allow other behaviors to steal the touch
 
     -- Client-only
@@ -63,41 +63,34 @@ function SlingBehavior.handlers:postPerform(dt)
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
            touch.usedBy = touch.usedBy or {}
-           touch.usedBy.sling = true -- mark the touch without `used` so we detect player interaction
+           touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
         end
-        if touchData.allTouchesReleased then
-            if not touch.used and touch.movedNear then
-                local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
-                local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
-                if dragLen > MAX_DRAG_LENGTH then
-                    dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
-                    dragLen = MAX_DRAG_LENGTH
-                end
+        if not touch.used and touch.movedNear then
+            local dragX, dragY = touch.x - touch.initialX, touch.y - touch.initialY
+            local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+            if dragLen > MAX_DRAG_LENGTH then
+                dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
+                dragLen = MAX_DRAG_LENGTH
+            end
 
-                for actorId, component in pairs(self.components) do
-                    if not component.disabled then
-                        -- Own the body, then just set velocity locally and the physics system will sync it
-                        local bodyId, body = self.dependencies.Body:getBody(actorId)
-                        if physics:getOwner(bodyId) ~= self.game.clientId then
-                            physics:setOwner(bodyId, self.game.clientId, true, 0)
-                        end
-                        body:setLinearVelocity(component.properties.speed * dragX, component.properties.speed * dragY)
-                        self:fireTrigger("sling", actorId)
+            for actorId, component in pairs(self.components) do
+                if not component.disabled then
+                    local bodyId, body = self.dependencies.Body:getBody(actorId)
+                    if physics:getOwner(bodyId) ~= self.game.clientId then
+                        physics:setOwner(bodyId, self.game.clientId, true, 0)
                     end
+                    local m = body:getMass()
+                    local impulsePerFrame = component.properties.speed / 60
+                    body:applyLinearImpulse(m * impulsePerFrame * dragX, m * impulsePerFrame * dragY)
                 end
             end
         end
     end
 end
 
-SlingBehavior.triggers.sling = {
-   description = "When this is slung",
-   category = "controls",
-}
-
 -- Draw
 
-function SlingBehavior.handlers:drawOverlay()
+function AnalogStickBehavior.handlers:drawOverlay()
     if not self.game.performing then
         return
     end

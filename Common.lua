@@ -66,6 +66,7 @@ require "behaviors.counter"
 require "behaviors.text"
 
 require "behaviors.drawing2"
+require "behaviors.analog_stick"
 
 require "tools.grab"
 

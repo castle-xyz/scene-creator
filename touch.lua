@@ -168,7 +168,7 @@ function Client:touchToShowHints()
       local anyTapDidNothing = false
       local cumulativeCooldown = 0
       for touchId, touch in pairs(self.touches) do
-         if touch.used or touch.sling then
+         if touch.used or touch.usedBy then
             anyTouchUsed = true
             cumulativeCooldown = cumulativeCooldown + (touch.stepsUnused or 0)
             touch.stepsUnused = 0
@@ -176,7 +176,7 @@ function Client:touchToShowHints()
             touch.stepsUnused = touch.stepsUnused or 0
             touch.stepsUnused = touch.stepsUnused + 1
          end
-         if not touch.used and not touch.sling and touch.released
+         if not touch.used and not touch.usedBy and touch.released
             and not touch.movedNear and time - touch.pressTime < 0.2 -- it's a tap
             and touch.pressTime - self.hintState.lastUselessTapTime > 0.5 -- it's been some time since last tap
          then
