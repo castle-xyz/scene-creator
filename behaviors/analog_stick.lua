@@ -11,7 +11,15 @@ local AnalogStickBehavior =
        speed = {
           method = 'numberInput',
           label = 'Speed',
-          props = { min = 0, max = 40, step = 0.5 },
+          props = { min = 0, max = 50, step = 0.5 },
+          rules = {
+             set = true,
+          },
+       },
+       turnFriction = {
+          method = 'numberInput',
+          label = 'Turn Friction',
+          props = { min = 0, max = 10, step = 0.1 },
           rules = {
              set = true,
           },
@@ -30,11 +38,13 @@ local TRIANGLE_WIDTH = 10 * UNIT
 -- Component management
 
 function AnalogStickBehavior.handlers:addComponent(component, bp, opts)
-    component.properties.speed = bp.speed or 3
+    component.properties.speed = bp.speed or 6
+    component.properties.turnFriction = bp.turnFriction or 3
 end
 
 function AnalogStickBehavior.handlers:blueprintComponent(component, bp)
     bp.speed = component.properties.speed
+    bp.turnFriction = component.properties.turnFriction
 end
 
 function AnalogStickBehavior.getters:isInteractive(component)
@@ -59,6 +69,10 @@ function AnalogStickBehavior:_updateCenter(touch)
 
    self._centerX = self._centerX + centerVelocity * math.cos(dragAngle)
    self._centerY = self._centerY + centerVelocity * math.sin(dragAngle)
+end
+
+local diffAngle = function(a1, a2)
+   return ((a1 - a2 + math.pi) % (2 * math.pi) - math.pi)
 end
 
 function AnalogStickBehavior.handlers:postPerform(dt)
@@ -104,6 +118,16 @@ function AnalogStickBehavior.handlers:postPerform(dt)
                     end
                     local m = body:getMass()
                     local impulsePerFrame = component.properties.speed / 60
+
+                    -- boost the analog stick magnitude if the player's direction
+                    -- is pointed against the analog stick's direction
+                    if component.properties.turnFriction ~= nil and component.properties.turnFriction > 0 then
+                       local vx, vy = body:getLinearVelocity()
+                       local actorDirection = math.atan2(vy, vx)
+                       local dragDirection = math.atan2(dragY, dragX)
+                       impulsePerFrame = impulsePerFrame * (1 + math.abs(diffAngle(actorDirection, dragDirection) / math.pi) * component.properties.turnFriction)
+                    end
+
                     body:applyLinearImpulse(m * impulsePerFrame * dragX, m * impulsePerFrame * dragY)
 
                     if gestureStarted then
