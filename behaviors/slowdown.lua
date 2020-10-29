@@ -30,7 +30,8 @@ local SlowdownBehavior = defineCoreBehavior {
 
 function SlowdownBehavior:updateJoint(component)
     if not component._joint then
-        local groundBodyId, groundBody = self.dependencies.Body:getGroundBody()
+        local members = self.dependencies.Body:getMembers(component.actorId)
+        local groundBodyId, groundBody = self.dependencies.Body:getGroundBody(members.layerName)
         local bodyId, body = self.dependencies.Body:getBody(component.actorId)
         local x, y = body:getPosition()
         component._joint = love.physics.newFrictionJoint(groundBody, body, x, y)

@@ -781,12 +781,14 @@ RulesBehavior.responses["act on"] = {
     },
     run = function(self, actorId, params, context)
         if params.tag and params.tag ~= '' then
+            self.game:cameraBeginActOn()
             self.game.behaviorsByName.Tags:forEachActorWithTag(
                 params.tag,
                 function(otherActorId)
                     self:runResponse(params["body"], otherActorId, context)
                 end
             )
+            self.game:cameraEndActOn()
         end
     end
 }
@@ -878,6 +880,16 @@ RulesBehavior.responses["coin flip"] = {
     run = function(self, actorId, params, context)
         return math.random() < params.probability
     end
+}
+
+-- Camera responses
+
+RulesBehavior.responses["follow with camera"] = {
+   description = "Follow this with the camera",
+   category = "camera",
+   run = function(self, actorId, params, context)
+       self.game:cameraAttachToActorId(actorId)
+   end
 }
 
 -- Performance

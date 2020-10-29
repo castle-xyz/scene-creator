@@ -32,11 +32,11 @@ function SlidingBehavior:updateJoint(component)
     end
 
     local direction = component.properties.direction
+    local members = self.dependencies.Body:getMembers(component.actorId)
     if direction == "none" then
        -- we still want to allow rotation, so fix the body to a revolute joint at its own position
-       local members = self.dependencies.Body:getMembers(component.actorId)
        local x, y = members.body:getPosition()
-       local groundBodyId, groundBody = self.dependencies.Body:getGroundBody()
+       local groundBodyId, groundBody = self.dependencies.Body:getGroundBody(members.layerName)
        component._joint = love.physics.newRevoluteJoint(groundBody, members.body, x, y)
     elseif direction ~= "both" then
         -- allow motion in one dimension
@@ -48,7 +48,7 @@ function SlidingBehavior:updateJoint(component)
         end
 
         if ax and ay then
-            local groundBodyId, groundBody = self.dependencies.Body:getGroundBody()
+            local groundBodyId, groundBody = self.dependencies.Body:getGroundBody(members.layerName)
             local bodyId, body = self.dependencies.Body:getBody(component.actorId)
             local x, y = body:getPosition()
             component._joint = love.physics.newWheelJoint(groundBody, body, x, y, ax, ay)

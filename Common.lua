@@ -81,6 +81,7 @@ require "snapshot"
 require "command"
 require "variables"
 require "scene_properties"
+require "camera"
 
 function Common:start()
     self.onEndOfFrames = {}
@@ -93,6 +94,7 @@ function Common:start()
     self:startSnapshot()
     self:startCommand()
     self:startVariables()
+    self:startCamera()
 
     self.performing = true
     self.paused = false

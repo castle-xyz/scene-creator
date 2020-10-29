@@ -146,6 +146,7 @@ function Client:load(isEditing, snapshot, variables, isNewScene)
 
     self:resetView()
     self.viewTransform = love.math.newTransform()
+    self.cameraTransform = love.math.newTransform()
 
     if snapshot then
         self:restoreSnapshot(snapshot)
@@ -167,6 +168,7 @@ end
 
 function Common:restartScene()
     self:send("setPaused", true)
+    self:startCamera()
     self:restoreSnapshot(currentSnapshot)
     self:send("setPaused", false)
 end
@@ -406,6 +408,7 @@ function Client:update(dt)
     self:fireOnEndOfFrame()
 
     self:updateNotify(dt)
+    self:updateCamera(dt)
 
     self:updateAutoSaveScene()
     self:sendVariableUpdate()
@@ -654,11 +657,16 @@ function Client:draw()
             --    end
             --end
 
+            local cameraX, cameraY = self:getCameraPosition()
+            self.cameraTransform:reset()
+            self.cameraTransform:translate(-cameraX, -cameraY)
+
             self.viewTransform:reset()
             self.viewTransform:scale(windowWidth / self.viewWidth)
             self.viewTransform:translate(-self.viewX, -self.viewY)
             self.viewTransform:translate(0.5 * self.viewWidth, self:getYOffset())
             love.graphics.applyTransform(self.viewTransform)
+            love.graphics.applyTransform(self.cameraTransform)
         end
 
 
@@ -727,32 +735,35 @@ function Client:draw()
 
     if DEBUG_PHYSICS_BODIES and not self:isActiveToolFullscreen() then -- Physics bodies
         local physics = self.behaviorsByName.Body:getPhysics()
-        local worldId, world = physics:getWorld()
-        if world then
-            love.graphics.setLineWidth(5 * self:getPixelScale())
-            for _, body in ipairs(world:getBodies()) do
-                local bodyId = physics:idForObject(body)
-                local ownerId = physics:getOwner(bodyId)
-                if ownerId then
-                    local c = ownerId + 1
-                    love.graphics.setColor(c % 2, math.floor(c / 2) % 2, math.floor(c / 4) % 2)
-                else
-                    love.graphics.setColor(1, 1, 1)
-                end
 
-                -- Draw shapes
-                for _, fixture in ipairs(body:getFixtures()) do
-                    local shape = fixture:getShape()
-                    local ty = shape:getType()
-                    if ty == "circle" then
-                        local x, y = body:getWorldPoints(shape:getPoint())
-                        love.graphics.circle("line", x, y, shape:getRadius())
-                    elseif ty == "polygon" then
-                        love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
-                    elseif ty == "edge" then
-                        love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
-                    elseif ty == "chain" then
-                        love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+        for _, layerName in pairs(self.behaviorsByName.Body:getLayerNames()) do
+            local worldId, world = self.behaviorsByName.Body:getWorld(layerName)
+            if world then
+                love.graphics.setLineWidth(5 * self:getPixelScale())
+                for _, body in ipairs(world:getBodies()) do
+                    local bodyId = physics:idForObject(body)
+                    local ownerId = physics:getOwner(bodyId)
+                    if ownerId then
+                        local c = ownerId + 1
+                        love.graphics.setColor(c % 2, math.floor(c / 2) % 2, math.floor(c / 4) % 2)
+                    else
+                        love.graphics.setColor(1, 1, 1)
+                    end
+
+                    -- Draw shapes
+                    for _, fixture in ipairs(body:getFixtures()) do
+                        local shape = fixture:getShape()
+                        local ty = shape:getType()
+                        if ty == "circle" then
+                            local x, y = body:getWorldPoints(shape:getPoint())
+                            love.graphics.circle("line", x, y, shape:getRadius())
+                        elseif ty == "polygon" then
+                            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+                        elseif ty == "edge" then
+                            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+                        elseif ty == "chain" then
+                            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+                        end
                     end
                 end
             end

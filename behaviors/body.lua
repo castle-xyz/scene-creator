@@ -12,6 +12,8 @@ if not succeeded then
 end
 BODY_POLYGON_SKIN = love.physics.newRectangleShape(UNIT, UNIT):getRadius()
 BODY_RECTANGLE_SLOP = 2.01 * BODY_POLYGON_SKIN
+local DEFAULT_LAYER = "main"
+local CAMERA_LAYER = "camera"
 
 local BodyBehavior =
     defineCoreBehavior {
@@ -56,8 +58,12 @@ local BodyBehavior =
              set = true,
           },
        },
-       worldId = {},
-       groundBodyId = {},
+       relativeToCamera = {
+          method = 'toggle',
+          label = 'Relative to camera',
+       },
+       layerName = {},
+       layers = {},
        bodyId = {},
        fixtureId = {},
        fixtures = {},
@@ -67,6 +73,16 @@ local BodyBehavior =
 }
 
 -- Behavior management
+
+function BodyBehavior:_createLayer(relativeToCamera)
+    local layer = {}
+
+    layer.worldId = self._physics:newWorld(0, UNIT * 9.8, true)
+    layer.groundBodyId = self._physics:newBody(layer.worldId, 0, 0, "static")
+    layer.relativeToCamera = relativeToCamera
+
+    return layer
+end
 
 function BodyBehavior.handlers:addBehavior(opts)
     -- Create a local `Physics` at every host
@@ -83,18 +99,20 @@ function BodyBehavior.handlers:addBehavior(opts)
         self:onContact(...)
     end
 
-    -- Create a new world
-    self:sendSetProperties(nil, "worldId", self._physics:newWorld(0, UNIT * 9.8, true))
+    local layers = {}
+    layers[DEFAULT_LAYER] = self:_createLayer(false)
+    layers[CAMERA_LAYER] = self:_createLayer(true)
 
-    -- Create the ground body
-    self:sendSetProperties(nil, "groundBodyId", self._physics:newBody(self.globals.worldId, 0, 0, "static"))
+    self:sendSetProperties(nil, "layers", layers)
 end
 
 function BodyBehavior.handlers:removeBehavior(opts)
-    -- Destroy the local copy of the world
-    local worldId, world = self:getWorld()
-    if world then
-        world:destroy()
+    for _, layerName in pairs(self:getLayerNames()) do
+        -- Destroy the local copy of the world
+        local worldId, world = self:getWorld(layerName)
+        if world then
+            world:destroy()
+        end
     end
 end
 
@@ -130,7 +148,9 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         -- At the origin, create the physics body and fixtures and shapes. Other hosts will receive
         -- them through sync
 
-        local bodyId = self._physics:newBody(self.globals.worldId, bp.x or 0, bp.y or 0, bp.bodyType or "static")
+        component.properties.layerName = bp.layerName or DEFAULT_LAYER
+
+        local bodyId = self._physics:newBody(self.globals.layers[component.properties.layerName].worldId, bp.x or 0, bp.y or 0, bp.bodyType or "static")
         if bp.massData then
             local massData = bp.massData
 
@@ -198,6 +218,11 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
            component.properties.visible = true
         else
            component.properties.visible = bp.visible
+        end
+
+        component.properties.relativeToCamera = false
+        if component.properties.layerName == CAMERA_LAYER then
+            component.properties.relativeToCamera = true
         end
     end
 end
@@ -275,6 +300,7 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.width = component.properties.width
     bp.height = component.properties.height
     bp.visible = component.properties.visible
+    bp.layerName = component.properties.layerName
 end
 
 function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
@@ -367,7 +393,10 @@ end
 function BodyBehavior.handlers:prePerform(dt)
     -- Update the world at the very start of the performance to allow other behaviors to make
     -- changes after
-    self._physics:updateWorld(self.globals.worldId, dt)
+
+    for _, layerName in pairs(self:getLayerNames()) do
+        self._physics:updateWorld(self.globals.layers[layerName].worldId, dt)
+    end
 
     -- If client, check for touches
     if self.game.clientId then
@@ -645,6 +674,16 @@ function BodyBehavior.setters:height(component, value)
    self:setRectangleShape(actorId, rectangleWidth, value)
 end
 
+function BodyBehavior.setters:relativeToCamera(component, value)
+    if value then
+        component.properties.layerName = CAMERA_LAYER
+    else
+        component.properties.layerName = DEFAULT_LAYER
+    end
+
+    component.properties.relativeToCamera = value
+end
+
 function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
     local bodyId, body = self:getBody(componentOrActorId)
     local bodyFixtures = body:getFixtures()
@@ -805,12 +844,22 @@ function BodyBehavior:getPhysics()
     return self._physics
 end
 
-function BodyBehavior:getWorld()
-    return self.globals.worldId, self._physics:objectForId(self.globals.worldId)
+function BodyBehavior:getLayerNames()
+    local result = {}
+
+    for k, v in pairs(self.globals.layers) do
+      table.insert(result, k)
+    end
+
+    return result
 end
 
-function BodyBehavior:getGroundBody()
-    return self.globals.groundBodyId, self._physics:objectForId(self.globals.groundBodyId)
+function BodyBehavior:getWorld(layerName)
+    return self.globals.layers[layerName].worldId, self._physics:objectForId(self.globals.layers[layerName].worldId)
+end
+
+function BodyBehavior:getGroundBody(layerName)
+    return self.globals.layers[layerName].groundBodyId, self._physics:objectForId(self.globals.layers[layerName].groundBodyId)
 end
 
 function BodyBehavior:getComponent(componentOrActorId)
@@ -832,6 +881,14 @@ function BodyBehavior:getMembers(componentOrActorId)
     local firstFixture = fixtures and fixtures[1]
     local fixtureIds = {}
 
+    local component = self:getComponent(componentOrActorId)
+    local layerName = DEFAULT_LAYER
+    if component then
+        layerName = component.properties.layerName
+    end
+
+    local layer = self.globals.layers[layerName]
+
     if fixtures then
         for _, fixture in pairs(fixtures) do
             table.insert(fixtureIds, physics:idForObject(fixture))
@@ -845,6 +902,8 @@ function BodyBehavior:getMembers(componentOrActorId)
         fixtures = fixtures,
         firstFixture = firstFixture,
         fixtureIds = fixtureIds,
+        layerName = layerName,
+        layer = layer,
     }
 end
 
@@ -961,46 +1020,76 @@ function BodyBehavior:getActorForBody(body)
 end
 
 function BodyBehavior:getActorsAtBoundingBox(minX, minY, maxX, maxY)
+    local cameraX, cameraY = self.game:getCameraPosition()
     local hits = {}
-    local worldId, world = self:getWorld()
-    if world then
-        world:queryBoundingBox(
-            minX,
-            minY,
-            maxX,
-            maxY,
-            function(fixture)
-                local actorId = self:getActorForBody(fixture:getBody())
-                if actorId then
-                    hits[actorId] = true
-                end
-                return true
-            end
-        )
-    end
-    return hits
-end
 
-function BodyBehavior:getActorsAtPoint(x, y)
-    local hits = {}
-    local worldId, world = self:getWorld()
-    if world then
-        world:queryBoundingBox(
-            x - 1,
-            y - 1,
-            x + 1,
-            y + 1,
-            function(fixture)
-                if fixture:testPoint(x, y) then
+    for layerName, layer in pairs(self.globals.layers) do
+        local tempMinX = minX
+        local tempMinY = minY
+        local tempMaxX = maxX
+        local tempMaxY = maxY
+
+        if layer.relativeToCamera then
+            tempMinX = tempMinX - cameraX
+            tempMinY = tempMinY - cameraY
+            tempMaxX = tempMaxX - cameraX
+            tempMaxY = tempMaxY - cameraY
+        end
+
+        local worldId, world = self:getWorld(layerName)
+        if world then
+            world:queryBoundingBox(
+                tempMinX,
+                tempMinY,
+                tempMaxX,
+                tempMaxY,
+                function(fixture)
                     local actorId = self:getActorForBody(fixture:getBody())
                     if actorId then
                         hits[actorId] = true
                     end
+                    return true
                 end
-                return true
-            end
-        )
+            )
+        end
     end
+
+    return hits
+end
+
+function BodyBehavior:getActorsAtPoint(x, y)
+    local cameraX, cameraY = self.game:getCameraPosition()
+    local hits = {}
+
+    for layerName, layer in pairs(self.globals.layers) do
+        local tempX = x
+        local tempY = y
+
+        if layer.relativeToCamera then
+            tempX = tempX - cameraX
+            tempY = tempY - cameraY
+        end
+
+        local worldId, world = self:getWorld(layerName)
+        if world then
+            world:queryBoundingBox(
+                tempX - 1,
+                tempY - 1,
+                tempX + 1,
+                tempY + 1,
+                function(fixture)
+                    if fixture:testPoint(tempX, tempY) then
+                        local actorId = self:getActorForBody(fixture:getBody())
+                        if actorId then
+                            hits[actorId] = true
+                        end
+                    end
+                    return true
+                end
+            )
+        end
+    end
+
     return hits
 end
 

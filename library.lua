@@ -100,11 +100,23 @@ end
 
 -- Start / stop
 
+function Common:generateLibraryId()
+    local suffix = tostring(self._nextLibraryIdSuffix)
+    self._nextLibraryIdSuffix = self._nextLibraryIdSuffix + 1
+
+    local prefix = "0"
+
+    return prefix .. "-" .. suffix
+end
+
 function Common:startLibrary()
+    -- need this to be backwards compatible. we used to use the same
+    -- ids for this and for physics bodies. this broke when we added multiple layers
+    self._nextLibraryIdSuffix = 2
     self.library = {} -- `entryId` -> entry
 
     for _, entrySpec in pairs(CORE_LIBRARY) do
-        local entryId = self:generateId()
+        local entryId = self:generateLibraryId()
         local entry = util.deepCopyTable(entrySpec)
         entry.entryId = entryId
         entry.isCore = true
