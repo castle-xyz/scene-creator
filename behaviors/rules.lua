@@ -771,8 +771,8 @@ RulesBehavior.responses["repeat"] = {
 }
 
 RulesBehavior.responses["act on"] = {
-    description = "Act on any actor with a specific tag",
-    category = "interaction",
+    description = "Tell other actors with a specific tag",
+    category = "tell other actors",
     paramSpecs = {
        tag = {
           method = "tagPicker",
@@ -792,8 +792,8 @@ RulesBehavior.responses["act on"] = {
 }
 
 RulesBehavior.responses["act on other"] = {
-    description = "Act on the other actor this collided with",
-    category = "interaction",
+    description = "Tell the other actor this collided with",
+    category = "tell other actors",
     triggerFilter = {collide = true},
     run = function(self, actorId, params, context)
         if context.otherActorId then
