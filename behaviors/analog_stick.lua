@@ -80,10 +80,12 @@ function AnalogStickBehavior.handlers:postPerform(dt)
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
+           local gestureStarted = false
            if touch.usedBy == nil or not touch.usedBy.analogStick then
               touch.usedBy = touch.usedBy or {}
               touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
               self._centerX, self._centerY = touch.initialX, touch.initialY
+              gestureStarted = true
            else
               self:_updateCenter(touch)
            end
@@ -103,11 +105,38 @@ function AnalogStickBehavior.handlers:postPerform(dt)
                     local m = body:getMass()
                     local impulsePerFrame = component.properties.speed / 60
                     body:applyLinearImpulse(m * impulsePerFrame * dragX, m * impulsePerFrame * dragY)
+
+                    if gestureStarted then
+                       self:fireTrigger("analog stick begins", actorId)
+                    end
                 end
             end
         end
     end
+    if touchData.allTouchesReleased then
+       if self._centerX ~= nil or self._centerY ~= nil then
+          self._centerX = nil
+          self._centerY = nil
+          for actorId, component in pairs(self.components) do
+             if not component.disabled then
+                self:fireTrigger("analog stick ends", actorId)
+             end
+          end
+       end
+    end
 end
+
+-- Rules
+
+AnalogStickBehavior.triggers["analog stick begins"] = {
+   description = "When analog stick input begins",
+   category = "controls",
+}
+
+AnalogStickBehavior.triggers["analog stick ends"] = {
+   description = "When analog stick input ends",
+   category = "controls",
+}
 
 -- Draw
 
