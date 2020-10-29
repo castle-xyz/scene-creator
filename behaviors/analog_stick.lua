@@ -11,7 +11,7 @@ local AnalogStickBehavior =
        speed = {
           method = 'numberInput',
           label = 'Speed',
-          props = { min = 0, max = 15, step = 0.5 },
+          props = { min = 0, max = 40, step = 0.5 },
           rules = {
              set = true,
           },
@@ -43,6 +43,24 @@ end
 
 -- Perform
 
+-- this method causes the center of the analog stick to pull toward
+-- the touch.
+function AnalogStickBehavior:_updateCenter(touch)
+   local dragX, dragY = touch.x - self._centerX, touch.y - self._centerY
+   local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+   local dragAngle = math.atan2(dragY, dragX)
+   
+   local centerVelocity
+   if dragLen > MAX_DRAG_LENGTH then
+      centerVelocity = dragLen * 0.06
+   else
+      centerVelocity = dragLen * 0.02
+   end
+
+   self._centerX = self._centerX + centerVelocity * math.cos(dragAngle)
+   self._centerY = self._centerY + centerVelocity * math.sin(dragAngle)
+end
+
 function AnalogStickBehavior.handlers:postPerform(dt)
     -- Do this in `postPerform` to allow other behaviors to steal the touch
 
@@ -62,11 +80,14 @@ function AnalogStickBehavior.handlers:postPerform(dt)
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
-           touch.usedBy = touch.usedBy or {}
-           touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
-        end
-        if not touch.used and touch.movedNear then
-            local dragX, dragY = touch.x - touch.initialX, touch.y - touch.initialY
+           if touch.usedBy == nil or not touch.usedBy.analogStick then
+              touch.usedBy = touch.usedBy or {}
+              touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
+              self._centerX, self._centerY = touch.initialX, touch.initialY
+           else
+              self:_updateCenter(touch)
+           end
+            local dragX, dragY = touch.x - self._centerX, touch.y - self._centerY
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > MAX_DRAG_LENGTH then
                 dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
@@ -106,15 +127,15 @@ function AnalogStickBehavior.handlers:drawOverlay()
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
             local touchX, touchY = touch.x, touch.y
-            local dragX, dragY = touchX - touch.initialX, touchY - touch.initialY
+            local dragX, dragY = touchX - self._centerX, touchY - self._centerY
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then
                 if dragLen > MAX_DRAG_LENGTH then
                     dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
                     dragLen = MAX_DRAG_LENGTH
                     local dragAngle = math.atan2(dragY, dragX)
-                    touchX = touch.initialX + dragLen * math.cos(dragAngle)
-                    touchY = touch.initialY + dragLen * math.sin(dragAngle)
+                    touchX = self._centerX + dragLen * math.cos(dragAngle)
+                    touchY = self._centerY + dragLen * math.sin(dragAngle)
                 end
 
                 love.graphics.setColor(1, 1, 1, 0.8)
@@ -125,9 +146,9 @@ function AnalogStickBehavior.handlers:drawOverlay()
 
                 -- At the center of the analog stick,
                 -- a circle with solid outline and transparent fill
-                love.graphics.circle("line", touch.initialX, touch.initialY, maxRadius)
+                love.graphics.circle("line", self._centerX, self._centerY, maxRadius)
                 love.graphics.setColor(1, 1, 1, 0.3)
-                love.graphics.circle("fill", touch.initialX, touch.initialY, maxRadius)
+                love.graphics.circle("fill", self._centerX, self._centerY, maxRadius)
                 love.graphics.setColor(1, 1, 1, 0.8)
 
                 -- Under the (clamped) touch,
