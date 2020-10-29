@@ -218,7 +218,7 @@ function Client:drawNoTouchesHintOverlay()
       love.graphics.rectangle(
          "fill",
             -0.5 * DEFAULT_VIEW_WIDTH,
-            -0.5 * DEFAULT_VIEW_WIDTH,
+            -self:getDefaultYOffset(),
          DEFAULT_VIEW_WIDTH,
          DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
       )
@@ -235,7 +235,7 @@ function Client:drawNoTouchesHintOverlay()
             love.graphics.origin()
             love.graphics.scale(hintOverlayCanvas:getWidth() / DEFAULT_VIEW_WIDTH)
             love.graphics.translate(0, 0)
-            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, 0.5 * DEFAULT_VIEW_WIDTH)
+            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, self:getDefaultYOffset())
             love.graphics.clear(0, 0, 0, 0)
 
             local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}

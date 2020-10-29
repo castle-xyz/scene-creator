@@ -168,7 +168,7 @@ function GrabTool:drawGrid()
             "offset",
             {
                 dpiScale * (self.game.viewX % gridSize - 0.5 * self.game.viewWidth) * self.game:getViewScale(),
-                dpiScale * (self.game.viewY % gridSize - 0.5 * self.game.viewWidth) * self.game:getViewScale()
+                dpiScale * (self.game.viewY % gridSize - self.game:getYOffset()) * self.game:getViewScale()
             }
         )
         love.graphics.setShader(gridShader)

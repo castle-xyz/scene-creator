@@ -2,8 +2,36 @@ local DEFAULT_SCENE_PROPERTIES = {
    backgroundColor = { r = 227 / 255, g = 230 / 255, b = 252 / 255 },
 }
 
+local NEW_CARD_SCENE_PROPERTIES = {
+   coordinateSystemVersion = 2,
+}
+
+function Common:getDefaultYOffset()
+   local yPosition = 0.5 * DEFAULT_VIEW_WIDTH
+   if self.sceneProperties.coordinateSystemVersion == 2 then
+      yPosition = 0.5 * DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
+   end
+
+   return yPosition
+end
+
+function Common:getYOffset()
+   local yPosition = 0.5 * self.viewWidth
+   if self.sceneProperties.coordinateSystemVersion == 2 then
+      yPosition = 0.5 * self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO
+   end
+
+   return yPosition
+end
+
 function Common:startSceneProperties()
    self.sceneProperties = util.deepCopyTable(DEFAULT_SCENE_PROPERTIES)
+
+   if self.isNewScene then
+      for k, v in pairs(NEW_CARD_SCENE_PROPERTIES) do
+         self.sceneProperties[k] = v
+      end
+   end
 end
 
 function Common:sendSetSceneProperties(properties, opts)

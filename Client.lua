@@ -53,9 +53,16 @@ function love.load()
     local deckState = scene.deckState or {}
     local variables = deckState.variables or {}
     local snapshot = nil
+    local isNewScene = false
 
-    if scene and scene.data and scene.data.snapshot then
-        snapshot = scene.data.snapshot
+    if scene and scene.data then
+        if scene.data.snapshot then
+            snapshot = scene.data.snapshot
+        end
+
+        if scene.data.empty then
+            isNewScene = true
+        end
     end
 
     currentSnapshot = snapshot
@@ -76,14 +83,14 @@ function love.load()
     if initialParams.isEditing then
         isEditing = true
         editInstance = Client:_new()
-        editInstance:load(true, snapshot, variables)
+        editInstance:load(true, snapshot, variables, isNewScene)
 
         local tempSnapshot = editInstance:createSnapshot()
         editInstance:setLastSuccessfulSaveSnapshot(tempSnapshot)
     else
         isEditing = false
         playInstance = Client:_new()
-        playInstance:load(false, snapshot, variables)
+        playInstance:load(false, snapshot, variables, false)
     end
 end
 
@@ -117,13 +124,14 @@ function endEditing()
     editInstance:saveScreenshot()
 
     playInstance = Client:_new()
-    playInstance:load(false, currentSnapshot, currentVariables)
+    playInstance:load(false, currentSnapshot, currentVariables, false)
     isEditing = false
 end
 
-function Client:load(isEditing, snapshot, variables)
+function Client:load(isEditing, snapshot, variables, isNewScene)
     self.clientId = 0
     self.isEditable = isEditable
+    self.isNewScene = isNewScene
 
     self:start()
 
@@ -482,10 +490,11 @@ function Client:drawScene(opts)
                 love.graphics.clear(0.8, 0.8, 0.8)
                 love.graphics.push("all")
                 love.graphics.setColor(bgColor.r, bgColor.g, bgColor.b)
+
                 love.graphics.rectangle(
                     "fill",
                     -0.5 * DEFAULT_VIEW_WIDTH,
-                    -0.5 * DEFAULT_VIEW_WIDTH,
+                    -self:getDefaultYOffset(),
                     DEFAULT_VIEW_WIDTH,
                     DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
                 )
@@ -546,7 +555,7 @@ function Client:getScreenshotData()
             love.graphics.origin()
             love.graphics.scale(screenshotWidth / DEFAULT_VIEW_WIDTH)
             love.graphics.translate(0, 0)
-            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, 0.5 * DEFAULT_VIEW_WIDTH)
+            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, self:getDefaultYOffset())
 
             love.graphics.clear(0.0, 0.0, 0.0, 0.0)
             self:drawScene()
@@ -569,7 +578,7 @@ function Client:saveScreenshot()
             love.graphics.origin()
             love.graphics.scale(screenshotWidth / DEFAULT_VIEW_WIDTH)
             love.graphics.translate(0, 0)
-            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, 0.5 * DEFAULT_VIEW_WIDTH)
+            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, self:getDefaultYOffset())
 
             self:drawScene()
 
@@ -649,7 +658,7 @@ function Client:draw()
             self.viewTransform:reset()
             self.viewTransform:scale(windowWidth / self.viewWidth)
             self.viewTransform:translate(-self.viewX, -self.viewY)
-            self.viewTransform:translate(0.5 * self.viewWidth, 0.5 * self.viewWidth)
+            self.viewTransform:translate(0.5 * self.viewWidth, self:getYOffset())
             love.graphics.applyTransform(self.viewTransform)
         end
 
@@ -677,7 +686,7 @@ function Client:draw()
                 love.graphics.rectangle(
                     "line",
                     -0.5 * DEFAULT_VIEW_WIDTH,
-                    -0.5 * DEFAULT_VIEW_WIDTH,
+                    -self:getDefaultYOffset(),
                     DEFAULT_VIEW_WIDTH,
                     DEFAULT_VIEW_WIDTH * VIEW_HEIGHT_TO_WIDTH_RATIO
                 )
