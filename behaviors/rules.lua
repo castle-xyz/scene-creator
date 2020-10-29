@@ -880,6 +880,16 @@ RulesBehavior.responses["coin flip"] = {
     end
 }
 
+-- Camera responses
+
+RulesBehavior.responses["attach camera"] = {
+   description = "Attach camera to this actor",
+   category = "general",
+   run = function(self, actorId, params, context)
+       self.game:cameraAttachToActorId(actorId)
+   end
+}
+
 -- Performance
 
 function RulesBehavior.handlers:postPerform(dt)

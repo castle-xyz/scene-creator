@@ -49,6 +49,10 @@ local BodyBehavior =
           label = 'Height',
           props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
        },
+       relativeToCamera = {
+          method = 'toggle',
+          label = 'Relative to camera',
+       },
        worldId = {},
        groundBodyId = {},
        bodyId = {},
@@ -187,6 +191,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         component.properties.width = width
         component.properties.height = height
         component.properties.isNewDrawingTool = false
+        component.properties.relativeToCamera = bp.relativeToCamera or false
     end
 end
 
@@ -262,6 +267,7 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.fixtures = component.properties.fixtures
     bp.width = component.properties.width
     bp.height = component.properties.height
+    bp.relativeToCamera = component.properties.relativeToCamera
 end
 
 function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)

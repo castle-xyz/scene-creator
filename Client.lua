@@ -147,6 +147,7 @@ function Client:load(isEditing, snapshot, variables, isNewScene)
 
     self:resetView()
     self.viewTransform = love.math.newTransform()
+    self.cameraTransform = love.math.newTransform()
 
     if snapshot then
         self:restoreSnapshot(snapshot)
@@ -510,11 +511,29 @@ function Client:drawScene(opts)
             local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
             self:forEachActorByDrawOrder(
                 function(actor)
+                    local relativeToCamera = false
+                    local bodyComponent = self.behaviorsByName.Body:getComponent(actor.actorId)
+                    if bodyComponent and bodyComponent.properties then
+                        printObject(bodyComponent.properties)
+                    end
+                    if bodyComponent and bodyComponent.properties.relativeToCamera then
+                        relativeToCamera = true
+                    end
+
+                    if not relativeToCamera then
+                        love.graphics.push("transform")
+                        love.graphics.applyTransform(self.cameraTransform)
+                    end
+
                     for behaviorId, behavior in pairs(drawBehaviors) do
                         local component = actor.components[behaviorId]
                         if component then
                             behavior:callHandler("drawComponent", component)
                         end
+                    end
+
+                    if not relativeToCamera then
+                        love.graphics.pop()
                     end
                 end
             )
@@ -654,6 +673,12 @@ function Client:draw()
             --        end
             --    end
             --end
+
+            self:send("updateCamera")
+
+            local cameraX, cameraY = self:getCameraPosition()
+            self.cameraTransform:reset()
+            self.cameraTransform:translate(-cameraX, -cameraY)
 
             self.viewTransform:reset()
             self.viewTransform:scale(windowWidth / self.viewWidth)
