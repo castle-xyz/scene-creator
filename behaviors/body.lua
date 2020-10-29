@@ -368,13 +368,6 @@ function BodyBehavior.handlers:prePerform(dt)
                     end
                 end
             end
-            if touch.pressed then
-               for actorId in pairs(hits) do
-                  if self:fireTrigger("touch down", actorId) then
-                     touch.used = true
-                  end
-               end
-            end
             if touch.released then
                for actorId in pairs(hits) do
                   if self:fireTrigger("touch up", actorId) then
@@ -383,11 +376,29 @@ function BodyBehavior.handlers:prePerform(dt)
                end
             else
                 for actorId in pairs(hits) do
+                    -- press all actors under this touch
                     if self:fireTrigger("press", actorId) then
                         touch.used = true
                     end
+
+                    -- if we dragged onto a new actor, touch down
+                    if touch.pressed or not touch.previousActorsTouched[actorId] then
+                       if self:fireTrigger("touch down", actorId) then
+                          touch.used = true
+                       end
+                    end
+                end
+
+                -- if we dragged off of an actor, touch up
+                for actorId in pairs(touch.previousActorsTouched) do
+                   if not hits[actorId] then
+                      if self:fireTrigger("touch up", actorId) then
+                         touch.used = true
+                      end
+                   end
                 end
             end
+            touch.previousActorsTouched = hits
         end
     end
 end

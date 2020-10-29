@@ -75,6 +75,7 @@ function Client:updateTouches()
             touch.released = false
             touch.movedNear = false
             touch.movedFar = false
+            touch.previousActorsTouched = {}
 
             self.touches[touchId] = touch
         else -- Move
