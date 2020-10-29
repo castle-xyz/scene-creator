@@ -360,16 +360,28 @@ function BodyBehavior.handlers:prePerform(dt)
     if self.game.clientId then
         local touchData = self:getTouchData()
         for touchId, touch in pairs(touchData.touches) do
+            local hits = self:getActorsAtPoint(touch.x, touch.y)
             if (touch.released and not touch.movedFar and love.timer.getTime() - touch.pressTime < 0.3) then
-                local hits = self:getActorsAtPoint(touch.x, touch.y)
                 for actorId in pairs(hits) do
                     if self:fireTrigger("tap", actorId) then
                         touch.used = true
                     end
                 end
             end
-            if not touch.released then
-                local hits = self:getActorsAtPoint(touch.x, touch.y)
+            if touch.pressed then
+               for actorId in pairs(hits) do
+                  if self:fireTrigger("touch down", actorId) then
+                     touch.used = true
+                  end
+               end
+            end
+            if touch.released then
+               for actorId in pairs(hits) do
+                  if self:fireTrigger("touch up", actorId) then
+                     touch.used = true
+                  end
+               end
+            else
                 for actorId in pairs(hits) do
                     if self:fireTrigger("press", actorId) then
                         touch.used = true
@@ -515,6 +527,16 @@ BodyBehavior.triggers.tap = {
 BodyBehavior.triggers.press = {
     description = "While this is pressed",
     category = "controls"
+}
+
+BodyBehavior.triggers["touch down"] = {
+   description = "When a touch begins on this actor",
+   category = "controls",
+}
+
+BodyBehavior.triggers["touch up"] = {
+   description = "When a touch ends on this actor",
+   category = "controls",
 }
 
 -- Responses
