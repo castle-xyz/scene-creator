@@ -28,6 +28,7 @@ local AnalogStickBehavior =
 }
 
 local MAX_DRAG_LENGTH = 2 * UNIT
+local MAX_DRAG_LENGTH_DRAW = MAX_DRAG_LENGTH * 0.8
 
 local DRAW_MULTIPLIER = 0.8
 
@@ -183,9 +184,9 @@ function AnalogStickBehavior.handlers:drawOverlay()
             local dragX, dragY = touchX - self._centerX, touchY - self._centerY
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then
-                if dragLen > MAX_DRAG_LENGTH then
-                    dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
-                    dragLen = MAX_DRAG_LENGTH
+                if dragLen > MAX_DRAG_LENGTH_DRAW then
+                    dragX, dragY = dragX * MAX_DRAG_LENGTH_DRAW / dragLen, dragY * MAX_DRAG_LENGTH_DRAW / dragLen
+                    dragLen = MAX_DRAG_LENGTH_DRAW
                     local dragAngle = math.atan2(dragY, dragX)
                     touchX = self._centerX + dragLen * math.cos(dragAngle)
                     touchY = self._centerY + dragLen * math.sin(dragAngle)
@@ -195,21 +196,21 @@ function AnalogStickBehavior.handlers:drawOverlay()
                 love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
 
                 local touchRadius = TOUCH_RADIUS * self.game:getPixelScale()
-                local maxRadius = MAX_DRAG_LENGTH + touchRadius
+                local maxRadius = MAX_DRAG_LENGTH_DRAW + touchRadius
 
                 -- At the center of the analog stick,
                 -- a circle with solid outline and transparent fill
                 love.graphics.circle("line", self._centerX, self._centerY, maxRadius)
                 love.graphics.setColor(1, 1, 1, 0.3)
                 love.graphics.circle("fill", self._centerX, self._centerY, maxRadius)
-                love.graphics.setColor(1, 1, 1, 0.8)
+                love.graphics.setColor(1, 1, 1, 0.4)
 
                 -- Under the (clamped) touch,
                 -- a circle with solid outline and transparent fill
                 love.graphics.circle("line", touchX, touchY, touchRadius)
                 love.graphics.setColor(1, 1, 1, 0.3)
                 love.graphics.circle("fill", touchX, touchY, touchRadius)
-                love.graphics.setColor(1, 1, 1, 0.8)
+                love.graphics.setColor(1, 1, 1, 0.4)
             end
         end
     end
