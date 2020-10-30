@@ -541,12 +541,12 @@ BodyBehavior.triggers.press = {
 }
 
 BodyBehavior.triggers["touch down"] = {
-   description = "When a touch begins on this actor",
+   description = "When a touch begins on this",
    category = "controls",
 }
 
 BodyBehavior.triggers["touch up"] = {
-   description = "When a touch ends on this actor",
+   description = "When a touch ends on this",
    category = "controls",
 }
 
