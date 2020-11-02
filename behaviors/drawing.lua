@@ -301,6 +301,11 @@ end
 -- Draw
 
 function DrawingBehavior.handlers:drawComponent(component)
+    local bodyComponent = self.dependencies.Body.components[component.actorId]
+     if bodyComponent.properties.visible == false and self.game.performing then
+        return
+     end
+
     -- Body attributes
     local bodyWidth, bodyHeight = self.dependencies.Body:getSize(component.actorId)
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)

@@ -49,6 +49,13 @@ local BodyBehavior =
           label = 'Height',
           props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
        },
+       visible = {
+          method = 'toggle',
+          label = 'Visible',
+          rules = {
+             set = true,
+          },
+       },
        worldId = {},
        groundBodyId = {},
        bodyId = {},
@@ -187,6 +194,11 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         component.properties.width = width
         component.properties.height = height
         component.properties.isNewDrawingTool = false
+        if bp.visible == nil then
+           component.properties.visible = true
+        else
+           component.properties.visible = bp.visible
+        end
     end
 end
 
@@ -262,6 +274,7 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.fixtures = component.properties.fixtures
     bp.width = component.properties.width
     bp.height = component.properties.height
+    bp.visible = component.properties.visible
 end
 
 function BodyBehavior.handlers:addDependentComponent(addedComponent, opts)
