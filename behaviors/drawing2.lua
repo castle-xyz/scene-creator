@@ -92,6 +92,7 @@ function Drawing2Behavior:updateBodyShape(component, physicsBodyData)
         self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
         self.dependencies.Body:setShapes(component.actorId, shapes)
     end
+    component._hash = component.properties.hash
 end
 
 -- Component management
@@ -161,7 +162,6 @@ function Drawing2Behavior.handlers:drawComponent(component)
     if component._hash ~= component.properties.hash then
         self:updateBodyShape(component, data.physicsBodyData)
     end
-    component._hash = component.properties.hash
 
     component._drawData = drawData -- Maintain strong reference
     local graphicsSize = drawData.scale or 10
