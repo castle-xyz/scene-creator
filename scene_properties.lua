@@ -29,7 +29,7 @@ function Common:startSceneProperties()
 
    if self.isNewScene then
       for k, v in pairs(NEW_CARD_SCENE_PROPERTIES) do
-         self.sceneProperties[k] = v
+         self.sceneProperties[k] = util.deepCopyTable(v)
       end
    end
 end

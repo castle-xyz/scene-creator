@@ -14,6 +14,33 @@ function util.unpackPairs(t)
     return unpack(rets, 1, nArgs)
 end
 
+function util.deepCompare(t1, t2)
+   local typ1, typ2 = type(t1), type(t2)
+   if typ1 ~= typ2 then
+      -- print('  deep compare type failed: ' .. tostring(typ1) .. ' ~= ' .. tostring(typ2))
+      return false
+   elseif typ1 == 'nil' or typ1 == 'boolean' or typ1 == 'number' or typ1 == 'string' or typ1 == 'function' then
+      --[[if t1 ~= t2 then
+         print('  deep compare val failed: ' .. tostring(t1) .. ' ~= ' .. tostring(t2))
+         end--]]
+      return t1 == t2
+   elseif typ1 == 'table' then
+      local allKeys = {}
+      for k, v1 in pairs(t1) do allKeys[k] = true end
+      for k, v2 in pairs(t2) do allKeys[k] = true end
+      for k, _ in pairs(allKeys) do
+         local v1, v2 = t1[k], t2[k]
+         if not util.deepCompare(v1, v2) then
+            -- print('  deep compare key failed: ' .. tostring(k))
+            return false
+         end
+      end
+      return true
+   else
+      error('deepCompare: bad type: ' .. tostring(typ1))
+   end
+end
+
 function util.deepCopyTable(t)
     local typ = type(t)
     if typ == 'nil' or typ == 'boolean' or typ == 'number' or typ == 'string' or typ == 'function' then

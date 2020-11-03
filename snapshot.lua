@@ -1,14 +1,10 @@
 function Common:startSnapshot()
     self.lastSaveAttemptTime = nil
-    self.lastSuccessfulSaveData = nil
+    self.lastSuccessfulSaveSnapshot = nil
 end
 
 function Common:setLastSuccessfulSaveSnapshot(snapshot)
-    self.lastSuccessfulSaveData = cjson.encode(
-        {
-            snapshot = snapshot
-        }
-    )
+   self.lastSuccessfulSaveSnapshot = snapshot
 end
 
 function Common:restoreSnapshot(snapshot)
@@ -76,7 +72,7 @@ function Common:createSnapshot()
     )
 
     -- Save scene properties
-    snapshot.sceneProperties = self.sceneProperties
+    snapshot.sceneProperties = util.deepCopyTable(self.sceneProperties)
     
     return snapshot
 end
@@ -85,13 +81,14 @@ function Common:saveScene(snapshot)
     if not self.performing then
         self.lastSaveAttemptTime = love.timer.getTime()
 
-        local data =
+        snapshot = snapshot or self:createSnapshot()
+        if not util.deepCompare(snapshot, self.lastSuccessfulSaveSnapshot) then
+           local data =
             cjson.encode(
             {
-                snapshot = snapshot or self:createSnapshot()
+                snapshot = snapshot
             }
-        )
-        if data ~= self.lastSuccessfulSaveData then
+            )
             if next(self.actors) then
                 pcall(
                     function()
@@ -107,7 +104,7 @@ function Common:saveScene(snapshot)
                     data = data
                 }
             )
-            self.lastSuccessfulSaveData = data
+            self.lastSuccessfulSaveSnapshot = snapshot
         end
     end
 end
