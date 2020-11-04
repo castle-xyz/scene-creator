@@ -60,6 +60,9 @@ function Client:updateTouches()
         local screenX, screenY = love.touch.getPosition(touchId)
         local x, y = self.viewTransform:inverseTransformPoint(screenX, screenY)
 
+        screenX, screenY = self.cameraTransform:inverseTransformPoint(screenX, screenY)
+        x, y = self.cameraTransform:inverseTransformPoint(x, y)
+
         local touch = self.touches[touchId]
         if not touch then -- Press
             touch = {}
@@ -215,6 +218,7 @@ function Client:drawNoTouchesHintOverlay()
       local overlayAlpha = math.min(math.max(0, self.hintState.counter - 45) / 15, 1)
       love.graphics.push("all")
       love.graphics.setColor(0, 0, 0, overlayAlpha * 0.7)
+      love.graphics.applyTransform(self.cameraTransform:inverse())
       love.graphics.rectangle(
          "fill",
             -0.5 * DEFAULT_VIEW_WIDTH,
@@ -237,6 +241,8 @@ function Client:drawNoTouchesHintOverlay()
             love.graphics.translate(0, 0)
             love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, self:getDefaultYOffset())
             love.graphics.clear(0, 0, 0, 0)
+
+            love.graphics.applyTransform(self.cameraTransform)
 
             local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
             self:forEachActorByDrawOrder(

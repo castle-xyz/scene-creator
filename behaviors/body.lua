@@ -358,6 +358,23 @@ end
 -- Perform / update
 
 function BodyBehavior.handlers:prePerform(dt)
+    local cameraX, cameraY = self.game:getCameraPosition()
+
+    self.game:forEachActorByDrawOrder(
+        function(actor)
+            local bodyComponent = self:getComponent(actor.actorId)
+            if not bodyComponent then
+                return
+            end
+
+            if bodyComponent.properties.relativeToCamera then
+                local members = self:getMembers(actor.actorId)
+                members.physics:setX(members.bodyId, members.body:getX() + cameraX)
+                members.physics:setY(members.bodyId, members.body:getY() + cameraY)
+            end
+        end
+    )
+
     -- Update the world at the very start of the performance to allow other behaviors to make
     -- changes after
     self._physics:updateWorld(self.globals.worldId, dt)
@@ -407,6 +424,23 @@ function BodyBehavior.handlers:prePerform(dt)
             touch.previousActorsTouched = hits
         end
     end
+
+    self.game:forEachActorByDrawOrder(
+        function(actor)
+            local bodyComponent = self:getComponent(actor.actorId)
+            if not bodyComponent then
+                return
+            end
+
+            if bodyComponent.properties.relativeToCamera then
+                local members = self:getMembers(actor.actorId)
+                local newX = members.body:getX()
+                local newY = members.body:getY()
+                members.physics:setX(members.bodyId, newX - cameraX)
+                members.physics:setY(members.bodyId, newY - cameraY)
+            end
+        end
+    )
 end
 
 function BodyBehavior.handlers:postUpdate(dt)

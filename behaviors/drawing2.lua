@@ -150,6 +150,13 @@ function Drawing2Behavior.handlers:drawComponent(component)
     local bodyX, bodyY = body:getPosition()
     local bodyAngle = body:getAngle()
 
+    local bodyComponent = self.dependencies.Body:getComponent(component.actorId)
+    if bodyComponent and bodyComponent.properties.relativeToCamera then
+        local cameraX, cameraY = self.game:getCameraPosition()
+        bodyX = bodyX + cameraX
+        bodyY = bodyY + cameraY
+    end
+
     local data = self:cacheDrawing(component, component.properties)
     local drawData = data.drawData
 
