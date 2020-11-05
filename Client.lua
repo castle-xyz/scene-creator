@@ -121,7 +121,6 @@ function endEditing()
 
     currentSnapshot = editInstance:createSnapshot()
     editInstance:saveScene(currentSnapshot)
-    editInstance:saveScreenshot()
 
     playInstance = Client:_new()
     playInstance:load(false, currentSnapshot, currentVariables, false)
