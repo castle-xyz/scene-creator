@@ -177,19 +177,20 @@ function AnalogStickBehavior.handlers:drawOverlay()
 
     -- Look for a single-finger drag
     local touchData = self:getTouchData()
-    if touchData.maxNumTouches == 1 then
+    if touchData.maxNumTouches == 1 and not touchData.allTouchesReleased then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
             local touchX, touchY = touch.x, touch.y
-            local dragX, dragY = touchX - self._centerX, touchY - self._centerY
+            local centerX, centerY = self._centerX or touch.initialX, self._centerY or touch.initialY
+            local dragX, dragY = touchX - centerX, touchY - centerY
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then
                 if dragLen > MAX_DRAG_LENGTH_DRAW then
                     dragX, dragY = dragX * MAX_DRAG_LENGTH_DRAW / dragLen, dragY * MAX_DRAG_LENGTH_DRAW / dragLen
                     dragLen = MAX_DRAG_LENGTH_DRAW
                     local dragAngle = math.atan2(dragY, dragX)
-                    touchX = self._centerX + dragLen * math.cos(dragAngle)
-                    touchY = self._centerY + dragLen * math.sin(dragAngle)
+                    touchX = centerX + dragLen * math.cos(dragAngle)
+                    touchY = centerY + dragLen * math.sin(dragAngle)
                 end
 
                 love.graphics.setColor(1, 1, 1, 0.8)
@@ -200,9 +201,9 @@ function AnalogStickBehavior.handlers:drawOverlay()
 
                 -- At the center of the analog stick,
                 -- a circle with solid outline and transparent fill
-                love.graphics.circle("line", self._centerX, self._centerY, maxRadius)
+                love.graphics.circle("line", centerX, centerY, maxRadius)
                 love.graphics.setColor(1, 1, 1, 0.3)
-                love.graphics.circle("fill", self._centerX, self._centerY, maxRadius)
+                love.graphics.circle("fill", centerX, centerY, maxRadius)
                 love.graphics.setColor(1, 1, 1, 0.4)
 
                 -- Under the (clamped) touch,
