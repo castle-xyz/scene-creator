@@ -56,8 +56,8 @@ end
 
 -- this method causes the center of the analog stick to pull toward
 -- the touch.
-function AnalogStickBehavior:_updateCenter(touch)
-   local dragX, dragY = touch.x - self._centerX, touch.y - self._centerY
+function AnalogStickBehavior:_updateCenter(touch, cameraX, cameraY)
+   local dragX, dragY = (touch.x - cameraX) - self._centerX, (touch.y - cameraY) - self._centerY
    local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
    local dragAngle = math.atan2(dragY, dragX)
    
@@ -95,16 +95,18 @@ function AnalogStickBehavior.handlers:postPerform(dt)
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
-           local gestureStarted = false
-           if touch.usedBy == nil or not touch.usedBy.analogStick then
-              touch.usedBy = touch.usedBy or {}
-              touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
-              self._centerX, self._centerY = touch.initialX, touch.initialY
-              gestureStarted = true
-           else
-              self:_updateCenter(touch)
-           end
-            local dragX, dragY = touch.x - self._centerX, touch.y - self._centerY
+            -- analog stick is measured in scene space, but invariant to camera position
+            local cameraX, cameraY = self.game:getCameraPosition()
+            local gestureStarted = false
+            if touch.usedBy == nil or not touch.usedBy.analogStick then
+                touch.usedBy = touch.usedBy or {}
+                touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
+                self._centerX, self._centerY = touch.initialX - cameraX, touch.initialY - cameraY
+                gestureStarted = true
+            else
+                self:_updateCenter(touch, cameraX, cameraY)
+            end
+            local dragX, dragY = (touch.x - cameraX) - self._centerX, (touch.y - cameraY) - self._centerY
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > MAX_DRAG_LENGTH then
                 dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
@@ -180,8 +182,9 @@ function AnalogStickBehavior.handlers:drawOverlay()
     if touchData.maxNumTouches == 1 and not touchData.allTouchesReleased then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
-            local touchX, touchY = touch.x, touch.y
-            local centerX, centerY = self._centerX or touch.initialX, self._centerY or touch.initialY
+            local cameraX, cameraY = self.game:getCameraPosition()
+            local touchX, touchY = touch.x - cameraX, touch.y - cameraY
+            local centerX, centerY = self._centerX or (touch.initialX - cameraX), self._centerY or (touch.initialY - cameraY)
             local dragX, dragY = touchX - centerX, touchY - centerY
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then
@@ -192,6 +195,9 @@ function AnalogStickBehavior.handlers:drawOverlay()
                     touchX = centerX + dragLen * math.cos(dragAngle)
                     touchY = centerY + dragLen * math.sin(dragAngle)
                 end
+
+                love.graphics.push()
+                love.graphics.translate(cameraX, cameraY)
 
                 love.graphics.setColor(1, 1, 1, 0.8)
                 love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
@@ -211,7 +217,7 @@ function AnalogStickBehavior.handlers:drawOverlay()
                 love.graphics.circle("line", touchX, touchY, touchRadius)
                 love.graphics.setColor(1, 1, 1, 0.3)
                 love.graphics.circle("fill", touchX, touchY, touchRadius)
-                love.graphics.setColor(1, 1, 1, 0.4)
+                love.graphics.pop()
             end
         end
     end
