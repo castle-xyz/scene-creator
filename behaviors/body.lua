@@ -68,6 +68,7 @@ local BodyBehavior =
        fixtureId = {},
        fixtures = {},
        isNewDrawingTool = {},
+       isInViewport = {},
        sensor = {},
     },
 }
@@ -224,6 +225,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         if component.properties.layerName == CAMERA_LAYER then
             component.properties.relativeToCamera = true
         end
+        component.properties.isInViewport = false
     end
 end
 
@@ -442,6 +444,29 @@ function BodyBehavior.handlers:prePerform(dt)
             end
             touch.previousActorsTouched = hits
         end
+
+        local cameraX, cameraY = self.game:getCameraCornerPosition()
+        local cameraWidth, cameraHeight = self.game:getCameraSize()
+        local viewportHits = self:getActorsAtBoundingBox(cameraX, cameraY, cameraX + cameraWidth, cameraY + cameraHeight)
+        for actorId in pairs(viewportHits) do
+            local component = self:getComponent(actorId)
+            if component and not component.properties.isInViewport then
+                component.properties.isInViewport = true
+                self:fireTrigger("enter camera viewport", actorId)
+            end
+        end
+
+        self.game:forEachActorByDrawOrder(
+            function(actor)
+                if not viewportHits[actor.actorId] then
+                    local component = self:getComponent(actor.actorId)
+                    if component and component.properties.isInViewport then
+                        component.properties.isInViewport = false
+                        self:fireTrigger("exit camera viewport", actor.actorId)
+                    end
+                end
+            end
+        )
     end
 end
 
@@ -587,9 +612,14 @@ BodyBehavior.triggers["touch down"] = {
    category = "controls",
 }
 
-BodyBehavior.triggers["touch up"] = {
-   description = "When a touch ends on this",
-   category = "controls",
+BodyBehavior.triggers["enter camera viewport"] = {
+   description = "When this enters the camera viewport",
+   category = "camera",
+}
+
+BodyBehavior.triggers["exit camera viewport"] = {
+   description = "When this exits the camera viewport",
+   category = "camera",
 }
 
 -- Responses
@@ -637,6 +667,19 @@ BodyBehavior.responses["face direction of motion"] = {
          members.physics:setAngle(members.bodyId, angle)
       end
    end,
+}
+
+BodyBehavior.responses["is in camera viewport"] = {
+    description = "If this is in the camera viewport",
+    category = "camera",
+    returnType = "boolean",
+    run = function(self, actorId, params, context)
+        local component = self:getComponent(actorId)
+        if component then
+            return component.properties.isInViewport
+        end
+        return false
+    end
 }
 
 

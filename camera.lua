@@ -17,6 +17,14 @@ function Common:getCameraPosition()
     return self.camera.x, self.camera.y
 end
 
+function Common:getCameraCornerPosition()
+    return self.camera.x - 0.5 * self.viewWidth, self.camera.y - self:getYOffset()
+end
+
+function Common:getCameraSize()
+    return self.viewWidth, self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO
+end
+
 -- Message receivers
 
 function Common:cameraAttachToActorId(actorId)
