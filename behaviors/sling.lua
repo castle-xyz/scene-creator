@@ -61,13 +61,19 @@ function SlingBehavior.handlers:postPerform(dt)
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
+        local cameraX, cameraY = self.game:getCameraPosition()
         if not touch.used and touch.movedNear then
            touch.usedBy = touch.usedBy or {}
-           touch.usedBy.sling = true -- mark the touch without `used` so we detect player interaction
+           if not touch.usedBy.sling then
+              touch.usedBy.sling = true -- mark the touch without `used` so we detect player interaction
+              self._initialX, self._initialY = touch.initialX - cameraX, touch.initialY - cameraY
+           end
         end
         if touchData.allTouchesReleased then
             if not touch.used and touch.movedNear then
-                local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
+                -- sling is measured in scene space, but invariant to camera position
+                local touchX, touchY = touch.x - cameraX, touch.y - cameraY
+                local dragX, dragY = self._initialX - touchX, self._initialY - touchY
                 local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
                 if dragLen > MAX_DRAG_LENGTH then
                     dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
@@ -112,13 +118,18 @@ function SlingBehavior.handlers:drawOverlay()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
-            local dragX, dragY = touch.initialX - touch.x, touch.initialY - touch.y
+            local cameraX, cameraY = self.game:getCameraPosition()
+            local touchX, touchY = touch.x - cameraX, touch.y - cameraY
+            local dragX, dragY = self._initialX - touchX, self._initialY - touchY
             local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
             if dragLen > 0 then
                 if dragLen > MAX_DRAG_LENGTH then
                     dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
                     dragLen = MAX_DRAG_LENGTH
                 end
+
+                love.graphics.push()
+                love.graphics.translate(cameraX, cameraY)
 
                 love.graphics.setColor(1, 1, 1, 0.8)
                 love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
@@ -128,16 +139,16 @@ function SlingBehavior.handlers:drawOverlay()
                 local triangleWidth = TRIANGLE_WIDTH * self.game:getPixelScale()
 
                 -- Circle with solid outline and transparent fill
-                love.graphics.circle("line", touch.initialX, touch.initialY, circleRadius)
+                love.graphics.circle("line", self._initialX, self._initialY, circleRadius)
                 love.graphics.setColor(1, 1, 1, 0.3)
-                love.graphics.circle("fill", touch.initialX, touch.initialY, circleRadius)
+                love.graphics.circle("fill", self._initialX, self._initialY, circleRadius)
                 love.graphics.setColor(1, 1, 1, 0.8)
 
                 -- Line and triangle
-                local endX, endY = touch.initialX + DRAW_MULTIPLIER * dragX, touch.initialY + DRAW_MULTIPLIER * dragY
+                local endX, endY = self._initialX + DRAW_MULTIPLIER * dragX, self._initialY + DRAW_MULTIPLIER * dragY
                 love.graphics.line(
-                    touch.initialX,
-                    touch.initialY,
+                    self._initialX,
+                    self._initialY,
                     endX - triangleLength * dragX / dragLen,
                     endY - triangleLength * dragY / dragLen
                 )
@@ -150,6 +161,7 @@ function SlingBehavior.handlers:drawOverlay()
                     endX - triangleLength * dragX / dragLen + triangleWidth * dragY / dragLen,
                     endY - triangleLength * dragY / dragLen - triangleWidth * dragX / dragLen
                 )
+                love.graphics.pop()
             end
         end
     end
