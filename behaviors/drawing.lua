@@ -312,6 +312,13 @@ function DrawingBehavior.handlers:drawComponent(component)
     local bodyX, bodyY = body:getPosition()
     local bodyAngle = body:getAngle()
 
+    local members = self.dependencies.Body:getMembers(component.actorId)
+    if members and members.layer and members.layer.relativeToCamera then
+        local cameraX, cameraY = self.game:getCameraPosition()
+        bodyX = bodyX + cameraX
+        bodyY = bodyY + cameraY
+    end
+
     local graphics, flipbook, graphicsWidth, graphicsHeight
 
     -- Check if the draw tool is acting on us
