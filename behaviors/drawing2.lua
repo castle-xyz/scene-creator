@@ -143,7 +143,6 @@ function Drawing2Behavior.setters:base64Png(component, ...)
 end
 
 -- Draw
-
 function Drawing2Behavior.handlers:drawComponent(component)
     local bodyComponent = self.dependencies.Body.components[component.actorId]
     if bodyComponent.properties.visible == false and self.game.performing then
@@ -161,6 +160,20 @@ function Drawing2Behavior.handlers:drawComponent(component)
         local cameraX, cameraY = self.game:getCameraPosition()
         bodyX = bodyX + cameraX
         bodyY = bodyY + cameraY
+    end
+
+
+    if self.game.performing then
+        local cameraCornerX, cameraCornerY = self.game:getCameraCornerPosition()
+        local cameraWidth, cameraHeight = self.game:getCameraSize()
+        local bodySizeForCamera = bodyWidth
+        if bodyHeight > bodyWidth then
+            bodySizeForCamera = bodyHeight
+        end
+
+        if bodyX + bodySizeForCamera < cameraCornerX or bodyX - bodySizeForCamera > cameraCornerX + cameraWidth or bodyY + bodySizeForCamera < cameraCornerY or bodyY - bodySizeForCamera > cameraCornerY + cameraHeight then
+            return
+        end
     end
 
     local data = self:cacheDrawing(component, component.properties)
