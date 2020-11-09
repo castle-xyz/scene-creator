@@ -102,15 +102,15 @@ CounterBehavior.triggers["counter changes"] = {
 -- Responses
 
 CounterBehavior.responses["change counter"] = {
-    description = "Adjust the actor's counter",
-    category = "state",
-    paramSpecs = {
-       changeBy = {
-          label = "adjust by",
-          method = "numberInput",
-          initialValue = 1,
-       },
-    },
+    description = "Adjust the actor's counter (legacy)",
+    isDeprecated = true,
+    migrate = function(self, actorId, response)
+       response.name = "set counter"
+
+       response.params.relative = true
+       response.params.setToValue = response.params.changeBy
+       response.params.changeBy = nil
+    end,
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
             local component = self.components[actorId]
@@ -122,7 +122,7 @@ CounterBehavior.responses["change counter"] = {
 }
 
 CounterBehavior.responses["set counter"] = {
-    description = "Set the actor's counter",
+    description = "Modify the actor's counter",
     category = "state",
     paramSpecs = {
        setToValue = {
@@ -130,12 +130,21 @@ CounterBehavior.responses["set counter"] = {
           method = "numberInput",
           initialValue = 0,
        },
+       relative = {
+          method = "toggle",
+          label = "relative",
+          initialValue = false,
+       },
     },
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
             local component = self.components[actorId]
             if component then
-                self:sendSetProperties(actorId, "value", params.setToValue)
+                if params.relative then
+                    self:sendSetProperties(actorId, "value", component.properties.value + params.setToValue)
+                else
+                    self:sendSetProperties(actorId, "value", params.setToValue)
+                end
             end
         end
     end
