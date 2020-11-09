@@ -312,7 +312,7 @@ RulesBehavior.responses["change variable"] = {
 }
 
 RulesBehavior.responses["set variable"] = {
-    description = 'Set a variable to a value',
+    description = "Modify the value of a variable",
     category = "state",
     paramSpecs = {
        variableId = {
