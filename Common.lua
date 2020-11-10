@@ -83,7 +83,7 @@ require "variables"
 require "scene_properties"
 require "camera"
 
-function Common:start()
+function Common:start(isPerforming)
     self.onEndOfFrames = {}
 
     self._nextIdSuffix = 1
@@ -96,7 +96,7 @@ function Common:start()
     self:startVariables()
     self:startCamera()
 
-    self.performing = true
+    self.performing = isPerforming
     self.paused = false
 end
 

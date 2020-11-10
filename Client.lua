@@ -132,7 +132,8 @@ function Client:load(isEditing, snapshot, variables, isNewScene)
     self.isEditable = isEditable
     self.isNewScene = isNewScene
 
-    self:start()
+    -- body component uses performing to determine collision shapes
+    self:start(not isEditing)
 
     --self.photoImages = {}
 
@@ -148,13 +149,11 @@ function Client:load(isEditing, snapshot, variables, isNewScene)
     self.viewTransform = love.math.newTransform()
     self.cameraTransform = love.math.newTransform()
 
-    -- body component uses performing to determine collision shapes. need to do this before restoring snapshot
-    self:send("setPerforming", not isEditing)
-
     if snapshot then
         self:restoreSnapshot(snapshot)
     end
 
+    self:send("setPerforming", not isEditing)
     self:send("updateVariables", variables)
 end
 
