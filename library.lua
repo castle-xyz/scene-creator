@@ -213,7 +213,7 @@ function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, 
             end
 
             -- Update actors
-                for actorId, actor in pairs(self.actors) do
+            for actorId, actor in pairs(self.actors) do
                 if actorId ~= opts.skipActorId and actor.parentEntryId == entryId then
                     local bp = self:blueprintActor(actorId) -- Start with old blueprint and merge changes
                     for _, change in ipairs(changes) do
@@ -241,7 +241,8 @@ function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, 
                         bp,
                         {
                             actorId = actorId,
-                            parentEntryId = entryId
+                            parentEntryId = entryId,
+                            drawOrder = actor.drawOrder,
                         }
                     )
                 end
