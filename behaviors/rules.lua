@@ -1003,3 +1003,84 @@ function RulesBehavior:changeRules(actorId, component, changeRulesFunc, descript
       end
    )
 end
+
+-- Rules clipboard
+
+function RulesBehavior:isClipboardEmpty()
+   return self.clipboard == nil
+      or self.clipboard.rules == nil
+      or #self.clipboard.rules == 0
+end
+
+function RulesBehavior:copyRules(component, rules)
+   -- make a deep copy snapshot in case the original is modified or deleted before we paste
+   -- TODO: does this work? do any rules reference actors etc.?
+   self.clipboard = self.clipboard or {}
+   self.clipboard.rules = util.deepCopyTable(rules)
+end
+
+function RulesBehavior:pasteRules(component, rules)
+   rules = rules or self.clipboard.rules
+   self:changeRules(
+      component.actorId, component,
+      function()
+         for _, rule in ipairs(rules) do
+            local ruleToInsert = {}
+            ruleToInsert.trigger = self:validateTriggerForActor(component.actorId, rule.trigger)
+            ruleToInsert.response = self:validateResponseForActor(component.actorId, rule.response)
+            table.insert(component.properties.rules, ruleToInsert)
+         end
+      end,
+      #rules == 1 and 'paste rule' or 'paste rules',
+      false
+   )
+end
+
+function RulesBehavior:validateTriggerForActor(actorId, trigger)
+   local triggerBehavior = self.game.behaviors[trigger.behaviorId]
+   if triggerBehavior.components[actorId] ~= nil then
+      -- target actor has the needed behavior for this trigger,
+      -- now validate the trigger's params
+      if triggerBehavior.triggers[trigger.name].validate then
+         return triggerBehavior.triggers[trigger.name].validate(
+            self.game.actors[actorId],
+            util.deepCopyTable(trigger)
+         )
+      else
+         return util.deepCopyTable(trigger)
+      end
+   end
+   -- target actor doesn't have the needed behavior for this trigger
+   return util.deepCopyTable(EMPTY_RULE.trigger)
+end
+
+function RulesBehavior:validateResponseForActor(actorId, response)
+   if not response then return nil end
+
+   local responseBehavior = self.game.behaviors[response.behaviorId]
+   if responseBehavior.components[actorId] ~= nil then
+      -- target actor has the needed behavior for this response,
+      -- now validate the response's params
+      local result
+      if responseBehavior.responses[response.name].validate then
+         result = responseBehavior.responses[response.name].validate(
+            self.game.actors[actorId],
+            util.deepCopyTable(response)
+         )
+      else
+         result = {
+            name = response.name,
+            behaviorId = response.behaviorId,
+            params = util.deepCopyTable(response.params),
+         }
+      end
+      result.nextResponse = self:validateResponseForActor(actorId, response.nextResponse)
+      result.body = self:validateResponseForActor(actorId, response.body)
+      result["then"] = self:validateResponseForActor(actorId, response["then"])
+      result["else"] = self:validateResponseForActor(actorid, response["else"])
+      return result
+   else
+      -- target actor doesn't have the behavior for this response, delete it and move to next
+      return self:validateResponseForActor(actorId, response.nextResponse)
+   end
+end

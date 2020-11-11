@@ -58,12 +58,23 @@ function Client:uiRules()
                end
             )
          end
+         actions['copy'] = function(rulesToCopy)
+            self.behaviorsByName.Rules:copyRules(component, rulesToCopy)
+         end
+         actions['paste'] = function()
+            self.behaviorsByName.Rules:pasteRules(component)
+         end
          self:_addSoundActions(actions)
          rules = component.properties.rules
       else
          actions['add'] = function(blueprint)
             self:_addBehavior(actor, rulesBehavior.behaviorId, blueprint)
             component = actor.components[rulesBehavior.behaviorId]
+         end
+         actions['paste'] = function()
+            self:_addBehavior(actor, rulesBehavior.behaviorId)
+            component = actor.components[rulesBehavior.behaviorId]
+            self.behaviorsByName.Rules:pasteRules(component)
          end
       end
 
@@ -78,6 +89,7 @@ function Client:uiRules()
             triggers = Rules.sanitizeEntries(triggers),
             responses = Rules.sanitizeEntries(responses),
             conditions = Rules.sanitizeEntries(conditions),
+            isClipboardEmpty = rulesBehavior:isClipboardEmpty(),
          },
          {
             actions = actions,
