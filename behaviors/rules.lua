@@ -476,6 +476,13 @@ RulesBehavior.responses.create = {
           },
        },
     },
+    validate = function(self, actorId, params)
+       local entry = self.game.library[params.entryId]
+       if not entry then
+          -- nonexistent blueprint?
+          params.entryId = nil
+       end
+    end,
     run = function(self, actorId, params, context)
         local entry = self.game.library[params.entryId]
         if entry then
@@ -612,6 +619,18 @@ RulesBehavior.responses["set behavior property"] = {
          initialValue = false,
       },
    },
+   validate = function(self, actorId, params)
+      if params.behaviorId == nil or params.propertyName == nil then
+         return response
+      end
+      local behavior = self.game.behaviors[params.behaviorId]
+      local component = behavior.components[actorId]
+      if component == nil then
+         params.behaviorId = nil
+         params.propertyName = nil
+         params.value = 0
+      end
+   end,
    run = function(self, actorId, params, context)
       if params.behaviorId == nil or params.propertyName == nil then
          -- incomplete rule
@@ -702,6 +721,15 @@ RulesBehavior.responses["disable behavior"] = {
          initialValue = nil,
       },
    },
+   validate = function(self, actorId, params)
+      if params.behaviorId ~= nil then
+         local behavior = self.game.behaviors[params.behaviorId]
+         local component = behavior.components[actorId]
+         if component == nil then
+            params.behaviorId = nil
+         end
+      end
+   end,
    run = function(self, actorId, params, context)
       if params.behaviorId ~= nil then
          self.game:send("disableComponent", self.clientId, actorId, params.behaviorId)
@@ -719,6 +747,15 @@ RulesBehavior.responses["enable behavior"] = {
          initialValue = nil,
       },
    },
+   validate = function(self, actorId, params)
+      if params.behaviorId ~= nil then
+         local behavior = self.game.behaviors[params.behaviorId]
+         local component = behavior.components[actorId]
+         if component == nil then
+            params.behaviorId = nil
+         end
+      end
+   end,
    run = function(self, actorId, params, context)
       if params.behaviorId ~= nil then
          self.game:send("enableComponent", self.clientId, actorId, params.behaviorId)
@@ -1041,14 +1078,15 @@ function RulesBehavior:validateTriggerForActor(actorId, trigger)
    if triggerBehavior.components[actorId] ~= nil then
       -- target actor has the needed behavior for this trigger,
       -- now validate the trigger's params
+      local result = util.deepCopyTable(trigger)
       if triggerBehavior.triggers[trigger.name].validate then
-         return triggerBehavior.triggers[trigger.name].validate(
-            self.game.actors[actorId],
-            util.deepCopyTable(trigger)
+         triggerBehavior.triggers[trigger.name].validate(
+            triggerBehavior,
+            actorId,
+            trigger.params
          )
-      else
-         return util.deepCopyTable(trigger)
       end
+      return result
    end
    -- target actor doesn't have the needed behavior for this trigger
    return util.deepCopyTable(EMPTY_RULE.trigger)
@@ -1061,18 +1099,17 @@ function RulesBehavior:validateResponseForActor(actorId, response)
    if responseBehavior.components[actorId] ~= nil then
       -- target actor has the needed behavior for this response,
       -- now validate the response's params
-      local result
+      local result = {
+         name = response.name,
+         behaviorId = response.behaviorId,
+         params = util.deepCopyTable(response.params),
+      }
       if responseBehavior.responses[response.name].validate then
-         result = responseBehavior.responses[response.name].validate(
-            self.game.actors[actorId],
-            util.deepCopyTable(response)
+         responseBehavior.responses[response.name].validate(
+            responseBehavior,
+            actorId,
+            result.params
          )
-      else
-         result = {
-            name = response.name,
-            behaviorId = response.behaviorId,
-            params = util.deepCopyTable(response.params),
-         }
       end
       result.nextResponse = self:validateResponseForActor(actorId, response.nextResponse)
       result.body = self:validateResponseForActor(actorId, response.body)
