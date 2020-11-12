@@ -74,6 +74,8 @@ function Client:uiRules()
          actions['paste'] = function()
             self:_addBehavior(actor, rulesBehavior.behaviorId)
             component = actor.components[rulesBehavior.behaviorId]
+            -- component will have 1 empty rule by default, remove that since we're pasting
+            component.properties.rules = {}
             self.behaviorsByName.Rules:pasteRules(component)
          end
       end
