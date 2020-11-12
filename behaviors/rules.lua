@@ -1063,8 +1063,8 @@ function RulesBehavior:pasteRules(component, rules)
       function()
          for _, rule in ipairs(rules) do
             local ruleToInsert = {}
-            ruleToInsert.trigger = self:validateTriggerForActor(component.actorId, rule.trigger)
-            ruleToInsert.response = self:validateResponseForActor(component.actorId, rule.response)
+            ruleToInsert.trigger = self:validateTriggerForActor(component.actorId, util.deepCopyTable(rule.trigger))
+            ruleToInsert.response = self:validateResponseForActor(component.actorId, util.deepCopyTable(rule.response))
             table.insert(component.properties.rules, ruleToInsert)
          end
       end,
@@ -1078,7 +1078,6 @@ function RulesBehavior:validateTriggerForActor(actorId, trigger)
    if triggerBehavior.components[actorId] ~= nil then
       -- target actor has the needed behavior for this trigger,
       -- now validate the trigger's params
-      local result = util.deepCopyTable(trigger)
       if triggerBehavior.triggers[trigger.name].validate then
          triggerBehavior.triggers[trigger.name].validate(
             triggerBehavior,
@@ -1086,7 +1085,7 @@ function RulesBehavior:validateTriggerForActor(actorId, trigger)
             trigger.params
          )
       end
-      return result
+      return trigger
    end
    -- target actor doesn't have the needed behavior for this trigger
    return util.deepCopyTable(EMPTY_RULE.trigger)
@@ -1099,25 +1098,20 @@ function RulesBehavior:validateResponseForActor(actorId, response)
    if responseBehavior.components[actorId] ~= nil then
       -- target actor has the needed behavior for this response,
       -- now validate the response's params
-      local result = {
-         name = response.name,
-         behaviorId = response.behaviorId,
-         params = util.deepCopyTable(response.params),
-      }
       if responseBehavior.responses[response.name].validate then
          responseBehavior.responses[response.name].validate(
             responseBehavior,
             actorId,
-            result.params
+            response.params
          )
       end
-      result.nextResponse = self:validateResponseForActor(actorId, response.nextResponse)
-      result.body = self:validateResponseForActor(actorId, response.body)
-      result["then"] = self:validateResponseForActor(actorId, response["then"])
-      result["else"] = self:validateResponseForActor(actorid, response["else"])
-      return result
+      response.params.nextResponse = self:validateResponseForActor(actorId, response.params.nextResponse)
+      response.params.body = self:validateResponseForActor(actorId, response.params.body)
+      response.params["then"] = self:validateResponseForActor(actorId, response.params["then"])
+      response.params["else"] = self:validateResponseForActor(actorid, response.params["else"])
+      return response
    else
       -- target actor doesn't have the behavior for this response, delete it and move to next
-      return self:validateResponseForActor(actorId, response.nextResponse)
+      return self:validateResponseForActor(actorId, response.params.nextResponse)
    end
 end
