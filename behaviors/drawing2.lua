@@ -143,10 +143,12 @@ function Drawing2Behavior.setters:base64Png(component, ...)
 end
 
 -- Draw
+
 function Drawing2Behavior.handlers:drawComponent(component)
     local bodyComponent = self.dependencies.Body.components[component.actorId]
-    if bodyComponent.properties.visible == false and self.game.performing then
-       return
+    if (bodyComponent.properties.visible == false or bodyComponent.properties.visible == 0)
+    and self.game.performing then
+        return
     end
 
     -- Body attributes
