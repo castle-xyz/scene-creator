@@ -27,6 +27,7 @@ function RulesBehavior.handlers:addBehavior(opts)
     -- By default, there is at most one thread running per actor per rule.
     -- `threadKey`s can be used customize that per trigger.
     self._coroutines = {} -- `actorId` -> `threadKey` -> current coroutine for that thread key
+    self._stopRepeatingIds = {}
 end
 
 -- Component management
@@ -776,7 +777,7 @@ RulesBehavior.responses["if"] = {
 }
 
 RulesBehavior.responses["repeat"] = {
-    description = "Repeat a response",
+    description = "Repeat N times",
     category = "logic",
     paramSpecs = {
        count = {
@@ -793,6 +794,11 @@ RulesBehavior.responses["repeat"] = {
        for i = 1, params.count do
           self:runResponse(params["body"], actorId, context)
 
+          if self._stopRepeatingIds[actorId] and self._stopRepeatingIds[actorId][self._currentThreadKey] then
+            self._stopRepeatingIds[actorId][self._currentThreadKey] = false
+            return
+          end
+
           -- yield every 5 repeats
           if math.fmod(i, 5) < 1 then
             coroutine.yield()
@@ -805,6 +811,58 @@ RulesBehavior.responses["repeat"] = {
           end
         end
     end
+}
+
+RulesBehavior.responses["infinite repeat"] = {
+   description = "Repeat every N seconds",
+   category = "logic",
+   paramSpecs = {
+      interval = {
+         label = "interval (seconds)",
+         method = "numberInput",
+         initialValue = 1,
+         props = {
+            min = 0.0625,
+            max = 30,
+            step = 0.1,
+            decimalDigits = 4,
+         },
+      },
+   },
+   run = function(self, actorId, params, context)
+      while true do
+         self:runResponse(params["body"], actorId, context)
+
+         if self._stopRepeatingIds[actorId] and self._stopRepeatingIds[actorId][self._currentThreadKey] then
+            self._stopRepeatingIds[actorId][self._currentThreadKey] = false
+            return
+         end
+
+         local timeLeft = params.interval
+         while timeLeft > 0 do
+               timeLeft = timeLeft - coroutine.yield()
+         end
+
+         local members = self.game.behaviorsByName.Body:getMembers(actorId)
+         if not (members.bodyId and members.body) then
+            -- actor was destroyed, abandon remaining iterations
+            break
+         end
+       end
+   end
+}
+
+RulesBehavior.responses["stop repeating"] = {
+   description = "Stop repeating",
+   category = "logic",
+   parentTypeFilter = {["repeat"] = true},
+   run = function(self, actorId, params, context)
+      if not self._stopRepeatingIds[actorId] then
+         self._stopRepeatingIds[actorId] = {}
+      end
+
+      self._stopRepeatingIds[actorId][self._currentThreadKey] = true
+   end
 }
 
 RulesBehavior.responses["act on"] = {
@@ -943,6 +1001,7 @@ function RulesBehavior.handlers:postPerform(dt)
     -- Resume coroutines
     for actorId, coros in pairs(self._coroutines) do
         for threadKey, coro in pairs(coros) do
+            self._currentThreadKey = threadKey
             local succeeded, err = coroutine.resume(coro, dt)
             if not succeeded then
                 print("rule error: ", err)

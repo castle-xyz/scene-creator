@@ -17,6 +17,7 @@ function Rules.sanitizeEntries(categories)
             paramSpecs = entry.entry.paramSpecs,
             returnType = entry.entry.returnType,
             triggerFilter = entry.entry.triggerFilter,
+            parentTypeFilter = entry.entry.parentTypeFilter,
          }
          table.insert(category, cleanEntry)
       end
