@@ -612,6 +612,11 @@ BodyBehavior.triggers["touch down"] = {
    category = "controls",
 }
 
+BodyBehavior.triggers["touch up"] = {
+   description = "When a touch ends on this",
+   category = "controls",
+}
+
 BodyBehavior.triggers["enter camera viewport"] = {
    description = "When this enters the camera viewport",
    category = "camera",
