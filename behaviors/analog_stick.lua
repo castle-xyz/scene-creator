@@ -11,7 +11,7 @@ local AnalogStickBehavior =
        speed = {
           method = 'numberInput',
           label = 'Speed',
-          props = { min = 0, max = 50, step = 0.5 },
+          props = { min = -50, max = 50, step = 0.5 },
           rules = {
              set = true,
           },
