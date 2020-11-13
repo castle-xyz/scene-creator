@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const SCENE_CREATOR_API_VERSION = 21;
+const SCENE_CREATOR_API_VERSION = 22;
 
 var fs = require("fs");
 var request = require("request");
