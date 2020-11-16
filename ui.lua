@@ -2,6 +2,7 @@ require "ui.inspector"
 require "ui.inspector_actions"
 require "ui.blueprints"
 require "ui.rules"
+require "ui.expressions"
 
 -- Start / stop
 
@@ -186,6 +187,12 @@ function Client:uiupdate()
       ui.pane('sceneCreatorRules', function()
          uiSelf:uiRules()
       end)
+   end)
+
+   profileFunction('uiupdate.uiExpressions', function()
+       ui.pane('sceneCreatorExpressions', function()
+           uiSelf:uiExpressions()
+       end)
    end)
 
    profileFunction('uiupdate.uiSettings', function()

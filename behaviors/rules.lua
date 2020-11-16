@@ -652,10 +652,10 @@ RulesBehavior.responses["set behavior property"] = {
          else
             oldValue = component.properties[params.propertyName]
          end
-         newValue = oldValue + params.value
+         newValue = oldValue + Expression.eval(params.value)
       else
          -- absolute
-         newValue = params.value
+         newValue = Expression.eval(params.value)
       end
 
       local propertySpec = behavior.propertySpecs[params.propertyName]
