@@ -55,3 +55,19 @@ Expression.expressions["random"] = {
       return min + math.random() * (max - min)
    end
 }
+
+Expression.expressions["variable"] = {
+   returnType = "number",
+   description = "the value of a variable",
+   paramSpecs = {
+      variableId = {
+         label = "variable",
+         method = "dropdown",
+         initialValue = "(none)",
+         props = { showVariablesItems = true },
+      },
+   },
+   eval = function(game, expression)
+      return game:variableIdToValue(expression.params.variableId)
+   end
+}
