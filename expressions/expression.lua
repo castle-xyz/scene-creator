@@ -61,7 +61,7 @@ Expression.expressions["variable"] = {
    description = "the value of a variable",
    paramSpecs = {
       variableId = {
-         label = "variable",
+         label = "Variable name",
          method = "dropdown",
          initialValue = "(none)",
          props = { showVariablesItems = true },
