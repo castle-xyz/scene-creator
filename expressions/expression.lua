@@ -7,14 +7,32 @@ Expression = {
    },
 }
 
-function Common:evalExpression(maybeExpression)
+function Common:evalExpression(maybeExpression, paramSpec)
+   local result
    local typ = type(maybeExpression)
    if typ == "table" and Expression.expressions[maybeExpression.expressionType] then
-      return Expression.expressions[maybeExpression.expressionType].eval(self, maybeExpression)
+      result = Expression.expressions[maybeExpression.expressionType].eval(self, maybeExpression)
+   else
+      -- not an expression, so treat as a primitive
+      result = maybeExpression
    end
 
-   -- not an expression, so treat as a primitive
-   return maybeExpression
+   -- if provided, validate result according to spec
+   if paramSpec ~= nil then
+      if paramSpec.props ~= nil then
+         if paramSpec.props.min ~= nil and result < paramSpec.props.min then
+            result = paramSpec.props.min
+         end
+         if paramSpec.props.max ~= nil and result > paramSpec.props.max then
+            result = paramSpec.props.max
+         end
+         if paramSpec.props.discrete ~= nil then
+            result = math.floor(result)
+         end
+      end
+   end
+
+   return result
 end
 
 Expression.expressions["number"] = {

@@ -586,7 +586,10 @@ RulesBehavior.responses.wait = {
        },
     },
     run = function(self, actorId, params, context)
-        local timeLeft = params.duration
+        local timeLeft = self.game:evalExpression(
+           params.duration,
+           self.responses["wait"].paramSpecs.duration
+        )
         while timeLeft > 0 do
             timeLeft = timeLeft - coroutine.yield()
         end
@@ -787,11 +790,16 @@ RulesBehavior.responses["repeat"] = {
           props = {
              min = 0,
              step = 1,
+             discrete = true,
           },
        },
     },
     run = function(self, actorId, params, context)
-       for i = 1, params.count do
+       local count = self.game:evalExpression(
+          params.count,
+          self.responses["repeat"].paramSpecs.count
+       )
+       for i = 1, count do
           self:runResponse(params["body"], actorId, context)
 
           if self._stopRepeatingIds[actorId] and self._stopRepeatingIds[actorId][self._currentThreadKey] then
@@ -821,6 +829,7 @@ RulesBehavior.responses["infinite repeat"] = {
          label = "interval (seconds)",
          method = "numberInput",
          initialValue = 1,
+         expression = false, -- temporally ambiguous what this would mean
          props = {
             min = 0.0625,
             max = 30,
