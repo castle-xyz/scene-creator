@@ -652,10 +652,10 @@ RulesBehavior.responses["set behavior property"] = {
          else
             oldValue = component.properties[params.propertyName]
          end
-         newValue = oldValue + Expression.eval(params.value)
+         newValue = oldValue + self.game:evalExpression(params.value)
       else
          -- absolute
-         newValue = Expression.eval(params.value)
+         newValue = self.game:evalExpression(params.value)
       end
 
       local propertySpec = behavior.propertySpecs[params.propertyName]

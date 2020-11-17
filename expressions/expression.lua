@@ -1,57 +1,57 @@
 Expression = {
    expressions = {},
    BaseExpression = {
-      expressionType = 'base',
-      returnType = 'nil',
+      expressionType = "base",
+      returnType = "nil",
       params = nil,
    },
 }
 
-function Expression.eval(maybeExpression)
+function Common:evalExpression(maybeExpression)
    local typ = type(maybeExpression)
    if typ == "table" and Expression.expressions[maybeExpression.expressionType] then
-      return Expression.expressions[maybeExpression.expressionType].eval(maybeExpression)
+      return Expression.expressions[maybeExpression.expressionType].eval(self, maybeExpression)
    end
 
    -- not an expression, so treat as a primitive
    return maybeExpression
 end
 
-Expression.expressions['number'] = {
-   returnType = 'number',
-   description = 'a constant number',
+Expression.expressions["number"] = {
+   returnType = "number",
+   description = "a constant number",
    paramSpecs = {
       value = {
-         description = 'Value',
-         method = 'numberInput',
+         label = "Value",
+         method = "numberInput",
          initialValue = 0,
          expression = false,
       },
    },
-   eval = function(expression)
+   eval = function(game, expression)
       return expression.params.value
    end
 }
 
-Expression.expressions['random'] = {
-   returnType = 'number',
-   description = 'a random number',
+Expression.expressions["random"] = {
+   returnType = "number",
+   description = "a random number",
    paramSpecs = {
       min = {
-         description = 'Minimum value',
-         method = 'numberInput',
+         label = "Minimum value",
+         method = "numberInput",
          initialValue = 0,
          expression = false, -- TODO: allow expression
       },
       max = {
-         description = 'Maximum value',
-         method = 'numberInput',
+         label = "Maximum value",
+         method = "numberInput",
          initialValue = 1,
          expression = false, -- TODO: allow expression
       },
    },
-   eval = function(expression)
-      local min, max = Expression.eval(expression.params.min), Expression.eval(expression.params.max)
+   eval = function(game, expression)
+      local min, max = game:evalExpression(expression.params.min), game:evalExpression(expression.params.max)
       return min + math.random() * (max - min)
    end
 }
