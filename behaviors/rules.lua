@@ -947,6 +947,7 @@ RulesBehavior.responses["play sound"] = {
          method = "numberInput",
          label = "random seed",
          initialValue = 1337,
+         expression = false,
          props = {
             min = 0,
          },
@@ -956,12 +957,14 @@ RulesBehavior.responses["play sound"] = {
          method = "numberInput",
          label = "mutation seed",
          initialValue = 0,
+         expression = false,
       },
       -- magnitude passed to sfxr mutation call (if applicable)
       mutationAmount = {
          method = "numberInput",
          label = "mutation amount",
          initialValue = 5,
+         expression = false,
          props = {
             min = 0,
             max = 20,
