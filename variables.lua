@@ -77,22 +77,69 @@ local function variableReachesValueTrigger(self, actorId, variableId, newValue)
         {},
         {
             filter = function(params)
-                if params.variableId ~= variableId then
-                    return false
+                local applies, lhs, rhs
+                if params.variableId == variableId then
+                    -- $variable reaches value
+                    applies = true
+                    lhs = newValue
+                    rhs = self:evalExpression(params.value)
+                elseif params.value.expressionType == "variable"
+                    and params.value.params.variableId == variableId then
+                     -- $other_variable reaches $variable
+                     applies = true
+                     lhs = self:variableIdToValue(params.variableId)
+                     rhs = newValue
                 end
 
-                if params.comparison == "equal" and newValue == params.value then
+                if not applies then
+                   return false
+                end
+
+                if params.comparison == "equal" and lhs == rhs then
                     return true
                 end
-                if params.comparison == "less or equal" and newValue <= params.value then
+                if params.comparison == "less or equal" and lhs <= rhs then
                     return true
                 end
-                if params.comparison == "greater or equal" and newValue >= params.value then
+                if params.comparison == "greater or equal" and lhs >= rhs then
                     return true
                 end
                 return false
             end
         }
+    )
+
+    -- maybe fire 'counter reaches $variable'
+    self.behaviorsByName.Counter:fireTrigger(
+       "counter reaches value",
+       actorId,
+       {},
+       {
+          filter = function(params)
+             local component = self.behaviorsByName.Counter.components[actorId]
+             if component == nil then
+                return false
+             end
+             if params.value.expressionType ~= "variable" then
+                return false
+             end
+             if params.value.params.variableId == variableId then
+                 local lhs = component.properties.value
+                 local rhs = newValue
+
+                 if params.comparison == "equal" and lhs == rhs then
+                    return true
+                 end
+                 if params.comparison == "less or equal" and lhs <= rhs then
+                    return true
+                 end
+                 if params.comparison == "greater or equal" and lhs >= rhs then
+                    return true
+                 end
+                 return false
+             end
+          end
+       }
     )
 end
 

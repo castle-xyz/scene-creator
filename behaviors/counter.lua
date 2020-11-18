@@ -51,13 +51,14 @@ function CounterBehavior.setters:value(component, newValue, opts)
                 },
                 {
                     filter = function(params)
-                        if params.comparison == "equal" and newValue == params.value then
+                        local compareTo = self.game:evalExpression(params.value)
+                        if params.comparison == "equal" and newValue == compareTo then
                             return true
                         end
-                        if params.comparison == "less or equal" and newValue <= params.value then
+                        if params.comparison == "less or equal" and newValue <= compareTo then
                             return true
                         end
-                        if params.comparison == "greater or equal" and newValue >= params.value then
+                        if params.comparison == "greater or equal" and newValue >= compareTo then
                             return true
                         end
                         return false
