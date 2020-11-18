@@ -60,17 +60,20 @@ Expression.expressions["random"] = {
          method = "numberInput",
          initialValue = 0,
          expression = false, -- TODO: allow expression
+         order = 1,
       },
       max = {
          label = "Maximum value",
          method = "numberInput",
          initialValue = 1,
          expression = false, -- TODO: allow expression
+         order = 2,
       },
       discrete = {
          label = "Only choose whole numbers",
          method = "toggle",
          initialValue = false,
+         order = 3,
       },
    },
    eval = function(game, expression)
