@@ -378,13 +378,14 @@ RulesBehavior.responses["variable meets condition"] = {
     },
     run = function(self, actorId, params, context)
         local value = self.game:variableIdToValue(params.variableId)
-        if params.comparison == "equal" and value == params.value then
+        local compareTo = self.game:evalExpression(params.value)
+        if params.comparison == "equal" and value == compareTo then
             return true
         end
-        if params.comparison == "less or equal" and value <= params.value then
+        if params.comparison == "less or equal" and value <= compareTo then
             return true
         end
-        if params.comparison == "greater or equal" and value >= params.value then
+        if params.comparison == "greater or equal" and value >= compareTo then
             return true
         end
         return false
@@ -982,7 +983,11 @@ RulesBehavior.responses["coin flip"] = {
        },
     },
     run = function(self, actorId, params, context)
-        return math.random() < params.probability
+        local probability = self.game:evalExpression(
+           params.probability,
+           self.responses["coin flip"].paramSpecs.probability
+        )
+        return math.random() < probability
     end
 }
 

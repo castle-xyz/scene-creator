@@ -177,14 +177,15 @@ CounterBehavior.responses["counter meets condition"] = {
             return false
         end
         local value = component.properties.value
+        local compareTo = self.game:evalExpression(params.value)
 
-        if params.comparison == "equal" and value == params.value then
+        if params.comparison == "equal" and value == compareTo then
             return true
         end
-        if params.comparison == "less or equal" and value <= params.value then
+        if params.comparison == "less or equal" and value <= compareTo then
             return true
         end
-        if params.comparison == "greater or equal" and value >= params.value then
+        if params.comparison == "greater or equal" and value >= compareTo then
             return true
         end
         return false
