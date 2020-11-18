@@ -67,10 +67,19 @@ Expression.expressions["random"] = {
          initialValue = 1,
          expression = false, -- TODO: allow expression
       },
+      discrete = {
+         label = "Only choose whole numbers",
+         method = "toggle",
+         initialValue = false,
+      },
    },
    eval = function(game, expression)
       local min, max = game:evalExpression(expression.params.min), game:evalExpression(expression.params.max)
-      return min + math.random() * (max - min)
+      local result = min + math.random() * (max - min)
+      if expression.params.discrete == true then
+         result = math.floor(result + 0.5)
+      end
+      return result
    end
 }
 
