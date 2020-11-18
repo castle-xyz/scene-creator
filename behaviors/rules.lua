@@ -231,6 +231,7 @@ RulesBehavior.triggers["variable reaches value"] = {
           },
        },
        comparison = {
+          label = "comparison",
           method = "dropdown",
           initialValue = "equal",
           props = {
@@ -242,6 +243,7 @@ RulesBehavior.triggers["variable reaches value"] = {
           },
        },
        value = {
+          label = "value",
           method = "numberInput",
           initialValue = 0,
        },
@@ -363,6 +365,7 @@ RulesBehavior.responses["variable meets condition"] = {
           },
        },
        comparison = {
+          label = "comparison",
           method = "dropdown",
           initialValue = "equal",
           props = {
@@ -374,6 +377,7 @@ RulesBehavior.responses["variable meets condition"] = {
           },
        },
        value = {
+          label = "value",
           method = "numberInput",
           initialValue = 0,
        },
@@ -884,6 +888,7 @@ RulesBehavior.responses["act on"] = {
     category = "tell other actors",
     paramSpecs = {
        tag = {
+          label = "tag",
           method = "tagPicker",
           props = { singleSelect = true },
        },

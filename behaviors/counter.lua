@@ -78,6 +78,7 @@ CounterBehavior.triggers["counter reaches value"] = {
     category = "state",
     paramSpecs = {
        comparison = {
+          label = "comparison",
           method = "dropdown",
           initialValue = "equal",
           props = {
@@ -89,6 +90,7 @@ CounterBehavior.triggers["counter reaches value"] = {
           },
        },
        value = {
+          label = "value",
           method = "numberInput",
           initialValue = 0,
        },
