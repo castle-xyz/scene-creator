@@ -344,6 +344,12 @@ MovingBehavior.responses["move toward actor"] = {
             local members = self.game.behaviorsByName.Body:getMembers(otherActorId)
             if members.body then
                local otherX, otherY = members.body:getPosition()
+               if members.layer and members.layer.relativeToCamera then
+                  local cameraX, cameraY = self.game:getCameraPosition()
+                  otherX = otherX + cameraX
+                  otherY = otherY + cameraY
+               end
+
                local dx, dy = otherX - x, otherY - y
                local dist = math.sqrt(dx * dx + dy * dy)
                if dist < minDistance then
