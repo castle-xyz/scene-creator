@@ -83,7 +83,8 @@ local function variableReachesValueTrigger(self, actorId, variableId, newValue)
                     applies = true
                     lhs = newValue
                     rhs = self:evalExpression(params.value)
-                elseif params.value.expressionType == "variable"
+                elseif type(params.value) == "table"
+                    and params.value.expressionType == "variable"
                     and params.value.params.variableId == variableId then
                      -- $other_variable reaches $variable
                      applies = true
@@ -120,7 +121,7 @@ local function variableReachesValueTrigger(self, actorId, variableId, newValue)
              if component == nil then
                 return false
              end
-             if params.value.expressionType ~= "variable" then
+             if type(params.value) ~= "table" or params.value.expressionType ~= "variable" then
                 return false
              end
              if params.value.params.variableId == variableId then
