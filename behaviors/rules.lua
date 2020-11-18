@@ -306,7 +306,8 @@ RulesBehavior.responses["change variable"] = {
         --if context.isOwner then -- Only owning host should fire variable updates
         local component = self.components[actorId]
         if component and self.game.performing then
-            self.game:variableChangeByValue(params.variableId, params.changeBy)
+            local changeBy = self.game:evalExpression(params.changeBy)
+            self.game:variableChangeByValue(params.variableId, changeBy)
         end
         --end
     end
@@ -338,10 +339,11 @@ RulesBehavior.responses["set variable"] = {
     run = function(self, actorId, params, context)
         local component = self.components[actorId]
         if component and self.game.performing then
+            local setToValue = self.game:evalExpression(params.setToValue)
             if params.relative then
-                self.game:variableChangeByValue(params.variableId, params.setToValue)
+                self.game:variableChangeByValue(params.variableId, setToValue)
             else
-                self.game:variableSetToValue(params.variableId, params.setToValue)
+                self.game:variableSetToValue(params.variableId, setToValue)
             end
         end
     end
@@ -502,15 +504,17 @@ RulesBehavior.responses.create = {
                 if bp.components.Body then
                    local coordinateSystem = params.coordinateSystem or "relative position"
                    if coordinateSystem == "relative position" then
-                      bp.components.Body.x = x + params.xOffset
-                      bp.components.Body.y = y + params.yOffset
+                      bp.components.Body.x = x + self.game:evalExpression(params.xOffset)
+                      bp.components.Body.y = y + self.game:evalExpression(params.yOffset)
                    elseif coordinateSystem == "relative angle and distance" then
-                      local angle, distance = math.rad(params.angle or 0) + a, params.distance or 0
+                      local angle, distance =
+                         math.rad(self.game:evalExpression(params.angle or 0)) + a,
+                         self.game:evalExpression(params.distance or 0)
                       bp.components.Body.x = x + distance * math.cos(angle)
                       bp.components.Body.y = y + distance * math.sin(angle)
                   else
-                     bp.components.Body.x = params.xAbsolute
-                     bp.components.Body.y = params.yAbsolute
+                     bp.components.Body.x = self.game:evalExpression(params.xAbsolute)
+                     bp.components.Body.y = self.game:evalExpression(params.yAbsolute)
                   end
                 end
                 local newActorId = self.game:generateActorId()

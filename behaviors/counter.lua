@@ -114,8 +114,9 @@ CounterBehavior.responses["change counter"] = {
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
             local component = self.components[actorId]
+            local changeBy = self.game:evalExpression(params.changeBy)
             if component then
-                self:sendSetProperties(actorId, "value", component.properties.value + params.changeBy)
+                self:sendSetProperties(actorId, "value", component.properties.value + changeBy)
             end
         end
     end
@@ -139,11 +140,12 @@ CounterBehavior.responses["set counter"] = {
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
             local component = self.components[actorId]
+            local setToValue = self.game:evalExpression(params.setToValue)
             if component then
                 if params.relative then
-                    self:sendSetProperties(actorId, "value", component.properties.value + params.setToValue)
+                    self:sendSetProperties(actorId, "value", component.properties.value + setToValue)
                 else
-                    self:sendSetProperties(actorId, "value", params.setToValue)
+                    self:sendSetProperties(actorId, "value", setToValue)
                 end
             end
         end
