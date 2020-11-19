@@ -7,11 +7,11 @@ Expression = {
    },
 }
 
-function Common:evalExpression(maybeExpression, paramSpec)
+function Common:evalExpression(actorId, maybeExpression, paramSpec)
    local result
    local typ = type(maybeExpression)
    if typ == "table" and Expression.expressions[maybeExpression.expressionType] then
-      result = Expression.expressions[maybeExpression.expressionType].eval(self, maybeExpression)
+      result = Expression.expressions[maybeExpression.expressionType].eval(self, actorId, maybeExpression)
    else
       -- not an expression, so treat as a primitive
       result = maybeExpression
@@ -35,6 +35,10 @@ function Common:evalExpression(maybeExpression, paramSpec)
    return result
 end
 
+function Common:defineExpression(expressionType, expression)
+   Expression.expressions[expressionType] = util.deepCopyTable(expression)
+end
+
 Expression.expressions["number"] = {
    returnType = "number",
    description = "a constant number",
@@ -46,7 +50,7 @@ Expression.expressions["number"] = {
          expression = false,
       },
    },
-   eval = function(game, expression)
+   eval = function(game, actorId, expression)
       return expression.params.value
    end
 }
@@ -76,8 +80,8 @@ Expression.expressions["random"] = {
          order = 3,
       },
    },
-   eval = function(game, expression)
-      local min, max = game:evalExpression(expression.params.min), game:evalExpression(expression.params.max)
+   eval = function(game, actorId, expression)
+      local min, max = game:evalExpression(actorId, expression.params.min), game:evalExpression(actorId, expression.params.max)
       local result = min + math.random() * (max - min)
       if expression.params.discrete == true then
          result = math.floor(result + 0.5)
@@ -97,7 +101,7 @@ Expression.expressions["variable"] = {
          props = { showVariablesItems = true },
       },
    },
-   eval = function(game, expression)
+   eval = function(game, actorId, expression)
       return game:variableIdToValue(expression.params.variableId)
    end
 }

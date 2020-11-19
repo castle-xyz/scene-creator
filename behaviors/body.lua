@@ -24,6 +24,7 @@ local BodyBehavior =
           method = 'numberInput',
           label = 'X Position',
           rules = {
+             get = true,
              set = true,
           },
        },
@@ -31,6 +32,7 @@ local BodyBehavior =
           method = 'numberInput',
           label = 'Y Position',
           rules = {
+             get = true,
              set = true,
           },
        },

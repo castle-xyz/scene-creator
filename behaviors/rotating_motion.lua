@@ -94,35 +94,11 @@ RotatingMotionBehavior.responses["move toward actor"] = {
          x, y = members.body:getPosition()
       end
       
-      local closestActorId, minDistance, targetX, targetY = nil, math.huge, 0, 0
-      for otherActorId, actor in pairs(self.game.actors) do
-         if otherActorId ~= actorId
-         and ((not params.tag or params.tag == '') or self.game.behaviorsByName.Tags:actorHasTag(otherActorId, params.tag)) then
-            local members = self.game.behaviorsByName.Body:getMembers(otherActorId)
-            if members.body then
-               local otherX, otherY = members.body:getPosition()
-               if members.layer and members.layer.relativeToCamera then
-                  local cameraX, cameraY = self.game:getCameraPosition()
-                  otherX = otherX + cameraX
-                  otherY = otherY + cameraY
-               end
-
-               local dx, dy = otherX - x, otherY - y
-               local dist = math.sqrt(dx * dx + dy * dy)
-               if dist < minDistance then
-                  minDistance = dist
-                  closestActorId = otherActorId
-                  targetX = otherX
-                  targetY = otherY
-               end
-            end
-         end
-      end
-
+      local closestActorId, actorX, actorY = self.game:closestActorWithTag(actorId, params.tag)
       if members.body and closestActorId ~= nil then
-         local angle = math.atan2(targetY - y, targetX - x)
+         local angle = math.atan2(actorY - y, actorX - x)
          local component = self.components[actorId]
-         local speed = self.game:evalExpression(params.speed)
+         local speed = self.game:evalExpression(actorId, params.speed)
          component.properties.vx = speed * math.cos(angle)
          component.properties.vy = speed * math.sin(angle)
       end
