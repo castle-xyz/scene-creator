@@ -21,14 +21,14 @@ Common:defineExpression(
       },
       eval = function(game, actorId, expression)
          if not expression.params.behaviorId or not expression.params.propertyName then
-            return nil
+            return 0
          end
 
          -- behavior's property must allow rules to read it
          local behavior = game.behaviors[expression.params.behaviorId]
          if not behavior.propertySpecs[expression.params.propertyName].rules
          or not behavior.propertySpecs[expression.params.propertyName].rules.get then
-            return nil
+            return 0
          end
 
          -- identify actor whose property to read
@@ -47,7 +47,7 @@ Common:defineExpression(
                return component.properties[expression.params.propertyName]
             end
          end
-         return nil
+         return 0
       end,
    }
 )

@@ -14,6 +14,7 @@ local BouncyBehavior =
           props = { step = 0.05, min = 0, max = 2 },
           rules = {
              set = true,
+             get = true,
           },
        },
     },

@@ -10,6 +10,7 @@ local RotatingMotionBehavior = defineCoreBehavior {
           label = 'Velocity X',
           rules = {
              set = true,
+             get = true,
           },
        },
        vy = {
@@ -17,6 +18,7 @@ local RotatingMotionBehavior = defineCoreBehavior {
           label = 'Velocity Y',
           rules = {
              set = true,
+             get = true,
           },
        },
        rotationsPerSecond = {
@@ -24,6 +26,7 @@ local RotatingMotionBehavior = defineCoreBehavior {
           label = 'Rotations per second',
           rules = {
              set = true,
+             get = true,
           },
        },
     },

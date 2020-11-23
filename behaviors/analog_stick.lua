@@ -14,6 +14,7 @@ local AnalogStickBehavior =
           props = { min = -50, max = 50, step = 0.5 },
           rules = {
              set = true,
+             get = true,
           },
        },
        turnFriction = {
@@ -22,6 +23,7 @@ local AnalogStickBehavior =
           props = { min = 0, max = 10, step = 0.1 },
           rules = {
              set = true,
+             get = true,
           },
        },
     },

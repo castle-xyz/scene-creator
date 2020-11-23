@@ -13,6 +13,7 @@ local FrictionBehavior =
           props = { step = 0.05, min = 0 },
           rules = {
              set = true,
+             get = true,
           },
        },
     },

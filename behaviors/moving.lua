@@ -11,6 +11,7 @@ local MovingBehavior =
           label = 'Velocity X',
           rules = {
              set = true,
+             get = true,
           },
        },
        vy = {
@@ -18,6 +19,7 @@ local MovingBehavior =
           label = 'Velocity Y',
           rules = {
              set = true,
+             get = true,
           },
        },
        angularVelocity = {
@@ -25,6 +27,7 @@ local MovingBehavior =
           label = 'Rotation speed (degrees)',
           rules = {
              set = true,
+             get = true,
           },
        },
        density = {
@@ -33,6 +36,7 @@ local MovingBehavior =
           props = { min = 0.1, step = 0.1 },
           rules = {
              set = true,
+             get = true,
           },
        },
     },
@@ -391,4 +395,10 @@ function MovingBehavior.getters:vy(component)
    local members = self.dependencies.Body:getMembers(component.actorId)
    local vx, vy = members.body:getLinearVelocity()
    return vy
+end
+
+function MovingBehavior.getters:angularVelocity(component)
+   local members = self.dependencies.Body:getMembers(component.actorId)
+   local va = members.body:getAngularVelocity()
+   return va * 180 / math.pi
 end

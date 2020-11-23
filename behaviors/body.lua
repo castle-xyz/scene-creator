@@ -41,6 +41,7 @@ local BodyBehavior =
           label = 'Rotation',
           rules = {
              set = true,
+             get = true,
           },
        },
        width = {

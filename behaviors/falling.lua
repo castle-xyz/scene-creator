@@ -15,6 +15,7 @@ local FallingBehavior = defineCoreBehavior {
          },
          rules = {
              set = true,
+             get = true,
           },
       },
    },

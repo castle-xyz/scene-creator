@@ -13,6 +13,7 @@ local SlowdownBehavior = defineCoreBehavior {
           props = { min = 0 },
           rules = {
              set = true,
+             get = true,
           },
        },
        rotationSlowdown = {
@@ -21,6 +22,7 @@ local SlowdownBehavior = defineCoreBehavior {
           props = { min = 0, step = 0.1 },
           rules = {
              set = true,
+             get = true,
           },
        },
     },

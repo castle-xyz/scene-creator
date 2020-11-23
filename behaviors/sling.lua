@@ -14,6 +14,7 @@ local SlingBehavior =
           props = { min = 0, max = 10, step = 0.5 },
           rules = {
              set = true,
+             get = true,
           },
        },
     },

@@ -13,6 +13,7 @@ local SpeedLimitBehavior =
           props = { min = 0.1 },
           rules = {
              set = true,
+             get = true,
           },
        },
     },
