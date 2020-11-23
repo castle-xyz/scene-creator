@@ -1,13 +1,14 @@
 local CounterBehavior =
     defineCoreBehavior {
     name = "Counter",
-    displayName = "counter",
+    displayName = "Counter",
     dependencies = {},
     propertySpecs = {
        value = {
           method = 'numberInput',
-          label = 'value',
+          label = 'Value',
           props = { step = 1 }, -- TODO: dynamic min and max
+          rules = { get = true },
        },
        minValue = {
           method = 'numberInput',
