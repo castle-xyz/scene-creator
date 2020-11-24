@@ -313,7 +313,7 @@ MovingBehavior.responses["move toward own angle"] = {
       if members.body then
          local angle = members.body:getAngle()
          local m = members.body:getMass()
-         local speed = self.game:evalExpression(actorId, params.speed)
+         local speed = self.game:evalExpression(params.speed, actorId, context)
          members.body:applyLinearImpulse(m * speed * math.cos(angle), m * speed * math.sin(angle))
       end
    end,
@@ -345,7 +345,7 @@ MovingBehavior.responses["move toward actor"] = {
       if members.body and closestActorId ~= nil then
          local m = members.body:getMass()
          local angle = math.atan2(actorY - y, actorX - x)
-         local speed = self.game:evalExpression(actorId, params.speed)
+         local speed = self.game:evalExpression(params.speed, actorId, context)
          members.body:applyLinearImpulse(m * speed * math.cos(angle), m * speed * math.sin(angle))
       end
    end

@@ -308,7 +308,7 @@ RulesBehavior.responses["change variable"] = {
         --if context.isOwner then -- Only owning host should fire variable updates
         local component = self.components[actorId]
         if component and self.game.performing then
-            local changeBy = self.game:evalExpression(actorId, params.changeBy)
+            local changeBy = self.game:evalExpression(params.changeBy, actorId, context)
             self.game:variableChangeByValue(params.variableId, changeBy)
         end
         --end
@@ -341,7 +341,7 @@ RulesBehavior.responses["set variable"] = {
     run = function(self, actorId, params, context)
         local component = self.components[actorId]
         if component and self.game.performing then
-            local setToValue = self.game:evalExpression(actorId, params.setToValue)
+            local setToValue = self.game:evalExpression(params.setToValue, actorId, context)
             if params.relative then
                 self.game:variableChangeByValue(params.variableId, setToValue)
             else
@@ -384,7 +384,7 @@ RulesBehavior.responses["variable meets condition"] = {
     },
     run = function(self, actorId, params, context)
         local value = self.game:variableIdToValue(params.variableId)
-        local compareTo = self.game:evalExpression(actorId, params.value)
+        local compareTo = self.game:evalExpression(params.value, actorId, context)
         if params.comparison == "equal" and value == compareTo then
             return true
         end
@@ -508,17 +508,17 @@ RulesBehavior.responses.create = {
                 if bp.components.Body then
                    local coordinateSystem = params.coordinateSystem or "relative position"
                    if coordinateSystem == "relative position" then
-                      bp.components.Body.x = x + self.game:evalExpression(actorId, params.xOffset)
-                      bp.components.Body.y = y + self.game:evalExpression(actorId, params.yOffset)
+                      bp.components.Body.x = x + self.game:evalExpression(params.xOffset, actorId, context)
+                      bp.components.Body.y = y + self.game:evalExpression(params.yOffset, actorId, context)
                    elseif coordinateSystem == "relative angle and distance" then
                       local angle, distance =
-                         math.rad(self.game:evalExpression(actorId, params.angle or 0)) + a,
-                         self.game:evalExpression(actorId, params.distance or 0)
+                         math.rad(self.game:evalExpression(params.angle or 0, actorId, context)) + a,
+                         self.game:evalExpression(params.distance or 0, actorId, context)
                       bp.components.Body.x = x + distance * math.cos(angle)
                       bp.components.Body.y = y + distance * math.sin(angle)
                   else
-                     bp.components.Body.x = self.game:evalExpression(actorId, params.xAbsolute)
-                     bp.components.Body.y = self.game:evalExpression(actorId, params.yAbsolute)
+                     bp.components.Body.x = self.game:evalExpression(params.xAbsolute, actorId, context)
+                     bp.components.Body.y = self.game:evalExpression(params.yAbsolute, actorId, context)
                   end
                 end
                 local newActorId = self.game:generateActorId()
@@ -596,8 +596,9 @@ RulesBehavior.responses.wait = {
     },
     run = function(self, actorId, params, context)
         local timeLeft = self.game:evalExpression(
-           actorId,
            params.duration,
+           actorId,
+           context,
            self.responses["wait"].paramSpecs.duration
         )
         while timeLeft > 0 do
@@ -665,10 +666,10 @@ RulesBehavior.responses["set behavior property"] = {
          else
             oldValue = component.properties[params.propertyName]
          end
-         newValue = oldValue + self.game:evalExpression(actorId, params.value)
+         newValue = oldValue + self.game:evalExpression(params.value, actorId, context)
       else
          -- absolute
-         newValue = self.game:evalExpression(actorId, params.value)
+         newValue = self.game:evalExpression(params.value, actorId, context)
       end
 
       local propertySpec = behavior.propertySpecs[params.propertyName]
@@ -806,8 +807,9 @@ RulesBehavior.responses["repeat"] = {
     },
     run = function(self, actorId, params, context)
        local count = self.game:evalExpression(
-          actorId,
           params.count,
+          actorId,
+          context,
           self.responses["repeat"].paramSpecs.count
        )
        for i = 1, count do
@@ -998,8 +1000,9 @@ RulesBehavior.responses["coin flip"] = {
     },
     run = function(self, actorId, params, context)
         local probability = self.game:evalExpression(
-           actorId,
            params.probability,
+           actorId,
+           context,
            self.responses["coin flip"].paramSpecs.probability
         )
         return math.random() < probability

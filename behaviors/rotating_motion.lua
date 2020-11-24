@@ -101,7 +101,7 @@ RotatingMotionBehavior.responses["move toward actor"] = {
       if members.body and closestActorId ~= nil then
          local angle = math.atan2(actorY - y, actorX - x)
          local component = self.components[actorId]
-         local speed = self.game:evalExpression(actorId, params.speed)
+         local speed = self.game:evalExpression(params.speed, actorId, context)
          component.properties.vx = speed * math.cos(angle)
          component.properties.vy = speed * math.sin(angle)
       end

@@ -7,11 +7,11 @@ Expression = {
    },
 }
 
-function Common:evalExpression(actorId, maybeExpression, paramSpec)
+function Common:evalExpression(maybeExpression, actorId, context, paramSpec)
    local result
    local typ = type(maybeExpression)
    if typ == "table" and Expression.expressions[maybeExpression.expressionType] then
-      result = Expression.expressions[maybeExpression.expressionType].eval(self, actorId, maybeExpression)
+      result = Expression.expressions[maybeExpression.expressionType].eval(self, maybeExpression, actorId, context)
    else
       -- not an expression, so treat as a primitive
       result = maybeExpression
@@ -50,7 +50,7 @@ Expression.expressions["number"] = {
          expression = false,
       },
    },
-   eval = function(game, actorId, expression)
+   eval = function(game, expression, actorId, context)
       return expression.params.value
    end
 }
@@ -80,8 +80,8 @@ Expression.expressions["random"] = {
          order = 3,
       },
    },
-   eval = function(game, actorId, expression)
-      local min, max = game:evalExpression(actorId, expression.params.min), game:evalExpression(actorId, expression.params.max)
+   eval = function(game, expression, actorId, context)
+      local min, max = game:evalExpression(expression.params.min, actorId, context), game:evalExpression(expression.params.max, actorId, context)
       local result = min + math.random() * (max - min)
       if expression.params.discrete == true then
          result = math.floor(result + 0.5)
@@ -101,7 +101,7 @@ Expression.expressions["variable"] = {
          props = { showVariablesItems = true },
       },
    },
-   eval = function(game, actorId, expression)
+   eval = function(game, expression, actorId, context)
       return game:variableIdToValue(expression.params.variableId)
    end
 }

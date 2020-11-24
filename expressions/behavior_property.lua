@@ -19,7 +19,7 @@ Common:defineExpression(
             initialValue = { kind = "self" },
          },
       },
-      eval = function(game, actorId, expression)
+      eval = function(game, expression, actorId, context)
          if not expression.params.behaviorId or not expression.params.propertyName then
             return 0
          end
@@ -37,6 +37,8 @@ Common:defineExpression(
             targetActorId = actorId
          elseif expression.params.actorRef.kind == "closest" then
             targetActorId = game:closestActorWithTag(actorId, expression.params.actorRef.tag)
+         elseif expression.params.actorRef.kind == "other" then
+            targetActorId = context.otherActorId
          end
 
          local component = behavior.components[targetActorId]

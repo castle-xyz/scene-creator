@@ -52,7 +52,7 @@ function CounterBehavior.setters:value(component, newValue, opts)
                 },
                 {
                     filter = function(params)
-                        local compareTo = self.game:evalExpression(component.actorId, params.value)
+                        local compareTo = self.game:evalExpression(params.value, component.actorId)
                         if params.comparison == "equal" and newValue == compareTo then
                             return true
                         end
@@ -118,7 +118,7 @@ CounterBehavior.responses["change counter"] = {
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
             local component = self.components[actorId]
-            local changeBy = self.game:evalExpression(actorId, params.changeBy)
+            local changeBy = self.game:evalExpression(params.changeBy, actorId, context)
             if component then
                 self:sendSetProperties(actorId, "value", component.properties.value + changeBy)
             end
@@ -144,7 +144,7 @@ CounterBehavior.responses["set counter"] = {
     run = function(self, actorId, params, context)
         if context.isOwner then -- Only owning host should fire counter updates
             local component = self.components[actorId]
-            local setToValue = self.game:evalExpression(actorId, params.setToValue)
+            local setToValue = self.game:evalExpression(params.setToValue, actorId, context)
             if component then
                 if params.relative then
                     self:sendSetProperties(actorId, "value", component.properties.value + setToValue)
@@ -183,7 +183,7 @@ CounterBehavior.responses["counter meets condition"] = {
             return false
         end
         local value = component.properties.value
-        local compareTo = self.game:evalExpression(actorId, params.value)
+        local compareTo = self.game:evalExpression(params.value, actorId, context)
 
         if params.comparison == "equal" and value == compareTo then
             return true
