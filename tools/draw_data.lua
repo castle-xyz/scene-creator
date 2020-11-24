@@ -73,7 +73,6 @@ local function makeSubpathsFromSubpathData(pathData)
         local subpathData = pathData.subpathDataList[i]
         local subpath = tove.newSubpath()
         pathData.tovePath:addSubpath(subpath)
-        pathData.tovePathThin:addSubpath(subpath)
 
         if subpathData.type == 'line' then
             subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
@@ -138,13 +137,6 @@ function DrawData:updatePathDataRendering(pathData)
     path:setMiterLimit(1)
     path:setLineJoin("round")
     pathData.tovePath = path
-
-    local pathThin = tove.newPath()
-    pathThin:setLineColor(1.0, 1.0, 1.0, 1.0)
-    pathThin:setLineWidth(0.05)
-    pathThin:setMiterLimit(1)
-    pathThin:setLineJoin("round")
-    pathData.tovePathThin = pathThin
 
     pathData.subpathDataList = {}
 
@@ -446,8 +438,6 @@ function DrawData:new(obj)
     local newObj = {
         _graphics = nil,
         _graphicsNeedsReset = true,
-        _graphicsForPathsCanvas = nil,
-        _graphicsForPathsCanvasNeedsReset = true,
         pathDataList = obj.pathDataList or {},
         nextPathId = obj.nextPathId or 0,
         color = obj.color or obj.fillColor or {hexStringToRgb("f9a31b")},
@@ -468,7 +458,6 @@ function DrawData:new(obj)
             local pathData = util.deepCopyTable(pathData)
             pathData.subpathDataList = nil
             pathData.tovePath = nil
-            pathData.tovePathThin = nil
 
             for j = 1, #pathData.points - 1 do
                 local newPathData = util.deepCopyTable(pathData)
@@ -505,7 +494,6 @@ end
 
 function DrawData:resetGraphics()
     self._graphicsNeedsReset = true
-    self._graphicsForPathsCanvasNeedsReset = true
 end
 
 local function round(num, numDecimalPlaces)
@@ -667,7 +655,7 @@ function DrawData:updatePathsCanvas()
 
             love.graphics.clear(0.0, 0.0, 0.0, 0.0)
             love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
-            self:graphicsForPathsCanvas():draw()
+            self:graphics():draw()
 
             love.graphics.pop()
         end
@@ -744,30 +732,12 @@ function DrawData:graphics()
     return self._graphics
 end
 
-function DrawData:graphicsForPathsCanvas()
-    if self._graphicsForPathsCanvasNeedsReset then
-        self._graphicsForPathsCanvasNeedsReset = false
-        self:cleanUpPaths()
-
-        self._graphicsForPathsCanvas = tove.newGraphics()
-        self._graphicsForPathsCanvas:setDisplay("mesh", 1024)
-
-        for i = 1, #self.pathDataList do
-            self._graphicsForPathsCanvas:addPath(self.pathDataList[i].tovePathThin)
-        end
-    end
-
-    return self._graphicsForPathsCanvas
-end
-
 function DrawData:clearGraphics()
     self._graphics = nil
     self._graphicsNeedsReset = true
-    self._graphicsForPathsCanvasNeedsReset = true
 
     for i = 1, #self.pathDataList do
         self.pathDataList[i].tovePath = nil
-        self.pathDataList[i].tovePathThin = nil
         self.pathDataList[i].subpathDataList = nil
     end
 end
