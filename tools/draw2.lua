@@ -11,6 +11,9 @@ local HANDLE_TOUCH_RADIUS = 30
 local HANDLE_DRAW_RADIUS = 12
 
 local SUBTOOLS = {}
+local FUNCTIONS_TO_ADD_TO_SUBTOOLS = {
+    "drawData", "saveDrawing", "addPathData", "clearTempGraphics", "resetTempGraphics", "addTempPathData", "subtool", "bind"
+}
 
 function defineDrawSubtool(subtoolSpec)
     subtoolSpec.handlers = subtoolSpec.handlers or {}
@@ -22,6 +25,8 @@ require('tools.draw_algorithms')
 require('tools.draw_data')
 
 require('tools.draw.subtools.draw_shapes_subtool')
+require('tools.draw.subtools.draw_pencil_no_grid_subtool')
+require('tools.draw.subtools.draw_line_subtool')
 
 local DrawTool =
     defineCoreBehavior {
@@ -104,13 +109,28 @@ function DrawTool.handlers:addBehavior(opts)
 
     for _, subtool in pairs(SUBTOOLS) do
         if subtool.handlers.addSubtool ~= nil then
-            subtool.drawTool = self
+            --subtool.drawTool = self
+            for _, functionName in pairs(FUNCTIONS_TO_ADD_TO_SUBTOOLS) do
+                subtool[functionName] = function(...)
+                    -- remove the first 'self' arg and replace with DrawTool's
+                    -- self so that we can use self:addPathData syntax in subtools
+                    -- instead of self.addPathData
+                    local args = {...}
+                    table.remove(args, 1)
+                    return self[functionName](self, unpack(args))
+                end
+            end
+
             self:callSubtoolHandler(subtool, "addSubtool")
         end
     end
 end
 
 -- Methods
+
+function DrawTool:subtool()
+    return self._subtool
+end
 
 function DrawTool:addPathData(pathData)
     if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
@@ -383,6 +403,7 @@ function DrawTool:updateDrawTool(c, touch)
 
     local roundedX, roundedY = self._drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
     local roundedCoord = {x = roundedX, y = roundedY}
+    local clampedX, clampedY = self._drawData:clampGlobalCoordinates(touchX, touchY)
 
     local touchData = {
         touch = touch,
@@ -391,6 +412,8 @@ function DrawTool:updateDrawTool(c, touch)
         roundedX = roundedX,
         roundedY = roundedY,
         roundedCoord = roundedCoord,
+        clampedX = clampedX,
+        clampedY = clampedY,
     }
 
     for _, subtool in pairs(SUBTOOLS) do
@@ -400,84 +423,7 @@ function DrawTool:updateDrawTool(c, touch)
         end
     end
 
-    if self._subtool == 'pencil_no_grid' then
-        local clampedX, clampedY = self._drawData:clampGlobalCoordinates(touchX, touchY)
-
-        if _initialCoord == nil then
-            _initialCoord = {
-                x = clampedX,
-                y = clampedY,
-            }
-            _currentPathData = nil
-            _currentPathDataList = {}
-        end
-
-        local newCoord = {
-            x = clampedX,
-            y = clampedY,
-        }
-
-        _currentPathData = {}
-        _currentPathData.points = {_initialCoord, newCoord}
-        _currentPathData.style = 1
-        _currentPathData.isFreehand = true
-
-        local dist = math.sqrt(math.pow(_initialCoord.x - clampedX, 2.0) + math.pow(_initialCoord.y - clampedY, 2.0))
-        if dist > 0.2 then
-            _initialCoord = newCoord
-            table.insert(_currentPathDataList, _currentPathData)
-            _currentPathData = nil
-        end
-
-        if touch.released then
-            if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
-                table.insert(_currentPathDataList, _currentPathData)
-            end
-
-            for i = 1, #_currentPathDataList do
-                _currentPathDataList[i].tovePath = nil
-                self:addPathData(_currentPathDataList[i])
-            end
-            self._drawData:resetGraphics()
-            self._drawData:resetFill()
-            self:saveDrawing("freehand pencil", c)
-
-            _initialCoord = nil
-            _currentPathData = nil
-            _currentPathDataList = {}
-            self:clearTempGraphics()
-        else
-            self:resetTempGraphics()
-            for i = 1, #_currentPathDataList do
-                self:addTempPathData(_currentPathDataList[i])
-            end
-
-            if _currentPathData ~= nil then
-                self:addTempPathData(_currentPathData)
-            end
-        end
-    elseif self._subtool == 'line' then
-        if _initialCoord == nil then
-            _initialCoord = roundedCoord
-        end
-
-        local pathData = {}
-        pathData.points = {_initialCoord, roundedCoord}
-        pathData.style = 1
-
-        if touch.released then
-            self:addPathData(pathData)
-            self._drawData:resetGraphics()
-            self._drawData:resetFill()
-            self:saveDrawing("line", c)
-
-            _initialCoord = nil
-            self:clearTempGraphics()
-        else
-            self:resetTempGraphics()
-            self:addTempPathData(pathData)
-        end
-    elseif self._subtool == 'pencil' then
+    if self._subtool == 'pencil' then
         if _initialCoord == nil then
             _initialCoord = roundedCoord
             _currentPathData = nil
