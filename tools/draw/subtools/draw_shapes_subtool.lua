@@ -10,21 +10,21 @@ local function onTouch(obj, component, touchData)
     end
 
     local shape
-    if obj.drawTool._subtool == 'rectangle' then
-        shape = obj.drawTool:drawData():getRectangleShape(obj._initialCoord, touchData.roundedCoord)
-    elseif obj.drawTool._subtool == 'circle' then
+    if obj.subtool() == 'rectangle' then
+        shape = obj:drawData():getRectangleShape(obj._initialCoord, touchData.roundedCoord)
+    elseif obj.subtool() == 'circle' then
         local roundDx = floatUnit(obj._initialCoord.x - touchData.touchX)
         local roundDy = floatUnit(obj._initialCoord.y - touchData.touchY)
 
-        shape = obj.drawTool:drawData():getCircleShape(
+        shape = obj:drawData():getCircleShape(
             obj._initialCoord,
             touchData.roundedCoord,
-            obj.drawTool:bind(obj.drawTool:drawData(), 'roundGlobalCoordinatesToGrid'),
-            obj.drawTool:bind(obj.drawTool:drawData(), 'roundGlobalDistanceToGrid'),
+            obj:bind(obj:drawData(), 'roundGlobalCoordinatesToGrid'),
+            obj:bind(obj:drawData(), 'roundGlobalDistanceToGrid'),
             roundDx,
             roundDy)
-    elseif obj.drawTool._subtool == 'triangle' then
-        shape = obj.drawTool:drawData():getTriangleShape(obj._initialCoord, touchData.roundedCoord)
+    elseif obj.subtool() == 'triangle' then
+        shape = obj:drawData():getTriangleShape(obj._initialCoord, touchData.roundedCoord)
     end
 
     if shape then
@@ -34,20 +34,20 @@ local function onTouch(obj, component, touchData)
     if touchData.touch.released then
         for i = 1, #obj._currentPathDataList do
             obj._currentPathDataList[i].tovePath = nil
-            obj.drawTool:addPathData(obj._currentPathDataList[i])
+            obj:addPathData(obj._currentPathDataList[i])
         end
 
-        obj.drawTool:drawData():resetGraphics()
-        obj.drawTool:drawData():resetFill()
-        obj.drawTool:saveDrawing('add ' .. obj.drawTool._subtool, component)
+        obj:drawData():resetGraphics()
+        obj:drawData():resetFill()
+        obj:saveDrawing('add ' .. obj.subtool(), component)
 
         obj._initialCoord = nil
         obj._currentPathDataList = {}
-        obj.drawTool:clearTempGraphics()
+        obj:clearTempGraphics()
     else
-        obj.drawTool:resetTempGraphics()
+        obj:resetTempGraphics()
         for i = 1, #obj._currentPathDataList do
-            obj.drawTool:addTempPathData(obj._currentPathDataList[i])
+            obj:addTempPathData(obj._currentPathDataList[i])
         end
     end
 end
