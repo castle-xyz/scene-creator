@@ -220,7 +220,7 @@ function Client:setActiveTool(toolBehaviorId)
         end
 
         if activeTool.handlers['onSetActive'] then
-            activeTool.handlers['onSetActive'](self)
+            activeTool.handlers['onSetActive'](activeTool)
         end
     end
 end

@@ -10,8 +10,18 @@ BACKGROUND_COLOR = {r = 0.0, g = 0.0, b = 0.0}
 local HANDLE_TOUCH_RADIUS = 30
 local HANDLE_DRAW_RADIUS = 12
 
+local SUBTOOLS = {}
+
+function defineDrawSubtool(subtoolSpec)
+    subtoolSpec.handlers = subtoolSpec.handlers or {}
+    table.insert(SUBTOOLS, subtoolSpec)
+    return subtoolSpec
+end
+
 require('tools.draw_algorithms')
 require('tools.draw_data')
+
+require('tools.draw.subtools.draw_shapes_subtool')
 
 local DrawTool =
     defineCoreBehavior {
@@ -53,61 +63,96 @@ we use the same system but in radians
 
 local TEST_POINT = nil
 
-local _viewTransform = love.math.newTransform()
-local _drawData
-local _physicsBodyData
+--local _viewTransform = love.math.newTransform()
+--local _drawData
+--local _physicsBodyData
 
 local _initialCoord
 local _currentPathData
 
-local _tempGraphics
 local _tool
-local _subtool
 local _physicsBodySubtool
 local _grabbedPaths
 local _isUsingBendPoint
 
 local _didChange
 
+function DrawTool:callSubtoolHandler(subtool, handlerName, ...)
+    local handler = subtool.handlers[handlerName]
+    if handler then
+        return handler(subtool, ...)
+    end
+end
+
 function DrawTool.handlers:addBehavior(opts)
-    
+    self._viewTransform = love.math.newTransform()
+    self._drawData = nil
+    self._physicsBodyData = nil
+
+    self._initialCoord = nil
+    self._currentPathData = nil
+
+    self._tempGraphics = nil
+    self._tool = nil
+    self._subtool = nil
+    self._physicsBodySubtool = nil
+
+    self._grabbedPaths = nil
+    self._isUsingBendPoint = nil
+
+    self._didChange = nil
+
+    for _, subtool in pairs(SUBTOOLS) do
+        if subtool.handlers.addSubtool ~= nil then
+            subtool.drawTool = self
+            self:callSubtoolHandler(subtool, "addSubtool")
+        end
+    end
 end
 
 -- Methods
 
-local function addPathData(pathData)
+function DrawTool:addPathData(pathData)
     if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
         if not pathData.color then
-            pathData.color = util.deepCopyTable(_drawData.color)
+            pathData.color = util.deepCopyTable(self._drawData.color)
         end
-        table.insert(_drawData.pathDataList, pathData)
+        table.insert(self._drawData.pathDataList, pathData)
     end
 end
 
-local function addTempPathData(pathData)
+function DrawTool:addTempPathData(pathData)
     if not pathData.color then
-        pathData.color = util.deepCopyTable(_drawData.color)
+        pathData.color = util.deepCopyTable(self._drawData.color)
     end
-    _drawData:updatePathDataRendering(pathData)
-    _tempGraphics:addPath(pathData.tovePath)
+    self._drawData:updatePathDataRendering(pathData)
+    self._tempGraphics:addPath(pathData.tovePath)
 end
 
-local function removePathData(pathData)
-    for i = #_drawData.pathDataList, 1, -1 do
-        if _drawData.pathDataList[i] == pathData then
-            table.remove(_drawData.pathDataList, i)
+function DrawTool:removePathData(pathData)
+    for i = #self._drawData.pathDataList, 1, -1 do
+        if self._drawData.pathDataList[i] == pathData then
+            table.remove(self._drawData.pathDataList, i)
         end
     end
 end
 
-local function resetTempGraphics()
-    _tempGraphics = tove.newGraphics()
-    _tempGraphics:setDisplay("mesh", 1024)
+function DrawTool:resetTempGraphics()
+    self._tempGraphics = tove.newGraphics()
+    self._tempGraphics:setDisplay("mesh", 1024)
+end
+
+function DrawTool:clearTempGraphics()
+    self._tempGraphics = nil
+end
+
+function DrawTool:drawData()
+    return self._drawData
 end
 
 function DrawTool:saveDrawing(commandDescription, c)
     local actorId = c.actorId
-    local newDrawData = _drawData:serialize()
+    local newDrawData = self._drawData:serialize()
     local newPhysicsBodyData = _physicsBodyData:serialize()
     local newHash = self.dependencies.Drawing2:hash(newDrawData, newPhysicsBodyData) -- Prevent reloading since we're already in sync
     c._lastHash = newHash
@@ -149,14 +194,14 @@ end
 -- Update
 
 function DrawTool.handlers:onSetActive()
-    _drawData = DrawData:new()
+    self._drawData = DrawData:new()
     _physicsBodyData = PhysicsBodyData:new()
     _grabbedPaths = nil
     _initialCoord = nil
-    _tempGraphics = nil
+    self:clearTempGraphics()
     _didChange = false
     _tool = 'draw'
-    _subtool = 'pencil_no_grid'
+    self._subtool = 'pencil_no_grid'
     _physicsBodySubtool = 'rectangle'
 end
 
@@ -174,14 +219,14 @@ end
 
 local _scaleRotateData = {}
 
-local function bind(t, k)
+function DrawTool:bind(t, k)
     return function(...) return t[k](t, ...) end
 end
 
 function DrawTool:updatePhysicsBodyTool(c, touch)
-    local touchX, touchY = _viewTransform:inverseTransformPoint(touch.x, touch.y)
+    local touchX, touchY = self._viewTransform:inverseTransformPoint(touch.x, touch.y)
 
-    local roundedX, roundedY = _drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
+    local roundedX, roundedY = self._drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
     local roundedCoord = {x = roundedX, y = roundedY}
 
     if _physicsBodySubtool == 'rectangle' or _physicsBodySubtool == 'circle' or _physicsBodySubtool == 'triangle' then
@@ -196,7 +241,7 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
             local roundDx = floatUnit(_initialCoord.x - touchX)
             local roundDy = floatUnit(_initialCoord.y - touchY)
 
-            shape = _physicsBodyData:getCircleShape(_initialCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'), roundDx, roundDy)
+            shape = _physicsBodyData:getCircleShape(_initialCoord, roundedCoord, self:bind(self._drawData, 'roundGlobalCoordinatesToGrid'), self:bind(self._drawData, 'roundGlobalDistanceToGrid'), roundDx, roundDy)
         elseif _physicsBodySubtool == 'triangle' then
             shape = _physicsBodyData:getTriangleShape(_initialCoord, roundedCoord)
         end
@@ -225,9 +270,9 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
         end
 
         if _grabbedShape then
-            local diffX, diffY = _drawData:roundGlobalDiffCoordinatesToGrid(touchX - _initialCoord.x, touchY - _initialCoord.y)
+            local diffX, diffY = self._drawData:roundGlobalDiffCoordinatesToGrid(touchX - _initialCoord.x, touchY - _initialCoord.y)
 
-            _physicsBodyData.tempShape = _physicsBodyData:moveShapeBy(_grabbedShape, diffX, diffY, _drawData:gridCellSize())
+            _physicsBodyData.tempShape = _physicsBodyData:moveShapeBy(_grabbedShape, diffX, diffY, self._drawData:gridCellSize())
         end
 
         if touch.released then
@@ -298,7 +343,7 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
                 local roundDx = floatUnit(_scaleRotateData.handle.oppositeX - touchX)
                 local roundDy = floatUnit(_scaleRotateData.handle.oppositeY - touchY)
 
-                shape = _physicsBodyData:getCircleShape(otherCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'), roundDx, roundDy)
+                shape = _physicsBodyData:getCircleShape(otherCoord, roundedCoord, self:bind(self._drawData, 'roundGlobalCoordinatesToGrid'), self:bind(self._drawData, 'roundGlobalDistanceToGrid'), roundDx, roundDy)
             elseif type == 'triangle' then
                 shape = _physicsBodyData:getTriangleShape(roundedCoord, _scaleRotateData.otherPoints[1], _scaleRotateData.otherPoints[2])
             end
@@ -334,54 +379,29 @@ function DrawTool:updatePhysicsBodyTool(c, touch)
 end
 
 function DrawTool:updateDrawTool(c, touch)
-    local touchX, touchY = _viewTransform:inverseTransformPoint(touch.x, touch.y)
+    local touchX, touchY = self._viewTransform:inverseTransformPoint(touch.x, touch.y)
 
-    local roundedX, roundedY = _drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
+    local roundedX, roundedY = self._drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
     local roundedCoord = {x = roundedX, y = roundedY}
 
-    if _subtool == 'rectangle' or _subtool == 'circle' or _subtool == 'triangle' then
-        if _initialCoord == nil then
-            _initialCoord = roundedCoord
-            _currentPathDataList = {}
+    local touchData = {
+        touch = touch,
+        touchX = touchX,
+        touchY = touchY,
+        roundedX = roundedX,
+        roundedY = roundedY,
+        roundedCoord = roundedCoord,
+    }
+
+    for _, subtool in pairs(SUBTOOLS) do
+        if subtool.category == "draw" and subtool.name == self._subtool then
+            self:callSubtoolHandler(subtool, "onTouch", c, touchData)
+            return
         end
+    end
 
-        local shape
-        if _subtool == 'rectangle' then
-            shape = _drawData:getRectangleShape(_initialCoord, roundedCoord)
-        elseif _subtool == 'circle' then
-            local roundDx = floatUnit(_initialCoord.x - touchX)
-            local roundDy = floatUnit(_initialCoord.y - touchY)
-
-            shape = _drawData:getCircleShape(_initialCoord, roundedCoord, bind(_drawData, 'roundGlobalCoordinatesToGrid'), bind(_drawData, 'roundGlobalDistanceToGrid'), roundDx, roundDy)
-        elseif _subtool == 'triangle' then
-            shape = _drawData:getTriangleShape(_initialCoord, roundedCoord)
-        end
-
-        if shape then
-            _currentPathDataList = shape
-        end
-
-        if touch.released then
-            for i = 1, #_currentPathDataList do
-                _currentPathDataList[i].tovePath = nil
-                addPathData(_currentPathDataList[i])
-            end
-
-            _drawData:resetGraphics()
-            _drawData:resetFill()
-            self:saveDrawing('add ' .. _subtool, c)
-
-            _initialCoord = nil
-            _currentPathDataList = {}
-            _tempGraphics = nil
-        else
-            resetTempGraphics()
-            for i = 1, #_currentPathDataList do
-                addTempPathData(_currentPathDataList[i])
-            end
-        end
-    elseif _subtool == 'pencil_no_grid' then
-        local clampedX, clampedY = _drawData:clampGlobalCoordinates(touchX, touchY)
+    if self._subtool == 'pencil_no_grid' then
+        local clampedX, clampedY = self._drawData:clampGlobalCoordinates(touchX, touchY)
 
         if _initialCoord == nil then
             _initialCoord = {
@@ -416,27 +436,27 @@ function DrawTool:updateDrawTool(c, touch)
 
             for i = 1, #_currentPathDataList do
                 _currentPathDataList[i].tovePath = nil
-                addPathData(_currentPathDataList[i])
+                self:addPathData(_currentPathDataList[i])
             end
-            _drawData:resetGraphics()
-            _drawData:resetFill()
+            self._drawData:resetGraphics()
+            self._drawData:resetFill()
             self:saveDrawing("freehand pencil", c)
 
             _initialCoord = nil
             _currentPathData = nil
             _currentPathDataList = {}
-            _tempGraphics = nil
+            self:clearTempGraphics()
         else
-            resetTempGraphics()
+            self:resetTempGraphics()
             for i = 1, #_currentPathDataList do
-                addTempPathData(_currentPathDataList[i])
+                self:addTempPathData(_currentPathDataList[i])
             end
 
             if _currentPathData ~= nil then
-                addTempPathData(_currentPathData)
+                self:addTempPathData(_currentPathData)
             end
         end
-    elseif _subtool == 'line' then
+    elseif self._subtool == 'line' then
         if _initialCoord == nil then
             _initialCoord = roundedCoord
         end
@@ -446,18 +466,18 @@ function DrawTool:updateDrawTool(c, touch)
         pathData.style = 1
 
         if touch.released then
-            addPathData(pathData)
-            _drawData:resetGraphics()
-            _drawData:resetFill()
+            self:addPathData(pathData)
+            self._drawData:resetGraphics()
+            self._drawData:resetFill()
             self:saveDrawing("line", c)
 
             _initialCoord = nil
-            _tempGraphics = nil
+            self:clearTempGraphics()
         else
-            resetTempGraphics()
-            addTempPathData(pathData)
+            self:resetTempGraphics()
+            self:addTempPathData(pathData)
         end
-    elseif _subtool == 'pencil' then
+    elseif self._subtool == 'pencil' then
         if _initialCoord == nil then
             _initialCoord = roundedCoord
             _currentPathData = nil
@@ -476,7 +496,7 @@ function DrawTool:updateDrawTool(c, touch)
         local newAngle = (angleRoundedTo8Directions * (math.pi * 2.0) / 8.0)
         local direction = {x = math.cos(newAngle), y = math.sin(newAngle)}
 
-        local cellSize = _drawData.scale / _drawData.gridSize
+        local cellSize = self._drawData.scale / self._drawData.gridSize
 
         if distFromOriginalPoint > cellSize then
             if _currentPathData ~= nil and (_currentPathData.points[1].x ~= _currentPathData.points[2].x or _currentPathData.points[1].y ~= _currentPathData.points[2].y) then
@@ -487,7 +507,7 @@ function DrawTool:updateDrawTool(c, touch)
         end
 
         distFromOriginalPoint = math.sqrt(math.pow(touchX - _initialCoord.x, 2.0) + math.pow(touchY - _initialCoord.y, 2.0)) - cellSize * 0.5
-        local newRoundedX, newRoundedY = _drawData:roundGlobalCoordinatesToGrid(_initialCoord.x + direction.x * distFromOriginalPoint, _initialCoord.y + direction.y * distFromOriginalPoint)
+        local newRoundedX, newRoundedY = self._drawData:roundGlobalCoordinatesToGrid(_initialCoord.x + direction.x * distFromOriginalPoint, _initialCoord.y + direction.y * distFromOriginalPoint)
             
         _currentPathData = {}
         _currentPathData.points = {_initialCoord, {
@@ -505,35 +525,35 @@ function DrawTool:updateDrawTool(c, touch)
 
             for i = 1, #newPathDataList do
                 newPathDataList[i].tovePath = nil
-                addPathData(newPathDataList[i])
+                self:addPathData(newPathDataList[i])
             end
-            _drawData:resetGraphics()
-            _drawData:resetFill()
+            self._drawData:resetGraphics()
+            self._drawData:resetFill()
             self:saveDrawing("pencil", c)
 
             _initialCoord = nil
             _currentPathData = nil
             _currentPathDataList = {}
-            _tempGraphics = nil
+            self:clearTempGraphics()
         else
-            resetTempGraphics()
+            self:resetTempGraphics()
             for i = 1, #_currentPathDataList do
-                addTempPathData(_currentPathDataList[i])
+                self:addTempPathData(_currentPathDataList[i])
             end
-            addTempPathData(_currentPathData)
+            self:addTempPathData(_currentPathData)
         end
-    elseif _subtool == 'move' then
+    elseif self._subtool == 'move' then
         if _grabbedPaths == nil then
             _grabbedPaths = {}
 
-            for i = 1, #_drawData.pathDataList do
-                if not _drawData.pathDataList[i].isFreehand then
+            for i = 1, #self._drawData.pathDataList do
+                if not self._drawData.pathDataList[i].isFreehand then
                     for p = 1, 2 do
-                        local distance = math.sqrt(math.pow(touchX - _drawData.pathDataList[i].points[p].x, 2.0) + math.pow(touchY - _drawData.pathDataList[i].points[p].y, 2.0))
+                        local distance = math.sqrt(math.pow(touchX - self._drawData.pathDataList[i].points[p].x, 2.0) + math.pow(touchY - self._drawData.pathDataList[i].points[p].y, 2.0))
 
-                        if distance < _drawData.scale * 0.05 then
-                            _drawData.pathDataList[i].grabPointIndex = p
-                            table.insert(_grabbedPaths, _drawData.pathDataList[i])
+                        if distance < self._drawData.scale * 0.05 then
+                            self._drawData.pathDataList[i].grabPointIndex = p
+                            table.insert(_grabbedPaths, self._drawData.pathDataList[i])
                             break
                         end
                     end
@@ -541,17 +561,17 @@ function DrawTool:updateDrawTool(c, touch)
             end
 
             for i = 1, #_grabbedPaths do
-                removePathData(_grabbedPaths[i])
+                self:removePathData(_grabbedPaths[i])
             end
 
             if #_grabbedPaths == 0 then
-                for i = 1, #_drawData.pathDataList do
-                    if not _drawData.pathDataList[i].isFreehand then
-                        local pathData = _drawData.pathDataList[i]
+                for i = 1, #self._drawData.pathDataList do
+                    if not self._drawData.pathDataList[i].isFreehand then
+                        local pathData = self._drawData.pathDataList[i]
                         local distance, t, subpath = pathData.tovePath:nearest(touchX, touchY, 0.5)
                         if subpath then
                             local pointX, pointY = subpath:position(t)
-                            removePathData(pathData)
+                            self:removePathData(pathData)
                             local touchPoint = {x = touchX, y = touchY}
 
                             -- todo: figure out path ids here
@@ -585,7 +605,7 @@ function DrawTool:updateDrawTool(c, touch)
             end
 
             if #_grabbedPaths > 0 then
-                _drawData:resetGraphics()
+                self._drawData:resetGraphics()
             end
         end
 
@@ -599,24 +619,24 @@ function DrawTool:updateDrawTool(c, touch)
         if touch.released then
             if _grabbedPaths and #_grabbedPaths > 0 then
                 for i = 1, #_grabbedPaths do
-                    addPathData(_grabbedPaths[i])
+                    self:addPathData(_grabbedPaths[i])
                 end
 
-                _drawData:resetGraphics()
-                _drawData:resetFill()
+                self._drawData:resetGraphics()
+                self._drawData:resetFill()
                 self:saveDrawing("move", c)
             end
 
             _grabbedPaths = nil
-            _tempGraphics = nil
+            self:clearTempGraphics()
         else
-            resetTempGraphics()
+            self:resetTempGraphics()
 
             for i = 1, #_grabbedPaths do
-                addTempPathData(_grabbedPaths[i])
+                self:addTempPathData(_grabbedPaths[i])
             end
         end
-    elseif _subtool == 'bend' then
+    elseif self._subtool == 'bend' then
         if _grabbedPaths == nil then
             _grabbedPaths = {}
             _initialCoord = {
@@ -625,11 +645,11 @@ function DrawTool:updateDrawTool(c, touch)
             }
             _isUsingBendPoint = false
 
-            for i = 1, #_drawData.pathDataList do
-                if not _drawData.pathDataList[i].isFreehand and _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
-                    table.insert(_grabbedPaths, _drawData.pathDataList[i])
-                    removePathData(_drawData.pathDataList[i])
-                    _drawData:resetGraphics()
+            for i = 1, #self._drawData.pathDataList do
+                if not self._drawData.pathDataList[i].isFreehand and self._drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
+                    table.insert(_grabbedPaths, self._drawData.pathDataList[i])
+                    self:removePathData(self._drawData.pathDataList[i])
+                    self._drawData:resetGraphics()
                     break
                 end
             end
@@ -665,24 +685,24 @@ function DrawTool:updateDrawTool(c, touch)
                     end
                 end
 
-                addPathData(_grabbedPaths[1])
+                self:addPathData(_grabbedPaths[1])
 
-                _drawData:resetFill()
-                _drawData:resetGraphics()
+                self._drawData:resetFill()
+                self._drawData:resetGraphics()
                 self:saveDrawing("bend", c)
             end
 
             _grabbedPaths = nil
-            _tempGraphics = nil
+            self:clearTempGraphics()
             _initialCoord = nil
         else
             if #_grabbedPaths > 0 then
-                resetTempGraphics()
-                addTempPathData(_grabbedPaths[1])
+                self:resetTempGraphics()
+                self:addTempPathData(_grabbedPaths[1])
             end
         end
-    elseif _subtool == 'fill' then
-        if _drawData:floodFill(touchX, touchY) then
+    elseif self._subtool == 'fill' then
+        if self._drawData:floodFill(touchX, touchY) then
             _didChange = true
         end
 
@@ -692,24 +712,24 @@ function DrawTool:updateDrawTool(c, touch)
             end
             _didChange = false
         end
-    elseif _subtool == 'erase' then
-        for i = 1, #_drawData.pathDataList do
-            if _drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
-                removePathData(_drawData.pathDataList[i])
-                _drawData:resetGraphics()
+    elseif self._subtool == 'erase' then
+        for i = 1, #self._drawData.pathDataList do
+            if self._drawData.pathDataList[i].tovePath:nearest(touchX, touchY, 0.5) then
+                self:removePathData(self._drawData.pathDataList[i])
+                self._drawData:resetGraphics()
                 _didChange = true
                 break
             end
         end
 
-        if _drawData:floodClear(touchX, touchY) then
+        if self._drawData:floodClear(touchX, touchY) then
             _didChange = true
         end
 
         if touch.released then
             if _didChange then
-                _drawData:resetGraphics()
-                _drawData:resetFill()
+                self._drawData:resetGraphics()
+                self._drawData:resetFill()
                 self:saveDrawing("erase", c)
             end
             _didChange = false
@@ -733,7 +753,7 @@ function DrawTool.handlers:update(dt)
         local data = self.dependencies.Drawing2:cacheDrawing(drawingComponent, drawingComponent.properties)
 
         c._lastHash = drawingComponent.properties.hash
-        _drawData = data.drawData:clone()
+        self._drawData = data.drawData:clone()
         _physicsBodyData = data.physicsBodyData:clone()
 
         if _scaleRotateData and _scaleRotateData.index and _scaleRotateData.index > _physicsBodyData:getNumShapes() then
@@ -757,17 +777,17 @@ end
 
 -- Draw
 
-local function drawShapes()
+function DrawTool:drawShapes()
     love.graphics.setColor(1, 1, 1, 1)
 
-    _drawData:graphics():draw()
+    self._drawData:graphics():draw()
 
-    if _tempGraphics ~= nil then
-        _tempGraphics:draw()
+    if self._tempGraphics ~= nil then
+        self._tempGraphics:draw()
     end
 end
 
-local function drawPoints(points, radius)
+function DrawTool:drawPoints(points, radius)
     if radius == nil then
         radius = 0.07
     end
@@ -785,10 +805,10 @@ function DrawTool.handlers:drawOverlay()
 
     love.graphics.push()
 
-    _viewTransform:reset()
-    _viewTransform:translate(GRID_HORIZONTAL_PADDING, GRID_TOP_PADDING)
-    _viewTransform:scale(GRID_WIDTH / _drawData.scale)
-    love.graphics.applyTransform(_viewTransform)
+    self._viewTransform:reset()
+    self._viewTransform:translate(GRID_HORIZONTAL_PADDING, GRID_TOP_PADDING)
+    self._viewTransform:scale(GRID_WIDTH / self._drawData.scale)
+    love.graphics.applyTransform(self._viewTransform)
 
     love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b)
 
@@ -796,48 +816,48 @@ function DrawTool.handlers:drawOverlay()
 
     if _tool == 'draw' then
         _physicsBodyData:draw()
-        _drawData:renderFill()
+        self._drawData:renderFill()
     else
-        _drawData:renderFill()
-        drawShapes()
+        self._drawData:renderFill()
+        self:drawShapes()
 
         love.graphics.setColor(0, 0, 0, 0.5)
         local padding = 0.1
-        love.graphics.rectangle('fill', -padding, -padding, _drawData.scale + padding * 2.0, _drawData.scale + padding * 2.0)
+        love.graphics.rectangle('fill', -padding, -padding, self._drawData.scale + padding * 2.0, self._drawData.scale + padding * 2.0)
     end
 
     -- grid
-    --if _tool ~= 'draw' or (_subtool == 'line' or _subtool == 'pencil' or _subtool == 'move' or _subtool == 'rectangle' or _subtool == 'circle' or _subtool == 'triangle') then
+    --if _tool ~= 'draw' or (self._subtool == 'line' or self._subtool == 'pencil' or self._subtool == 'move' or self._subtool == 'rectangle' or self._subtool == 'circle' or self._subtool == 'triangle') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
         --love.graphics.setPointSize(10.0)
 
         local points = {}
 
-        for x = 1, _drawData.gridSize do
-            for y = 1, _drawData.gridSize do
-                local globalX, globalY = _drawData:gridToGlobalCoordinates(x, y)
+        for x = 1, self._drawData.gridSize do
+            for y = 1, self._drawData.gridSize do
+                local globalX, globalY = self._drawData:gridToGlobalCoordinates(x, y)
                 table.insert(points, globalX)
                 table.insert(points, globalY)
             end
         end
 
-        drawPoints(points)
+        self:drawPoints(points)
     --end
 
     if _tool == 'draw' then
-        drawShapes()
+        self:drawShapes()
     end
 
     love.graphics.setColor(1, 1, 1, 1)
 
-    if _tool == "draw" and _subtool == "move" then
+    if _tool == "draw" and self._subtool == "move" then
         local movePoints = {}
 
-        for i = 1, #_drawData.pathDataList do
-            if not _drawData.pathDataList[i].isFreehand then
+        for i = 1, #self._drawData.pathDataList do
+            if not self._drawData.pathDataList[i].isFreehand then
                 for p = 1, 2 do
-                    table.insert(movePoints, _drawData.pathDataList[i].points[p].x)
-                    table.insert(movePoints, _drawData.pathDataList[i].points[p].y)
+                    table.insert(movePoints, self._drawData.pathDataList[i].points[p].x)
+                    table.insert(movePoints, self._drawData.pathDataList[i].points[p].y)
                 end
             end
         end
@@ -898,10 +918,10 @@ function DrawTool.handlers:uiData()
     end
 
     actions['onSelectArtworkSubtool'] = function(name)
-        _subtool = name
+        self._subtool = name
 
-        if _subtool == 'fill' or _subtool == 'erase' then
-            _drawData:updatePathsCanvas()
+        if self._subtool == 'fill' or self._subtool == 'erase' then
+            self._drawData:updatePathsCanvas()
         end
     end
 
@@ -916,14 +936,14 @@ function DrawTool.handlers:uiData()
     end
 
     actions['updateColor'] = function(opts)
-        _drawData:updateColor(opts.r, opts.g, opts.b)
+        self._drawData:updateColor(opts.r, opts.g, opts.b)
         self:saveDrawing("update color", c)
     end
 
     ui.data({
         currentMode = (_tool == 'draw' and 'artwork' or 'collision'),
-        color = _drawData.color,
-        artworkSubtool = _subtool,
+        color = self._drawData.color,
+        artworkSubtool = self._subtool,
         collisionSubtool = _physicsBodySubtool,
     }, {
         actions = actions,
