@@ -18,6 +18,35 @@ Client =
     {__index = Common}
 )
 
+do
+    GC_TEST_A = newproxy(true)
+    print("GCTEST: A created")
+    local mt = getmetatable(GC_TEST_A)
+    mt.__gc = function()
+        print("GCTEST: A destroyed")
+    end
+end
+
+local GC_TEST_B = newproxy(true)
+do
+    print("GCTEST: B created")
+    local mt = getmetatable(GC_TEST_B)
+    mt.__gc = function()
+        print("GCTEST: B destroyed")
+    end
+end
+
+do
+    local GC_TEST_C = newproxy(true)
+    do
+        print("GCTEST: C created")
+        local mt = getmetatable(GC_TEST_C)
+        mt.__gc = function()
+            print("GCTEST: C destroyed")
+        end
+    end
+end
+
 require "Common"
 
 -- Client modules
@@ -485,6 +514,10 @@ end
 
 function Client:drawScene(opts)
     opts = opts or {}
+
+    if not not GC_TEST_B then
+        opts.foooooo = true
+    end
 
     profileFunction('drawScene.background', function()
         do -- Background
