@@ -1,11 +1,11 @@
-local NoTouchState = {
+NoTouchState = {
    INACTIVE = 0,
    ACTIVE = 1,
 }
 
 -- Start / stop
 
-local overlayShader
+--overlayShader
 
 function Client:startTouch()
     self.touches = {} -- `touchId` -> touch
@@ -37,7 +37,7 @@ end
 
 -- Update
 
-local TOUCH_MOVE_THRESHOLD = 35
+TOUCH_MOVE_THRESHOLD = 35
 
 function Client:updateTouches()
     -- Clear old released touches
@@ -137,7 +137,7 @@ function Client:updateTouches()
     end
 end
 
-local hintOverlayCanvas
+--hintOverlayCanvas
 
 function Client:_heatUpNoTouchOverlay(count)
    self.hintState.counter = self.hintState.counter + count

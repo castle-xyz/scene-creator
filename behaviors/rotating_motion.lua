@@ -1,4 +1,4 @@
-local RotatingMotionBehavior = defineCoreBehavior {
+RotatingMotionBehavior = defineCoreBehavior {
     name = "RotatingMotion",
     displayName = "Fixed Motion",
     dependencies = {

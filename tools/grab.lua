@@ -1,4 +1,4 @@
-local GrabTool =
+GrabTool =
     defineCoreBehavior {
     name = "Grab",
     propertyNames = {},
@@ -125,8 +125,6 @@ function GrabTool.handlers:update(dt)
 end
 
 -- Draw
-
-local gridShader
 
 if GRID_SHADER then
     gridShader = GRID_SHADER

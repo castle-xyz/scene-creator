@@ -1,4 +1,4 @@
-local ImageBehavior =
+ImageBehavior =
     defineCoreBehavior {
     name = "Image",
     dependencies = {
@@ -60,7 +60,7 @@ end
 
 -- Draw
 
-local theQuad = love.graphics and love.graphics.newQuad(0, 0, 32, 32, 32, 32)
+theQuad = love.graphics and love.graphics.newQuad(0, 0, 32, 32, 32, 32)
 
 function ImageBehavior.handlers:drawComponent(component)
     -- Image drawable

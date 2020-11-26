@@ -1,7 +1,7 @@
-local FONT_SIZE = 16
-local DEFAULT_NOTIFY_TIME = 3.5
-local RECTANGLE_BORDER_RADIUS = 10
-local PADDING = 4
+FONT_SIZE = 16
+DEFAULT_NOTIFY_TIME = 3.5
+RECTANGLE_BORDER_RADIUS = 10
+PADDING = 4
 
 function Client:startNotify()
     self.notifyMessage = ""
@@ -18,8 +18,8 @@ function Client:updateNotify(dt)
     end
 end
 
-local font
-local lastDpiScale
+--font
+--lastDpiScale
 
 function Client:drawNotify()
     if self.notifyTime <= 0 then

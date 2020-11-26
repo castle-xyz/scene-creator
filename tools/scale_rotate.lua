@@ -1,4 +1,4 @@
-local ScaleRotateTool =
+ScaleRotateTool =
     defineCoreBehavior {
     name = "ScaleRotate",
     propertyNames = {},
@@ -13,8 +13,8 @@ local ScaleRotateTool =
     }
 }
 
-local HANDLE_TOUCH_RADIUS = 30
-local HANDLE_DRAW_RADIUS = 12
+HANDLE_TOUCH_RADIUS = 30
+HANDLE_DRAW_RADIUS = 12
 
 -- Behavior management
 
@@ -359,7 +359,7 @@ end
 
 -- Draw
 
-local gridShader
+--gridShader
 
 if GRID_SHADER then
     gridShader = GRID_SHADER

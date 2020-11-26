@@ -1,4 +1,4 @@
-local TextBehavior = defineCoreBehavior {
+TextBehavior = defineCoreBehavior {
     name = 'Text',
     displayName = 'Text',
     dependencies = {},

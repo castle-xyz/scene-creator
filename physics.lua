@@ -1,8 +1,8 @@
-local Physics = {}
+Physics = {}
 
 -- A `sync` is a serialization of frequently-varying object state (such as a body's position or velocity)
 
-local function readBodySync(body)
+function readBodySync(body)
     local x, y = body:getPosition()
     local vx, vy = body:getLinearVelocity()
     local a = body:getAngle()
@@ -10,14 +10,14 @@ local function readBodySync(body)
     return x, y, vx, vy, a, va
 end
 
-local function writeBodySync(body, x, y, vx, vy, a, va)
+function writeBodySync(body, x, y, vx, vy, a, va)
     body:setPosition(x, y)
     body:setLinearVelocity(vx, vy)
     body:setAngle(a)
     body:setAngularVelocity(va)
 end
 
-local function writeInterpolatedBodySync(body, interpolatedTick, history, currentTick)
+function writeInterpolatedBodySync(body, interpolatedTick, history, currentTick)
     -- Is there an exact entry?
     if history[interpolatedTick] then
         writeBodySync(body, unpack(history[interpolatedTick]))
@@ -73,7 +73,7 @@ function Physics:_defineMethod(methodName, opts)
 end
 
 -- All `love.physics.new<X>` as `Physics:new<X>`, returns object id
-local CONSTRUCTOR_NAMES = {
+CONSTRUCTOR_NAMES = {
     "newBody",
     "newChainShape",
     "newCircleShape",
@@ -96,7 +96,7 @@ local CONSTRUCTOR_NAMES = {
 }
 
 -- All `:<foo>` as `Physics:<foo>` with object id as first param
-local RELIABLE_METHOD_NAMES = {
+RELIABLE_METHOD_NAMES = {
     "setActive",
     "setAngle",
     "setAngularDamping",

@@ -1,4 +1,4 @@
-local CounterBehavior =
+CounterBehavior =
     defineCoreBehavior {
     name = "Counter",
     displayName = "Counter",

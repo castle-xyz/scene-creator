@@ -28,28 +28,28 @@
 -- So make sure to seed only once, application wide. And to not have multiple processes do that
 -- simultaneously (like nginx does for example).
 
-local M = {}
-local math = require('math')
-local os = require('os')
-local string = require('string')
+M = {}
+math = require('math')
+os = require('os')
+string = require('string')
 
-local bitsize = 32  -- bitsize assumed for Lua VM. See randomseed function below.
-local lua_version = tonumber(_VERSION:match("%d%.*%d*"))  -- grab Lua version used
+bitsize = 32  -- bitsize assumed for Lua VM. See randomseed function below.
+lua_version = tonumber(_VERSION:match("%d%.*%d*"))  -- grab Lua version used
 
-local MATRIX_AND = {{0,0},{0,1} }
-local MATRIX_OR = {{0,1},{1,1}}
-local HEXES = '0123456789abcdef'
+MATRIX_AND = {{0,0},{0,1} }
+MATRIX_OR = {{0,1},{1,1}}
+HEXES = '0123456789abcdef'
 
-local math_floor = math.floor
-local math_random = math.random
-local math_abs = math.abs
-local string_sub = string.sub
-local to_number = tonumber
-local assert = assert
-local type = type
+math_floor = math.floor
+math_random = math.random
+math_abs = math.abs
+string_sub = string.sub
+to_number = tonumber
+assert = assert
+type = type
 
 -- performs the bitwise operation specified by truth matrix on two numbers.
-local function BITWISE(x, y, matrix)
+function BITWISE(x, y, matrix)
   local z = 0
   local pow = 1
   while x > 0 or y > 0 do
@@ -61,7 +61,7 @@ local function BITWISE(x, y, matrix)
   return z
 end
 
-local function INT2HEX(x)
+function INT2HEX(x)
   local s,base = '',16
   local d
   while x > 0 do

@@ -1,10 +1,10 @@
-local PROFILER_ENABLED = false
-local DISPLAY_INTERVAL = 5.0
+PROFILER_ENABLED = false
+DISPLAY_INTERVAL = 5.0
 
-local timeSinceLastDisplay = 0.0
-local categoryStats = {}
+timeSinceLastDisplay = 0.0
+categoryStats = {}
 
-local functionsRanThisFrame = nil
+functionsRanThisFrame = nil
 
 function runOnProfilerFrame(name, fn)
     if not DEBUG or not PROFILER_ENABLED then
@@ -43,7 +43,7 @@ function profileFunction(category, fn)
     return unpack(result)
 end
 
-local function round(num, numDecimalPlaces)
+function round(num, numDecimalPlaces)
     local mult = 10^(numDecimalPlaces or 0)
     return math.floor(num * mult + 0.5) / mult
 end

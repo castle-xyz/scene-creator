@@ -1,4 +1,4 @@
-local DrawTool =
+DrawTool =
     defineCoreBehavior {
     name = "Draw",
     propertyNames = {},

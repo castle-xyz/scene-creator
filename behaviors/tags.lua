@@ -1,4 +1,4 @@
-local TagsBehavior =
+TagsBehavior =
     defineCoreBehavior {
     name = "Tags",
     displayName = "tags",

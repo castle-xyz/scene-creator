@@ -1,4 +1,4 @@
-local SlingBehavior =
+SlingBehavior =
     defineCoreBehavior {
     name = "Sling",
     displayName = "Slingshot",
@@ -20,13 +20,13 @@ local SlingBehavior =
     },
 }
 
-local MAX_DRAG_LENGTH = 3 * UNIT
+MAX_DRAG_LENGTH = 3 * UNIT
 
-local DRAW_MULTIPLIER = 0.8
+DRAW_MULTIPLIER = 0.8
 
-local CIRCLE_RADIUS = 18 * UNIT
-local TRIANGLE_LENGTH = 25 * UNIT
-local TRIANGLE_WIDTH = 10 * UNIT
+CIRCLE_RADIUS = 18 * UNIT
+TRIANGLE_LENGTH = 25 * UNIT
+TRIANGLE_WIDTH = 10 * UNIT
 
 -- Component management
 

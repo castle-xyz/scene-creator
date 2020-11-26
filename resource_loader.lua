@@ -1,15 +1,13 @@
-local resource_loader = {}
+resource_loader = {}
 
 -- Load functions retain a 'holder' to which a strong reference must be held while the resource is in use
-
-local defaultImage
 
 if love.graphics then
     defaultImage = love.graphics.newImage(CHECKERBOARD_IMAGE_URL)
     defaultImage:setFilter("nearest", "nearest")
 end
 
-local imageHolders = {
+imageHolders = {
     linear = setmetatable({}, {__mode = "v"}),
     nearest = setmetatable({}, {__mode = "v"})
 }
@@ -34,7 +32,7 @@ function resource_loader.loadImage(url, filter)
     return holder
 end
 
-local fontHolders = setmetatable({}, {__mode = "v"})
+fontHolders = setmetatable({}, {__mode = "v"})
 
 function resource_loader.loadFont(url, size)
     local key = size .. "|" .. url

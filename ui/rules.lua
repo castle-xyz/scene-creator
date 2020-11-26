@@ -1,4 +1,4 @@
-local Rules = {}
+Rules = {}
 
 -- TODO: we only do this because the raw entries contain functions,
 -- which cannot be serialized.

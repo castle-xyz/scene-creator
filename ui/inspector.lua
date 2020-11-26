@@ -1,4 +1,4 @@
-local Inspector = {
+Inspector = {
 }
 
 function Client:_uiActorAllowsBehavior(actor, behavior)

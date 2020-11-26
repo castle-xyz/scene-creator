@@ -27,7 +27,7 @@ do
     end
 end
 
-local GC_TEST_B = newproxy(true)
+GC_TEST_B = newproxy(true)
 do
     print("GCTEST: B created")
     local mt = getmetatable(GC_TEST_B)
@@ -59,14 +59,14 @@ require "notify"
 
 -- Start / stop
 
-local isEditing
-local isEditable
-local playInstance
-local editInstance
-local currentSnapshot
-local currentVariables
-local sentGameLoadedEvent
-local screenshotCanvas
+--isEditing
+--isEditable
+--playInstance
+--editInstance
+--currentSnapshot
+--currentVariables
+--sentGameLoadedEvent
+--screenshotCanvas
 
 function Client:_new()
     local result = setmetatable({}, {__index = self})
@@ -458,7 +458,7 @@ end
 
 -- Draw
 
-local debugFont = love.graphics.newFont(14)
+debugFont = love.graphics.newFont(14)
 
 function Client:resetViewPosition()
     self.viewX, self.viewY = 0, 0

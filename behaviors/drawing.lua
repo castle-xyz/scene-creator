@@ -1,4 +1,4 @@
-local DrawingBehavior =
+DrawingBehavior =
     defineCoreBehavior {
     name = "Drawing",
     dependencies = {
@@ -16,27 +16,26 @@ local DrawingBehavior =
     },
 }
 
-local ffi = require "ffi"
-local C = ffi.C
+ffi = require "ffi"
+C = ffi.C
 
 -- Default
 
-local DEFAULT_URL = "assets/rectangle.svg"
-local DEFAULT_GRAPHICS
+DEFAULT_URL = "assets/rectangle.svg"
 if not castle.system.isRemoteServer() then
     DEFAULT_GRAPHICS = tove.newGraphics(love.filesystem.newFileData(DEFAULT_URL):getString(), 1024)
 end
 
 -- Wobble
 
-local AMOUNT = 3
-local NOISE_SCALE = 0.08
-local FRAMES = 3
-local TWEEN = 1
-local SPEED = 10
-local POINTS = false
+AMOUNT = 3
+NOISE_SCALE = 0.08
+FRAMES = 3
+TWEEN = 1
+SPEED = 10
+POINTS = false
 
-local function wobblePoint(x, y, seed)
+function wobblePoint(x, y, seed)
     seed = seed * 100
     local dx1 = AMOUNT * (2 * love.math.noise(NOISE_SCALE * x, NOISE_SCALE * y, 1, seed) - 1)
     local dy1 = AMOUNT * (2 * love.math.noise(NOISE_SCALE * x, NOISE_SCALE * y, 10, seed) - 1)
@@ -49,21 +48,21 @@ local function wobblePoint(x, y, seed)
     return x + dx1 + dx2, y + dy1 + dy2
 end
 
-local function copyCurve(dest, src)
+function copyCurve(dest, src)
     dest.x0, dest.y0 = src.x0, src.y0
     dest.cp1x, dest.cp1y = src.cp1x, src.cp1y
     dest.cp2x, dest.cp2y = src.cp2x, src.cp2y
     dest.x, dest.y = src.x, src.y
 end
 
-local function wobbleCurve(dest, src, seed)
+function wobbleCurve(dest, src, seed)
     dest.x0, dest.y0 = wobblePoint(src.x0, src.y0, seed)
     dest.cp1x, dest.cp1y = wobblePoint(src.cp1x, src.cp1y, seed)
     dest.cp2x, dest.cp2y = wobblePoint(src.cp2x, src.cp2y, seed)
     dest.x, dest.y = wobblePoint(src.x, src.y, seed)
 end
 
-local function wobbleDrawing(drawing)
+function wobbleDrawing(drawing)
     local frames = {}
     local display = drawing:getDisplay()
     for f = 1, FRAMES do
@@ -102,9 +101,9 @@ end
 
 -- Loading
 
-local cache = setmetatable({}, {__mode = "v"})
+cache = setmetatable({}, {__mode = "v"})
 
-local function graphicsDimensions(graphics)
+function graphicsDimensions(graphics)
     local minX, minY, maxX, maxY = graphics:computeAABB("high")
     return maxX - minX, maxY - minY
 end

@@ -1,4 +1,4 @@
-local FrictionBehavior =
+FrictionBehavior =
     defineCoreBehavior {
     name = "Friction",
     displayName = "Friction",

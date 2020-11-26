@@ -7,13 +7,13 @@ DRAW_DATA_SCALE = 10.0
 
 BACKGROUND_COLOR = {r = 0.0, g = 0.0, b = 0.0}
 
-local HANDLE_TOUCH_RADIUS = 30
-local HANDLE_DRAW_RADIUS = 12
+HANDLE_TOUCH_RADIUS = 30
+HANDLE_DRAW_RADIUS = 12
 
 require('tools.draw_algorithms')
 require('tools.draw_data')
 
-local DrawTool =
+DrawTool =
     defineCoreBehavior {
     name = "Draw2",
     propertyNames = {},
@@ -51,23 +51,23 @@ we use the same system but in radians
 
 -- Behavior management
 
-local TEST_POINT = nil
+TEST_POINT = nil
 
-local _viewTransform = love.math.newTransform()
-local _drawData
-local _physicsBodyData
-
-local _initialCoord
-local _currentPathData
-
-local _tempGraphics
-local _tool
-local _subtool
-local _physicsBodySubtool
-local _grabbedPaths
-local _isUsingBendPoint
-
-local _didChange
+_viewTransform = love.math.newTransform()
+--_drawData
+--_physicsBodyData
+--
+--_initialCoord
+--_currentPathData
+--
+--_tempGraphics
+--_tool
+--_subtool
+--_physicsBodySubtool
+--_grabbedPaths
+--_isUsingBendPoint
+--
+--_didChange
 
 function DrawTool.handlers:addBehavior(opts)
     
@@ -75,7 +75,7 @@ end
 
 -- Methods
 
-local function addPathData(pathData)
+function addPathData(pathData)
     if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
         if not pathData.color then
             pathData.color = util.deepCopyTable(_drawData.color)
@@ -84,7 +84,7 @@ local function addPathData(pathData)
     end
 end
 
-local function addTempPathData(pathData)
+function addTempPathData(pathData)
     if not pathData.color then
         pathData.color = util.deepCopyTable(_drawData.color)
     end
@@ -92,7 +92,7 @@ local function addTempPathData(pathData)
     _tempGraphics:addPath(pathData.tovePath)
 end
 
-local function removePathData(pathData)
+function removePathData(pathData)
     for i = #_drawData.pathDataList, 1, -1 do
         if _drawData.pathDataList[i] == pathData then
             table.remove(_drawData.pathDataList, i)
@@ -100,7 +100,7 @@ local function removePathData(pathData)
     end
 end
 
-local function resetTempGraphics()
+function resetTempGraphics()
     _tempGraphics = tove.newGraphics()
     _tempGraphics:setDisplay("mesh", 1024)
 end
@@ -172,9 +172,9 @@ function DrawTool.handlers:preUpdate(dt)
     end
 end
 
-local _scaleRotateData = {}
+_scaleRotateData = {}
 
-local function bind(t, k)
+function bind(t, k)
     return function(...) return t[k](t, ...) end
 end
 
@@ -757,7 +757,7 @@ end
 
 -- Draw
 
-local function drawShapes()
+function drawShapes()
     love.graphics.setColor(1, 1, 1, 1)
 
     _drawData:graphics():draw()
@@ -767,7 +767,7 @@ local function drawShapes()
     end
 end
 
-local function drawPoints(points, radius)
+function drawPoints(points, radius)
     if radius == nil then
         radius = 0.07
     end

@@ -1,4 +1,4 @@
-local RulesBehavior =
+RulesBehavior =
     defineCoreBehavior {
     name = "Rules",
     displayName = "rules",
@@ -10,7 +10,7 @@ local RulesBehavior =
     },
 }
 
-local EMPTY_RULE = {
+EMPTY_RULE = {
     trigger = {
         name = "none",
         behaviorId = nil
@@ -81,7 +81,7 @@ function RulesBehavior.handlers.componentHasTrigger(component, triggerName)
 end
 
 -- TODO: might want to specify this in the trigger config instead
-local interactiveTriggers = {
+interactiveTriggers = {
    'tap',
    'press',
 }

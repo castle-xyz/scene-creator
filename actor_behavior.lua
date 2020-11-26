@@ -2,7 +2,7 @@
 
 -- Base behavior
 
-local BaseBehavior = {}
+BaseBehavior = {}
 
 function BaseBehavior:getUiName()
     return self.displayName or self.name
@@ -120,7 +120,7 @@ end
 
 -- Core behavior definition
 
-local CORE_BEHAVIORS = {}
+CORE_BEHAVIORS = {}
 
 function defineCoreBehavior(behaviorSpec)
     behaviorSpec.isCore = true

@@ -1,4 +1,4 @@
-local FallingBehavior = defineCoreBehavior {
+FallingBehavior = defineCoreBehavior {
     name = "Falling",
     displayName = "Gravity",
     dependencies = {

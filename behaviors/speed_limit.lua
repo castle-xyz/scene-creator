@@ -1,4 +1,4 @@
-local SpeedLimitBehavior =
+SpeedLimitBehavior =
     defineCoreBehavior {
     name = "SpeedLimit",
     displayName = "Speed Limit",

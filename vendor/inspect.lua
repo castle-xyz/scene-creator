@@ -1,4 +1,4 @@
-local inspect = {
+inspect = {
     _VERSION = "inspect.lua 3.1.0",
     _URL = "http://github.com/kikito/inspect.lua",
     _DESCRIPTION = "human-readable representations of tables",
@@ -28,7 +28,7 @@ local inspect = {
     ]]
 }
 
-local tostring = tostring
+tostring = tostring
 
 inspect.KEY =
     setmetatable(
@@ -45,13 +45,13 @@ inspect.METATABLE =
         end}
 )
 
-local function rawpairs(t)
+function rawpairs(t)
     return next, t, nil
 end
 
 -- Apostrophizes the string if it has quotes, but not aphostrophes
 -- Otherwise, it returns a regular quoted string
-local function smartQuote(str)
+function smartQuote(str)
     if str:match('"') and not str:match("'") then
         return "'" .. str .. "'"
     end
@@ -59,7 +59,7 @@ local function smartQuote(str)
 end
 
 -- \a => '\\a', \0 => '\\0', 31 => '\31'
-local shortControlCharEscapes = {
+shortControlCharEscapes = {
     ["\a"] = "\\a",
     ["\b"] = "\\b",
     ["\f"] = "\\f",
@@ -68,7 +68,7 @@ local shortControlCharEscapes = {
     ["\t"] = "\\t",
     ["\v"] = "\\v"
 }
-local longControlCharEscapes = {} -- \a => nil, \0 => \000, 31 => \031
+longControlCharEscapes = {} -- \a => nil, \0 => \000, 31 => \031
 for i = 0, 31 do
     local ch = string.char(i)
     if not shortControlCharEscapes[ch] then
@@ -77,19 +77,19 @@ for i = 0, 31 do
     end
 end
 
-local function escape(str)
+function escape(str)
     return (str:gsub("\\", "\\\\"):gsub("(%c)%f[0-9]", longControlCharEscapes):gsub("%c", shortControlCharEscapes))
 end
 
-local function isIdentifier(str)
+function isIdentifier(str)
     return type(str) == "string" and str:match("^[_%a][_%a%d]*$")
 end
 
-local function isSequenceKey(k, sequenceLength)
+function isSequenceKey(k, sequenceLength)
     return type(k) == "number" and 1 <= k and k <= sequenceLength and math.floor(k) == k
 end
 
-local defaultTypeOrders = {
+defaultTypeOrders = {
     ["number"] = 1,
     ["boolean"] = 2,
     ["string"] = 3,
@@ -99,7 +99,7 @@ local defaultTypeOrders = {
     ["thread"] = 7
 }
 
-local function sortKeys(a, b)
+function sortKeys(a, b)
     local ta, tb = type(a), type(b)
 
     -- strings and numbers are sorted numerically/alphabetically
@@ -123,7 +123,7 @@ end
 
 -- For implementation reasons, the behavior of rawlen & # is "undefined" when
 -- tables aren't pure sequences. So we implement our own # operator.
-local function getSequenceLength(t)
+function getSequenceLength(t)
     local len = 1
     local v = rawget(t, len)
     while v ~= nil do
@@ -133,7 +133,7 @@ local function getSequenceLength(t)
     return len - 1
 end
 
-local function getNonSequentialKeys(t)
+function getNonSequentialKeys(t)
     local keys, keysLength = {}, 0
     local sequenceLength = getSequenceLength(t)
     for k, _ in rawpairs(t) do
@@ -146,7 +146,7 @@ local function getNonSequentialKeys(t)
     return keys, keysLength, sequenceLength
 end
 
-local function countTableAppearances(t, tableAppearances)
+function countTableAppearances(t, tableAppearances)
     tableAppearances = tableAppearances or {}
 
     if type(t) == "table" then
@@ -165,7 +165,7 @@ local function countTableAppearances(t, tableAppearances)
     return tableAppearances
 end
 
-local copySequence = function(s)
+copySequence = function(s)
     local copy, len = {}, #s
     for i = 1, len do
         copy[i] = s[i]
@@ -173,7 +173,7 @@ local copySequence = function(s)
     return copy, len
 end
 
-local function makePath(path, ...)
+function makePath(path, ...)
     local keys = {...}
     local newPath, len = copySequence(path)
     for i = 1, #keys do
@@ -182,7 +182,7 @@ local function makePath(path, ...)
     return newPath
 end
 
-local function processRecursive(process, item, path, visited)
+function processRecursive(process, item, path, visited)
     if item == nil then
         return nil
     end
@@ -215,8 +215,8 @@ end
 
 -------------------------------------------------------------------
 
-local Inspector = {}
-local Inspector_mt = {__index = Inspector}
+Inspector = {}
+Inspector_mt = {__index = Inspector}
 
 function Inspector:puts(...)
     local args = {...}

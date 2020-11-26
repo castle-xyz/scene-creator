@@ -1,4 +1,4 @@
-local MovingBehavior =
+MovingBehavior =
     defineCoreBehavior {
     name = "Moving",
     displayName = "Dynamic Motion",
@@ -135,8 +135,8 @@ function MovingBehavior.handlers:updateComponentFixture(component, fixtureId)
    end
 end
 
-local STOPS_TRANSLATING_THRESHOLD = 0.0005
-local STOPS_ROTATING_THRESHOLD = 0.001
+STOPS_TRANSLATING_THRESHOLD = 0.0005
+STOPS_ROTATING_THRESHOLD = 0.001
 
 function MovingBehavior.handlers:postPerform(dt)
    for actorId, component in pairs(self.components) do

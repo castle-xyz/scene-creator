@@ -1,4 +1,4 @@
-local SlowdownBehavior = defineCoreBehavior {
+SlowdownBehavior = defineCoreBehavior {
     name = "Slowdown",
     displayName = "Slow down",
     dependencies = {

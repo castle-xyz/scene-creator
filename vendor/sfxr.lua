@@ -26,8 +26,8 @@ A port of the sfxr sound effect synthesizer to pure Lua, designed to be used
 together with the *awesome* [LÖVE](https://love2d.org) game framework.
 ]]--
 -- @module sfxr
-local sfxr = {}
-local bit = bit32 or require("bit")
+sfxr = {}
+bit = bit32 or require("bit")
 
 -- Constants
 
@@ -90,7 +90,7 @@ sfxr.ENDIANNESS = {
 --- Truncate a number to an unsigned integer.
 -- @tparam number n a (signed) number
 -- @treturn int the number, truncated and unsigned
-local function trunc(n)
+function trunc(n)
     if n >= 0 then
         return math.floor(n)
     else
@@ -100,7 +100,7 @@ end
 
 --- Set the random seed and initializes the generator.
 -- @tparam number seed the random seed
-local function setseed(seed)
+function setseed(seed)
     math.randomseed(seed)
     for i=0, 5 do
         math.random()
@@ -111,7 +111,7 @@ end
 -- @tparam number low the lower bound
 -- @tparam number high the upper bound
 -- @treturn number a random number where `low < n < high`
-local function random(low, high)
+function random(low, high)
     return low + math.random() * (high - low)
 end
 
@@ -121,7 +121,7 @@ end
 -- Note: n < 0 do not work, use `not maybe(w)` instead
 -- @tparam[opt=1] number w the weight towards false
 -- @treturn bool a random boolean
-local function maybe(w)
+function maybe(w)
     return trunc(random(0, w or 1)) == 0
 end
 
@@ -130,14 +130,14 @@ end
 -- @tparam number min the lower bound
 -- @tparam number max the upper bound
 -- @treturn number the number where `min <= n <= max`
-local function clamp(n, min, max)
+function clamp(n, min, max)
     return math.max(min or -math.huge, math.min(max or math.huge, n))
 end
 
 --- Copy a table (shallow) or a primitive.
 -- @param t a table or primitive
 -- @return a copy of t
-local function shallowcopy(t)
+function shallowcopy(t)
     if type(t) == "table" then
         local t2 = {}
         for k,v in pairs(t) do
@@ -153,7 +153,7 @@ end
 -- @tparam tab t1 a table
 -- @tparam tab t2 a table to merge into t1
 -- @treturn tab t1
-local function mergetables(t1, t2)
+function mergetables(t1, t2)
     for k, v in pairs(t2) do
         if type(v) == "table" then
             if type(t1[k] or false) == "table" then
@@ -172,7 +172,7 @@ end
 -- [source](https://stackoverflow.com/questions/14416734/)
 -- @tparam number number a number
 -- @treturn string a binary string
-local function packIEEE754(number)
+function packIEEE754(number)
 	if number == 0 then
 		return string.char(0x00, 0x00, 0x00, 0x00)
 	elseif number ~= number then
@@ -211,7 +211,7 @@ end
 -- [source](https://stackoverflow.com/questions/14416734/)
 -- @tparam string packed a binary string
 -- @treturn number a number
-local function unpackIEEE754(packed)
+function unpackIEEE754(packed)
 	local b1, b2, b3, b4 = string.byte(packed, 1, 4)
 	local exponent = (b1 % 0x80) * 0x02 + math.floor(b2 / 0x80)
 	local mantissa = math.ldexp(((b2 % 0x80) * 0x100 + b3) * 0x100 + b4, -23)

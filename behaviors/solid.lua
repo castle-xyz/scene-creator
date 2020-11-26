@@ -1,4 +1,4 @@
-local SolidBehavior =
+SolidBehavior =
     defineCoreBehavior {
     name = "Solid",
     displayName = "Solid",
@@ -10,7 +10,7 @@ local SolidBehavior =
 
 -- Utilities
 
-local function wakeBodyAndColliders(body)
+function wakeBodyAndColliders(body)
     body:setAwake(true)
     for _, contact in ipairs(body:getContacts()) do
         local f1, f2 = contact:getFixtures()

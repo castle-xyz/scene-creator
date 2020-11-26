@@ -70,7 +70,7 @@ function Common:variableIdToValue(id)
 end
 
 
-local function variableReachesValueTrigger(self, actorId, variableId, newValue)
+function variableReachesValueTrigger(self, actorId, variableId, newValue)
     self.behaviorsByName.Rules:fireTrigger(
         "variable reaches value",
         actorId,
@@ -144,7 +144,7 @@ local function variableReachesValueTrigger(self, actorId, variableId, newValue)
     )
 end
 
-local function fireVariableTriggers(self, variableId, newValue)
+function fireVariableTriggers(self, variableId, newValue)
     self._updateQueued = true
 
     for actorId, actor in pairs(self.actors) do

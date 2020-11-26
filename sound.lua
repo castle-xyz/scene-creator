@@ -1,9 +1,9 @@
-local Sound = {
+Sound = {
    -- key -> { params, source }
    sources = {},
 }
 
-local SOUND_MAX_DUR = 1
+SOUND_MAX_DUR = 1
 
 function Sound.makeKey(params)
    return 'sound-' .. tostring(params.category)

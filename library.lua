@@ -1,8 +1,8 @@
 -- Core library
 
-local DrawingData = require 'library_drawing_data'
+DrawingData = require 'library_drawing_data'
 
-local CORE_LIBRARY = {
+CORE_LIBRARY = {
     {
         entryType = "actorBlueprint",
         title = "Wall",
@@ -80,7 +80,7 @@ local CORE_LIBRARY = {
     },
 }
 
-local assetNames = require "asset_names"
+assetNames = require "asset_names"
 for _, assetName in ipairs(assetNames) do
     -- SVG?
     if assetName:match("%.svg$") then

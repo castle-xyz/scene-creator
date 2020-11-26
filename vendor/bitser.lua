@@ -14,36 +14,36 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ]]
 
-local floor = math.floor
-local pairs = pairs
-local type = type
-local insert = table.insert
-local getmetatable = getmetatable
-local setmetatable = setmetatable
+floor = math.floor
+pairs = pairs
+type = type
+insert = table.insert
+getmetatable = getmetatable
+setmetatable = setmetatable
 
-local ffi = require("ffi")
-local buf_pos = 0
-local buf_size = -1
-local buf = nil
-local writable_buf = nil
-local writable_buf_size = nil
-local SEEN_LEN = {}
+ffi = require("ffi")
+buf_pos = 0
+buf_size = -1
+buf = nil
+writable_buf = nil
+writable_buf_size = nil
+SEEN_LEN = {}
 
-local function Buffer_prereserve(min_size)
+function Buffer_prereserve(min_size)
 	if buf_size < min_size then
 		buf_size = min_size
 		buf = ffi.new("uint8_t[?]", buf_size)
 	end
 end
 
-local function Buffer_clear()
+function Buffer_clear()
 	buf_size = -1
 	buf = nil
 	writable_buf = nil
 	writable_buf_size = nil
 end
 
-local function Buffer_makeBuffer(size)
+function Buffer_makeBuffer(size)
 	if writable_buf then
 		buf = writable_buf
 		buf_size = writable_buf_size
@@ -54,12 +54,12 @@ local function Buffer_makeBuffer(size)
 	Buffer_prereserve(size)
 end
 
-local function Buffer_newReader(str)
+function Buffer_newReader(str)
 	Buffer_makeBuffer(#str)
 	ffi.copy(buf, str, #str)
 end
 
-local function Buffer_newDataReader(data, size)
+function Buffer_newDataReader(data, size)
 	writable_buf = buf
 	writable_buf_size = buf_size
 	buf_pos = 0
@@ -67,7 +67,7 @@ local function Buffer_newDataReader(data, size)
 	buf = ffi.cast("uint8_t*", data)
 end
 
-local function Buffer_reserve(additional_size)
+function Buffer_reserve(additional_size)
 	while buf_pos + additional_size > buf_size do
 		buf_size = buf_size * 2
 		local oldbuf = buf
@@ -76,45 +76,45 @@ local function Buffer_reserve(additional_size)
 	end
 end
 
-local function Buffer_write_byte(x)
+function Buffer_write_byte(x)
 	Buffer_reserve(1)
 	buf[buf_pos] = x
 	buf_pos = buf_pos + 1
 end
 
-local function Buffer_write_string(s)
+function Buffer_write_string(s)
 	Buffer_reserve(#s)
 	ffi.copy(buf + buf_pos, s, #s)
 	buf_pos = buf_pos + #s
 end
 
-local function Buffer_write_data(ct, len, ...)
+function Buffer_write_data(ct, len, ...)
 	Buffer_reserve(len)
 	ffi.copy(buf + buf_pos, ffi.new(ct, ...), len)
 	buf_pos = buf_pos + len
 end
 
-local function Buffer_ensure(numbytes)
+function Buffer_ensure(numbytes)
 	if buf_pos + numbytes > buf_size then
 		error("malformed serialized data")
 	end
 end
 
-local function Buffer_read_byte()
+function Buffer_read_byte()
 	Buffer_ensure(1)
 	local x = buf[buf_pos]
 	buf_pos = buf_pos + 1
 	return x
 end
 
-local function Buffer_read_string(len)
+function Buffer_read_string(len)
 	Buffer_ensure(len)
 	local x = ffi.string(buf + buf_pos, len)
 	buf_pos = buf_pos + len
 	return x
 end
 
-local function Buffer_read_data(ct, len)
+function Buffer_read_data(ct, len)
 	Buffer_ensure(len)
 	local x = ffi.new(ct)
 	ffi.copy(x, buf + buf_pos, len)
@@ -122,16 +122,14 @@ local function Buffer_read_data(ct, len)
 	return x
 end
 
-local resource_registry = {}
-local resource_name_registry = {}
-local class_registry = {}
-local class_name_registry = {}
-local classkey_registry = {}
-local class_deserialize_registry = {}
+resource_registry = {}
+resource_name_registry = {}
+class_registry = {}
+class_name_registry = {}
+classkey_registry = {}
+class_deserialize_registry = {}
 
-local serialize_value
-
-local function write_number(value, _)
+function write_number(value, _)
 	if floor(value) == value and value >= -2147483648 and value <= 2147483647 then
 		if value >= -27 and value <= 100 then
 			--small int
@@ -152,7 +150,7 @@ local function write_number(value, _)
 	end
 end
 
-local function write_string(value, _)
+function write_string(value, _)
 	if #value < 32 then
 		--short string
 		Buffer_write_byte(192 + #value)
@@ -164,15 +162,15 @@ local function write_string(value, _)
 	Buffer_write_string(value)
 end
 
-local function write_nil(_, _)
+function write_nil(_, _)
 	Buffer_write_byte(247)
 end
 
-local function write_boolean(value, _)
+function write_boolean(value, _)
 	Buffer_write_byte(value and 249 or 248)
 end
 
-local function write_table(value, seen)
+function write_table(value, seen)
 	local classkey
 	local classname = (class_name_registry[value.class] -- MiddleClass
 		or class_name_registry[value.__baseclass] -- SECL
@@ -206,7 +204,7 @@ local function write_table(value, seen)
 	end
 end
 
-local types = {number = write_number, string = write_string, table = write_table, boolean = write_boolean, ["nil"] = write_nil}
+types = {number = write_number, string = write_string, table = write_table, boolean = write_boolean, ["nil"] = write_nil}
 
 serialize_value = function(value, seen)
 	if seen[value] then
@@ -244,23 +242,23 @@ serialize_value = function(value, seen)
 		)(value, seen)
 end
 
-local function serialize(value)
+function serialize(value)
 	Buffer_makeBuffer(4096)
 	local seen = {[SEEN_LEN] = 0}
 	serialize_value(value, seen)
 end
 
-local function add_to_seen(value, seen)
+function add_to_seen(value, seen)
 	insert(seen, value)
 	return value
 end
 
-local function reserve_seen(seen)
+function reserve_seen(seen)
 	insert(seen, 42)
 	return #seen
 end
 
-local function deserialize_value(seen)
+function deserialize_value(seen)
 	local t = Buffer_read_byte()
 	if t < 128 then
 		--small int
@@ -342,21 +340,21 @@ local function deserialize_value(seen)
 	end
 end
 
-local function deserialize_MiddleClass(instance, class)
+function deserialize_MiddleClass(instance, class)
 	return setmetatable(instance, class.__instanceDict)
 end
 
-local function deserialize_SECL(instance, class)
+function deserialize_SECL(instance, class)
 	return setmetatable(instance, getmetatable(class))
 end
 
-local deserialize_humpclass = setmetatable
+deserialize_humpclass = setmetatable
 
-local function deserialize_Slither(instance, class)
+function deserialize_Slither(instance, class)
 	return getmetatable(class).allocate(instance)
 end
 
-local function deserialize_Moonscript(instance, class)
+function deserialize_Moonscript(instance, class)
 	return setmetatable(instance, class.__base)
 end
 

@@ -1,10 +1,10 @@
-local n, v = "serpent", "0.302" -- (C) 2012-18 Paul Kulchenko; MIT License
-local c, d = "Paul Kulchenko", "Lua serializer and pretty printer"
-local snum = {[tostring(1/0)]='1/0 --[[math.huge]]',[tostring(-1/0)]='-1/0 --[[-math.huge]]',[tostring(0/0)]='0/0'}
-local badtype = {thread = true, userdata = true, cdata = true}
-local getmetatable = debug and debug.getmetatable or getmetatable
-local pairs = function(t) return next, t end -- avoid using __pairs in Lua 5.2+
-local keyword, globals, G = {}, {}, (_G or _ENV)
+n, v = "serpent", "0.302" -- (C) 2012-18 Paul Kulchenko; MIT License
+c, d = "Paul Kulchenko", "Lua serializer and pretty printer"
+snum = {[tostring(1/0)]='1/0 --[[math.huge]]',[tostring(-1/0)]='-1/0 --[[-math.huge]]',[tostring(0/0)]='0/0'}
+badtype = {thread = true, userdata = true, cdata = true}
+getmetatable = debug and debug.getmetatable or getmetatable
+pairs = function(t) return next, t end -- avoid using __pairs in Lua 5.2+
+keyword, globals, G = {}, {}, (_G or _ENV)
 for _,k in ipairs({'and', 'break', 'do', 'else', 'elseif', 'end', 'false',
   'for', 'function', 'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat',
   'return', 'then', 'true', 'until', 'while'}) do keyword[k] = true end
@@ -12,7 +12,7 @@ for k,v in pairs(G) do globals[v] = k end -- build func to name mapping
 for _,g in ipairs({'coroutine', 'debug', 'io', 'math', 'string', 'table', 'os'}) do
   for k,v in pairs(type(G[g]) == 'table' and G[g] or {}) do globals[v] = g..'.'..k end end
 
-local function s(t, opts)
+function s(t, opts)
   local name, indent, fatal, maxnum = opts.name, opts.indent, opts.fatal, opts.maxnum
   local sparse, custom, huge = opts.sparse, opts.custom, not opts.nohuge
   local space, maxl = (opts.compact and '' or ' '), (opts.maxlevel or math.huge)
@@ -119,7 +119,7 @@ local function s(t, opts)
   return not name and body..warn or "do local "..body..sepr..tail.."return "..name..sepr.."end"
 end
 
-local function deserialize(data, opts)
+function deserialize(data, opts)
   local env = (opts and opts.safe == false) and G
     or setmetatable({}, {
         __index = function(t,k) return t end,
@@ -132,7 +132,7 @@ local function deserialize(data, opts)
   return pcall(f)
 end
 
-local function merge(a, b) if b then for k,v in pairs(b) do a[k] = v end end; return a; end
+function merge(a, b) if b then for k,v in pairs(b) do a[k] = v end end; return a; end
 return { _NAME = n, _COPYRIGHT = c, _DESCRIPTION = d, _VERSION = v, serialize = s,
   load = deserialize,
   dump = function(a, opts) return s(a, merge({name = '_', compact = true, sparse = true}, opts)) end,

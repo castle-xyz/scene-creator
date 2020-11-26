@@ -1,4 +1,4 @@
-local AnalogStickBehavior =
+AnalogStickBehavior =
     defineCoreBehavior {
     name = "AnalogStick",
     displayName = "Analog Stick",
@@ -29,14 +29,14 @@ local AnalogStickBehavior =
     },
 }
 
-local MAX_DRAG_LENGTH = 2 * UNIT
-local MAX_DRAG_LENGTH_DRAW = MAX_DRAG_LENGTH * 0.8
+MAX_DRAG_LENGTH = 2 * UNIT
+MAX_DRAG_LENGTH_DRAW = MAX_DRAG_LENGTH * 0.8
 
-local DRAW_MULTIPLIER = 0.8
+DRAW_MULTIPLIER = 0.8
 
-local TOUCH_RADIUS = 38 * UNIT
-local TRIANGLE_LENGTH = 25 * UNIT
-local TRIANGLE_WIDTH = 10 * UNIT
+TOUCH_RADIUS = 38 * UNIT
+TRIANGLE_LENGTH = 25 * UNIT
+TRIANGLE_WIDTH = 10 * UNIT
 
 -- Component management
 
@@ -74,7 +74,7 @@ function AnalogStickBehavior:_updateCenter(touch, cameraX, cameraY)
    self._centerY = self._centerY + centerVelocity * math.sin(dragAngle)
 end
 
-local diffAngle = function(a1, a2)
+diffAngle = function(a1, a2)
    return ((a1 - a2 + math.pi) % (2 * math.pi) - math.pi)
 end
 

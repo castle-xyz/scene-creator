@@ -1,4 +1,4 @@
-local DragBehavior =
+DragBehavior =
     defineCoreBehavior {
     name = "Drag",
     displayName = "Drag",
@@ -9,7 +9,7 @@ local DragBehavior =
     }
 }
 
-local CIRCLE_RADIUS = 18 * UNIT
+CIRCLE_RADIUS = 18 * UNIT
 
 -- Component management
 

@@ -1,7 +1,7 @@
-local util = {}
+util = {}
 
 
-local uuidLib = require 'vendor.uuid'
+uuidLib = require 'vendor.uuid'
 uuidLib.seed()
 
 
@@ -57,7 +57,7 @@ function util.stacktrace(message)
 end
 
 
-local ui = castle.ui
+ui = castle.ui
 
 function util.uiRow(id, ...)
     local nArgs = select('#', ...)

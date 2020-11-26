@@ -1,5 +1,5 @@
 DrawData = {}
-local FILL_CANVAS_SIZE = 256
+FILL_CANVAS_SIZE = 256
 
 function DrawData:gridCellSize()
     return self.scale / (self.gridSize - 1)
@@ -68,7 +68,7 @@ function DrawData:roundGlobalDistanceToGrid(d)
     return x
 end
 
-local function makeSubpathsFromSubpathData(pathData)
+function makeSubpathsFromSubpathData(pathData)
     for i = 1, #pathData.subpathDataList do
         local subpathData = pathData.subpathDataList[i]
         local subpath = tove.newSubpath()
@@ -83,7 +83,7 @@ local function makeSubpathsFromSubpathData(pathData)
     end
 end
 
-local function addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
+function addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
     table.insert(pathData.subpathDataList, {
         type = 'line',
         p1 = {
@@ -97,7 +97,7 @@ local function addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
     })
 end
 
-local function addCircleSubpathData(pathData, centerX, centerY, radius, startAngle, endAngle)
+function addCircleSubpathData(pathData, centerX, centerY, radius, startAngle, endAngle)
     table.insert(pathData.subpathDataList, {
         type = 'arc',
         center = {
@@ -496,12 +496,12 @@ function DrawData:resetGraphics()
     self._graphicsNeedsReset = true
 end
 
-local function round(num, numDecimalPlaces)
+function round(num, numDecimalPlaces)
     local mult = 10^(numDecimalPlaces or 0)
     return math.floor(num * mult + 0.5) / mult
 end
 
-local function roundFloatArray(a)
+function roundFloatArray(a)
     if a == nil then
         return a
     end
@@ -513,7 +513,7 @@ local function roundFloatArray(a)
     return a
 end
 
-local function floatArrayEquals(a1, a2)
+function floatArrayEquals(a1, a2)
     if a1 == nil and a2 == nil then
         return true
     end
@@ -535,7 +535,7 @@ local function floatArrayEquals(a1, a2)
     return true
 end
 
-local function coordinatesEqual(c1, c2)
+function coordinatesEqual(c1, c2)
     if not floatEquals(c1.x, c2.x) then
         return false
     end
@@ -547,7 +547,7 @@ local function coordinatesEqual(c1, c2)
     return true
 end
 
-local function arePathDatasMergable(pd1, pd2)
+function arePathDatasMergable(pd1, pd2)
     if not coordinatesEqual(pd1.points[#pd1.points], pd2.points[1]) then
         return false
     end

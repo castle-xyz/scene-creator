@@ -1,4 +1,4 @@
-local SlidingBehavior =
+SlidingBehavior =
     defineCoreBehavior {
     name = "Sliding",
     displayName = "Axis Lock",

@@ -4,15 +4,15 @@ function Common:startCommand()
     self.redos = self.redos or {}
 end
 
-local STANDARD_IMPLICITS = {
+STANDARD_IMPLICITS = {
     actorId = true
 }
 
-local DEFAULT_COALESCE_INTERVAL = 2.2
+DEFAULT_COALESCE_INTERVAL = 2.2
 
-local MAX_UNDOS = 100
+MAX_UNDOS = 100
 
-local function forEachUpvalue(func, body)
+function forEachUpvalue(func, body)
     local i = 1
     while true do
         local name, value = debug.getupvalue(func, i)

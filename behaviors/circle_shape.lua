@@ -1,4 +1,4 @@
-local CircleShapeBehavior = defineCoreBehavior {
+CircleShapeBehavior = defineCoreBehavior {
     name = "CircleShape",
     displayName = "circle",
     dependencies = {

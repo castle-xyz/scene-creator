@@ -1,8 +1,8 @@
-local DEFAULT_SCENE_PROPERTIES = {
+DEFAULT_SCENE_PROPERTIES = {
    backgroundColor = { r = 227 / 255, g = 230 / 255, b = 252 / 255 },
 }
 
-local NEW_CARD_SCENE_PROPERTIES = {
+NEW_CARD_SCENE_PROPERTIES = {
    coordinateSystemVersion = 2,
 }
 

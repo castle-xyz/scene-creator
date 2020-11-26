@@ -1,7 +1,7 @@
-local Physics = require "physics"
+Physics = require "physics"
 
 -- To account for `b2_polygonRadius` (see 'b2Settings.h')
-local succeeded =
+succeeded =
     pcall(
     function()
         love.physics.setMeter(0.5 * UNIT)
@@ -12,10 +12,10 @@ if not succeeded then
 end
 BODY_POLYGON_SKIN = love.physics.newRectangleShape(UNIT, UNIT):getRadius()
 BODY_RECTANGLE_SLOP = 2.01 * BODY_POLYGON_SKIN
-local DEFAULT_LAYER = "main"
-local CAMERA_LAYER = "camera"
+DEFAULT_LAYER = "main"
+CAMERA_LAYER = "camera"
 
-local BodyBehavior =
+BodyBehavior =
     defineCoreBehavior {
     name = "Body",
     displayName = "Layout",
@@ -958,7 +958,7 @@ function BodyBehavior:getMembers(componentOrActorId)
     }
 end
 
-local function getRectangleSizeFromFixture(fixture)
+function getRectangleSizeFromFixture(fixture)
     local shape = fixture:getShape()
     if shape:getType() == "polygon" then
         local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()

@@ -154,13 +154,13 @@ function PhysicsBodyData:draw()
     end
 end
 
-local function _isBetweenNumbers(x, n1, n2)
+function _isBetweenNumbers(x, n1, n2)
     local low = math.min(n1, n2)
     local high = math.max(n1, n2)
     return x >= low and x <= high
 end
 
-local function signForTriangleTest(p1, p2, p3)
+function signForTriangleTest(p1, p2, p3)
     return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
 end
 
@@ -234,7 +234,7 @@ function PhysicsBodyData:isShapeInBounds(shape)
     end
 end
 
-local function numberSign(n)
+function numberSign(n)
     if n < 0 then
         return -1
     elseif n > 0 then
@@ -337,11 +337,11 @@ function PhysicsBodyData:commitTempShape()
     return false
 end
 
-local function floatEquals(f1, f2)
+function floatEquals(f1, f2)
     return f1 > f2 - 0.001 and f1 < f2 + 0.001
 end
 
-local function sortPoints(p1, p2)
+function sortPoints(p1, p2)
     if p1.x > p2.x then
         local t = p1
         p1 = p2

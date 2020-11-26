@@ -1,4 +1,4 @@
-local BouncyBehavior =
+BouncyBehavior =
     defineCoreBehavior {
     name = "Bouncy",
     displayName = "Bounce",

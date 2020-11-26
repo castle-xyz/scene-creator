@@ -86,11 +86,11 @@ function arePointsEqual(p1, p2)
     return (p1.x == p2.x and p1.y == p2.y)
 end
 
-local function distance(p1, p2)
+function distance(p1, p2)
     return math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0))
 end
 
-local function areAnglesEqual(a1, a2)
+function areAnglesEqual(a1, a2)
     local delta = 0.001
     for i = -1, 1, 1 do
         local ta1 = a1 + (i * math.pi * 2.0)
@@ -125,7 +125,7 @@ end
 
 ]]--
 
-local function normalizeRadianAngle(angle)
+function normalizeRadianAngle(angle)
     local pi2 = 2.0 * math.pi
     if angle < 0 then
         angle = angle + pi2
@@ -148,7 +148,7 @@ function isAngleBetween(N, a, b)
     end
 end
 
-local function radianAngleQuadrant(angle)
+function radianAngleQuadrant(angle)
     return math.floor(normalizeRadianAngle(angle) / (math.pi / 2.0)) + 1
 end
 

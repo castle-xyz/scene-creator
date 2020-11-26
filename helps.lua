@@ -1,6 +1,6 @@
 -- vim: set wrap linebreak breakindent showbreak=>\ :
 
-local helps = {
+helps = {
     behaviors = {
         Body = {
             description = [[

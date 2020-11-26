@@ -1,7 +1,7 @@
 require('tools.draw_data')
 require('tools.physics_body_data')
 
-local Drawing2Behavior =
+Drawing2Behavior =
     defineCoreBehavior {
     name = "Drawing2",
     dependencies = {
@@ -17,18 +17,18 @@ local Drawing2Behavior =
     },
 }
 
-local ffi = require "ffi"
-local C = ffi.C
+ffi = require "ffi"
+C = ffi.C
 
 -- TODO
-local DEFAULT_DATA = ''
+DEFAULT_DATA = ''
 
 -- Loading
 
 -- TODO: we should use a weak map in edit mode but not in play mode. using a weak map in play mode causes stutters
 -- because drawing get garage collected too aggressively
 --local cache = setmetatable({}, {__mode = "v"})
-local cache = setmetatable({}, {})
+cache = setmetatable({}, {})
 
 function Drawing2Behavior:preloadDrawing(data)
     if not data.hash then
