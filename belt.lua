@@ -87,27 +87,73 @@ function Common:updateBelt(dt)
 
         local touchId, touch = next(self.touches)
 
-        if touch.screenY > windowHeight - BELT_HEIGHT then -- Drag to scroll
-            touch.used = true
-            self.beltCursorX = self.beltCursorX - touch.screenDX
-            skipApplyVel = true
-            dragScrolling = true
+        if touch.screenY > windowHeight - BELT_HEIGHT then -- Touch on belt
+            -- Track which element was first pressed on
+            if touch.pressed then
+                local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
 
-            -- Keep track of last 3 touch velocities and use max, to smooth things out
-            if not touch.beltVelocities then
-                touch.beltVelocities = {}
-            end
-            table.insert(touch.beltVelocities, -touch.screenDX / dt)
-            while #touch.beltVelocities > 3 do
-                table.remove(touch.beltVelocities, 1)
-            end
-            local maxVel = 0
-            for _, vel in ipairs(touch.beltVelocities) do
-                if math.abs(vel) > math.abs(maxVel) then
-                    maxVel = vel
+                local beltIndex = math.floor(touchBeltX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
+                local placeElem = self.beltElems[beltIndex]
+                if placeElem then
+                    touch.beltIndex = beltIndex
+                    placeElem.placeRelX = placeElem.x - touchBeltX
+                    placeElem.placeRelY = windowHeight - 0.5 * BELT_HEIGHT - touch.screenY
                 end
             end
-            self.beltCursorVX = maxVel
+
+            -- See if we should enter placing mode
+            if touch.beltIndex and not touch.beltPlacing then
+                local totalDX = touch.screenX - touch.initialScreenX
+                local totalDY = touch.screenY - touch.initialScreenY
+                local totalDLen = totalDX * totalDX + totalDY * totalDY
+                local long = totalDLen > (0.25 * ELEM_SIZE) * (0.25 * ELEM_SIZE)
+                local vertical = totalDY < 0 and math.abs(totalDY) > 1.2 * math.abs(totalDX)
+                if long and vertical then
+                    touch.beltPlacing = true
+                    touch.used = true
+                end
+            end
+
+            -- This is a drag scroll if not placing
+            if not touch.beltPlacing then
+                touch.used = true
+                self.beltCursorX = self.beltCursorX - touch.screenDX
+                skipApplyVel = true
+                dragScrolling = true
+
+                -- Keep track of last 3 touch velocities and use max, to smooth things out
+                if not touch.beltVelocities then
+                    touch.beltVelocities = {}
+                end
+                table.insert(touch.beltVelocities, -touch.screenDX / dt)
+                while #touch.beltVelocities > 3 do
+                    table.remove(touch.beltVelocities, 1)
+                end
+                local maxVel = 0
+                for _, vel in ipairs(touch.beltVelocities) do
+                    if math.abs(vel) > math.abs(maxVel) then
+                        maxVel = vel
+                    end
+                end
+                self.beltCursorVX = maxVel
+            end
+        end
+
+        -- Placing
+        if touch.beltPlacing and touch.beltIndex then
+            -- Slow down scroll real quick if we're placing
+            self.beltCursorVX = 0.2 * self.beltCursorVX
+
+            -- Update place position
+            local placeElem = self.beltElems[touch.beltIndex]
+            placeElem.placeX = touch.screenX + placeElem.placeRelX
+            placeElem.placeY = touch.screenY + placeElem.placeRelY
+        end
+    else
+        -- Clear placings
+        for _, elem in ipairs(self.beltElems) do
+            elem.placeX, elem.placeY = nil, nil
+            elem.placeRelX, elem.placeRelY = nil, nil
         end
     end
 
@@ -186,15 +232,24 @@ function Common:drawBelt()
         0, windowHeight - BELT_HEIGHT,
         windowWidth, BELT_HEIGHT)
 
-    local y = windowHeight - 0.5 * BELT_HEIGHT
+    local commonY = windowHeight - 0.5 * BELT_HEIGHT
 
     love.graphics.setColor(1, 1, 1)
     for i, elem in ipairs(self.beltElems) do
         if elem.image then
             local imgW, imgH = elem.image:getDimensions()
             local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
+
+            local x = 0.5 * windowWidth + elem.x - self.beltCursorX
+            local y = commonY
+
+            if elem.placeX and elem.placeY then
+                -- Use placing coordinates if we're placing
+                x, y = elem.placeX, elem.placeY
+            end
+
             love.graphics.draw(elem.image,
-                0.5 * windowWidth + elem.x - self.beltCursorX, y,
+                x, y,
                 0, scale, scale, 0.5 * imgW, 0.5 * imgH)
         end
     end
@@ -203,7 +258,7 @@ function Common:drawBelt()
     love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
     local boxSize = 1.05 * ELEM_SIZE
     love.graphics.rectangle("line",
-        0.5 * windowWidth - 0.5 * boxSize, y - 0.5 * boxSize,
+        0.5 * windowWidth - 0.5 * boxSize, commonY - 0.5 * boxSize,
         boxSize, boxSize)
 
     love.graphics.pop()
