@@ -144,6 +144,7 @@ function Client:load(isEditing, snapshot, variables, isNewScene)
     self:startUi()
 
     self:startNotify()
+    self:startBelt()
 
     self:resetView()
     self.viewTransform = love.math.newTransform()
