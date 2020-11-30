@@ -409,6 +409,7 @@ function Client:update(dt)
     self:fireOnEndOfFrame()
 
     self:updateNotify(dt)
+    self:updateBelt(dt)
     self:updateCamera(dt)
 
     self:updateAutoSaveScene()
@@ -774,6 +775,8 @@ function Client:draw()
     love.graphics.pop()
 
     do -- Screen-space overlay
+        self:drawBelt()
+
         self:drawNotify()
     end
 
