@@ -2,7 +2,7 @@ function Client:_makeBlueprintData(actor)
    local saveBlueprintData = nil
    if not saveBlueprintData then
       local oldEntry = self.library[actor.parentEntryId]
-      if oldEntry.isCore then
+      if oldEntry ~= nil and oldEntry.isCore then
          -- Don't overwrite core entries
          oldEntry = nil
       end
