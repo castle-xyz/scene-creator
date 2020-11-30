@@ -5,7 +5,7 @@ local BELT_HEIGHT = 200
 local ELEM_SIZE = 170
 local ELEM_GAP = 20
 
-local DECEL_X = 2400
+local DECEL_X = 2000
 
 local SNAP_THRESHOLD_VX = 200
 
@@ -92,7 +92,22 @@ function Common:updateBelt(dt)
             self.beltCursorX = self.beltCursorX - touch.screenDX
             skipApplyVel = true
             dragScrolling = true
-            self.beltCursorVX = -touch.screenDX / dt
+
+            -- Keep track of last 3 touch velocities and use max, to smooth things out
+            if not touch.beltVelocities then
+                touch.beltVelocities = {}
+            end
+            table.insert(touch.beltVelocities, -touch.screenDX / dt)
+            while #touch.beltVelocities > 3 do
+                table.remove(touch.beltVelocities, 1)
+            end
+            local maxVel = 0
+            for _, vel in ipairs(touch.beltVelocities) do
+                if math.abs(vel) > math.abs(maxVel) then
+                    maxVel = vel
+                end
+            end
+            self.beltCursorVX = maxVel
         end
     end
 
@@ -113,19 +128,28 @@ function Common:updateBelt(dt)
     end
 
     -- Snap cursor to nearest elem
+    local skipDecelerate = false
     if not rubberBanded and not dragScrolling then
         if math.abs(self.beltCursorVX) <= SNAP_THRESHOLD_VX then
-            local i = math.floor(self.beltCursorX / (ELEM_SIZE + ELEM_GAP) + 0.5)
+            local projX = self.beltCursorX + 0.3 * self.beltCursorVX
+            local i = math.floor(projX / (ELEM_SIZE + ELEM_GAP) + 0.5)
 
             local beforeX = (i - 0.5) * (ELEM_SIZE + ELEM_GAP)
             local afterX = (i + 0.5) * (ELEM_SIZE + ELEM_GAP)
-            local beforeDX = self.beltCursorX - beforeX
-            local afterDX = afterX - self.beltCursorX
+            local beforeDX = projX - beforeX
+            local afterDX = afterX - projX
 
+            -- Model snap using springs on both ends of the current elem. That
+            -- might reduce to a spring at the current elem, so maybe we could
+            -- simplify to that...
             local accel = 0
             accel = accel - 0.7 * SNAP_THRESHOLD_VX * beforeDX
             accel = accel + 0.7 * SNAP_THRESHOLD_VX * afterDX
             self.beltCursorVX = self.beltCursorVX + accel * dt
+
+            -- Below applies explonential damping -- seems fine without it though
+            --self.beltCursorVX = 0.92 * self.beltCursorVX
+            --skipDecelerate = true
         end
     end
 
@@ -134,8 +158,8 @@ function Common:updateBelt(dt)
         self.beltCursorX = self.beltCursorX + self.beltCursorVX * dt
     end
 
-    -- Deceleration
-    if self.beltCursorVX ~= 0 then
+    -- Deceleration -- stopping at proper zero if we get there
+    if not skipDecelerate and self.beltCursorVX ~= 0 then
         if self.beltCursorVX > 0 then
             self.beltCursorVX = self.beltCursorVX - DECEL_X * dt
             if self.beltCursorVX < 0 then
@@ -174,6 +198,13 @@ function Common:drawBelt()
                 0, scale, scale, 0.5 * imgW, 0.5 * imgH)
         end
     end
+
+    love.graphics.setColor(0, 1, 0)
+    love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
+    local boxSize = 1.05 * ELEM_SIZE
+    love.graphics.rectangle("line",
+        0.5 * windowWidth - 0.5 * boxSize, y - 0.5 * boxSize,
+        boxSize, boxSize)
 
     love.graphics.pop()
 end
