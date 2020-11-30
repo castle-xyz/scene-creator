@@ -404,6 +404,8 @@ function Client:update(dt)
     self:updatePerformance(dt)
     self:applySelections() -- Performance may have added or removed actors or components, so apply changes
 
+    self:updateBelt(dt) -- Early to allow belt to steal touches
+
     self:callHandlers("preUpdate", dt)
 
     if not self.performing and not self:isActiveToolFullscreen() then
@@ -421,7 +423,6 @@ function Client:update(dt)
     self:fireOnEndOfFrame()
 
     self:updateNotify(dt)
-    self:updateBelt(dt)
     self:updateCamera(dt)
 
     self:updateAutoSaveScene()
