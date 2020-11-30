@@ -77,6 +77,7 @@ require "tools.draw2"
 require "tools.scale_rotate"
 
 require "library"
+require "belt"
 require "snapshot"
 require "command"
 require "variables"
