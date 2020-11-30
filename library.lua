@@ -122,6 +122,8 @@ function Common:startLibrary()
         entry.isCore = true
         self.library[entryId] = entry
     end
+
+    self:markBeltDirty()
 end
 
 -- Message receivers
@@ -134,10 +136,14 @@ function Common.receivers:addLibraryEntry(time, entryId, entry)
     if entryCopy and entryCopy.actorBlueprint and entryCopy.actorBlueprint.components and entryCopy.actorBlueprint.components.Drawing2 then
         self.behaviorsByName.Drawing2:preloadDrawing(entryCopy.actorBlueprint.components.Drawing2)
     end
+
+    self:markBeltDirty()
 end
 
 function Common.receivers:removeLibraryEntry(time, entryId)
     self.library[entryId] = nil
+
+    self:markBeltDirty()
 end
 
 function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, opts)
@@ -253,4 +259,6 @@ function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, 
     local newEntryCopy = util.deepCopyTable(newEntry)
     newEntryCopy.entryId = entryId
     self.library[entryId] = newEntryCopy
+
+    self:markBeltDirty()
 end
