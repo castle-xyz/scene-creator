@@ -5,6 +5,8 @@ local BELT_HEIGHT = 200
 local ELEM_SIZE = 170
 local ELEM_GAP = 20
 
+local DECEL_X = 2400
+
 -- Start / stop
 
 function Common:startBelt()
@@ -13,6 +15,7 @@ function Common:startBelt()
     self.beltElems = {}
 
     self.beltCursorX = 0
+    self.beltCursorVX = 0
 end
 
 -- Update
@@ -65,11 +68,63 @@ function Common:syncBelt()
     for i, elem in ipairs(self.beltElems) do
         elem.x = (ELEM_SIZE + ELEM_GAP) * (i - 1)
     end
+
+    self.beltDirty = false
 end
 
 function Common:updateBelt(dt)
     if self.beltDirty then
         self:syncBelt()
+    end
+
+    local skipApplyVel = false
+
+    local dragScrolling = false
+    if self.numTouches == 1 and self.maxNumTouches == 1 then -- Single touch
+        local windowWidth, windowHeight = love.graphics.getDimensions()
+
+        local touchId, touch = next(self.touches)
+
+        if touch.screenY > windowHeight - BELT_HEIGHT then -- Drag to scroll
+            touch.used = true
+            self.beltCursorX = self.beltCursorX - touch.screenDX
+            skipApplyVel = true
+            dragScrolling = true
+            self.beltCursorVX = -touch.screenDX / dt
+        end
+    end
+
+    -- Velocity application
+    if not skipApplyVel then
+        self.beltCursorX = self.beltCursorX + self.beltCursorVX * dt
+    end
+
+    -- Deceleration
+    if self.beltCursorVX ~= 0 then
+        if self.beltCursorVX > 0 then
+            self.beltCursorVX = self.beltCursorVX - DECEL_X * dt
+            if self.beltCursorVX < 0 then
+                self.beltCursorVX = 0
+            end
+        elseif self.beltCursorVX < 0 then
+            self.beltCursorVX = self.beltCursorVX + DECEL_X * dt
+            if self.beltCursorVX > 0 then
+                self.beltCursorVX = 0
+            end
+        end
+    end
+
+    -- Strong rubber band on ends
+    if not dragScrolling and self.numTouches ~= 1 then
+        if self.beltCursorX < 0 then
+            self.beltCursorVX = 0.5 * self.beltCursorVX
+            self.beltCursorX = 0.85 * self.beltCursorX
+        end
+        local maxX = self.beltElems[#self.beltElems].x
+        if self.beltCursorX > maxX then
+            self.beltCursorVX = 0.5 * self.beltCursorVX
+            self.beltCursorX = 0.85 * self.beltCursorX + 0.15 * maxX
+        end
     end
 end
 
