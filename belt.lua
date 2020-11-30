@@ -1,9 +1,18 @@
+-- Constants
+
+local BELT_HEIGHT = 200
+
+local ELEM_SIZE = 170
+local ELEM_GAP = 20
+
 -- Start / stop
 
 function Common:startBelt()
     self.beltDirty = true
 
     self.beltElems = {}
+
+    self.beltCursorX = 0
 end
 
 -- Update
@@ -51,6 +60,11 @@ function Common:syncBelt()
     table.sort(self.beltElems, function(a, b)
         return a.order < b.order
     end)
+
+    -- Calculate positions
+    for i, elem in ipairs(self.beltElems) do
+        elem.x = (ELEM_SIZE + ELEM_GAP) * (i - 1)
+    end
 end
 
 function Common:updateBelt(dt)
@@ -60,11 +74,6 @@ function Common:updateBelt(dt)
 end
 
 -- Draw
-
-local BELT_HEIGHT = 200
-
-local ELEM_SIZE = 170
-local ELEM_GAP = 20
 
 function Common:drawBelt()
     local windowWidth, windowHeight = love.graphics.getDimensions()
@@ -80,17 +89,13 @@ function Common:drawBelt()
 
     love.graphics.setColor(1, 1, 1)
     for i, elem in ipairs(self.beltElems) do
-        local x = 0.5 * windowWidth + (ELEM_SIZE + ELEM_GAP) * (i - 1)
-
         if elem.image then
             local imgW, imgH = elem.image:getDimensions()
             local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
-            love.graphics.draw(elem.image, x, y, 0, scale, scale, 0.5 * imgW, 0.5 * imgH)
+            love.graphics.draw(elem.image,
+                0.5 * windowWidth + elem.x - self.beltCursorX, y,
+                0, scale, scale, 0.5 * imgW, 0.5 * imgH)
         end
-
-        --love.graphics.rectangle("fill",
-        --    x - 0.5 * ELEM_SIZE, y - 0.5 * ELEM_SIZE,
-        --    ELEM_SIZE, ELEM_SIZE)
     end
 
     love.graphics.pop()
