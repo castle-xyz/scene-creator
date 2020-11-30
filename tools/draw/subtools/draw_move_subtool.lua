@@ -1,5 +1,5 @@
 local MoveTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork_move",
     name = "move",
 }
 

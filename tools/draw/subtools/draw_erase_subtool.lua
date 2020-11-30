@@ -1,10 +1,14 @@
 local EraseTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork",
     name = "erase",
 }
 
 function EraseTool.handlers:addSubtool()
     self._didChange = false
+end
+
+function EraseTool.handlers:onSelected()
+    self:drawData():updatePathsCanvas()
 end
 
 function EraseTool.handlers:onTouch(component, touchData)

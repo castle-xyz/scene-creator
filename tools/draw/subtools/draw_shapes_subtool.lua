@@ -10,9 +10,9 @@ local function onTouch(obj, component, touchData)
     end
 
     local shape
-    if obj.subtool() == 'rectangle' then
+    if obj:selectedSubtools().artwork_draw == 'rectangle' then
         shape = obj:drawData():getRectangleShape(obj._initialCoord, touchData.roundedCoord)
-    elseif obj.subtool() == 'circle' then
+    elseif obj:selectedSubtools().artwork_draw == 'circle' then
         local roundDx = floatUnit(obj._initialCoord.x - touchData.touchX)
         local roundDy = floatUnit(obj._initialCoord.y - touchData.touchY)
 
@@ -23,7 +23,7 @@ local function onTouch(obj, component, touchData)
             obj:bind(obj:drawData(), 'roundGlobalDistanceToGrid'),
             roundDx,
             roundDy)
-    elseif obj.subtool() == 'triangle' then
+    elseif obj:selectedSubtools().artwork_draw == 'triangle' then
         shape = obj:drawData():getTriangleShape(obj._initialCoord, touchData.roundedCoord)
     end
 
@@ -39,7 +39,7 @@ local function onTouch(obj, component, touchData)
 
         obj:drawData():resetGraphics()
         obj:drawData():resetFill()
-        obj:saveDrawing('add ' .. obj.subtool(), component)
+        obj:saveDrawing('add ' .. obj:selectedSubtools().artwork_draw, component)
 
         obj._initialCoord = nil
         obj._currentPathDataList = {}
@@ -54,7 +54,7 @@ end
 
 -- Rectangle
 local RectangleTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork_draw",
     name = "rectangle",
 }
 
@@ -68,7 +68,7 @@ end
 
 -- Circle
 local CircleTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork_draw",
     name = "circle",
 }
 
@@ -82,7 +82,7 @@ end
 
 -- Triangle
 local TriangleTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork_draw",
     name = "triangle",
 }
 

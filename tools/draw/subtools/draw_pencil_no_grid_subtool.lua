@@ -1,5 +1,5 @@
 local PencilNoGridTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork_draw",
     name = "pencil_no_grid",
 }
 

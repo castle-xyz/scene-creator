@@ -1,5 +1,5 @@
 local BendTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork_move",
     name = "bend",
 }
 

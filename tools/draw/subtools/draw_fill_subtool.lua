@@ -1,10 +1,14 @@
 local FillTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork",
     name = "fill",
 }
 
 function FillTool.handlers:addSubtool()
     self._didChange = false
+end
+
+function FillTool.handlers:onSelected()
+    self:drawData():updatePathsCanvas()
 end
 
 function FillTool.handlers:onTouch(component, touchData)

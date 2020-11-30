@@ -1,5 +1,5 @@
 local PencilTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork_draw",
     name = "pencil",
 }
 

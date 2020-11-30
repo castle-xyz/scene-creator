@@ -1,5 +1,5 @@
 local LineTool = defineDrawSubtool {
-    category = "draw",
+    category = "artwork_draw",
     name = "line",
 }
 
