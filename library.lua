@@ -2,6 +2,7 @@
 
 local DrawingData = require 'library_drawing_data'
 
+local CORE_BELT_ORDER_OFFSET = -100
 local CORE_LIBRARY = {
     {
         entryType = "actorBlueprint",
@@ -16,6 +17,7 @@ local CORE_LIBRARY = {
             }
         },
         base64Png = DrawingData.Wall.base64Png,
+        beltOrder = CORE_BELT_ORDER_OFFSET + 2,
     },
     {
         entryType = "actorBlueprint",
@@ -31,6 +33,7 @@ local CORE_LIBRARY = {
             }
         },
         base64Png = DrawingData.Ball.base64Png,
+        beltOrder = CORE_BELT_ORDER_OFFSET + 1,
     },
     {
         entryType = "actorBlueprint",
@@ -45,6 +48,7 @@ local CORE_LIBRARY = {
             }
         },
         base64Png = DrawingData.TextBox.base64Png,
+        beltOrder = CORE_BELT_ORDER_OFFSET + 3,
     },
     {
        entryType = "actorBlueprint",
@@ -77,6 +81,7 @@ local CORE_LIBRARY = {
           },
        },
        base64Png = DrawingData.NavigationButton.base64Png,
+        beltOrder = CORE_BELT_ORDER_OFFSET + 4,
     },
 }
 
