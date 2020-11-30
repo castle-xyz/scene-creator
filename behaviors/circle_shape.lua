@@ -16,6 +16,10 @@ local CircleShapeBehavior = defineCoreBehavior {
 -- Component management
 
 function CircleShapeBehavior.handlers:addComponent(component, bp, opts)
+    if self.game.actors[component.actorId].components[self.game.behaviorsByName.Drawing2.behaviorId] then
+        return
+    end
+
     if opts.isOrigin then
         if self.dependencies.Body:getShapeType(component.actorId) ~= "circle" then
             local physics = self.dependencies.Body:getPhysics()
@@ -27,6 +31,10 @@ function CircleShapeBehavior.handlers:addComponent(component, bp, opts)
 end
 
 function CircleShapeBehavior.handlers:disableComponent(component, opts)
+    if self.game.actors[component.actorId].components[self.game.behaviorsByName.Drawing2.behaviorId] then
+        return
+    end
+
     if opts.isOrigin and not opts.removeActor then
         self.dependencies.Body:resetShapes(component.actorId)
     end
