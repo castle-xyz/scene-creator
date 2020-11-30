@@ -105,22 +105,24 @@ function GrabTool.handlers:update(dt)
         local moveX, moveY = 0, 0
 
         local touchId, touch = next(touchData.touches)
-        touch.used = true
-        if self._gridEnabled then
-            local touchPrevX, touchPrevY = touch.x - touch.dx, touch.y - touch.dy
+        if not touch.beltUsed then
+            touch.used = true
+            if self._gridEnabled then
+                local touchPrevX, touchPrevY = touch.x - touch.dx, touch.y - touch.dy
 
-            local qTouchPrevX = util.quantize(touchPrevX, self._gridSize, touch.initialX)
-            local qTouchPrevY = util.quantize(touchPrevY, self._gridSize, touch.initialY)
+                local qTouchPrevX = util.quantize(touchPrevX, self._gridSize, touch.initialX)
+                local qTouchPrevY = util.quantize(touchPrevY, self._gridSize, touch.initialY)
 
-            local qTouchX = util.quantize(touch.x, self._gridSize, touch.initialX)
-            local qTouchY = util.quantize(touch.y, self._gridSize, touch.initialY)
+                local qTouchX = util.quantize(touch.x, self._gridSize, touch.initialX)
+                local qTouchY = util.quantize(touch.y, self._gridSize, touch.initialY)
 
-            moveX, moveY = qTouchX - qTouchPrevX, qTouchY - qTouchPrevY
-        else
-            moveX, moveY = touch.dx, touch.dy
+                moveX, moveY = qTouchX - qTouchPrevX, qTouchY - qTouchPrevY
+            else
+                moveX, moveY = touch.dx, touch.dy
+            end
+
+            self:move(moveX, moveY)
         end
-
-        self:move(moveX, moveY)
     end
 end
 

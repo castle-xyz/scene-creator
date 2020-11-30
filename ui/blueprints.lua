@@ -112,15 +112,20 @@ function Client:uiBlueprints()
    ui.data(data, { actions = actions })
 end
 
-function Client:_addBlueprintToScene(entryId)
+function Client:_addBlueprintToScene(entryId, x, y)
    local entry = self.library[entryId]
    
    -- Set up actor blueprint and id
     local bp = util.deepCopyTable(entry.actorBlueprint)
-    if bp.components.Body then -- Has a `Body`? Position at center of window.
-        local windowWidth, windowHeight = love.graphics.getDimensions()
-        bp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
-        bp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
+    if bp.components.Body then -- Has a `Body`? Position at given position or window center
+        if x and y then
+            bp.components.Body.x = x
+            bp.components.Body.y = y
+        else
+            local windowWidth, windowHeight = love.graphics.getDimensions()
+            bp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
+            bp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
+        end
     end
     local newActorId = self:generateActorId()
 
