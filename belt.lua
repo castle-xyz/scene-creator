@@ -110,12 +110,14 @@ function Common:updateBelt(dt)
                 local vertical = totalDY < 0 and math.abs(totalDY) > 1.2 * math.abs(totalDX)
                 if long and vertical then
                     touch.beltPlacing = true
+                    touch.beltUsed = true
                     touch.used = true
                 end
             end
 
             -- This is a drag scroll if not placing
             if not touch.beltPlacing then
+                touch.beltUsed = true
                 touch.used = true
                 self.beltCursorX = self.beltCursorX - touch.screenDX
                 skipApplyVel = true
@@ -148,6 +150,16 @@ function Common:updateBelt(dt)
             local placeElem = self.beltElems[touch.beltIndex]
             placeElem.placeX = touch.screenX + placeElem.placeRelX
             placeElem.placeY = touch.screenY + placeElem.placeRelY
+
+            -- Touch dragged far enough into scene? Place actor!
+            if touch.screenY < windowHeight - 1.1 * BELT_HEIGHT then
+                touch.beltUsed = false
+                touch.beltPlacing = nil
+                touch.beltIndex = nil
+                placeElem.placeX, placeElem.placeY = nil, nil
+                placeElem.placeRelX, placeElem.placeRelY = nil, nil
+                self:_addBlueprintToScene(placeElem.entryId, touch.x, touch.y)
+            end
         end
     else
         -- Clear placings
