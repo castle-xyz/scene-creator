@@ -115,7 +115,7 @@ function Common:updateBelt(dt)
     end
 
     -- Strong rubber band on ends
-    if not dragScrolling and self.numTouches ~= 1 then
+    if not dragScrolling then
         if self.beltCursorX < 0 then
             self.beltCursorVX = 0.5 * self.beltCursorVX
             self.beltCursorX = 0.85 * self.beltCursorX
