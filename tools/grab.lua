@@ -80,6 +80,10 @@ function GrabTool:move(moveX, moveY)
     )
 end
 
+function GrabTool:getGridSize()
+    return self._gridSize
+end
+
 -- Update
 
 function GrabTool.handlers:preUpdate(dt)

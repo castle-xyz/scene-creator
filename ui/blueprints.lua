@@ -118,14 +118,12 @@ function Client:_addBlueprintToScene(entryId, x, y)
    -- Set up actor blueprint and id
     local bp = util.deepCopyTable(entry.actorBlueprint)
     if bp.components.Body then -- Has a `Body`? Position at given position or window center
-        if x and y then
-            bp.components.Body.x = x
-            bp.components.Body.y = y
-        else
-            local windowWidth, windowHeight = love.graphics.getDimensions()
-            bp.components.Body.x = util.quantize(self.viewX, 0.5 * UNIT)
-            bp.components.Body.y = util.quantize(self.viewY, 0.5 * UNIT)
+        if not (x and y) then
+            x, y = self.viewX, self.viewY
         end
+        local gridSize = self.behaviorsByName.Grab:getGridSize()
+        bp.components.Body.x = util.quantize(x, gridSize)
+        bp.components.Body.y = util.quantize(y, gridSize)
     end
     local newActorId = self:generateActorId()
 
