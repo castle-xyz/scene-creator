@@ -58,6 +58,10 @@ function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
             skipActorId = actorId,
         })
     end)
+    self:deselectAllActors()
+    self:applySelections()
+    self:syncBelt()
+    self:focusEntryInBelt(entryId)
 end
 
 function Client:_addBlueprint(actor, saveBlueprintData)
@@ -75,6 +79,10 @@ function Client:_addBlueprint(actor, saveBlueprintData)
         base64Png = base64Png,
     })
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
+    self:deselectAllActors()
+    self:applySelections()
+    self:syncBelt()
+    self:focusEntryInBelt(newEntryId)
 end
 
 function Client:uiBlueprints()

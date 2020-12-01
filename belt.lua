@@ -25,7 +25,7 @@ function Common:startBelt()
 
     self.beltTop = nil -- Initialized on first update
 
-    self.targetIndex = nil -- Target element to scroll to if not `nil`
+    self.beltTargetIndex = nil -- Target element to scroll to if not `nil`
 end
 
 -- Show / hide
@@ -59,6 +59,19 @@ jsEvents.listen(
         end
     end
 )
+
+-- Focus
+
+function Common:focusEntryInBelt(entryId)
+    self:syncBelt() -- Often called right after a change, so let's sync
+    for i, elem in ipairs(self.beltElems) do
+        if elem.entryId == entryId then
+            self.beltTargetIndex = i
+            self.beltVisible = true
+            break
+        end
+    end
+end
 
 -- Update
 
@@ -157,10 +170,10 @@ function Common:updateBelt(dt)
 
             -- Cancel existing target on press, track new target on tap
             if touch.pressed then
-                self.targetIndex = nil
+                self.beltTargetIndex = nil
             end
             if touch.released and not touch.movedNear and love.timer.getTime() - touch.pressTime < 0.2 then
-                self.targetIndex = touchBeltIndex
+                self.beltTargetIndex = touchBeltIndex
             end
 
             -- Track which element was first pressed on
@@ -243,7 +256,7 @@ function Common:updateBelt(dt)
     end
 
     -- Scroll to target
-    local targetElem = self.beltElems[self.targetIndex]
+    local targetElem = self.beltElems[self.beltTargetIndex]
     if targetElem ~= nil then
         if math.abs(targetElem.x - self.beltCursorX) <= 3 then
             -- Reached target
@@ -256,7 +269,7 @@ function Common:updateBelt(dt)
         end
         return -- Skip velocity-based logic when in target mode
     else
-        self.targetIndex = nil -- Invalid target index
+        self.beltTargetIndex = nil -- Invalid target index
     end
 
     -- Strong rubber band on ends
@@ -376,6 +389,12 @@ function Common:drawBelt()
     love.graphics.rectangle("line",
         0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
         boxSize, boxSize)
+
+    -- Touch overlay
+    love.graphics.setColor(1, 0, 1, 0.5)
+    for _, touch in pairs(self.touches) do
+        love.graphics.circle('fill', touch.screenX, touch.screenY, ELEM_SIZE * 0.2)
+    end
 
     love.graphics.pop()
 end
