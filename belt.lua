@@ -9,6 +9,8 @@ local DECEL_X = 2000
 
 local SNAP_THRESHOLD_VX = 200
 
+local SHOW_HIDE_VY = 1200
+
 -- Start / stop
 
 function Common:startBelt()
@@ -18,7 +20,33 @@ function Common:startBelt()
 
     self.beltCursorX = 0
     self.beltCursorVX = 0
+
+    self.beltVisible = false
+
+    self.beltTop = nil -- Initialized on first update
 end
+
+-- Show / hide
+
+jsEvents.listen(
+    "SHOW_BELT",
+    function()
+        local self = currentInstance()
+        if self then
+            self.beltVisible = true
+        end
+    end
+)
+
+jsEvents.listen(
+    "HIDE_BELT",
+    function()
+        local self = currentInstance()
+        if self then
+            self.beltVisible = false
+        end
+    end
+)
 
 -- Update
 
@@ -79,15 +107,37 @@ function Common:updateBelt(dt)
         self:syncBelt()
     end
 
+    local windowWidth, windowHeight = love.graphics.getDimensions()
+
+    -- Animate belt in / out
+    if not self.beltTop then
+        self.beltTop = windowHeight -- Initialization
+    end
+    if self.beltVisible == false and self.beltTop < windowHeight then
+        self.beltTop = self.beltTop + SHOW_HIDE_VY * dt
+        if self.beltTop > windowHeight then
+            self.beltTop = windowHeight
+        end
+    end
+    if self.beltVisible == true and self.beltTop > windowHeight - BELT_HEIGHT then
+        self.beltTop = self.beltTop - SHOW_HIDE_VY * dt
+        if self.beltTop < windowHeight - BELT_HEIGHT then
+            self.beltTop = windowHeight - BELT_HEIGHT
+        end
+    end
+
+    -- Skip all this logic when hidden and animations are done
+    if self.beltTop >= windowHeight and self.beltCursorVX == 0 then
+        return
+    end
+
     local skipApplyVel = false
 
     local dragScrolling = false
     if self.numTouches == 1 and self.maxNumTouches == 1 then -- Single touch
-        local windowWidth, windowHeight = love.graphics.getDimensions()
-
         local touchId, touch = next(self.touches)
 
-        if touch.screenY > windowHeight - BELT_HEIGHT then -- Touch on belt
+        if touch.screenY > self.beltTop then -- Touch on belt
             -- Track which element was first pressed on
             if touch.pressed then
                 local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
@@ -97,7 +147,7 @@ function Common:updateBelt(dt)
                 if placeElem then
                     touch.beltIndex = beltIndex
                     placeElem.placeRelX = placeElem.x - touchBeltX
-                    placeElem.placeRelY = windowHeight - 0.5 * BELT_HEIGHT - touch.screenY
+                    placeElem.placeRelY = self.beltTop - 0.5 * BELT_HEIGHT - touch.screenY
                 end
             end
 
@@ -152,7 +202,7 @@ function Common:updateBelt(dt)
             placeElem.placeY = touch.screenY + placeElem.placeRelY
 
             -- Touch dragged far enough into scene? Place actor!
-            if touch.screenY < windowHeight - 1.1 * BELT_HEIGHT then
+            if touch.screenY < self.beltTop - 0.2 * BELT_HEIGHT then
                 touch.beltUsed = false
                 touch.beltPlacing = nil
                 touch.beltIndex = nil
@@ -237,15 +287,22 @@ end
 function Common:drawBelt()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
+    -- Skip drawing when hidden
+    if self.beltTop >= windowHeight then
+        return
+    end
+
     love.graphics.push("all")
 
+    -- Background
     love.graphics.setColor(0, 0, 0, 0.4)
     love.graphics.rectangle("fill",
-        0, windowHeight - BELT_HEIGHT,
+        0, self.beltTop,
         windowWidth, BELT_HEIGHT)
 
-    local commonY = windowHeight - 0.5 * BELT_HEIGHT
+    local elemsY = self.beltTop + 0.5 * BELT_HEIGHT
 
+    -- Elements
     love.graphics.setColor(1, 1, 1)
     for i, elem in ipairs(self.beltElems) do
         if elem.image then
@@ -253,7 +310,7 @@ function Common:drawBelt()
             local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
 
             local x = 0.5 * windowWidth + elem.x - self.beltCursorX
-            local y = commonY
+            local y = elemsY
 
             if elem.placeX and elem.placeY then
                 -- Use placing coordinates if we're placing
@@ -266,11 +323,12 @@ function Common:drawBelt()
         end
     end
 
+    -- Highlight box
     love.graphics.setColor(0, 1, 0)
     love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
     local boxSize = 1.05 * ELEM_SIZE
     love.graphics.rectangle("line",
-        0.5 * windowWidth - 0.5 * boxSize, commonY - 0.5 * boxSize,
+        0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
         boxSize, boxSize)
 
     love.graphics.pop()
