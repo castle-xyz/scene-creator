@@ -24,6 +24,8 @@ function Common:startBelt()
     self.beltVisible = false
 
     self.beltTop = nil -- Initialized on first update
+
+    self.targetIndex = nil -- Target element to scroll to if not `nil`
 end
 
 -- Show / hide
@@ -150,14 +152,22 @@ function Common:updateBelt(dt)
         local touchId, touch = next(self.touches)
 
         if touch.screenY > self.beltTop then -- Touch on belt
+            local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
+            local touchBeltIndex = math.floor(touchBeltX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
+
+            -- Cancel existing target on press, track new target on tap
+            if touch.pressed then
+                self.targetIndex = nil
+            end
+            if touch.released and not touch.movedNear and love.timer.getTime() - touch.pressTime < 0.2 then
+                self.targetIndex = touchBeltIndex
+            end
+
             -- Track which element was first pressed on
             if touch.pressed then
-                local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
-
-                local beltIndex = math.floor(touchBeltX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
-                local placeElem = self.beltElems[beltIndex]
+                local placeElem = self.beltElems[touchBeltIndex]
                 if placeElem then
-                    touch.beltIndex = beltIndex
+                    touch.beltIndex = touchBeltIndex
                     placeElem.placeRelX = placeElem.x - touchBeltX
                     placeElem.placeRelY = self.beltTop + 0.5 * BELT_HEIGHT - touch.screenY
                 end
@@ -230,6 +240,23 @@ function Common:updateBelt(dt)
             elem.placeX, elem.placeY = nil, nil
             elem.placeRelX, elem.placeRelY = nil, nil
         end
+    end
+
+    -- Scroll to target
+    local targetElem = self.beltElems[self.targetIndex]
+    if targetElem ~= nil then
+        if math.abs(targetElem.x - self.beltCursorX) <= 3 then
+            -- Reached target
+            self.targetElem = nil
+            self.beltCursorX = targetElem.x
+            self.beltCursorVX = 0
+        else
+            -- Rubber band toward target
+            self.beltCursorX = 0.4 * targetElem.x + 0.6 * self.beltCursorX
+        end
+        return -- Skip velocity-based logic when in target mode
+    else
+        self.targetIndex = nil -- Invalid target index
     end
 
     -- Strong rubber band on ends
