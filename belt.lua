@@ -252,24 +252,26 @@ function Common:updateBelt(dt)
     local skipDecelerate = false
     if not rubberBanded and not dragScrolling then
         if math.abs(self.beltCursorVX) <= SNAP_THRESHOLD_VX then
-            local projX = self.beltCursorX + 0.2 * self.beltCursorVX
+            local projX = self.beltCursorX
+
+            -- Apply spring force toward nearest elem
             local i = math.floor(projX / (ELEM_SIZE + ELEM_GAP) + 0.5)
-
-            local beforeX = (i - 0.5) * (ELEM_SIZE + ELEM_GAP)
-            local afterX = (i + 0.5) * (ELEM_SIZE + ELEM_GAP)
-            local beforeDX = projX - beforeX
-            local afterDX = afterX - projX
-
-            -- Model snap using springs on both ends of the current elem. That
-            -- might reduce to a spring at the current elem, so maybe we could
-            -- simplify to that...
-            local accel = 0
-            accel = accel - 0.7 * SNAP_THRESHOLD_VX * beforeDX
-            accel = accel + 0.7 * SNAP_THRESHOLD_VX * afterDX
-            self.beltCursorVX = self.beltCursorVX + accel * dt
+            local iX = i * (ELEM_SIZE + ELEM_GAP)
+            if math.abs(self.beltCursorVX) > 0.7 * SNAP_THRESHOLD_VX then
+                -- Don't "pull back" if we really want to go forward
+                if iX < projX and self.beltCursorVX > 0 then
+                    iX = math.max(projX, iX + 0.8 * (ELEM_SIZE + ELEM_GAP))
+                end
+                if iX > projX and self.beltCursorVX < 0 then
+                    iX = math.min(projX, iX - 0.8 * (ELEM_SIZE + ELEM_GAP))
+                end
+            end
+            local accel = 0.7 * SNAP_THRESHOLD_VX * (iX - projX)
+            local newVX = self.beltCursorVX + accel * dt
+            self.beltCursorVX = 0.85 * newVX + 0.15 * self.beltCursorVX
 
             -- Explonential damping
-            self.beltCursorVX = 0.92 * self.beltCursorVX
+            --self.beltCursorVX = 0.92 * self.beltCursorVX
         end
     end
 
