@@ -1,4 +1,3 @@
-version: 2
 jobs:
   upload_dev:
     docker:
@@ -26,6 +25,7 @@ jobs:
       - run: cd scripts && npm run upload-dev
 
 workflows:
+  version: 2
   build:
     jobs:
       - upload_dev:
