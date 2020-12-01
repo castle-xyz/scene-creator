@@ -252,7 +252,7 @@ function Common:updateBelt(dt)
     local skipDecelerate = false
     if not rubberBanded and not dragScrolling then
         if math.abs(self.beltCursorVX) <= SNAP_THRESHOLD_VX then
-            local projX = self.beltCursorX + 0.3 * self.beltCursorVX
+            local projX = self.beltCursorX + 0.2 * self.beltCursorVX
             local i = math.floor(projX / (ELEM_SIZE + ELEM_GAP) + 0.5)
 
             local beforeX = (i - 0.5) * (ELEM_SIZE + ELEM_GAP)
@@ -268,9 +268,8 @@ function Common:updateBelt(dt)
             accel = accel + 0.7 * SNAP_THRESHOLD_VX * afterDX
             self.beltCursorVX = self.beltCursorVX + accel * dt
 
-            -- Below applies explonential damping -- seems fine without it though
-            --self.beltCursorVX = 0.92 * self.beltCursorVX
-            --skipDecelerate = true
+            -- Explonential damping
+            self.beltCursorVX = 0.92 * self.beltCursorVX
         end
     end
 
