@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  upload_dev:
     docker:
       - image: circleci/node:lts
 
@@ -24,3 +24,12 @@ jobs:
           key: v1-dependencies-{{ checksum "scripts/package-lock.json" }}
 
       - run: cd scripts && npm run upload-dev
+
+workflows:
+  build:
+    jobs:
+      - upload_dev:
+          filters:
+            branches:
+              only:
+                - master
