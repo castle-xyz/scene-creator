@@ -5,7 +5,7 @@ local BELT_HEIGHT = 200
 local ELEM_SIZE = 170
 local ELEM_GAP = 20
 
-local DECEL_X = 2000
+local DECEL_X = 2200
 
 local SNAP_THRESHOLD_VX = 200
 
@@ -118,6 +118,8 @@ function Common:updateBelt(dt)
     end
 
     local windowWidth, windowHeight = love.graphics.getDimensions()
+
+    local prevBeltCursorVX = self.beltCursorVX
 
     -- Animate belt in / out
     if not self.beltTop then
@@ -290,6 +292,11 @@ function Common:updateBelt(dt)
                 self.beltCursorVX = 0
             end
         end
+    end
+
+    -- Smoothing out various velocity artifacts
+    if self.beltCursorVX ~= 0 then
+        self.beltCursorVX = 0.8 * self.beltCursorVX + 0.2 * prevBeltCursorVX
     end
 end
 
