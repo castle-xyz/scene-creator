@@ -48,6 +48,16 @@ jsEvents.listen(
     end
 )
 
+jsEvents.listen(
+    "TOGGLE_BELT",
+    function()
+        local self = currentInstance()
+        if self then
+            self.beltVisible = not self.beltVisible
+        end
+    end
+)
+
 -- Update
 
 function Common:markBeltDirty()
@@ -147,7 +157,7 @@ function Common:updateBelt(dt)
                 if placeElem then
                     touch.beltIndex = beltIndex
                     placeElem.placeRelX = placeElem.x - touchBeltX
-                    placeElem.placeRelY = self.beltTop - 0.5 * BELT_HEIGHT - touch.screenY
+                    placeElem.placeRelY = self.beltTop + 0.5 * BELT_HEIGHT - touch.screenY
                 end
             end
 
@@ -202,13 +212,14 @@ function Common:updateBelt(dt)
             placeElem.placeY = touch.screenY + placeElem.placeRelY
 
             -- Touch dragged far enough into scene? Place actor!
-            if touch.screenY < self.beltTop - 0.2 * BELT_HEIGHT then
+            if touch.screenY < self.beltTop - 0.1 * BELT_HEIGHT then
                 touch.beltUsed = false
                 touch.beltPlacing = nil
                 touch.beltIndex = nil
                 placeElem.placeX, placeElem.placeY = nil, nil
                 placeElem.placeRelX, placeElem.placeRelY = nil, nil
                 self:_addBlueprintToScene(placeElem.entryId, touch.x, touch.y)
+                self.beltVisible = false
             end
         end
     else
