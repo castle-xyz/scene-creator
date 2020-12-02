@@ -503,10 +503,14 @@ function Client:drawScene(opts)
     profileFunction('drawScene.background', function()
         do -- Background
             local bgColor = self.sceneProperties.backgroundColor
+            local mult = 1
+            if self.beltVisible then
+                mult = BELT_DARKEN
+            end
             if opts.boundary then
-                love.graphics.clear(0.8, 0.8, 0.8)
+                love.graphics.clear(mult * 0.8, mult * 0.8, mult * 0.8)
                 love.graphics.push("all")
-                love.graphics.setColor(bgColor.r, bgColor.g, bgColor.b)
+                love.graphics.setColor(mult * bgColor.r, mult * bgColor.g, mult * bgColor.b)
 
                 love.graphics.rectangle(
                     "fill",
@@ -517,7 +521,7 @@ function Client:drawScene(opts)
                 )
                 love.graphics.pop()
             else
-                love.graphics.clear(bgColor.r, bgColor.g, bgColor.b)
+                love.graphics.clear(mult * bgColor.r, mult * bgColor.g, mult * bgColor.b)
             end
         end
     end)
@@ -700,7 +704,7 @@ function Client:draw()
 
     do -- Overlays
 
-        if not self:isActiveToolFullscreen() then
+        if not self.beltVisible and not self:isActiveToolFullscreen() then
             -- Boundary
             if not self.performing then
                 love.graphics.setLineWidth(1.75 * self:getPixelScale())
