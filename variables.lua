@@ -178,7 +178,7 @@ function Common:variableResetAll()
     for i = 1, #self.variables do
         if self._initialVariables[i].value ~= self.variables[i].value then
             self.variables[i].value = self._initialVariables[i].value
-            fireVariableTriggers(self, id, self.variables[i].value)
+            fireVariableTriggers(self, self.variables[i].id, self.variables[i].value)
         end
     end
  end
