@@ -118,7 +118,10 @@ function Common:syncBelt()
 
     -- Sort belt
     table.sort(self.beltElems, function(a, b)
-        return a.order < b.order
+        if a.order ~= b.order then
+            return a.order > b.order
+        end
+        return a.title < b.title
     end)
 
     -- Calculate positions
