@@ -11,6 +11,8 @@ local SNAP_THRESHOLD_VX = 200
 
 local SHOW_HIDE_VY = 1200
 
+BELT_DARKEN = 0.4
+
 -- Start / stop
 
 function Common:startBelt()
