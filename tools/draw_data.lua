@@ -6,18 +6,30 @@ function DrawData:gridCellSize()
 end
 
 function DrawData:globalToGridCoordinates(x, y)
+    if 0 == 0 then
+        return x, y
+    end
+
     local gridX = 1.0 + (self.gridSize - 1) * x / self.scale
     local gridY = 1.0 + (self.gridSize - 1) * y / self.scale
     return gridX, gridY
 end
 
 function DrawData:gridToGlobalCoordinates(x, y)
+    if 0 == 0 then
+        return x, y
+    end
+
     local globalX = (x - 1.0) * self:gridCellSize()
     local globalY = (y - 1.0) * self:gridCellSize()
     return globalX, globalY
 end
 
 function DrawData:roundGlobalDiffCoordinatesToGrid(x, y)
+    if 0 == 0 then
+        return x, y
+    end
+    
     local gridX, gridY = self:globalToGridCoordinates(x, y)
 
     gridX = math.floor(gridX + 0.5)
@@ -27,6 +39,10 @@ function DrawData:roundGlobalDiffCoordinatesToGrid(x, y)
 end
 
 function DrawData:roundGlobalCoordinatesToGrid(x, y)
+    if 0 == 0 then
+        return x, y
+    end
+    
     local gridX, gridY = self:globalToGridCoordinates(x, y)
 
     gridX = math.floor(gridX + 0.5)
@@ -48,6 +64,10 @@ function DrawData:roundGlobalCoordinatesToGrid(x, y)
 end
 
 function DrawData:clampGlobalCoordinates(x, y)
+    if 0 == 0 then
+        return x, y
+    end
+    
     if x < 0 then
         x = 0
     elseif x > self.scale then
@@ -64,6 +84,10 @@ function DrawData:clampGlobalCoordinates(x, y)
 end
 
 function DrawData:roundGlobalDistanceToGrid(d)
+    if 0 == 0 then
+        return d
+    end
+
     local x, y = self:roundGlobalCoordinatesToGrid(d, 0)
     return x
 end
