@@ -382,7 +382,7 @@ function Common:drawBelt()
 
     -- Elements
     love.graphics.setColor(1, 1, 1)
-    for i, elem in ipairs(self.beltElems) do
+    local function drawElem(elem)
         if elem.image then
             local imgW, imgH = elem.image:getDimensions()
             local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
@@ -399,6 +399,17 @@ function Common:drawBelt()
                 x, y,
                 0, scale, scale, 0.5 * imgW, 0.5 * imgH)
         end
+    end
+    local placeElem -- If we have a placing elem, draw it on top of others
+    for i, elem in ipairs(self.beltElems) do
+        if elem.placeX and elem.placeY then
+            placeElem = elem
+        else
+            drawElem(elem)
+        end
+    end
+    if placeElem then
+        drawElem(placeElem)
     end
 
     -- Highlight box
