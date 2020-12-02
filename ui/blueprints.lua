@@ -60,7 +60,6 @@ function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
     end)
     self:deselectAllActors()
     self:applySelections()
-    self:syncBelt()
     self:focusEntryInBelt(entryId)
 end
 
@@ -81,7 +80,6 @@ function Client:_addBlueprint(actor, saveBlueprintData)
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
     self:deselectAllActors()
     self:applySelections()
-    self:syncBelt()
     self:focusEntryInBelt(newEntryId)
 end
 
