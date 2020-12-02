@@ -1,8 +1,3 @@
-
-GRID_HORIZONTAL_PADDING = 0.05 * DEFAULT_VIEW_WIDTH
-GRID_TOP_PADDING = 0.1 * DEFAULT_VIEW_WIDTH
-GRID_WIDTH = DEFAULT_VIEW_WIDTH - GRID_HORIZONTAL_PADDING * 2.0
-
 DRAW_DATA_SCALE = 10.0
 
 BACKGROUND_COLOR = {r = 0.0, g = 0.0, b = 0.0}
@@ -22,6 +17,7 @@ end
 
 require('tools.draw_algorithms')
 require('tools.draw_data')
+require('tools.grid_shader')
 
 require('tools.draw.subtools.draw_shapes_subtool')
 require('tools.draw.subtools.draw_pencil_no_grid_subtool')
@@ -242,6 +238,9 @@ function DrawTool.handlers:onSetActive()
     self._physicsBodyData = PhysicsBodyData:new()
     self:clearTempGraphics()
     self._scaleRotateData = {}
+    self.viewWidth = DEFAULT_VIEW_WIDTH
+    self.viewX, self.viewY = 0, 0
+    self._gridSize = 0.5 * UNIT
 end
 
 function DrawTool.handlers:preUpdate(dt)
@@ -278,6 +277,81 @@ function DrawTool:getCurrentSubtool()
     return nil
 end
 
+function DrawTool:getViewScale()
+    local scale = self._viewTransform:getMatrix()
+    return scale
+end
+
+function DrawTool:getPixelScale()
+    return love.graphics.getDPIScale() / self:getViewScale()
+end
+
+function DrawTool:twoFingerPan(touchData)
+    if touchData.numTouches == 2 then
+        local moveX, moveY = 0, 0
+        local centerX, centerY
+        local scale
+
+        local touchId1, touch1 = next(touchData.touches)
+        local touchId2, touch2 = next(touchData.touches, touchId1)
+
+        local touch1PrevSX, touch1PrevSY = touch1.screenX - touch1.screenDX, touch1.screenY - touch1.screenDY
+        local touch2PrevSX, touch2PrevSY = touch2.screenX - touch2.screenDX, touch2.screenY - touch2.screenDY
+
+        local centerSX, centerSY = 0.5 * (touch1.screenX + touch2.screenX), 0.5 * (touch1.screenY + touch2.screenY)
+        local centerPrevSX, centerPrevSY = 0.5 * (touch1PrevSX + touch2PrevSX), 0.5 * (touch1PrevSY + touch2PrevSY)
+
+        moveX, moveY = (centerSX - centerPrevSX) / self:getViewScale(), (centerSY - centerPrevSY) / self:getViewScale()
+
+        local px, py = touch1.screenX - touch2.screenX, touch1.screenY - touch2.screenY
+        local pl = math.sqrt(px * px + py * py)
+        local prevPX, prevPY = touch1PrevSX - touch2PrevSX, touch1PrevSY - touch2PrevSY
+        local initialPX, initialPY =
+            touch1.initialScreenX - touch2.initialScreenX,
+            touch1.initialScreenY - touch2.initialScreenY
+        local initialPL = math.sqrt(initialPX * initialPX + initialPY * initialPY)
+        if
+            (touch1.zooming or touch2.zooming or
+                not (self.viewWidth == DEFAULT_VIEW_WIDTH and math.abs(initialPL - pl) <= 0.175 * initialPL))
+         then
+            -- Don't zoom if close to 1:1
+            local prevPL = math.sqrt(prevPX * prevPX + prevPY * prevPY)
+            if not (touch1.zooming and touch2.zooming) then
+                touch1.zooming = true
+                touch2.zooming = true
+                prevPL = initialPL
+            end
+            scale = prevPL / pl
+        end
+
+        centerX, centerY = self._viewTransform:inverseTransformPoint(centerSX, centerSY)
+
+        if scale then
+            local prevViewWidth = self.viewWidth
+            self.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(scale * self.viewWidth, MAX_VIEW_WIDTH))
+            if math.abs(self.viewWidth - DEFAULT_VIEW_WIDTH) < 0.1 * DEFAULT_VIEW_WIDTH then
+                self.viewWidth = DEFAULT_VIEW_WIDTH
+            end
+            scale = self.viewWidth / prevViewWidth -- Recompute to account for clamping above
+            moveX = moveX - (1 - scale) * (centerX - self.viewX)
+            moveY = moveY - (1 - scale) * (centerY - self.viewY)
+        end
+        if not (touch1.noPan or touch2.noPan) then
+            local prevX, prevY = self.viewX, self.viewY
+            self.viewX, self.viewY = self.viewX - moveX, self.viewY - moveY
+            if self.viewWidth == DEFAULT_VIEW_WIDTH then -- Move snap only when zoom is 1:1
+                local prevL = math.sqrt(prevX * prevX + prevY * prevY)
+                local l = math.sqrt(self.viewX * self.viewX + self.viewY * self.viewY)
+                if l < prevL and l < 0.2 * UNIT then -- Moved close to center? Snap and disable pan for rest of gesture.
+                    self.viewX, self.viewY = 0, 0
+                    touch1.noPan = true
+                    touch2.noPan = true
+                end
+            end
+        end
+    end
+end
+
 function DrawTool.handlers:update(dt)
     if not self:isActive() then
         return
@@ -304,6 +378,8 @@ function DrawTool.handlers:update(dt)
 
 
     local touchData = self:getTouchData()
+    local subtool = self:getCurrentSubtool()
+
     if touchData.numTouches == 1 and touchData.maxNumTouches == 1 then
         -- Get the single touch
         local touchId, touch = next(touchData.touches)
@@ -313,7 +389,7 @@ function DrawTool.handlers:update(dt)
         local roundedCoord = {x = roundedX, y = roundedY}
         local clampedX, clampedY = self._drawData:clampGlobalCoordinates(touchX, touchY)
     
-        local touchData = {
+        local childTouchData = {
             touch = touch,
             touchX = touchX,
             touchY = touchY,
@@ -324,10 +400,23 @@ function DrawTool.handlers:update(dt)
             clampedY = clampedY,
         }
 
-        local subtool = self:getCurrentSubtool()
         if subtool then
-            self:callSubtoolHandler(subtool, "onTouch", c, touchData)
+            self:callSubtoolHandler(subtool, "onTouch", c, childTouchData)
+            if touch.released then
+                subtool._hasTouch = false
+            else
+                subtool._hasTouch = true
+            end
         end
+    else
+        if subtool and subtool._hasTouch then
+            subtool._hasTouch = false
+            self:callSubtoolHandler(subtool, "addSubtool")
+            self:clearTempGraphics()
+            obj:physicsBodyData().tempShape = nil
+        end
+
+        self:twoFingerPan(touchData)
     end
 end
 
@@ -343,27 +432,19 @@ function DrawTool:drawShapes()
     end
 end
 
-function DrawTool:drawPoints(points, radius)
-    if radius == nil then
-        radius = 0.07
-    end
-
-    for i = 1, #points, 2 do
-        love.graphics.circle("fill", points[i], points[i + 1], radius)
-    end
-end
-
 function DrawTool.handlers:drawOverlay()
     if not self:isActive() then
         return
     end
 
+    local windowWidth, windowHeight = love.graphics.getDimensions()
 
     love.graphics.push()
 
     self._viewTransform:reset()
-    self._viewTransform:translate(GRID_HORIZONTAL_PADDING, GRID_TOP_PADDING)
-    self._viewTransform:scale(GRID_WIDTH / self._drawData.scale)
+    self._viewTransform:scale(windowWidth / self.viewWidth)
+    self._viewTransform:translate(-self.viewX, -self.viewY)
+    self._viewTransform:translate(0.5 * self.viewWidth, 0.5 * self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO)
     love.graphics.applyTransform(self._viewTransform)
 
     love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b)
@@ -385,19 +466,8 @@ function DrawTool.handlers:drawOverlay()
     -- grid
     --if self._selectedSubtools.root ~= 'artwork' or (self._selectedSubtools.artwork_draw == 'line' or self._selectedSubtools.artwork_draw == 'pencil' or self._selectedSubtools.artwork_move == 'move' or self._selectedSubtools.artwork_draw == 'rectangle' or self._selectedSubtools.artwork_draw == 'circle' or self._selectedSubtools.artwork_draw == 'triangle') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
-        --love.graphics.setPointSize(10.0)
+        drawGrid(self._gridSize, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, 0.5 * self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO)
 
-        local points = {}
-
-        for x = 1, self._drawData.gridSize do
-            for y = 1, self._drawData.gridSize do
-                local globalX, globalY = self._drawData:gridToGlobalCoordinates(x, y)
-                table.insert(points, globalX)
-                table.insert(points, globalY)
-            end
-        end
-
-        self:drawPoints(points)
     --end
 
     if self._selectedSubtools.root == 'artwork' then
@@ -419,7 +489,7 @@ function DrawTool.handlers:drawOverlay()
         end
 
         love.graphics.setColor(1.0, 0.6, 0.6, 1.0)
-        love.graphics.setPointSize(30.0)
+        love.graphics.setPointSize(30)
         love.graphics.points(movePoints)
     end
 
@@ -428,10 +498,11 @@ function DrawTool.handlers:drawOverlay()
 
         if self._selectedSubtools.collision == 'collision_move' and self._selectedSubtools.collision_move == 'scale-rotate' and self._scaleRotateData.index then
             love.graphics.setColor(1.0, 0.0, 0.0, 1.0)
-            love.graphics.setPointSize(30.0)
+            love.graphics.setPointSize(30)
+            love.graphics.setLineWidth(self:getPixelScale())
             --love.graphics.points()
 
-            local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
+            local handleDrawRadius = HANDLE_DRAW_RADIUS * self:getPixelScale()
             local scaleRotateShape = self._physicsBodyData:getShapeAtIndex(self._scaleRotateData.index)
             for _, handle in ipairs(self._physicsBodyData:getHandlesForShape(scaleRotateShape)) do
                 love.graphics.circle("fill", handle.x, handle.y, handleDrawRadius)
@@ -444,7 +515,7 @@ function DrawTool.handlers:drawOverlay()
 
     if TEST_POINT ~= nil then
         love.graphics.setColor(0.0, 1.0, 0.0, 1.0)
-        love.graphics.setPointSize(30.0)
+        love.graphics.setPointSize(30)
 
         love.graphics.points(TEST_POINT.x, TEST_POINT.y)
     end

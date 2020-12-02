@@ -617,8 +617,6 @@ function Client:draw()
         end)
     else
         self.viewTransform:reset()
-        self.viewTransform:scale(windowWidth / DEFAULT_VIEW_WIDTH)
-        love.graphics.applyTransform(self.viewTransform)
     end
 
     do -- Overlays
