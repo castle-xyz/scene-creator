@@ -26,6 +26,8 @@ function Common:startBelt()
     self.beltTop = nil -- Initialized on first update
 
     self.beltTargetIndex = nil -- Target element to scroll to if not `nil`
+    
+    self.beltEntryId = nil -- Entry id of currently highlighted belt element
 end
 
 -- Show / hide
@@ -255,9 +257,10 @@ function Common:updateBelt(dt)
         end
     end
 
-    -- Scroll to target
+    -- Scroll to target, also manage current entry id
     local targetElem = self.beltElems[self.beltTargetIndex]
     if targetElem ~= nil then
+        self.beltEntryId = targetElem.entryId
         if math.abs(targetElem.x - self.beltCursorX) <= 3 then
             -- Reached target
             self.targetElem = nil
@@ -270,6 +273,19 @@ function Common:updateBelt(dt)
         return -- Skip velocity-based logic when in target mode
     else
         self.beltTargetIndex = nil -- Invalid target index
+
+        -- Set entry id based on cursor position
+        local cursorIndex = math.floor(self.beltCursorX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
+        if cursorIndex < 1 then
+            cursorIndex = 1
+        end
+        if cursorIndex > #self.beltElems then
+            cursorIndex = self.beltElems
+        end
+        local cursorElem = self.beltElems[cursorIndex]
+        if cursorElem then
+            self.beltEntryId = cursorElem.entryId
+        end
     end
 
     -- Strong rubber band on ends
