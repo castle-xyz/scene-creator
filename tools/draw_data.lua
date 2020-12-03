@@ -445,16 +445,6 @@ function DrawData:cleanUpPaths()
     end
 end
 
-function DrawData:resetFill()
-    self:cleanUpPaths()
-
-    self:updatePathsCanvas()
-
-    local pathsImageData = self.pathsCanvas:newImageData()
-    self.fillImageData:updateFloodFillForNewPaths(pathsImageData)
-    self.fillImage:replacePixels(self.fillImageData)
-end
-
 function DrawData:clone()
     return DrawData:new(self)
 end
@@ -476,6 +466,7 @@ function DrawData:new(obj)
         pathsCanvas = nil,
         fillImageData = nil,
         fillImage = nil,
+        fillImageBounds = obj.fillImageBounds or nil,
         fillCanvasSize = obj.fillCanvasSize or FILL_CANVAS_SIZE,
         fillPng = obj.fillPng or nil,
         version = obj.version or nil,
@@ -529,6 +520,17 @@ function DrawData:migrateV1ToV2()
     end
 
     self.version = 2
+
+    self.fillImageBounds = {
+        {
+            x = -self.scale / 2.0,
+            y = -self.scale / 2.0,
+        },
+        {
+            x = self.scale / 2.0,
+            y = self.scale / 2.0,
+        }
+    }
 
     for i = 1, #self.pathDataList do
         local pathData = self.pathDataList[i]
@@ -693,11 +695,63 @@ function DrawData:serialize()
     return data
 end
 
+function DrawData:getFillImageData()
+    if self.fillImageData == nil then
+        self.fillImageData = love.image.newImageData(self.fillCanvasSize, self.fillCanvasSize)
+    end
+
+    return self.fillImageData
+end
+
+function DrawData:getFillImage()
+    if self.fillImage ~= nil then
+        return self.fillImage
+    end
+
+    if self.fillImageData == nil then
+        return nil
+    end
+
+    self.fillImage = love.graphics.newImage(self.fillImageData)
+    return self.fillImage
+end
+
+function DrawData:updateFillImageWithFillImageData()
+    if self.fillImageData == nil then
+        return
+    end
+
+    if self.fillImage ~= nil then
+        self.fillImage:replacePixels(self.fillImageData)
+        return
+    end
+
+    self.fillImage = love.graphics.newImage(self.fillImageData)
+end
+
+function DrawData:checkForEmptyFill()
+    if self.fillImageData == nil then
+        return
+    end
+
+    if self.fillImageData:isEmpty() then
+        self.fillImageData:release()
+        if self.fillImage ~= nil then
+            self.fillImage:release()
+        end
+
+        self.fillImageData = nil
+        self.fillImage = nil
+    end
+end
+
 function DrawData:floodFill(x, y)
     self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
-    local pixelCount = self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.color[1], self.color[2], self.color[3], 1.0)
-    self.fillImage:replacePixels(self.fillImageData)
+
+    local pixelCount = self:getFillImageData():floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.color[1], self.color[2], self.color[3], 1.0)
+    self:checkForEmptyFill()
+    self:updateFillImageWithFillImageData()
 
     return pixelCount > 0
 end
@@ -705,10 +759,22 @@ end
 function DrawData:floodClear(x, y)
     self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
-    local pixelCount = self.fillImageData:floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, 0.0, 0.0, 0.0, 0.0)
-    self.fillImage:replacePixels(self.fillImageData)
+
+    local pixelCount = self:getFillImageData():floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, 0.0, 0.0, 0.0, 0.0)
+    self:checkForEmptyFill()
+    self:updateFillImageWithFillImageData()
 
     return pixelCount > 0
+end
+
+function DrawData:resetFill()
+    self:cleanUpPaths()
+    self:updatePathsCanvas()
+
+    local pathsImageData = self.pathsCanvas:newImageData()
+    self:getFillImageData():updateFloodFillForNewPaths(pathsImageData)
+    self:checkForEmptyFill()
+    self:updateFillImageWithFillImageData()
 end
 
 function DrawData:updatePathsCanvas()
@@ -782,15 +848,10 @@ function DrawData:render(width, height)
 end
 
 function DrawData:renderFill()
-    if self.fillImageData == nil then
-        self.fillImageData = love.image.newImageData(self.fillCanvasSize, self.fillCanvasSize)
+    local fillImage = self:getFillImage()
+    if fillImage ~= nil then
+        love.graphics.draw(fillImage, 0.0, 0.0, 0.0, self.scale / self.fillCanvasSize, self.scale / self.fillCanvasSize)
     end
-
-    if self.fillImage == nil then
-        self.fillImage = love.graphics.newImage(self.fillImageData)
-    end
-
-    love.graphics.draw(self.fillImage, 0.0, 0.0, 0.0, self.scale / self.fillCanvasSize, self.scale / self.fillCanvasSize)
 end
 
 function DrawData:graphics()
