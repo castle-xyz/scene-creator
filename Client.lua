@@ -45,6 +45,19 @@ function Client:_new()
     return result
 end
 
+local function buildEditInstance(snapshot, variables, isNewScene)
+   editInstance = Client:_new()
+   editInstance:load(true, snapshot, variables, isNewScene)
+
+   local tempSnapshot = editInstance:createSnapshot()
+   editInstance:setLastSuccessfulSaveSnapshot(tempSnapshot)
+end
+
+local function buildPlayInstance(snapshot, variables)
+   playInstance = Client:_new()
+   playInstance:load(false, snapshot, variables, false)
+end
+
 function love.load()
     sentGameLoadedEvent = false
 
@@ -82,15 +95,10 @@ function love.load()
 
     if initialParams.isEditing then
         isEditing = true
-        editInstance = Client:_new()
-        editInstance:load(true, snapshot, variables, isNewScene)
-
-        local tempSnapshot = editInstance:createSnapshot()
-        editInstance:setLastSuccessfulSaveSnapshot(tempSnapshot)
+        buildEditInstance(snapshot, variables, isNewScene)
     else
         isEditing = false
-        playInstance = Client:_new()
-        playInstance:load(false, snapshot, variables, false)
+        buildPlayInstance(snapshot, variables)
     end
 end
 
@@ -112,6 +120,10 @@ function beginEditing()
         playInstance:send("clearScene")
     end
     playInstance = nil
+
+    if editInstance == nil then
+       buildEditInstance(currentSnapshot, currentVariables, false)
+    end
 end
 
 function endEditing()
@@ -122,8 +134,7 @@ function endEditing()
     currentSnapshot = editInstance:createSnapshot()
     editInstance:saveScene(currentSnapshot)
 
-    playInstance = Client:_new()
-    playInstance:load(false, currentSnapshot, currentVariables, false)
+    buildPlayInstance(currentSnapshot, currentVariables)
     isEditing = false
 end
 
