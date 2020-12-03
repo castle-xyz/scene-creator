@@ -421,6 +421,8 @@ end
 
 -- Draw
 
+local titleFont = love.graphics.newFont(32)
+
 function Common:drawBelt()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
@@ -478,6 +480,17 @@ function Common:drawBelt()
     love.graphics.rectangle("line",
         0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
         boxSize, boxSize)
+
+    -- Title for current element
+    love.graphics.setColor(1, 1, 1)
+    local currEntry = self.library[self.beltEntryId]
+    if currEntry and currEntry.title then
+        local w = titleFont:getWidth(currEntry.title)
+        local h = titleFont:getHeight()
+        love.graphics.print(currEntry.title, titleFont,
+            0.5 * windowWidth - 0.5 * w,
+            self.beltTop - 1.2 * h)
+    end
 
     -- Touch overlay
     love.graphics.setColor(1, 0, 1, 0.5)
