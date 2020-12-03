@@ -2,7 +2,7 @@
 
 local DrawingData = require 'library_drawing_data'
 
-local CORE_BELT_ORDER_OFFSET = -100
+local CORE_BELT_ORDER_OFFSET = 1000000
 local CORE_LIBRARY = {
     {
         entryType = "actorBlueprint",
