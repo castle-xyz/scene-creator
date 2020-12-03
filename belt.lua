@@ -134,7 +134,7 @@ function Common:syncBelt()
         local entryA = self.library[a.entryId]
         local entryB = self.library[b.entryId]
         if entryA.beltOrder ~= entryB.beltOrder then
-            return (entryA.beltOrder or 0) > (entryB.beltOrder or 0)
+            return (entryA.beltOrder or 0) < (entryB.beltOrder or 0)
         end
         return entryA.title < entryB.title
     end)
