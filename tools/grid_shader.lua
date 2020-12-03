@@ -9,12 +9,20 @@ elseif love.graphics then
         uniform float gridSize;
         uniform float dotRadius;
         uniform vec2 offset;
+        uniform vec2 viewOffset;
+        uniform bool highlightAxes;
+
         vec4 effect(vec4 color, Image tex, vec2 texCoords, vec2 screenCoords)
         {
             vec2 f = mod(screenCoords + offset + dotRadius, gridSize);
             float l = length(f - dotRadius);
             float s = 1.0 - smoothstep(dotRadius - 1.0, dotRadius + 1.0, l);
-            return vec4(color.rgb, s * color.a);
+            vec2 distToAxis = screenCoords - viewOffset;
+            if (highlightAxes && (abs(distToAxis.x) < dotRadius || abs(distToAxis.y) < dotRadius)) {
+                return vec4(1.0, 1.0, 1.0, s * color.a);
+            } else {
+                return vec4(color.rgb, s * color.a);
+            }
         }
     ]],
         [[
@@ -26,7 +34,7 @@ elseif love.graphics then
     )
 end
 
-function drawGrid(gridSize, viewScale, viewX, viewY, offsetX, offsetY)
+function drawGrid(gridSize, viewScale, viewX, viewY, offsetX, offsetY, dotRadius, highlightAxes)
     if gridSize > 0 then
         love.graphics.push("all")
 
@@ -34,7 +42,7 @@ function drawGrid(gridSize, viewScale, viewX, viewY, offsetX, offsetY)
 
         local dpiScale = love.graphics.getDPIScale()
         gridShader:send("gridSize", dpiScale * gridSize * viewScale)
-        gridShader:send("dotRadius", dpiScale * 2)
+        gridShader:send("dotRadius", dpiScale * dotRadius)
         gridShader:send(
             "offset",
             {
@@ -42,6 +50,14 @@ function drawGrid(gridSize, viewScale, viewX, viewY, offsetX, offsetY)
                 dpiScale * (viewY % gridSize - offsetY) * viewScale
             }
         )
+        gridShader:send(
+            "viewOffset",
+            {
+                dpiScale * (offsetX - viewX) * viewScale,
+                dpiScale * (offsetY - viewY) * viewScale,
+            }
+        )
+        gridShader:send("highlightAxes", highlightAxes)
         love.graphics.setShader(gridShader)
 
         love.graphics.origin()

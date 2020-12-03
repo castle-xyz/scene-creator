@@ -1,4 +1,5 @@
 DRAW_DATA_SCALE = 10.0
+local DRAW_MAX_VIEW_WIDTH = DEFAULT_VIEW_WIDTH * 2
 
 BACKGROUND_COLOR = {r = 0.0, g = 0.0, b = 0.0}
 
@@ -328,7 +329,7 @@ function DrawTool:twoFingerPan(touchData)
 
         if scale then
             local prevViewWidth = self.viewWidth
-            self.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(scale * self.viewWidth, MAX_VIEW_WIDTH))
+            self.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(scale * self.viewWidth, DRAW_MAX_VIEW_WIDTH))
             if math.abs(self.viewWidth - DEFAULT_VIEW_WIDTH) < 0.1 * DEFAULT_VIEW_WIDTH then
                 self.viewWidth = DEFAULT_VIEW_WIDTH
             end
@@ -413,7 +414,7 @@ function DrawTool.handlers:update(dt)
             subtool._hasTouch = false
             self:callSubtoolHandler(subtool, "addSubtool")
             self:clearTempGraphics()
-            obj:physicsBodyData().tempShape = nil
+            self:physicsBodyData().tempShape = nil
         end
 
         self:twoFingerPan(touchData)
@@ -438,13 +439,15 @@ function DrawTool.handlers:drawOverlay()
     end
 
     local windowWidth, windowHeight = love.graphics.getDimensions()
+    -- DrawingCardHeader.js height is 180 and DrawingCardBottomActions.js height is 80
+    local topOffset = 0.5 * (self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO - ((180 + 80) / (windowWidth / self.viewWidth)))
 
     love.graphics.push()
 
     self._viewTransform:reset()
     self._viewTransform:scale(windowWidth / self.viewWidth)
     self._viewTransform:translate(-self.viewX, -self.viewY)
-    self._viewTransform:translate(0.5 * self.viewWidth, 0.5 * self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO)
+    self._viewTransform:translate(0.5 * self.viewWidth, topOffset)
     love.graphics.applyTransform(self._viewTransform)
 
     love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b)
@@ -466,7 +469,7 @@ function DrawTool.handlers:drawOverlay()
     -- grid
     --if self._selectedSubtools.root ~= 'artwork' or (self._selectedSubtools.artwork_draw == 'line' or self._selectedSubtools.artwork_draw == 'pencil' or self._selectedSubtools.artwork_move == 'move' or self._selectedSubtools.artwork_draw == 'rectangle' or self._selectedSubtools.artwork_draw == 'circle' or self._selectedSubtools.artwork_draw == 'triangle') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
-        drawGrid(self._gridSize, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, 0.5 * self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO)
+        drawGrid(self._gridSize, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 4, true)
 
     --end
 

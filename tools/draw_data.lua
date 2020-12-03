@@ -1,5 +1,6 @@
 DrawData = {}
 local FILL_CANVAS_SIZE = 256
+local V2_FILL_CANVAS_SIZE = 1024
 
 function DrawData:gridCellSize()
     return self.scale / (self.gridSize - 1)
@@ -163,6 +164,10 @@ function DrawData:updatePathDataRendering(pathData)
     pathData.tovePath = path
 
     pathData.subpathDataList = {}
+
+    if pathData.isTransparent then
+        return
+    end
 
     local p1 = pathData.points[1]
     local p2 = pathData.points[2]
@@ -473,6 +478,7 @@ function DrawData:new(obj)
         fillImage = nil,
         fillCanvasSize = obj.fillCanvasSize or FILL_CANVAS_SIZE,
         fillPng = obj.fillPng or nil,
+        version = obj.version or nil,
     }
 
     local newPathDataList = {}
@@ -505,6 +511,7 @@ function DrawData:new(obj)
     setmetatable(newObj, self)
     self.__index = self
 
+    newObj:migrateV1ToV2()
     newObj:graphics()
 
     if obj.fillPng then
@@ -514,6 +521,50 @@ function DrawData:new(obj)
     end
 
     return newObj
+end
+
+function DrawData:migrateV1ToV2()
+    if self.version ~= nil and self.version >= 2 then
+        return
+    end
+
+    self.version = 2
+
+    for i = 1, #self.pathDataList do
+        local pathData = self.pathDataList[i]
+
+        for j = 1, #pathData.points do
+            pathData.points[j].x = pathData.points[j].x - self.scale / 2.0
+            pathData.points[j].y = pathData.points[j].y - self.scale / 2.0
+        end
+    end
+
+    local boundsPathData1 = {}
+    boundsPathData1.points = {{
+        x = -self.scale / 2.0,
+        y = -self.scale / 2.0,
+    }, {
+        x = -self.scale / 2.0,
+        y = -self.scale / 2.0,
+    }}
+    boundsPathData1.style = -1
+    boundsPathData1.isFreehand = true
+    boundsPathData1.isTransparent = true
+
+    local boundsPathData2 = {}
+    boundsPathData2.points = {{
+        x = self.scale / 2.0,
+        y = self.scale / 2.0,
+    }, {
+        x = self.scale / 2.0,
+        y = self.scale / 2.0,
+    }}
+    boundsPathData2.style = -1
+    boundsPathData2.isFreehand = true
+    boundsPathData2.isTransparent = true
+
+    table.insert(self.pathDataList, boundsPathData1)
+    table.insert(self.pathDataList, boundsPathData2)
 end
 
 function DrawData:resetGraphics()
@@ -604,6 +655,7 @@ function DrawData:serialize()
         gridSize = self.gridSize,
         scale = self.scale,
         fillCanvasSize = self.fillCanvasSize,
+        version = self.version,
     }
 
     local lastSerializedPathData = nil
@@ -617,6 +669,7 @@ function DrawData:serialize()
             id = pathData.id,
             isFreehand = pathData.isFreehand,
             color = roundFloatArray(pathData.color),
+            isTransparent = pathData.isTransparent,
         }
 
         for j = 1, #serializedPathData.points do
