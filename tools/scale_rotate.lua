@@ -196,7 +196,7 @@ function ScaleRotateTool.handlers:preUpdate(dt)
     local touchData = self:getTouchData()
     if touchData.numTouches == 1 then
         local touchId, touch = next(touchData.touches)
-        if touch.pressed then
+        if not touch.beltUsed and touch.pressed then
             for _, handle in ipairs(self:getHandles()) do
                 local distX, distY = handle.x - touch.x, handle.y - touch.y
                 if distX * distX + distY * distY <= handle.touchRadius * handle.touchRadius then
