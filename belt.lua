@@ -67,12 +67,16 @@ jsEvents.listen(
 
 -- Focus
 
-function Common:focusEntryInBelt(entryId)
+function Common:focusEntryInBelt(entryId, opts)
+    opts = opts or {}
     self:syncBelt() -- Often called right after a change, so let's sync
     for i, elem in ipairs(self.beltElems) do
         if elem.entryId == entryId then
             self.beltTargetIndex = i
-            self.beltVisible = true
+            self.beltEntryId = entryId
+            if not opts.noShow then
+                self.beltVisible = true
+            end
             break
         end
     end
@@ -95,6 +99,10 @@ end
 
 function Common:syncBelt()
     -- Synchronize belt data with library entries
+
+    if not self.beltDirty then
+        return
+    end
 
     -- Update images that changed
     for _, elem in ipairs(self.beltElems) do
@@ -145,15 +153,41 @@ function Common:updateBelt(dt)
     local origDt = dt
     dt = 1.6 * dt 
 
-    if self.beltDirty then
-        self:syncBelt()
+    -- Stay in sync
+    self:syncBelt()
+
+    if next(self.selectedActorIds) then
+        -- For now we'll dismiss belt when something is selected. Should make it so
+        -- the inspector and the belt never try to be visible at the same time.
+        self.beltVisible = false
+
+        -- Focus the blueprint of some selected actor so that we'll be on it
+        -- if the user opens the belt again
+        local needToFocus = true
+        for actorId in pairs(self.selectedActorIds) do
+            local actor = self.actors[actorId]
+            if actor and actor.parentEntryId == self.beltEntryId then
+                -- `next(...)` below may not consistently give us the same
+                -- item, so prevent trashing
+                needToFocus = false
+            end
+        end
+        if needToFocus then
+            local actorId = next(self.selectedActorIds)
+            local actor = self.actors[actorId]
+            local entry = actor and actor.parentEntryId and self.library[actor.parentEntryId]
+            if entry and not entry.isCore then
+                self:focusEntryInBelt(entry.entryId, { noShow = true })
+            end
+        end
     end
 
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
+    -- Save previous velocity, we'll use this for smoothing at the end
     local prevBeltCursorVX = self.beltCursorVX
 
-    -- Animate belt in / out
+    -- Animate belt show / hide
     if not self.beltTop then
         self.beltTop = windowHeight -- Initialization
     end
@@ -172,6 +206,19 @@ function Common:updateBelt(dt)
 
     -- Skip all this logic when hidden and animations are done
     if self.beltTop >= windowHeight and self.beltCursorVX == 0 then
+        -- Scroll to target immediately so we're there and don't do an
+        -- animation when opening belt again
+        -- TODO(nikki): Shares logic with "Scroll to target" below, refactor out?
+        local targetElem = self.beltElems[self.beltTargetIndex]
+        if targetElem ~= nil then
+            self.beltEntryId = targetElem.entryId
+            self.targetElem = nil
+            self.beltCursorX = targetElem.x
+            self.beltCursorVX = 0
+        else
+            self.beltTargetIndex = nil
+        end
+
         return
     end
 
@@ -273,6 +320,7 @@ function Common:updateBelt(dt)
     end
 
     -- Scroll to target, also manage current entry id
+    -- TODO(nikki): Shares logic with "Scroll to target immedately" above, refactor out?
     local targetElem = self.beltElems[self.beltTargetIndex]
     if targetElem ~= nil then
         self.beltEntryId = targetElem.entryId
