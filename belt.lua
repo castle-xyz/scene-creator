@@ -18,7 +18,8 @@ BELT_DARKEN = 0.4
 function Common:startBelt()
     self.beltDirty = true
 
-    self.beltElems = {}
+    -- Each elem holds `entryId` + non-persistent info like renderable image, x position etc. 
+    self.beltElems = {} 
 
     self.beltCursorX = 0
     self.beltCursorVX = 0
@@ -79,6 +80,14 @@ end
 
 -- Update
 
+function Common:updateBeltElemImage(elem, entry)
+    -- Create renderable texture from saved preview data in blueprint
+    local decoded = love.data.decode("data", "base64", entry.base64Png)
+    local imgData = love.image.newImageData(decoded)
+    elem.image = love.graphics.newImage(imgData)
+    elem.base64Png = entry.base64Png
+end
+
 function Common:markBeltDirty()
     -- Mark belt as needing synchronization
     self.beltDirty = true
@@ -87,43 +96,39 @@ end
 function Common:syncBelt()
     -- Synchronize belt data with library entries
 
-    -- Collect set of ids the current belt data covers
-    local currElemIds = {}
-    for _, beltElem in ipairs(self.beltElems) do
-        currElemIds[beltElem.entryId] = true
+    -- Update images that changed
+    for _, elem in ipairs(self.beltElems) do
+        local entry = self.library[elem.entryId]
+        -- Lua interns strings so hopefully the comparison is quick when equal
+        if entry and entry.base64Png ~= elem.base64Png then 
+            self:updateBeltElemImage(elem, entry)
+        end
     end
 
-    -- Prepare list of new elements
-    local newElems = {}
+    -- Add new elements to belt
+    local currElemIds = {}
+    for _, elem in ipairs(self.beltElems) do
+        currElemIds[elem.entryId] = true
+    end
     for entryId, entry in pairs(self.library) do
         if not currElemIds[entryId] then
             local newElem = {}
             newElem.entryId = entry.entryId
-            newElem.title = entry.title
-            newElem.order = entry.beltOrder
-            if newElem.order == nil then
-                newElem.order = 0
-            end
             if entry.base64Png then
-                local decoded = love.data.decode("data", "base64", entry.base64Png)
-                local imgData = love.image.newImageData(decoded)
-                newElem.image = love.graphics.newImage(imgData)
+                self:updateBeltElemImage(newElem, entry)
             end
-            table.insert(newElems, newElem)
+            table.insert(self.beltElems, newElem)
         end
-    end
-
-    -- Save new elements
-    for _, newElem in ipairs(newElems) do
-        table.insert(self.beltElems, newElem)
     end
 
     -- Sort belt
     table.sort(self.beltElems, function(a, b)
-        if a.order ~= b.order then
-            return a.order > b.order
+        local entryA = self.library[a.entryId]
+        local entryB = self.library[b.entryId]
+        if entryA.beltOrder ~= entryB.beltOrder then
+            return (entryA.beltOrder or 0) > (entryB.beltOrder or 0)
         end
-        return a.title < b.title
+        return entryA.title < entryB.title
     end)
 
     -- Calculate positions
