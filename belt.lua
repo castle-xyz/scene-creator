@@ -135,6 +135,11 @@ function Common:syncBelt()
 end
 
 function Common:updateBelt(dt)
+    -- Make belt snap quicker. Resorted to making time faster after tuning the
+    -- other constants for spring damping + deceleration...
+    local origDt = dt
+    dt = 1.6 * dt 
+
     if self.beltDirty then
         self:syncBelt()
     end
@@ -148,13 +153,13 @@ function Common:updateBelt(dt)
         self.beltTop = windowHeight -- Initialization
     end
     if self.beltVisible == false and self.beltTop < windowHeight then
-        self.beltTop = self.beltTop + SHOW_HIDE_VY * dt
+        self.beltTop = self.beltTop + SHOW_HIDE_VY * origDt
         if self.beltTop > windowHeight then
             self.beltTop = windowHeight
         end
     end
     if self.beltVisible == true and self.beltTop > windowHeight - BELT_HEIGHT then
-        self.beltTop = self.beltTop - SHOW_HIDE_VY * dt
+        self.beltTop = self.beltTop - SHOW_HIDE_VY * origDt
         if self.beltTop < windowHeight - BELT_HEIGHT then
             self.beltTop = windowHeight - BELT_HEIGHT
         end
