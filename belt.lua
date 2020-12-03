@@ -229,6 +229,9 @@ function Common:updateBelt(dt)
         local touchId, touch = next(self.touches)
 
         if touch.screenY > self.beltTop then -- Touch on belt
+            touch.beltUsed = true -- Grab / scale-rotate steal even if `touch.used`
+            touch.used = true
+
             local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
             local touchBeltIndex = math.floor(touchBeltX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
 
@@ -240,7 +243,7 @@ function Common:updateBelt(dt)
                 self.beltTargetIndex = touchBeltIndex
             end
 
-            -- Track which element was first pressed on
+            -- Track which element the touch begins on
             if touch.pressed then
                 local placeElem = self.beltElems[touchBeltIndex]
                 if placeElem then
@@ -250,24 +253,20 @@ function Common:updateBelt(dt)
                 end
             end
 
-            -- See if we should enter placing mode
+            -- Start placing if the touch began on an element and it's a long-ish vertical drag
             if touch.beltIndex and not touch.beltPlacing then
                 local totalDX = touch.screenX - touch.initialScreenX
                 local totalDY = touch.screenY - touch.initialScreenY
-                local totalDLen = totalDX * totalDX + totalDY * totalDY
-                local long = totalDLen > (0.25 * ELEM_SIZE) * (0.25 * ELEM_SIZE)
+                local totalDLen2 = totalDX * totalDX + totalDY * totalDY
+                local long = totalDLen2 > (0.25 * ELEM_SIZE) * (0.25 * ELEM_SIZE)
                 local vertical = totalDY < 0 and math.abs(totalDY) > 1.2 * math.abs(totalDX)
                 if long and vertical then
                     touch.beltPlacing = true
-                    touch.beltUsed = true
-                    touch.used = true
                 end
             end
 
             -- This is a drag scroll if not placing
             if not touch.beltPlacing then
-                touch.beltUsed = true
-                touch.used = true
                 self.beltCursorX = self.beltCursorX - touch.screenDX
                 skipApplyVel = true
                 dragScrolling = true
