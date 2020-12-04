@@ -417,9 +417,7 @@ function BodyBehavior.handlers:prePerform(dt)
             end
             if touch.released then
                for actorId in pairs(hits) do
-                  if self:fireTrigger("touch up", actorId) then
-                     touch.used = true
-                  end
+                  self:fireTrigger("touch up", actorId)
                end
             else
                 for actorId in pairs(hits) do
@@ -439,9 +437,7 @@ function BodyBehavior.handlers:prePerform(dt)
                 -- if we dragged off of an actor, touch up
                 for actorId in pairs(touch.previousActorsTouched) do
                    if not hits[actorId] then
-                      if self:fireTrigger("touch up", actorId) then
-                         touch.used = true
-                      end
+                      self:fireTrigger("touch up", actorId)
                    end
                 end
             end
