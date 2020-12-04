@@ -1,6 +1,5 @@
 DrawData = {}
 local FILL_CANVAS_SIZE = 256
-local V2_FILL_CANVAS_SIZE = 1024
 
 function DrawData:gridCellSize()
     return self.scale / (self.gridSize - 1)
@@ -470,6 +469,7 @@ function DrawData:new(obj)
         fillCanvasSize = obj.fillCanvasSize or FILL_CANVAS_SIZE,
         fillPng = obj.fillPng or nil,
         version = obj.version or nil,
+        fillPixelsPerUnit = obj.fillPixelsPerUnit or 25.6,
     }
 
     local newPathDataList = {}
@@ -522,14 +522,10 @@ function DrawData:migrateV1ToV2()
     self.version = 2
 
     self.fillImageBounds = {
-        {
-            x = -self.scale / 2.0,
-            y = -self.scale / 2.0,
-        },
-        {
-            x = self.scale / 2.0,
-            y = self.scale / 2.0,
-        }
+        minX = -self.scale / 2.0,
+        minY = -self.scale / 2.0,
+        maxX = self.scale / 2.0,
+        maxY = self.scale / 2.0,
     }
 
     for i = 1, #self.pathDataList do
@@ -567,6 +563,47 @@ function DrawData:migrateV1ToV2()
 
     table.insert(self.pathDataList, boundsPathData1)
     table.insert(self.pathDataList, boundsPathData2)
+end
+
+function DrawData:getPathDataBounds()
+    local minX = -1
+    local minY = -1
+    local maxX = -1
+    local maxY = -1
+
+    for i = 1, #self.pathDataList do
+        local pathData = self.pathDataList[i]
+
+        for j = 1, #pathData.points do
+            local x = pathData.points[j].x
+            local y = pathData.points[j].y
+
+            if minX == -1 or x < minX then
+                minX = x
+            end
+
+            if minY == -1 or y < minY then
+                minY = y
+            end
+
+            if maxX == -1 or x > maxX then
+                maxX = x
+            end
+
+            if maxY == -1 or y > maxY then
+                maxY = y
+            end
+        end
+    end
+
+    return {
+        minX = math.floor(minX),
+        minY = math.floor(minY),
+        maxX = math.ceil(maxX) + 1, -- need +1 so we don't lose width to the minX floor
+        maxY = math.ceil(maxY) + 1,
+        offsetX = minX - math.floor(minX),
+        offsetY = minY - math.floor(minY),
+    }
 end
 
 function DrawData:resetGraphics()
@@ -656,9 +693,10 @@ function DrawData:serialize()
         lineColor = self.lineColor,
         gridSize = self.gridSize,
         scale = self.scale,
+        fillImageBounds = self.fillImageBounds,
         fillCanvasSize = self.fillCanvasSize,
         version = self.version,
-        fillImageBounds = self.fillImageBounds,
+        fillPixelsPerUnit = self.fillPixelsPerUnit,
     }
 
     local lastSerializedPathData = nil
@@ -696,9 +734,38 @@ function DrawData:serialize()
     return data
 end
 
-function DrawData:getFillImageData()
+function DrawData:getFillImageDataSizedToPathBounds()
+    local pathBounds = self:getPathDataBounds()
+    local width = (pathBounds.maxX - pathBounds.minX) * 26
+    local height = (pathBounds.maxY - pathBounds.minY) * 26
+
     if self.fillImageData == nil then
-        self.fillImageData = love.image.newImageData(self.fillCanvasSize, self.fillCanvasSize)
+        self.fillImageData = love.image.newImageData(width, height)
+    elseif self.fillImageData:getWidth() ~= width or self.fillImageData:getHeight() ~= height then
+        local newFillImageData = love.image.newImageData(width, height)
+        print('width ' .. width .. '   height ' .. height)
+        print('self.fillImageBounds.maxX - self.fillImageBounds.minX ' .. (self.fillImageBounds.maxX - self.fillImageBounds.minX))
+        print('self.fillImageBounds.minX - pathBounds.minX ' .. (self.fillImageBounds.minX - pathBounds.minX))
+        print('self.fillImageBounds.minY - pathBounds.minY ' .. (self.fillImageBounds.minY - pathBounds.minY))
+
+        -- sourceX, sourceY, sourceWidth, sourceHeight, destX, destY
+        newFillImageData:copyImageData(
+            self.fillImageData,
+            0,
+            0,
+            (self.fillImageBounds.maxX - self.fillImageBounds.minX) * 26,
+            (self.fillImageBounds.maxY - self.fillImageBounds.minY) * 26,
+            (self.fillImageBounds.minX - pathBounds.minX) * 26,
+            (self.fillImageBounds.minY - pathBounds.minY) * 26)
+        self.fillImageData:release()
+        self.fillImageData = newFillImageData
+        self.fillImageBounds = util.deepCopyTable(pathBounds)
+
+        if self.fillImageData:isEmpty() then
+            print('is empty')
+        else
+            print('not is empty')
+        end
     end
 
     return self.fillImageData
@@ -723,8 +790,12 @@ function DrawData:updateFillImageWithFillImageData()
     end
 
     if self.fillImage ~= nil then
-        self.fillImage:replacePixels(self.fillImageData)
-        return
+        if self.fillImage:getWidth() == self.fillImageData:getWidth() and self.fillImage:getHeight() == self.fillImageData:getHeight() then
+            self.fillImage:replacePixels(self.fillImageData)
+            return
+        end
+
+        self.fillImage:release()
     end
 
     self.fillImage = love.graphics.newImage(self.fillImageData)
@@ -750,8 +821,8 @@ function DrawData:floodFill(x, y)
     self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
 
-    local pixelCount = self:getFillImageData():floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.color[1], self.color[2], self.color[3], 1.0)
-    self:checkForEmptyFill()
+    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.color[1], self.color[2], self.color[3], 1.0)
+    --self:checkForEmptyFill()
     self:updateFillImageWithFillImageData()
 
     return pixelCount > 0
@@ -761,8 +832,8 @@ function DrawData:floodClear(x, y)
     self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
 
-    local pixelCount = self:getFillImageData():floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, 0.0, 0.0, 0.0, 0.0)
-    self:checkForEmptyFill()
+    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, 0.0, 0.0, 0.0, 0.0)
+    --self:checkForEmptyFill()
     self:updateFillImageWithFillImageData()
 
     return pixelCount > 0
@@ -771,18 +842,22 @@ end
 function DrawData:resetFill()
     self:cleanUpPaths()
     self:updatePathsCanvas()
-
     local pathsImageData = self.pathsCanvas:newImageData()
-    self:getFillImageData():updateFloodFillForNewPaths(pathsImageData)
-    self:checkForEmptyFill()
+
+    self:getFillImageDataSizedToPathBounds():updateFloodFillForNewPaths(pathsImageData)
+    --self:checkForEmptyFill()
     self:updateFillImageWithFillImageData()
 end
 
 function DrawData:updatePathsCanvas()
-    if self.pathsCanvas == nil then
+    local bounds = self:getPathDataBounds()
+    local width = (bounds.maxX - bounds.minX) * 26
+    local height = (bounds.maxY - bounds.minY) * 26
+
+    if self.pathsCanvas == nil or self.pathsCanvas:getWidth() ~= width or self.pathsCanvas:getHeight() ~= height then
         self.pathsCanvas = love.graphics.newCanvas(
-            self.fillCanvasSize,
-            self.fillCanvasSize,
+            width,
+            height,
             {
                 dpiscale = 1,
                 msaa = 4
@@ -795,7 +870,8 @@ function DrawData:updatePathsCanvas()
             love.graphics.push("all")
 
             love.graphics.origin()
-            love.graphics.scale(self.fillCanvasSize / self.scale)
+            love.graphics.scale(25.6)
+            love.graphics.translate(-bounds.minX, -bounds.minY)
 
             love.graphics.clear(0.0, 0.0, 0.0, 0.0)
             love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
@@ -849,9 +925,18 @@ function DrawData:render(width, height)
 end
 
 function DrawData:renderFill()
+
+    --[[if self.pathsCanvas ~= nil then
+        local bounds = self:getPathDataBounds()
+        local pathsImageData = self.pathsCanvas:newImageData()
+        local pathsImage = love.graphics.newImage(pathsImageData)
+        love.graphics.draw(pathsImage, bounds.minX, bounds.minY, 0.0, 1.0 / 25.6, 1.0 / 25.6)
+    end]]--
+
     local fillImage = self:getFillImage()
     if fillImage ~= nil then
-        love.graphics.draw(fillImage, self.fillImageBounds[1].x, self.fillImageBounds[1].y, 0.0, (self.fillImageBounds[2].x - self.fillImageBounds[1].x) / self.fillCanvasSize, (self.fillImageBounds[2].y - self.fillImageBounds[1].y) / self.fillCanvasSize)
+        --printObject(self.fillImageBounds)
+        love.graphics.draw(fillImage, self.fillImageBounds.minX, self.fillImageBounds.minY, 0.0, 1.0 / 25.6, 1.0 / 25.6)
     end
 end
 
