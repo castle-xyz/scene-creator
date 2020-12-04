@@ -78,6 +78,29 @@ local diffAngle = function(a1, a2)
    return ((a1 - a2 + math.pi) % (2 * math.pi) - math.pi)
 end
 
+local function findAnalogStickTouch(touchData)
+   local analogStickTouch
+   local gestureStarted = false
+   for touchId, touch in pairs(touchData.touches) do
+       if touch.usedBy ~= nil and touch.usedBy.analogStick then
+          analogStickTouch = touch
+          break
+       end
+    end
+    if analogStickTouch == nil and touchData.maxNumTouches == 1 then
+        local touchId, touch = next(touchData.touches)
+        if not touch.used and touch.movedNear then
+            if touch.usedBy == nil or not touch.usedBy.analogStick then
+                touch.usedBy = touch.usedBy or {}
+                touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
+                analogStickTouch = touch
+                gestureStarted = true
+            end
+        end
+    end
+    return analogStickTouch, gestureStarted
+end
+
 function AnalogStickBehavior.handlers:postPerform(dt)
     -- Do this in `postPerform` to allow other behaviors to steal the touch
 
@@ -94,50 +117,45 @@ function AnalogStickBehavior.handlers:postPerform(dt)
     local physics = self.dependencies.Body:getPhysics()
 
     local touchData = self:getTouchData()
-    if touchData.maxNumTouches == 1 then
-        local touchId, touch = next(touchData.touches)
-        if not touch.used and touch.movedNear then
-            -- analog stick is measured in scene space, but invariant to camera position
-            local cameraX, cameraY = self.game:getCameraPosition()
-            local gestureStarted = false
-            if touch.usedBy == nil or not touch.usedBy.analogStick then
-                touch.usedBy = touch.usedBy or {}
-                touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
-                self._centerX, self._centerY = touch.initialX - cameraX, touch.initialY - cameraY
-                gestureStarted = true
-            else
-                self:_updateCenter(touch, cameraX, cameraY)
-            end
-            local dragX, dragY = (touch.x - cameraX) - self._centerX, (touch.y - cameraY) - self._centerY
-            local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
-            if dragLen > MAX_DRAG_LENGTH then
-                dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
-                dragLen = MAX_DRAG_LENGTH
-            end
+    local touch, gestureStarted = findAnalogStickTouch(touchData)
 
-            for actorId, component in pairs(self.components) do
-                if not component.disabled then
-                    local bodyId, body = self.dependencies.Body:getBody(actorId)
-                    if physics:getOwner(bodyId) ~= self.game.clientId then
-                        physics:setOwner(bodyId, self.game.clientId, true, 0)
-                    end
-                    local m = body:getMass()
-                    local impulsePerFrame = component.properties.speed / 60
+    if touch ~= nil then
+        -- analog stick is measured in scene space, but invariant to camera position
+        local cameraX, cameraY = self.game:getCameraPosition()
+        if gestureStarted then
+            self._centerX, self._centerY = touch.initialX - cameraX, touch.initialY - cameraY
+        else
+            self:_updateCenter(touch, cameraX, cameraY)
+        end
+        local dragX, dragY = (touch.x - cameraX) - self._centerX, (touch.y - cameraY) - self._centerY
+        local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+        if dragLen > MAX_DRAG_LENGTH then
+            dragX, dragY = dragX * MAX_DRAG_LENGTH / dragLen, dragY * MAX_DRAG_LENGTH / dragLen
+            dragLen = MAX_DRAG_LENGTH
+        end
 
-                    -- boost the analog stick magnitude if the player's direction
-                    -- is pointed against the analog stick's direction
-                    if component.properties.turnFriction ~= nil and component.properties.turnFriction > 0 then
-                       local vx, vy = body:getLinearVelocity()
-                       local actorDirection = math.atan2(vy, vx)
-                       local dragDirection = math.atan2(dragY, dragX)
-                       impulsePerFrame = impulsePerFrame * (1 + math.abs(diffAngle(actorDirection, dragDirection) / math.pi) * component.properties.turnFriction)
-                    end
+        for actorId, component in pairs(self.components) do
+            if not component.disabled then
+                local bodyId, body = self.dependencies.Body:getBody(actorId)
+                if physics:getOwner(bodyId) ~= self.game.clientId then
+                    physics:setOwner(bodyId, self.game.clientId, true, 0)
+                end
+                local m = body:getMass()
+                local impulsePerFrame = component.properties.speed / 60
 
-                    body:applyLinearImpulse(m * impulsePerFrame * dragX, m * impulsePerFrame * dragY)
+                -- boost the analog stick magnitude if the player's direction
+                -- is pointed against the analog stick's direction
+                if component.properties.turnFriction ~= nil and component.properties.turnFriction > 0 then
+                   local vx, vy = body:getLinearVelocity()
+                   local actorDirection = math.atan2(vy, vx)
+                   local dragDirection = math.atan2(dragY, dragX)
+                   impulsePerFrame = impulsePerFrame * (1 + math.abs(diffAngle(actorDirection, dragDirection) / math.pi) * component.properties.turnFriction)
+                end
 
-                    if gestureStarted then
-                       self:fireTrigger("analog stick begins", actorId)
-                    end
+                body:applyLinearImpulse(m * impulsePerFrame * dragX, m * impulsePerFrame * dragY)
+
+                if gestureStarted then
+                   self:fireTrigger("analog stick begins", actorId)
                 end
             end
         end
@@ -179,48 +197,46 @@ function AnalogStickBehavior.handlers:drawOverlay()
         return
     end
 
-    -- Look for a single-finger drag
     local touchData = self:getTouchData()
-    if touchData.maxNumTouches == 1 and not touchData.allTouchesReleased then
-        local touchId, touch = next(touchData.touches)
-        if not touch.used and touch.movedNear then
-            local cameraX, cameraY = self.game:getCameraPosition()
-            local touchX, touchY = touch.x - cameraX, touch.y - cameraY
-            local centerX, centerY = self._centerX or (touch.initialX - cameraX), self._centerY or (touch.initialY - cameraY)
-            local dragX, dragY = touchX - centerX, touchY - centerY
-            local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
-            if dragLen > 0 then
-                if dragLen > MAX_DRAG_LENGTH_DRAW then
-                    dragX, dragY = dragX * MAX_DRAG_LENGTH_DRAW / dragLen, dragY * MAX_DRAG_LENGTH_DRAW / dragLen
-                    dragLen = MAX_DRAG_LENGTH_DRAW
-                    local dragAngle = math.atan2(dragY, dragX)
-                    touchX = centerX + dragLen * math.cos(dragAngle)
-                    touchY = centerY + dragLen * math.sin(dragAngle)
-                end
+    local touch, gestureStarted = findAnalogStickTouch(touchData)
 
-                love.graphics.push()
-                love.graphics.translate(cameraX, cameraY)
-
-                love.graphics.setColor(1, 1, 1, 0.8)
-                love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
-
-                local touchRadius = TOUCH_RADIUS * self.game:getPixelScale()
-                local maxRadius = MAX_DRAG_LENGTH_DRAW + touchRadius
-
-                -- At the center of the analog stick,
-                -- a circle with solid outline and transparent fill
-                love.graphics.circle("line", centerX, centerY, maxRadius)
-                love.graphics.setColor(1, 1, 1, 0.3)
-                love.graphics.circle("fill", centerX, centerY, maxRadius)
-                love.graphics.setColor(1, 1, 1, 0.4)
-
-                -- Under the (clamped) touch,
-                -- a circle with solid outline and transparent fill
-                love.graphics.circle("line", touchX, touchY, touchRadius)
-                love.graphics.setColor(1, 1, 1, 0.3)
-                love.graphics.circle("fill", touchX, touchY, touchRadius)
-                love.graphics.pop()
+    if touch and not touchData.allTouchesReleased then
+        local cameraX, cameraY = self.game:getCameraPosition()
+        local touchX, touchY = touch.x - cameraX, touch.y - cameraY
+        local centerX, centerY = self._centerX or (touch.initialX - cameraX), self._centerY or (touch.initialY - cameraY)
+        local dragX, dragY = touchX - centerX, touchY - centerY
+        local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
+        if dragLen > 0 then
+            if dragLen > MAX_DRAG_LENGTH_DRAW then
+                dragX, dragY = dragX * MAX_DRAG_LENGTH_DRAW / dragLen, dragY * MAX_DRAG_LENGTH_DRAW / dragLen
+                dragLen = MAX_DRAG_LENGTH_DRAW
+                local dragAngle = math.atan2(dragY, dragX)
+                touchX = centerX + dragLen * math.cos(dragAngle)
+                touchY = centerY + dragLen * math.sin(dragAngle)
             end
+
+            love.graphics.push()
+            love.graphics.translate(cameraX, cameraY)
+
+            love.graphics.setColor(1, 1, 1, 0.8)
+            love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
+
+            local touchRadius = TOUCH_RADIUS * self.game:getPixelScale()
+            local maxRadius = MAX_DRAG_LENGTH_DRAW + touchRadius
+
+            -- At the center of the analog stick,
+            -- a circle with solid outline and transparent fill
+            love.graphics.circle("line", centerX, centerY, maxRadius)
+            love.graphics.setColor(1, 1, 1, 0.3)
+            love.graphics.circle("fill", centerX, centerY, maxRadius)
+            love.graphics.setColor(1, 1, 1, 0.4)
+
+            -- Under the (clamped) touch,
+            -- a circle with solid outline and transparent fill
+            love.graphics.circle("line", touchX, touchY, touchRadius)
+            love.graphics.setColor(1, 1, 1, 0.3)
+            love.graphics.circle("fill", touchX, touchY, touchRadius)
+            love.graphics.pop()
         end
     end
 end
