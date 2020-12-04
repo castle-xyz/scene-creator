@@ -426,7 +426,7 @@ end
 function DrawTool:drawShapes()
     love.graphics.setColor(1, 1, 1, 1)
 
-    self._drawData:graphics():draw()
+    --self._drawData:graphics():draw()
 
     if self._tempGraphics ~= nil then
         self._tempGraphics:draw()
