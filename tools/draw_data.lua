@@ -658,6 +658,7 @@ function DrawData:serialize()
         scale = self.scale,
         fillCanvasSize = self.fillCanvasSize,
         version = self.version,
+        fillImageBounds = self.fillImageBounds,
     }
 
     local lastSerializedPathData = nil
@@ -850,7 +851,7 @@ end
 function DrawData:renderFill()
     local fillImage = self:getFillImage()
     if fillImage ~= nil then
-        love.graphics.draw(fillImage, 0.0, 0.0, 0.0, self.scale / self.fillCanvasSize, self.scale / self.fillCanvasSize)
+        love.graphics.draw(fillImage, self.fillImageBounds[1].x, self.fillImageBounds[1].y, 0.0, (self.fillImageBounds[2].x - self.fillImageBounds[1].x) / self.fillCanvasSize, (self.fillImageBounds[2].y - self.fillImageBounds[1].y) / self.fillCanvasSize)
     end
 end
 

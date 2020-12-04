@@ -13,6 +13,7 @@ function PhysicsBodyData:new(obj)
         shapes = obj.shapes or {},
         scale = obj.scale or DRAW_DATA_SCALE,
         tempShape = nil,
+        version = obj.version or nil,
     }
 
     newObj = util.deepCopyTable(newObj)
@@ -20,13 +21,31 @@ function PhysicsBodyData:new(obj)
     setmetatable(newObj, self)
     self.__index = self
 
+    newObj:migrateV1ToV2()
+
     return newObj
+end
+
+function PhysicsBodyData:migrateV1ToV2()
+    if self.version ~= nil and self.version >= 2 then
+        return
+    end
+
+    self.version = 2
+
+    local d = -self.scale / 2.0
+
+    for i = 1, #self.shapes do
+        local shape = self.shapes[i]
+        self.shapes[i] = self:moveShapeByIgnoreBounds(shape, d, d)
+    end
 end
 
 function PhysicsBodyData:serialize()
     local data = {
         shapes = self.shapes,
         scale = self.scale,
+        version = self.version,
     }
 
     return data
