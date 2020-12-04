@@ -63,7 +63,7 @@ function SlingBehavior.handlers:postPerform(dt)
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
         local cameraX, cameraY = self.game:getCameraPosition()
-        if touch.movedNear then
+        if not touch.used and touch.movedNear then
            touch.usedBy = touch.usedBy or {}
            if not touch.usedBy.sling then
               touch.usedBy.sling = true -- mark the touch without `used` so we detect player interaction
@@ -71,7 +71,7 @@ function SlingBehavior.handlers:postPerform(dt)
            end
         end
         if touchData.allTouchesReleased then
-            if touch.usedBy ~= nil and touch.usedBy.sling then
+            if not touch.used and touch.movedNear then
                 -- sling is measured in scene space, but invariant to camera position
                 local touchX, touchY = touch.x - cameraX, touch.y - cameraY
                 local dragX, dragY = self._initialX - touchX, self._initialY - touchY
@@ -118,7 +118,7 @@ function SlingBehavior.handlers:drawOverlay()
     local touchData = self:getTouchData()
     if touchData.maxNumTouches == 1 then
         local touchId, touch = next(touchData.touches)
-        if touch.usedBy ~= nil and touch.usedBy.sling then
+        if not touch.used and touch.movedNear then
             local cameraX, cameraY = self.game:getCameraPosition()
             local touchX, touchY = touch.x - cameraX, touch.y - cameraY
             local dragX, dragY = self._initialX - touchX, self._initialY - touchY
