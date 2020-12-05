@@ -13,6 +13,8 @@ local SHOW_HIDE_VY = 1200
 
 BELT_DARKEN = 0.4
 
+local ENABLE_HAPTICS = true
+
 -- Start / stop
 
 function Common:startBelt()
@@ -31,6 +33,8 @@ function Common:startBelt()
     self.beltTargetIndex = nil -- Target element to scroll to if not `nil`
     
     self.beltEntryId = nil -- Entry id of currently highlighted belt element
+
+    self.lastVibrated = love.timer.getTime()
 end
 
 -- Show / hide
@@ -182,9 +186,10 @@ function Common:updateBelt(dt)
         end
     end
 
+    local currTime = love.timer.getTime()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
-    -- Save previous velocity, we'll use this for smoothing at the end
+    local prevBeltCursorX = self.beltCursorX
     local prevBeltCursorVX = self.beltCursorVX
 
     -- Animate belt show / hide
@@ -239,7 +244,7 @@ function Common:updateBelt(dt)
             if touch.pressed then
                 self.beltTargetIndex = nil
             end
-            if touch.released and not touch.movedNear and love.timer.getTime() - touch.pressTime < 0.2 then
+            if touch.released and not touch.movedNear and currTime - touch.pressTime < 0.2 then
                 self.beltTargetIndex = touchBeltIndex
             end
 
@@ -320,6 +325,7 @@ function Common:updateBelt(dt)
 
     -- Scroll to target, also manage current entry id
     -- TODO(nikki): Shares logic with "Scroll to target immedately" above, refactor out?
+    local targetMode = false
     local targetElem = self.beltElems[self.beltTargetIndex]
     if targetElem ~= nil then
         self.beltEntryId = targetElem.entryId
@@ -332,7 +338,7 @@ function Common:updateBelt(dt)
             -- Rubber band toward target
             self.beltCursorX = 0.4 * targetElem.x + 0.6 * self.beltCursorX
         end
-        return -- Skip velocity-based logic when in target mode
+        targetMode = true
     else
         self.beltTargetIndex = nil -- Invalid target index
 
@@ -350,72 +356,95 @@ function Common:updateBelt(dt)
         end
     end
 
-    -- Strong rubber band on ends
-    local rubberBanded = false
-    if not dragScrolling then
-        if self.beltCursorX < 0 then
-            self.beltCursorVX = 0.5 * self.beltCursorVX
-            self.beltCursorX = 0.85 * self.beltCursorX
-            rubberBanded = true
-        end
-        local maxX = self.beltElems[#self.beltElems].x
-        if self.beltCursorX > maxX then
-            self.beltCursorVX = 0.5 * self.beltCursorVX
-            self.beltCursorX = 0.85 * self.beltCursorX + 0.15 * maxX
-            rubberBanded = true
-        end
-    end
-
-    -- Snap cursor to nearest elem
-    local skipDecelerate = false
-    if not rubberBanded and not dragScrolling then
-        if math.abs(self.beltCursorVX) <= SNAP_THRESHOLD_VX then
-            local projX = self.beltCursorX
-
-            -- Apply spring force toward nearest elem
-            local i = math.floor(projX / (ELEM_SIZE + ELEM_GAP) + 0.5)
-            local iX = i * (ELEM_SIZE + ELEM_GAP)
-            if math.abs(self.beltCursorVX) > 0.7 * SNAP_THRESHOLD_VX then
-                -- Don't "pull back" if we really want to go forward
-                if iX < projX and self.beltCursorVX > 0 then
-                    iX = math.max(projX, iX + 0.8 * (ELEM_SIZE + ELEM_GAP))
-                end
-                if iX > projX and self.beltCursorVX < 0 then
-                    iX = math.min(projX, iX - 0.8 * (ELEM_SIZE + ELEM_GAP))
-                end
+    if not targetMode then
+        local rubberBandMode = false
+        -- Strong rubber band on ends
+        if not dragScrolling then
+            if self.beltCursorX < 0 then
+                self.beltCursorVX = 0.5 * self.beltCursorVX
+                self.beltCursorX = 0.85 * self.beltCursorX
+                rubberBandMode = true
             end
-            local accel = 0.7 * SNAP_THRESHOLD_VX * (iX - projX)
-            local newVX = self.beltCursorVX + accel * dt
-            self.beltCursorVX = 0.85 * newVX + 0.15 * self.beltCursorVX
-
-            -- Explonential damping
-            --self.beltCursorVX = 0.92 * self.beltCursorVX
-        end
-    end
-
-    -- Velocity application
-    if not skipApplyVel then
-        self.beltCursorX = self.beltCursorX + self.beltCursorVX * dt
-    end
-
-    -- Deceleration -- stopping at proper zero if we get there
-    if not skipDecelerate and self.beltCursorVX ~= 0 then
-        if self.beltCursorVX > 0 then
-            self.beltCursorVX = self.beltCursorVX - DECEL_X * dt
-            if self.beltCursorVX < 0 then
-                self.beltCursorVX = 0
+            local maxX = self.beltElems[#self.beltElems].x
+            if self.beltCursorX > maxX then
+                self.beltCursorVX = 0.5 * self.beltCursorVX
+                self.beltCursorX = 0.85 * self.beltCursorX + 0.15 * maxX
+                rubberBandMode = true
             end
-        elseif self.beltCursorVX < 0 then
-            self.beltCursorVX = self.beltCursorVX + DECEL_X * dt
+        end
+
+        -- Snap cursor to nearest elem
+        local skipDecelerate = false
+        if not rubberBandMode and not dragScrolling then
+            if math.abs(self.beltCursorVX) <= SNAP_THRESHOLD_VX then
+                local projX = self.beltCursorX
+
+                -- Apply spring force toward nearest elem
+                local i = math.floor(projX / (ELEM_SIZE + ELEM_GAP) + 0.5)
+                local iX = i * (ELEM_SIZE + ELEM_GAP)
+                if math.abs(self.beltCursorVX) > 0.7 * SNAP_THRESHOLD_VX then
+                    -- Don't "pull back" if we really want to go forward
+                    if iX < projX and self.beltCursorVX > 0 then
+                        iX = math.max(projX, iX + 0.8 * (ELEM_SIZE + ELEM_GAP))
+                    end
+                    if iX > projX and self.beltCursorVX < 0 then
+                        iX = math.min(projX, iX - 0.8 * (ELEM_SIZE + ELEM_GAP))
+                    end
+                end
+                local accel = 0.7 * SNAP_THRESHOLD_VX * (iX - projX)
+                local newVX = self.beltCursorVX + accel * dt
+                self.beltCursorVX = 0.85 * newVX + 0.15 * self.beltCursorVX
+
+                -- Explonential damping
+                --self.beltCursorVX = 0.92 * self.beltCursorVX
+            end
+        end
+
+        -- Velocity application
+        if not skipApplyVel then
+            self.beltCursorX = self.beltCursorX + self.beltCursorVX * dt
+        end
+
+        -- Deceleration -- stopping at proper zero if we get there
+        if not skipDecelerate and self.beltCursorVX ~= 0 then
             if self.beltCursorVX > 0 then
-                self.beltCursorVX = 0
+                self.beltCursorVX = self.beltCursorVX - DECEL_X * dt
+                if self.beltCursorVX < 0 then
+                    self.beltCursorVX = 0
+                end
+            elseif self.beltCursorVX < 0 then
+                self.beltCursorVX = self.beltCursorVX + DECEL_X * dt
+                if self.beltCursorVX > 0 then
+                    self.beltCursorVX = 0
+                end
             end
+        end
+
+        -- Smoothing out various velocity artifacts
+        if self.beltCursorVX ~= 0 then
+            self.beltCursorVX = 0.8 * self.beltCursorVX + 0.2 * prevBeltCursorVX
         end
     end
 
-    -- Smoothing out various velocity artifacts
-    if self.beltCursorVX ~= 0 then
-        self.beltCursorVX = 0.8 * self.beltCursorVX + 0.2 * prevBeltCursorVX
+    -- Vibrate when we go across elements
+    if ENABLE_HAPTICS and currTime - self.lastVibrated > 0.03 then
+        local offset
+        if self.beltCursorX < prevBeltCursorX then
+            offset = 0.5 + 0.32
+        end
+        if self.beltCursorX > prevBeltCursorX then
+            offset = 0.5 - 0.32
+        end
+        if offset then
+            local currIndex = math.floor(self.beltCursorX / (ELEM_SIZE + ELEM_GAP) + offset)
+            currIndex = math.max(-1, math.min(currIndex, #self.beltElems))
+            local prevIndex = math.floor(prevBeltCursorX / (ELEM_SIZE + ELEM_GAP) + offset)
+            prevIndex = math.max(-1, math.min(prevIndex, #self.beltElems))
+            if currIndex ~= prevIndex then
+                love.system.vibrate(0.71) -- Tuned for our iOS vibration patch
+                self.lastVibrated = currTime
+            end
+        end
     end
 end
 
