@@ -89,7 +89,7 @@ local function findAnalogStickTouch(touchData)
     end
     if analogStickTouch == nil then
         local touchId, touch = next(touchData.touches)
-        if not touch.used and touch.movedNear then
+        if touch and not touch.used and touch.movedNear then
             if touch.usedBy == nil or not touch.usedBy.analogStick then
                 touch.usedBy = touch.usedBy or {}
                 touch.usedBy.analogStick = true -- mark the touch without `used` so we detect player interaction
