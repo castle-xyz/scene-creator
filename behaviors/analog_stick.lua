@@ -87,7 +87,7 @@ local function findAnalogStickTouch(touchData)
           break
        end
     end
-    if analogStickTouch == nil and touchData.maxNumTouches == 1 then
+    if analogStickTouch == nil then
         local touchId, touch = next(touchData.touches)
         if not touch.used and touch.movedNear then
             if touch.usedBy == nil or not touch.usedBy.analogStick then
