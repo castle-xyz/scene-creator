@@ -1,5 +1,7 @@
 -- Constants
 
+local OS = love.system.getOS()
+
 local BELT_HEIGHT = 200
 
 local ELEM_SIZE = 170
@@ -441,7 +443,11 @@ function Common:updateBelt(dt)
             local prevIndex = math.floor(prevBeltCursorX / (ELEM_SIZE + ELEM_GAP) + offset)
             prevIndex = math.max(-1, math.min(prevIndex, #self.beltElems))
             if currIndex ~= prevIndex then
-                love.system.vibrate(0.71) -- Tuned for our iOS vibration patch
+                if OS == 'iOS' then
+                    love.system.vibrate(0.71) -- Tuned for our iOS vibration patch
+                else
+                    love.system.vibrate(0.04)
+                end
                 self.lastVibrated = currTime
             end
         end
