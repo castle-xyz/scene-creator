@@ -99,22 +99,42 @@ function DrawTool.handlers:addBehavior(opts)
         collision_move = "move",
     }
 
-    for _, subtool in pairs(SUBTOOLS) do
-        if subtool.handlers.addSubtool ~= nil then
-            --subtool.drawTool = self
-            for _, functionName in pairs(FUNCTIONS_TO_ADD_TO_SUBTOOLS) do
-                subtool[functionName] = function(...)
-                    -- remove the first 'self' arg and replace with DrawTool's
-                    -- self so that we can use self:addPathData syntax in subtools
-                    -- instead of self.addPathData
-                    local args = {...}
-                    table.remove(args, 1)
-                    return self[functionName](self, unpack(args))
-                end
-            end
+    self._subtools = {}
+    for _, SUBTOOL in pairs(SUBTOOLS) do
+        local subtool = {}
 
+        subtool.name = SUBTOOL.name
+        subtool.category = SUBTOOL.category
+
+        -- Copy methods
+        for methodName, method in pairs(SUBTOOL) do
+            if type(method) == "function" then
+                subtool[methodName] = method
+            end
+        end
+
+        -- Copy handlers and properties
+        subtool.handlers = {}
+        for handlerName, handler in pairs(SUBTOOL.handlers) do
+            subtool.handlers[handlerName] = handler
+        end
+
+        for _, functionName in pairs(FUNCTIONS_TO_ADD_TO_SUBTOOLS) do
+            subtool[functionName] = function(...)
+                -- remove the first 'self' arg and replace with DrawTool's
+                -- self so that we can use self:addPathData syntax in subtools
+                -- instead of self.addPathData
+                local args = {...}
+                table.remove(args, 1)
+                return self[functionName](self, unpack(args))
+            end
+        end
+
+        if subtool.handlers.addSubtool ~= nil then
             self:callSubtoolHandler(subtool, "addSubtool")
         end
+
+        table.insert(self._subtools, subtool)
     end
 end
 
@@ -249,7 +269,7 @@ function DrawTool:getCurrentSubtool()
         currentName = self._selectedSubtools[currentName]
     end
 
-    for _, subtool in pairs(SUBTOOLS) do
+    for _, subtool in pairs(self._subtools) do
         if subtool.category == currentCategory and subtool.name == currentName then
             return subtool
         end
