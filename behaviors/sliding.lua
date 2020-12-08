@@ -63,6 +63,10 @@ function SlidingBehavior.setters:isRotationAllowed(component, value)
    component.properties.isRotationAllowed = value
    if not component.disabled then
       local members = self.dependencies.Body:getMembers(component.actorId)
+      if not value or value == 0 then
+         -- if already rotating, and rotation disallowed, stop
+         members.body:setAngularVelocity(0)
+      end
       members.physics:setFixedRotation(members.bodyId, not value)
    end
 end
