@@ -97,6 +97,7 @@ function Client:uiGlobalActions()
          actionsAvailable = actionsAvailable,
          tools = tools,
          activeToolBehaviorId = self.activeToolBehaviorId,
+         beltVisible = self.beltVisible,
       },
       {
          actions = actions,
