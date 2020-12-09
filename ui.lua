@@ -76,6 +76,11 @@ function Client:uiGlobalActions()
       self:redo()
    end
 
+   actionsAvailable['startCapture'] = self.performing and not self:isCapturing()
+   actions['startCapture'] = function()
+      self:startCapture()
+   end
+
    -- TODO: dup of some logic in inspector_actions
    local tools = {}
     for _, tool in pairs(self.tools) do
