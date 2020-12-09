@@ -196,19 +196,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
     love.graphics.scale(bodyWidth / graphicsSize, bodyHeight / graphicsSize)
 
     -- Draw!
-    if self.game.performing or not self.game.beltVisible then
-        -- Normal color
-        love.graphics.setColor(1, 1, 1, 1)
-    else
-        -- Belt mode -- darken / highlight based on blueprint
-        local actor = self.game.actors[component.actorId]
-        local entry = actor and actor.parentEntryId and actor.parentEntryId == self.game.beltEntryId and self.game.library[actor.parentEntryId]
-        if entry and not entry.isCore then
-            love.graphics.setColor(1, 1, 1, 1)
-        else
-            love.graphics.setColor(BELT_DARKEN, BELT_DARKEN, BELT_DARKEN, 1)
-        end
-    end
+    love.graphics.setColor(1, 1, 1, 1)
     drawData:render(bodyWidth, bodyHeight)
 
     -- Pop transform
