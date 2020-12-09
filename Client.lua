@@ -37,7 +37,6 @@ local editInstance
 local currentSnapshot
 local currentVariables
 local sentGameLoadedEvent
-local screenshotCanvas
 
 function Client:_new()
     local result = setmetatable({}, {__index = self})
@@ -548,85 +547,6 @@ function Client:drawScene(opts)
         self:drawNoTouchesHintOverlay()
         end
     end)
-end
-
-function _createScreenshotCanvas()
-    if not screenshotCanvas then
-        screenshotWidth = 1350
-
-        screenshotCanvas =
-            love.graphics.newCanvas(
-            screenshotWidth,
-            screenshotWidth * VIEW_HEIGHT_TO_WIDTH_RATIO,
-            {
-                dpiscale = 1,
-                msaa = 4
-            }
-        )
-    end
-end
-
-function Client:getScreenshotData()
-    _createScreenshotCanvas()
-
-    screenshotCanvas:renderTo(
-        function()
-            love.graphics.push("all")
-
-            love.graphics.origin()
-            love.graphics.scale(screenshotWidth / DEFAULT_VIEW_WIDTH)
-            love.graphics.translate(0, 0)
-            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, self:getDefaultYOffset())
-
-            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
-            self:drawScene()
-
-            love.graphics.pop()
-        end
-    )
-
-    local fileData = screenshotCanvas:newImageData():encode("png")
-    return love.data.encode("string", "base64", fileData:getString())
-end
-
-function Client:saveScreenshot()
-    _createScreenshotCanvas()
-
-    screenshotCanvas:renderTo(
-        function()
-            love.graphics.push("all")
-
-            love.graphics.origin()
-            love.graphics.scale(screenshotWidth / DEFAULT_VIEW_WIDTH)
-            love.graphics.translate(0, 0)
-            love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, self:getDefaultYOffset())
-
-            self:drawScene()
-
-            love.graphics.pop()
-        end
-    )
-    local channel = love.thread.getChannel("SCENE_CREATOR_ENCODE_SCREENSHOT")
-    channel:push(screenshotCanvas:newImageData())
-    love.thread.originalNewThread(
-        [[
-        require 'love.system'
-        require 'love.image'
-        jsEvents = require '__ghost__.jsEvents'
-        local channel = love.thread.getChannel('SCENE_CREATOR_ENCODE_SCREENSHOT')
-        local imageData = channel:pop()
-        if imageData then
-            local filename = 'screenshot.png'
-            imageData:encode('png', filename)
-            jsEvents.send('GHOST_SCREENSHOT', {
-                path = love.filesystem.getSaveDirectory() .. '/' .. filename,
-            })
-        end
-    ]]
-    ):start()
-
-    -- todo: we need to clean this up or we run out of memory eventually, but calling release right here is too early
-    -- screenshotCanvas:release()
 end
 
 function love.draw()
