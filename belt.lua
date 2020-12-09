@@ -34,21 +34,64 @@ function Common:startBelt()
     
     self.beltEntryId = nil -- Entry id of currently highlighted belt element
 
-    self.lastVibrated = love.timer.getTime()
+    self.beltLastVibrated = love.timer.getTime()
 
     self.beltHighlightCanvas = nil -- Set up lazily
+    self.beltHighlightCanvas2 = nil
 
-    -- This shader renders black if the pixel is fully transparent, and white
-    -- otherwise. Used with a multiply blend mode to darken the screen.
+    -- Renders grey if the pixel is fully transparent, and white otherwise.
+    -- Used with a multiply blend mode to darken the screen.
     self.beltHighlightShader = love.graphics.newShader([[
-        vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCords) {
+        vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
             color = Texel(texture, texCoords);
             if (color.a == 0.0) {
-                color = vec4(0.2, 0.2, 0.2, 1.0);
+                color = vec4(0.35, 0.35, 0.35, 1.0);
             } else {
                 color = vec4(1.0, 1.0, 1.0, 1.0);
             }
             return color;
+        }
+    ]])
+
+    -- Renders grey around edges, black otherwise
+    self.beltOutlineShader = love.graphics.newShader([[
+        vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
+            vec4 c = Texel(texture, texCoords);
+            if (c.a == 0.0) {
+                float l = Texel(texture, vec2(texCoords.x - 1.0 / love_ScreenSize.x, texCoords.y)).a - c.a;
+                float r = Texel(texture, vec2(texCoords.x + 1.0 / love_ScreenSize.x, texCoords.y)).a - c.a;
+                float u = Texel(texture, vec2(texCoords.x, texCoords.y - 1.0 / love_ScreenSize.y)).a - c.a;
+                float d = Texel(texture, vec2(texCoords.x, texCoords.y + 1.0 / love_ScreenSize.y)).a - c.a;
+                float m = max(max(abs(l), abs(r)), max(abs(u), abs(d)));
+                return vec4(m, m, m, 1.0);
+            } else {
+                return vec4(0.0, 0.0, 0.0, 1.0);
+            }
+        }
+    ]])
+    self.beltOutlineThickeningShader = love.graphics.newShader([[
+        vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
+            float c = Texel(texture, texCoords).r;
+            float l = Texel(texture, vec2(texCoords.x - 1.0 / love_ScreenSize.x, texCoords.y)).r;
+            float r = Texel(texture, vec2(texCoords.x + 1.0 / love_ScreenSize.x, texCoords.y)).r;
+            float u = Texel(texture, vec2(texCoords.x, texCoords.y - 1.0 / love_ScreenSize.y)).r;
+            float d = Texel(texture, vec2(texCoords.x, texCoords.y + 1.0 / love_ScreenSize.y)).r;
+            float m = max(c, max(max(l, r), max(u, d)));
+            return vec4(m, m, m, 1.0);
+        }
+    ]])
+
+    -- Below from https://github.com/vrld/moonshine/blob/d39271e0c000e2fedbc2e3ad286b78b5a5146065/boxblur.lua#L20
+    self.beltOutlineBlurShader = love.graphics.newShader([[
+        #define RADIUS 1.0
+        extern vec2 direction;
+        vec4 effect(vec4 color, Image texture, vec2 tc, vec2 _) {
+            vec4 c = vec4(0.0);
+            for (float i = -RADIUS; i <= RADIUS; i += 1.0)
+            {
+                c += Texel(texture, tc + i * direction);
+            }
+            return c / (2.0 * RADIUS + 1.0) * color;
         }
     ]])
 end
@@ -443,7 +486,7 @@ function Common:updateBelt(dt)
     end
 
     -- Vibrate when we go across elements
-    if ENABLE_HAPTICS and currTime - self.lastVibrated > 0.03 then
+    if ENABLE_HAPTICS and currTime - self.beltLastVibrated > 0.03 then
         local offset
         if self.beltCursorX < prevBeltCursorX then
             offset = 0.5 + 0.32
@@ -462,7 +505,7 @@ function Common:updateBelt(dt)
                 else
                     love.system.vibrate(0.04)
                 end
-                self.lastVibrated = currTime
+                self.beltLastVibrated = currTime
             end
         end
     end
@@ -480,6 +523,9 @@ function Common:drawBelt()
         -- Set up and render to highlight canvas
         if not self.beltHighlightCanvas then
             self.beltHighlightCanvas = love.graphics.newCanvas()
+        end
+        if not self.beltHighlightCanvas2 then
+            self.beltHighlightCanvas2 = love.graphics.newCanvas()
         end
         self.beltHighlightCanvas:renderTo(function()
             love.graphics.push("all")
@@ -515,6 +561,42 @@ function Common:drawBelt()
         love.graphics.push("all") -- Darken other actors
         love.graphics.setBlendMode("multiply", "premultiplied")
         love.graphics.setShader(self.beltHighlightShader)
+        love.graphics.draw(self.beltHighlightCanvas)
+        love.graphics.pop()
+
+        -- Glow
+        self.beltHighlightCanvas2:renderTo(function()
+            -- Gray outside edges
+            love.graphics.push("all")
+            love.graphics.setShader(self.beltOutlineShader)
+            love.graphics.draw(self.beltHighlightCanvas)
+            love.graphics.pop()
+        end)
+        self.beltHighlightCanvas:renderTo(function()
+            -- Spread the gray further
+            love.graphics.push("all")
+            love.graphics.setShader(self.beltOutlineThickeningShader)
+            love.graphics.draw(self.beltHighlightCanvas2)
+            love.graphics.pop()
+        end)
+        self.beltHighlightCanvas2:renderTo(function()
+            -- Blur horizontally
+            love.graphics.push("all")
+            self.beltOutlineBlurShader:send("direction", { 1 / love.graphics.getWidth(), 0 })
+            love.graphics.setShader(self.beltOutlineBlurShader)
+            love.graphics.draw(self.beltHighlightCanvas)
+            love.graphics.pop()
+        end)
+        self.beltHighlightCanvas:renderTo(function()
+            -- Blur vertically
+            love.graphics.push("all")
+            self.beltOutlineBlurShader:send("direction", { 0, 1 / love.graphics.getHeight() })
+            love.graphics.setShader(self.beltOutlineBlurShader)
+            love.graphics.draw(self.beltHighlightCanvas2)
+            love.graphics.pop()
+        end)
+        love.graphics.push("all")
+        love.graphics.setBlendMode("add") -- Glow
         love.graphics.draw(self.beltHighlightCanvas)
         love.graphics.pop()
     end
