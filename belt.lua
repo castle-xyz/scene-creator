@@ -37,6 +37,9 @@ function Common:startBelt()
     self.lastVibrated = love.timer.getTime()
 
     self.beltHighlightCanvas = nil -- Set up lazily
+
+    -- This shader renders black if the pixel is fully transparent, and white
+    -- otherwise. Used with a multiply blend mode to darken the screen.
     self.beltHighlightShader = love.graphics.newShader([[
         vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCords) {
             color = Texel(texture, texCoords);
@@ -472,52 +475,54 @@ local titleFont = love.graphics.newFont(32)
 function Common:drawBelt()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
-    -- Skip drawing when hidden
+    -- Highlighting
+    if self.beltVisible then
+        -- Set up and render to highlight canvas
+        if not self.beltHighlightCanvas then
+            self.beltHighlightCanvas = love.graphics.newCanvas()
+        end
+        self.beltHighlightCanvas:renderTo(function()
+            love.graphics.push("all")
+            love.graphics.clear(0, 0, 0, 0)
+
+            love.graphics.origin()
+            love.graphics.applyTransform(self.viewTransform)
+
+            local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
+            self:forEachActorByDrawOrder(function(actor)
+                -- Render actor if it uses the currently highlighted blueprint
+                if actor and actor.parentEntryId and actor.parentEntryId == self.beltEntryId then
+                    local entry = self.library[actor.parentEntryId]
+                    if not entry.isCore then
+                        for behaviorId, behavior in pairs(drawBehaviors) do
+                            local component = actor.components[behaviorId]
+                            if component then
+                                behavior:callHandler("drawComponent", component)
+                            end
+                        end
+                    end
+                end
+            end)
+
+            love.graphics.pop()
+        end)
+
+        -- Render highlight canvas to screen
+        love.graphics.push("all") -- Transparent overlay (to make obscured actors visible)
+        love.graphics.setColor(1, 1, 1, 0.7)
+        love.graphics.draw(self.beltHighlightCanvas)
+        love.graphics.pop()
+        love.graphics.push("all") -- Darken other actors
+        love.graphics.setBlendMode("multiply", "premultiplied")
+        love.graphics.setShader(self.beltHighlightShader)
+        love.graphics.draw(self.beltHighlightCanvas)
+        love.graphics.pop()
+    end
+
+    -- Skip drawing UI when fully hidden
     if self.beltTop >= windowHeight then
         return
     end
-
-    -- Set up and render to highlight canvas
-    if not self.beltHighlightCanvas then
-        self.beltHighlightCanvas = love.graphics.newCanvas()
-    end
-    self.beltHighlightCanvas:renderTo(function()
-        love.graphics.push("all")
-        love.graphics.clear(0, 0, 0, 0)
-
-        love.graphics.origin()
-        love.graphics.applyTransform(self.viewTransform)
-
-        local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
-        self:forEachActorByDrawOrder(
-           function(actor)
-               if actor and actor.parentEntryId and actor.parentEntryId == self.beltEntryId then
-                   local entry = self.library[actor.parentEntryId]
-                   if not entry.isCore then
-                       for behaviorId, behavior in pairs(drawBehaviors) do
-                           local component = actor.components[behaviorId]
-                           if component then
-                               behavior:callHandler("drawComponent", component)
-                           end
-                       end
-                   end
-               end
-           end
-        )
-
-        love.graphics.pop()
-    end)
-
-    -- Render highlight canvas to screen
-    love.graphics.push("all") -- Transparent overlay (to make obscured actors visible)
-    love.graphics.setColor(1, 1, 1, 0.7)
-    love.graphics.draw(self.beltHighlightCanvas)
-    love.graphics.pop()
-    love.graphics.push("all") -- Darken other actors
-    love.graphics.setBlendMode("multiply", "premultiplied")
-    love.graphics.setShader(self.beltHighlightShader)
-    love.graphics.draw(self.beltHighlightCanvas)
-    love.graphics.pop()
 
     love.graphics.push("all")
 
