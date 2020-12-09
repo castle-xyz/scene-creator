@@ -36,7 +36,7 @@ function Common:startBelt()
 
     self.lastVibrated = love.timer.getTime()
 
-    self.beltHighlightCanvas = love.graphics.newCanvas()
+    self.beltHighlightCanvas = nil -- Set up lazily
     self.beltHighlightShader = love.graphics.newShader([[
         vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCords) {
             color = Texel(texture, texCoords);
@@ -477,7 +477,7 @@ function Common:drawBelt()
         return
     end
 
-    -- Highlight canvas
+    -- Set up and render to highlight canvas
     if not self.beltHighlightCanvas then
         self.beltHighlightCanvas = love.graphics.newCanvas()
     end
@@ -507,7 +507,13 @@ function Common:drawBelt()
 
         love.graphics.pop()
     end)
-    love.graphics.push("all")
+
+    -- Render highlight canvas to screen
+    love.graphics.push("all") -- Transparent overlay (to make obscured actors visible)
+    love.graphics.setColor(1, 1, 1, 0.7)
+    love.graphics.draw(self.beltHighlightCanvas)
+    love.graphics.pop()
+    love.graphics.push("all") -- Darken other actors
     love.graphics.setBlendMode("multiply", "premultiplied")
     love.graphics.setShader(self.beltHighlightShader)
     love.graphics.draw(self.beltHighlightCanvas)
