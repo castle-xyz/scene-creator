@@ -2,34 +2,22 @@ DrawData = {}
 local FILL_CANVAS_SIZE = 256
 
 function DrawData:gridCellSize()
-    return self.scale / (self.gridSize - 1)
+    return self.gridSize
 end
 
 function DrawData:globalToGridCoordinates(x, y)
-    if 0 == 0 then
-        return x, y
-    end
-
-    local gridX = 1.0 + (self.gridSize - 1) * x / self.scale
-    local gridY = 1.0 + (self.gridSize - 1) * y / self.scale
+    local gridX = x / self:gridCellSize()
+    local gridY = y / self:gridCellSize()
     return gridX, gridY
 end
 
 function DrawData:gridToGlobalCoordinates(x, y)
-    if 0 == 0 then
-        return x, y
-    end
-
-    local globalX = (x - 1.0) * self:gridCellSize()
-    local globalY = (y - 1.0) * self:gridCellSize()
+    local globalX = x * self:gridCellSize()
+    local globalY = y * self:gridCellSize()
     return globalX, globalY
 end
 
 function DrawData:roundGlobalDiffCoordinatesToGrid(x, y)
-    if 0 == 0 then
-        return x, y
-    end
-    
     local gridX, gridY = self:globalToGridCoordinates(x, y)
 
     gridX = math.floor(gridX + 0.5)
@@ -39,15 +27,13 @@ function DrawData:roundGlobalDiffCoordinatesToGrid(x, y)
 end
 
 function DrawData:roundGlobalCoordinatesToGrid(x, y)
-    if 0 == 0 then
-        return x, y
-    end
-    
     local gridX, gridY = self:globalToGridCoordinates(x, y)
 
     gridX = math.floor(gridX + 0.5)
     gridY = math.floor(gridY + 0.5)
 
+    -- TODO: fix bounds
+    --[[
     if gridX <= 0 then
         gridX = 1
     elseif gridX > self.gridSize then
@@ -58,16 +44,14 @@ function DrawData:roundGlobalCoordinatesToGrid(x, y)
         gridY = 1
     elseif gridY > self.gridSize then
         gridY = self.gridSize
-    end
+    end]]--
 
     return self:gridToGlobalCoordinates(gridX, gridY)
 end
 
 function DrawData:clampGlobalCoordinates(x, y)
-    if 0 == 0 then
-        return x, y
-    end
-    
+    -- TODO: fix bounds
+    --[[
     if x < 0 then
         x = 0
     elseif x > self.scale then
@@ -78,16 +62,12 @@ function DrawData:clampGlobalCoordinates(x, y)
         y = 0
     elseif y > self.scale then
         y = self.scale
-    end
+    end]]--
 
     return x, y
 end
 
 function DrawData:roundGlobalDistanceToGrid(d)
-    if 0 == 0 then
-        return d
-    end
-
     local x, y = self:roundGlobalCoordinatesToGrid(d, 0)
     return x
 end
@@ -460,7 +440,7 @@ function DrawData:new(obj)
         nextPathId = obj.nextPathId or 0,
         color = obj.color or obj.fillColor or {hexStringToRgb("f9a31b")},
         lineColor = obj.lineColor or {hexStringToRgb("f9a31b")},
-        gridSize = obj.gridSize or 15,
+        gridSize = obj.gridSize or 0.5,
         scale = obj.scale or DRAW_DATA_SCALE,
         pathsCanvas = nil,
         fillImageData = nil,
@@ -520,6 +500,7 @@ function DrawData:migrateV1ToV2()
     end
 
     self.version = 2
+    self.gridSize = self.scale / (self.gridSize - 1)
 
     self.fillImageBounds = {
         minX = self.fillPixelsPerUnit * -self.scale / 2.0,
@@ -809,7 +790,15 @@ function DrawData:floodFill(x, y)
     self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
 
-    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, self.color[1], self.color[2], self.color[3], 1.0)
+    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFill(
+        math.floor(x * self.fillPixelsPerUnit - self.fillImageBounds.minX),
+        math.floor(y * self.fillPixelsPerUnit - self.fillImageBounds.minY),
+        pathsImageData,
+        self.color[1],
+        self.color[2],
+        self.color[3],
+        1.0
+    )
     --self:checkForEmptyFill()
     self:updateFillImageWithFillImageData()
 
@@ -820,7 +809,15 @@ function DrawData:floodClear(x, y)
     self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
 
-    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFill(x * self.fillCanvasSize / self.scale, y * self.fillCanvasSize / self.scale, pathsImageData, 0.0, 0.0, 0.0, 0.0)
+    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFill(
+        math.floor(x * self.fillPixelsPerUnit - self.fillImageBounds.minX),
+        math.floor(y * self.fillPixelsPerUnit - self.fillImageBounds.minY),
+        pathsImageData,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    )
     --self:checkForEmptyFill()
     self:updateFillImageWithFillImageData()
 
@@ -886,13 +883,30 @@ function DrawData:renderPreviewPng(size)
 
     previewCanvas:renderTo(
         function()
-            local padding = self.scale * 0.025
+            local pathBounds = self:getPathDataBounds()
+            pathBounds.minX = pathBounds.minX / self.fillPixelsPerUnit
+            pathBounds.minY = pathBounds.minY / self.fillPixelsPerUnit
+            pathBounds.maxX = pathBounds.maxX / self.fillPixelsPerUnit
+            pathBounds.maxY = pathBounds.maxY / self.fillPixelsPerUnit
+
+            local width = pathBounds.maxX - pathBounds.minX
+            local height = pathBounds.maxY - pathBounds.minY
+
+            local maxDimension = width
+            if height > maxDimension then
+                maxDimension = height
+            end
+
+            local widthPadding = (maxDimension - width) / 2.0
+            local heightPadding = (maxDimension - height) / 2.0
+
+            local padding = maxDimension * 0.025
 
             love.graphics.push("all")
 
             love.graphics.origin()
-            love.graphics.scale(size / (self.scale * 1.05))
-            love.graphics.translate(padding, padding)
+            love.graphics.scale(size / (maxDimension * 1.05))
+            love.graphics.translate(padding - pathBounds.minX + widthPadding, padding - pathBounds.minY + heightPadding)
 
             love.graphics.clear(0.0, 0.0, 0.0, 0.0)
             love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
@@ -970,7 +984,10 @@ function DrawData:updateColor(r, g, b)
 end
 
 function DrawData:isPointInBounds(point)
-    return point.x >= -0.001 and point.x <= self.scale and point.y >= -0.001 and point.y <= self.scale
+    return true
+
+    -- TODO: fix bounds
+    --return point.x >= -0.001 and point.x <= self.scale and point.y >= -0.001 and point.y <= self.scale
 end
 
 function DrawData:_pointsToPaths(points)
