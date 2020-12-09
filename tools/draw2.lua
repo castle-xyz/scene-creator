@@ -241,7 +241,6 @@ function DrawTool.handlers:onSetActive()
     self._scaleRotateData = {}
     self.viewWidth = DEFAULT_VIEW_WIDTH
     self.viewX, self.viewY = 0, 0
-    self._gridSize = 0.5 * UNIT
 end
 
 function DrawTool.handlers:preUpdate(dt)
@@ -469,7 +468,7 @@ function DrawTool.handlers:drawOverlay()
     -- grid
     --if self._selectedSubtools.root ~= 'artwork' or (self._selectedSubtools.artwork_draw == 'line' or self._selectedSubtools.artwork_draw == 'pencil' or self._selectedSubtools.artwork_move == 'move' or self._selectedSubtools.artwork_draw == 'rectangle' or self._selectedSubtools.artwork_draw == 'circle' or self._selectedSubtools.artwork_draw == 'triangle') then
         love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
-        drawGrid(self._gridSize, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 4, true)
+        drawGrid(self._drawData:gridCellSize(), self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 4, true)
 
     --end
 
