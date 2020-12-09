@@ -27,6 +27,8 @@ require "touch"
 require "sound"
 require "ui"
 require "notify"
+require "screenshot"
+require "capture"
 
 -- Start / stop
 
@@ -420,6 +422,7 @@ function Client:update(dt)
     self:callHandlers("postUpdate", dt)
 
     self:fireOnEndOfFrame()
+    self:performCapture(dt)
 
     self:updateNotify(dt)
     self:updateCamera(dt)

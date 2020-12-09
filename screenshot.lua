@@ -1,10 +1,13 @@
-local screenshotCanvas
+-- width -> canvas
+local screenshotCanvases = {}
 
-local function _createScreenshotCanvas()
-    if not screenshotCanvas then
-        screenshotWidth = 1350
-
-        screenshotCanvas =
+local function _createScreenshotCanvas(opts)
+    local screenshotWidth = 1350
+    if opts ~= nil and opts.width ~= nil then
+        screenshotWidth = opts.width
+    end
+    if not screenshotCanvases[screenshotWidth] then
+        screenshotCanvases[screenshotWidth] =
             love.graphics.newCanvas(
             screenshotWidth,
             screenshotWidth * VIEW_HEIGHT_TO_WIDTH_RATIO,
@@ -14,9 +17,14 @@ local function _createScreenshotCanvas()
             }
         )
     end
+    return screenshotCanvases[screenshotWidth]
 end
 
-function Client:_drawScreenshot()
+function Client:_drawScreenshot(opts)
+   local screenshotWidth = 1350
+    if opts ~= nil and opts.width ~= nil then
+        screenshotWidth = opts.width
+    end
    love.graphics.push("all")
 
    love.graphics.origin()
@@ -30,24 +38,24 @@ function Client:_drawScreenshot()
    love.graphics.pop()
 end
 
-function Client:_renderScreenshotImageData()
-    _createScreenshotCanvas()
-    screenshotCanvas:renderTo(
+function Client:renderScreenshotImageData(opts)
+    local canvas = _createScreenshotCanvas(opts)
+    canvas:renderTo(
         function()
-           self:_drawScreenshot()
+           self:_drawScreenshot(opts)
         end
     )
-    return screenshotCanvas:newImageData()
+    return canvas:newImageData()
 end
 
 function Client:getScreenshotData()
-    local fileData = self:_renderScreenshotImageData():encode("png")
+    local fileData = self:renderScreenshotImageData():encode("png")
     return love.data.encode("string", "base64", fileData:getString())
 end
 
 function Client:saveScreenshot()
     local channel = love.thread.getChannel("SCENE_CREATOR_ENCODE_SCREENSHOT")
-    channel:push(self:_renderScreenshotImageData())
+    channel:push(self:renderScreenshotImageData())
     love.thread.originalNewThread(
         [[
         require 'love.system'
