@@ -35,6 +35,19 @@ function Common:startBelt()
     self.beltEntryId = nil -- Entry id of currently highlighted belt element
 
     self.lastVibrated = love.timer.getTime()
+
+    self.beltHighlightCanvas = love.graphics.newCanvas()
+    self.beltHighlightShader = love.graphics.newShader([[
+        vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCords) {
+            color = Texel(texture, texCoords);
+            if (color.a == 0.0) {
+                color = vec4(0.2, 0.2, 0.2, 1.0);
+            } else {
+                color = vec4(1.0, 1.0, 1.0, 1.0);
+            }
+            return color;
+        }
+    ]])
 end
 
 -- Show / hide
@@ -463,6 +476,42 @@ function Common:drawBelt()
     if self.beltTop >= windowHeight then
         return
     end
+
+    -- Highlight canvas
+    if not self.beltHighlightCanvas then
+        self.beltHighlightCanvas = love.graphics.newCanvas()
+    end
+    self.beltHighlightCanvas:renderTo(function()
+        love.graphics.push("all")
+        love.graphics.clear(0, 0, 0, 0)
+
+        love.graphics.origin()
+        love.graphics.applyTransform(self.viewTransform)
+
+        local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
+        self:forEachActorByDrawOrder(
+           function(actor)
+               if actor and actor.parentEntryId and actor.parentEntryId == self.beltEntryId then
+                   local entry = self.library[actor.parentEntryId]
+                   if not entry.isCore then
+                       for behaviorId, behavior in pairs(drawBehaviors) do
+                           local component = actor.components[behaviorId]
+                           if component then
+                               behavior:callHandler("drawComponent", component)
+                           end
+                       end
+                   end
+               end
+           end
+        )
+
+        love.graphics.pop()
+    end)
+    love.graphics.push("all")
+    love.graphics.setBlendMode("multiply", "premultiplied")
+    love.graphics.setShader(self.beltHighlightShader)
+    love.graphics.draw(self.beltHighlightCanvas)
+    love.graphics.pop()
 
     love.graphics.push("all")
 

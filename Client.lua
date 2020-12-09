@@ -700,7 +700,7 @@ function Client:draw()
 
     do -- Overlays
 
-        if not self:isActiveToolFullscreen() then
+        if not self.beltVisible and not self:isActiveToolFullscreen() then
             -- Boundary
             if not self.performing then
                 love.graphics.setLineWidth(1.75 * self:getPixelScale())
