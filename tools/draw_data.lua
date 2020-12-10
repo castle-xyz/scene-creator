@@ -735,8 +735,9 @@ function DrawData:getFillImageDataSizedToPathBounds()
             self.fillImageBounds.minY - pathBounds.minY)
         self.fillImageData:release()
         self.fillImageData = newFillImageData
-        self.fillImageBounds = util.deepCopyTable(pathBounds)
     end
+
+    self.fillImageBounds = util.deepCopyTable(pathBounds)
 
     return self.fillImageData
 end
