@@ -1,5 +1,6 @@
 DRAW_DATA_SCALE = 10.0
 local DRAW_MAX_VIEW_WIDTH = DEFAULT_VIEW_WIDTH * 2
+local DRAW_MAX_SIZE = 10.0
 
 --BACKGROUND_COLOR = {r = 62.0 / 255.0, g = 52.0 / 255.0, b = 81.0 / 255.0}
 BACKGROUND_COLOR = {r = 0.0, g = 0.0, b = 0.0}
@@ -460,10 +461,7 @@ function DrawTool.handlers:drawOverlay()
 
     love.graphics.setColor(1, 1, 1, 1)
 
-    if self._selectedSubtools.root == 'artwork' then
-        self._physicsBodyData:draw()
-        self._drawData:renderFill()
-    else
+    if self._selectedSubtools.root ~= 'artwork' then
         self._drawData:renderFill()
         self:drawShapes()
 
@@ -480,7 +478,10 @@ function DrawTool.handlers:drawOverlay()
     --end
 
     if self._selectedSubtools.root == 'artwork' then
+        love.graphics.setColor(1, 1, 1, 1)
+        self._drawData:renderFill()
         self:drawShapes()
+        self._physicsBodyData:draw()
     end
 
     love.graphics.setColor(1, 1, 1, 1)
