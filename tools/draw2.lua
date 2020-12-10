@@ -1,6 +1,7 @@
 DRAW_DATA_SCALE = 10.0
 local DRAW_MAX_VIEW_WIDTH = DEFAULT_VIEW_WIDTH * 2
 
+--BACKGROUND_COLOR = {r = 62.0 / 255.0, g = 52.0 / 255.0, b = 81.0 / 255.0}
 BACKGROUND_COLOR = {r = 0.0, g = 0.0, b = 0.0}
 
 local HANDLE_DRAW_RADIUS = 12
@@ -467,7 +468,7 @@ function DrawTool.handlers:drawOverlay()
 
     -- grid
     --if self._selectedSubtools.root ~= 'artwork' or (self._selectedSubtools.artwork_draw == 'line' or self._selectedSubtools.artwork_draw == 'pencil' or self._selectedSubtools.artwork_move == 'move' or self._selectedSubtools.artwork_draw == 'rectangle' or self._selectedSubtools.artwork_draw == 'circle' or self._selectedSubtools.artwork_draw == 'triangle') then
-        love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
+        love.graphics.setColor(0.3, 0.3, 0.3, 1.0)
         drawGrid(self._drawData:gridCellSize(), self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 4, true)
 
     --end
