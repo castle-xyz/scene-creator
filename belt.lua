@@ -15,6 +15,8 @@ local SHOW_HIDE_VY = 1200
 
 local ENABLE_HAPTICS = true
 
+local TOP_BELT = true -- Whether to draw belt at the top of the card
+
 -- Start / stop
 
 function Common:startBelt()
@@ -29,6 +31,7 @@ function Common:startBelt()
     self.beltVisible = false
 
     self.beltTop = nil -- Initialized on first update
+    self.beltBottom = nil
 
     self.beltTargetIndex = nil -- Target element to scroll to if not `nil`
     
@@ -252,24 +255,50 @@ function Common:updateBelt(dt)
     local prevBeltCursorVX = self.beltCursorVX
 
     -- Animate belt show / hide
-    if not self.beltTop then
-        self.beltTop = windowHeight -- Initialization
-    end
-    if self.beltVisible == false and self.beltTop < windowHeight then
-        self.beltTop = self.beltTop + SHOW_HIDE_VY * origDt
-        if self.beltTop > windowHeight then
-            self.beltTop = windowHeight
+    if not TOP_BELT then
+        if not self.beltTop then
+            self.beltTop = windowHeight -- Initialization
         end
-    end
-    if self.beltVisible == true and self.beltTop > windowHeight - BELT_HEIGHT then
-        self.beltTop = self.beltTop - SHOW_HIDE_VY * origDt
-        if self.beltTop < windowHeight - BELT_HEIGHT then
-            self.beltTop = windowHeight - BELT_HEIGHT
+        if self.beltVisible == false and self.beltTop < windowHeight then
+            self.beltTop = self.beltTop + SHOW_HIDE_VY * origDt
+            if self.beltTop > windowHeight then
+                self.beltTop = windowHeight
+            end
         end
+        if self.beltVisible == true and self.beltTop > windowHeight - BELT_HEIGHT then
+            self.beltTop = self.beltTop - SHOW_HIDE_VY * origDt
+            if self.beltTop < windowHeight - BELT_HEIGHT then
+                self.beltTop = windowHeight - BELT_HEIGHT
+            end
+        end
+        self.beltBottom = self.beltTop + BELT_HEIGHT
+    else
+        if not self.beltBottom then
+            self.beltBottom = 0 -- Initialization
+        end
+        if self.beltVisible == false and self.beltBottom > 0 then
+            self.beltBottom = self.beltBottom - SHOW_HIDE_VY * origDt
+            if self.beltBottom < 0 then
+                self.beltBottom = 0
+            end
+        end
+        if self.beltVisible == true and self.beltBottom < BELT_HEIGHT then
+            self.beltBottom = self.beltBottom + SHOW_HIDE_VY * origDt
+            if self.beltBottom > BELT_HEIGHT then
+                self.beltBottom = BELT_HEIGHT
+            end
+        end
+        self.beltTop = self.beltBottom - BELT_HEIGHT
     end
 
     -- Skip all this logic when hidden and animations are done
-    if self.beltTop >= windowHeight and self.beltCursorVX == 0 then
+    local hidden
+    if TOP_BELT then
+        hidden = self.beltBottom <= 0
+    else
+        hidden = self.beltTop >= windowHeight
+    end
+    if hidden and self.beltCursorVX == 0 then
         -- Scroll to target immediately so we're there and don't do an
         -- animation when opening belt again
         -- TODO(nikki): Shares logic with "Scroll to target" below, refactor out?
@@ -292,7 +321,13 @@ function Common:updateBelt(dt)
     if self.numTouches == 1 and self.maxNumTouches == 1 then -- Single touch
         local touchId, touch = next(self.touches)
 
-        if touch.screenY > self.beltTop then -- Touch on belt
+        local inside
+        if TOP_BELT then
+            inside = touch.screenY < self.beltBottom
+        else
+            inside = touch.screenY > self.beltTop
+        end
+        if inside then -- Touch on belt
             touch.beltUsed = true -- Grab / scale-rotate steal even if `touch.used`
             touch.used = true
 
@@ -323,7 +358,13 @@ function Common:updateBelt(dt)
                 local totalDY = touch.screenY - touch.initialScreenY
                 local totalDLen2 = totalDX * totalDX + totalDY * totalDY
                 local long = totalDLen2 > (0.25 * ELEM_SIZE) * (0.25 * ELEM_SIZE)
-                local vertical = totalDY < 0 and math.abs(totalDY) > 1.2 * math.abs(totalDX)
+                local dir
+                if TOP_BELT then
+                    dir = totalDY > 0
+                else
+                    dir = totalDY < 0
+                end
+                local vertical = dir and math.abs(totalDY) > 1.2 * math.abs(totalDX)
                 if long and vertical then
                     touch.beltPlacing = true
                 end
@@ -364,7 +405,13 @@ function Common:updateBelt(dt)
             placeElem.placeY = touch.screenY + placeElem.placeRelY
 
             -- Touch dragged far enough into scene? Place actor!
-            if touch.screenY < self.beltTop - 0.1 * BELT_HEIGHT then
+            local inScene
+            if TOP_BELT then
+                inScene = touch.screenY > self.beltBottom + 0.1 * BELT_HEIGHT 
+            else
+                inScene = touch.screenY < self.beltTop - 0.1 * BELT_HEIGHT 
+            end
+            if inScene then
                 touch.beltUsed = false
                 touch.beltPlacing = nil
                 touch.beltIndex = nil
@@ -602,8 +649,14 @@ function Common:drawBelt()
     end
 
     -- Skip drawing UI when fully hidden
-    if self.beltTop >= windowHeight then
-        return
+    if TOP_BELT then
+        if self.beltBottom <= 0 then
+            return
+        end
+    else
+        if self.beltTop >= windowHeight then
+            return
+        end
     end
 
     love.graphics.push("all")
@@ -664,7 +717,7 @@ function Common:drawBelt()
         local h = titleFont:getHeight()
         love.graphics.print(currEntry.title, titleFont,
             0.5 * windowWidth - 0.5 * w,
-            self.beltTop - 1.2 * h)
+            TOP_BELT and (self.beltBottom + 0.2 * h) or (self.beltTop - 1.2 * h))
     end
 
     -- Touch overlay
