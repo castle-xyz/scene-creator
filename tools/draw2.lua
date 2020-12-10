@@ -353,6 +353,20 @@ function DrawTool:twoFingerPan(touchData)
     end
 end
 
+function DrawTool:loadLastSave()
+    local c = self:getSingleComponent()
+    local drawingComponent = self.dependencies.Drawing2:get(c.actorId)
+    local data = self.dependencies.Drawing2:cacheDrawing(drawingComponent, drawingComponent.properties)
+
+    c._lastHash = drawingComponent.properties.hash
+    self._drawData = data.drawData:clone()
+    self._physicsBodyData = data.physicsBodyData:clone()
+
+    if self._scaleRotateData and self._scaleRotateData.index and self._scaleRotateData.index > self._physicsBodyData:getNumShapes() then
+        self._scaleRotateData.index = self._physicsBodyData:getNumShapes()
+    end
+end
+
 function DrawTool.handlers:update(dt)
     if not self:isActive() then
         return
@@ -366,15 +380,7 @@ function DrawTool.handlers:update(dt)
 
     local drawingComponent = self.dependencies.Drawing2:get(c.actorId)
     if c._lastHash ~= drawingComponent.properties.hash then
-        local data = self.dependencies.Drawing2:cacheDrawing(drawingComponent, drawingComponent.properties)
-
-        c._lastHash = drawingComponent.properties.hash
-        self._drawData = data.drawData:clone()
-        self._physicsBodyData = data.physicsBodyData:clone()
-
-        if self._scaleRotateData and self._scaleRotateData.index and self._scaleRotateData.index > self._physicsBodyData:getNumShapes() then
-            self._scaleRotateData.index = self._physicsBodyData:getNumShapes()
-        end
+        self:loadLastSave()
     end
 
 
@@ -414,7 +420,7 @@ function DrawTool.handlers:update(dt)
             subtool._hasTouch = false
             self:callSubtoolHandler(subtool, "addSubtool")
             self:clearTempGraphics()
-            self:physicsBodyData().tempShape = nil
+            self:loadLastSave()
         end
 
         self:twoFingerPan(touchData)
