@@ -115,6 +115,22 @@ end
 function PhysicsBodyData:_pointsForShape(shape)
     local type = shape.type
 
+    if type == "circle" then
+        local numPoints = 30
+        local angle = 0
+        local points = {}
+        for i = 1, numPoints do
+            local diffX = shape.radius * math.cos(angle)
+            local diffY = shape.radius * math.sin(angle)
+            table.insert(points, shape.x + diffX)
+            table.insert(points, shape.y + diffY)
+
+            angle = angle - math.pi * 2.0 / numPoints
+        end
+
+        return points
+    end
+
     local p1 = shape.p1
     local p2 = shape.p2
 
@@ -152,15 +168,85 @@ function PhysicsBodyData:_pointsForShape(shape)
     end
 end
 
-function PhysicsBodyData:_drawShape(shape)
-    love.graphics.setLineWidth(0.1)
+function PhysicsBodyData:_drawDashedPoints(points)
+    local startsWithDash = true
+    local leftoverAmount = 0
 
-    local ty = shape.type
-    if ty == "circle" then
-        love.graphics.circle("line", shape.x, shape.y, shape.radius)
-    else
-        love.graphics.polygon("line", self:_pointsForShape(shape))
+    for i = 1, #points, 2 do
+        local next = i + 2
+        if next > #points then
+            next = next - #points
+        end
+
+        startsWithDash, leftoverAmount = self:_drawDashedLine({
+            x = points[i],
+            y = points[i + 1],
+        }, {
+            x = points[next],
+            y = points[next + 1],
+        }, startsWithDash, leftoverAmount)
     end
+end
+
+function PhysicsBodyData:_drawDashedLine(p1, p2, startsWithDash, leftoverAmount)
+    local DASH_LENGTH = 0.3
+    local BLANK_LENGTH = 0.3
+
+    local totalLength = math.sqrt(math.pow(p2.x - p1.x, 2.0) + math.pow(p2.y - p1.y, 2.0))
+
+    local unitVect = {
+        x = p2.x - p1.x,
+        y = p2.y - p1.y,
+    }
+    local l = math.sqrt(unitVect.x * unitVect.x + unitVect.y * unitVect.y)
+    unitVect.x = unitVect.x / l
+    unitVect.y = unitVect.y / l
+
+    local currentDist = 0
+    local isDash = startsWithDash
+
+    while currentDist < totalLength do
+        local currentSegmentLength
+
+        if leftoverAmount > 0 then
+            currentSegmentLength = leftoverAmount
+            leftoverAmount = 0
+        else
+            if isDash then
+                currentSegmentLength = DASH_LENGTH
+            else
+                currentSegmentLength = BLANK_LENGTH
+            end
+        end
+
+        local drawCurrentSegmentLength = currentSegmentLength
+        local cutOffSegment = false
+        if drawCurrentSegmentLength + currentDist > totalLength then
+            drawCurrentSegmentLength = totalLength - currentDist
+            cutOffSegment = true
+        end
+
+        if isDash then
+            love.graphics.line(
+                p1.x + unitVect.x * currentDist,
+                p1.y + unitVect.y * currentDist,
+                p1.x + unitVect.x * (currentDist + drawCurrentSegmentLength),
+                p1.y + unitVect.y * (currentDist + drawCurrentSegmentLength)
+            )
+        end
+
+        if not cutOffSegment then
+            isDash = not isDash
+        end
+        currentDist = currentDist + currentSegmentLength
+    end
+
+    return isDash, currentDist - totalLength
+end
+
+function PhysicsBodyData:_drawShape(shape)
+    love.graphics.setLineWidth(0.06)
+    self:_drawDashedPoints(self:_pointsForShape(shape))
 end
 
 function PhysicsBodyData:draw()
