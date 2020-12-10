@@ -1,5 +1,6 @@
 DrawData = {}
 local FILL_CANVAS_SIZE = 256
+local DEBUG_FILL_IMAGE_SIZE = false
 
 function DrawData:gridCellSize()
     return self.gridSize
@@ -770,7 +771,7 @@ function DrawData:updateFillImageWithFillImageData()
     self.fillImage = love.graphics.newImage(self.fillImageData)
 end
 
-function DrawData:checkForEmptyFill()
+function DrawData:compressFillCanvas()
     if self.fillImageData == nil then
         return
     end
@@ -783,6 +784,39 @@ function DrawData:checkForEmptyFill()
 
         self.fillImageData = nil
         self.fillImage = nil
+    else
+        local minX, minY, maxX, maxY = self.fillImageData:getBounds()
+        local width = maxX - minX + 1
+        local height = maxY - minY + 1
+
+        local newFillImageData = love.image.newImageData(width, height)
+
+        -- sourceX, sourceY, sourceWidth, sourceHeight, destX, destY
+        newFillImageData:copyImageData(
+            self.fillImageData,
+            minX,
+            minY,
+            width,
+            height,
+            0,
+            0)
+
+        if DEBUG_FILL_IMAGE_SIZE then
+            for x = 0, width - 1 do
+                newFillImageData:setPixel(x, 0, 1.0, 0.0, 0.0, 1.0)
+            end
+
+            for y = 0, height - 1 do
+                newFillImageData:setPixel(0, y, 1.0, 0.0, 0.0, 1.0)
+            end
+        end
+
+        self.fillImageData:release()
+        self.fillImageData = newFillImageData
+        self.fillImageBounds.minX = self.fillImageBounds.minX + minX
+        self.fillImageBounds.minY = self.fillImageBounds.minY + minY
+        self.fillImageBounds.maxX = self.fillImageBounds.maxX + minX
+        self.fillImageBounds.maxY = self.fillImageBounds.maxY + minY
     end
 end
 
@@ -799,7 +833,7 @@ function DrawData:floodFill(x, y)
         self.color[3],
         1.0
     )
-    --self:checkForEmptyFill()
+    self:compressFillCanvas()
     self:updateFillImageWithFillImageData()
 
     return pixelCount > 0
@@ -818,7 +852,7 @@ function DrawData:floodClear(x, y)
         0.0,
         0.0
     )
-    --self:checkForEmptyFill()
+    self:compressFillCanvas()
     self:updateFillImageWithFillImageData()
 
     return pixelCount > 0
@@ -830,7 +864,7 @@ function DrawData:resetFill()
     local pathsImageData = self.pathsCanvas:newImageData()
 
     self:getFillImageDataSizedToPathBounds():updateFloodFillForNewPaths(pathsImageData)
-    --self:checkForEmptyFill()
+    self:compressFillCanvas()
     self:updateFillImageWithFillImageData()
 end
 
