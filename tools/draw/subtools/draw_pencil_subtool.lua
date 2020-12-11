@@ -61,6 +61,7 @@ function PencilTool.handlers:onTouch(component, touchData)
         end
         self:drawData():resetGraphics()
         self:drawData():resetFill()
+        self:drawData():updateBounds()
         self:saveDrawing("pencil", component)
 
         self._initialCoord = nil

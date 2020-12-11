@@ -62,6 +62,7 @@ function BendTool.handlers:onTouch(component, touchData)
 
             self:drawData():resetFill()
             self:drawData():resetGraphics()
+            self:drawData():updateBounds()
             self:saveDrawing("bend", component)
         end
 

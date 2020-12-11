@@ -29,6 +29,7 @@ function EraseTool.handlers:onTouch(component, touchData)
         if self._didChange then
             self:drawData():resetGraphics()
             self:drawData():resetFill()
+            self:drawData():updateBounds()
             self:saveDrawing("erase", component)
         end
         self._didChange = false

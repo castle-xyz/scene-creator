@@ -312,7 +312,7 @@ function PhysicsBodyData:isPointInShape(point, shape)
 end
 
 function PhysicsBodyData:isPointInBounds(point)
-    return point.x >= -0.001 and point.x <= self.scale and point.y >= -0.001 and point.y <= self.scale
+    return point.x >= -DRAW_MAX_SIZE and point.x <= DRAW_MAX_SIZE and point.y >= -DRAW_MAX_SIZE and point.y <= DRAW_MAX_SIZE
 end
 
 function PhysicsBodyData:isShapeInBounds(shape)

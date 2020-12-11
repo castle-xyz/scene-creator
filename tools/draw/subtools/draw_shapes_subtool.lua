@@ -39,6 +39,7 @@ local function onTouch(obj, component, touchData)
 
         obj:drawData():resetGraphics()
         obj:drawData():resetFill()
+        obj:drawData():updateBounds()
         obj:saveDrawing('add ' .. obj:selectedSubtools().artwork_draw, component)
 
         obj._initialCoord = nil

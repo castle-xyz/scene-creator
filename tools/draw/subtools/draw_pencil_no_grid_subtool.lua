@@ -47,6 +47,7 @@ function PencilNoGridTool.handlers:onTouch(component, touchData)
         end
         self:drawData():resetGraphics()
         self:drawData():resetFill()
+        self:drawData():updateBounds()
         self:saveDrawing("freehand pencil", component)
 
         self._initialCoord = nil

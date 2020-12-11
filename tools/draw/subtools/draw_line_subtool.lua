@@ -20,6 +20,7 @@ function LineTool.handlers:onTouch(component, touchData)
         self:addPathData(pathData)
         self:drawData():resetGraphics()
         self:drawData():resetFill()
+        self:drawData():updateBounds()
         self:saveDrawing("line", component)
 
         self._initialCoord = nil
