@@ -479,8 +479,8 @@ function DrawTool.handlers:drawOverlay()
         self:drawShapes()
 
         love.graphics.setColor(0, 0, 0, 0.5)
-        local padding = 0.1
-        love.graphics.rectangle('fill', -padding, -padding, self._drawData.scale + padding * 2.0, self._drawData.scale + padding * 2.0)
+        local padding = 1
+        love.graphics.rectangle('fill', -DRAW_MAX_SIZE - padding, -DRAW_MAX_SIZE - padding, (DRAW_MAX_SIZE + padding) * 2.0, (DRAW_MAX_SIZE + padding) * 2.0)
     end
 
     -- grid

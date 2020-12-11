@@ -54,6 +54,16 @@ local BodyBehavior =
           label = 'Height',
           props = { min = MIN_BODY_SIZE, max = MAX_BODY_SIZE, decimalDigits = 1 },
        },
+       widthScale = {
+          method = 'numberInput',
+          label = 'Width Scale',
+          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2 },
+       },
+       heightScale = {
+          method = 'numberInput',
+          label = 'Height Scale',
+          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2 },
+       },
        visible = {
           method = 'toggle',
           label = 'Visible',
@@ -217,6 +227,8 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
 
         component.properties.width = width
         component.properties.height = height
+        component.properties.widthScale = bp.widthScale or nil
+        component.properties.heightScale = bp.heightScale or nil
         component.properties.isNewDrawingTool = false
         if bp.visible == nil then
            component.properties.visible = true
@@ -304,6 +316,8 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.fixtures = component.properties.fixtures
     bp.width = component.properties.width
     bp.height = component.properties.height
+    bp.widthScale = component.properties.widthScale
+    bp.heightScale = component.properties.heightScale
     bp.visible = component.properties.visible
     bp.layerName = component.properties.layerName
 end
@@ -768,9 +782,6 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
             self._physics:destroyObject(shapeId)
         end
     else
-        local halfWidth = component.properties.width
-        local halfHeight = component.properties.height
-
         local shapeId = self._physics:newRectangleShape(component.properties.width, component.properties.height)
         local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
         self:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)

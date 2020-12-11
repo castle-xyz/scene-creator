@@ -435,6 +435,7 @@ function DrawData:new(obj)
         fillPng = obj.fillPng or nil,
         version = obj.version or nil,
         fillPixelsPerUnit = obj.fillPixelsPerUnit or 25.6,
+        bounds =  obj.bounds or nil,
     }
 
     local newPathDataList = {}
@@ -486,6 +487,12 @@ function DrawData:migrateV1ToV2()
 
     self.version = 2
     self.gridSize = self.scale / (self.gridSize - 1)
+    self.bounds = {
+        minX = -self.scale / 2.0,
+        minY = -self.scale / 2.0,
+        maxX = self.scale / 2.0,
+        maxY = self.scale / 2.0,
+    }
 
     self.fillImageBounds = {
         minX = self.fillPixelsPerUnit * -self.scale / 2.0,
@@ -531,6 +538,10 @@ function DrawData:migrateV1ToV2()
     table.insert(self.pathDataList, boundsPathData2)
 end
 
+function DrawData:updateBounds()
+    self.bounds = self:getPathDataBounds()
+end
+
 function DrawData:getPathDataBounds()
     local minX = -1
     local minY = -1
@@ -563,10 +574,21 @@ function DrawData:getPathDataBounds()
     end
 
     return {
-        minX = math.floor(minX * self.fillPixelsPerUnit),
-        minY = math.floor(minY * self.fillPixelsPerUnit),
-        maxX = math.ceil(maxX * self.fillPixelsPerUnit),
-        maxY = math.ceil(maxY * self.fillPixelsPerUnit),
+        minX = minX,
+        minY = minY,
+        maxX = maxX,
+        maxY = maxY,
+    }
+end
+
+function DrawData:getPathDataBoundsInPixelCoordinates()
+    local bounds = self:getPathDataBounds()
+
+    return {
+        minX = math.floor(bounds.minX * self.fillPixelsPerUnit),
+        minY = math.floor(bounds.minY * self.fillPixelsPerUnit),
+        maxX = math.ceil(bounds.maxX * self.fillPixelsPerUnit),
+        maxY = math.ceil(bounds.maxY * self.fillPixelsPerUnit),
     }
 end
 
@@ -661,6 +683,7 @@ function DrawData:serialize()
         fillCanvasSize = self.fillCanvasSize,
         version = self.version,
         fillPixelsPerUnit = self.fillPixelsPerUnit,
+        bounds = self.bounds,
     }
 
     local lastSerializedPathData = nil
@@ -699,7 +722,7 @@ function DrawData:serialize()
 end
 
 function DrawData:getFillImageDataSizedToPathBounds()
-    local pathBounds = self:getPathDataBounds()
+    local pathBounds = self:getPathDataBoundsInPixelCoordinates()
     local width = pathBounds.maxX - pathBounds.minX
     local height = pathBounds.maxY - pathBounds.minY
 
@@ -854,7 +877,7 @@ function DrawData:resetFill()
 end
 
 function DrawData:updatePathsCanvas()
-    local bounds = self:getPathDataBounds()
+    local bounds = self:getPathDataBoundsInPixelCoordinates()
     local width = bounds.maxX - bounds.minX
     local height = bounds.maxY - bounds.minY
 
@@ -903,10 +926,6 @@ function DrawData:renderPreviewPng(size)
     previewCanvas:renderTo(
         function()
             local pathBounds = self:getPathDataBounds()
-            pathBounds.minX = pathBounds.minX / self.fillPixelsPerUnit
-            pathBounds.minY = pathBounds.minY / self.fillPixelsPerUnit
-            pathBounds.maxX = pathBounds.maxX / self.fillPixelsPerUnit
-            pathBounds.maxY = pathBounds.maxY / self.fillPixelsPerUnit
 
             local width = pathBounds.maxX - pathBounds.minX
             local height = pathBounds.maxY - pathBounds.minY
@@ -952,7 +971,7 @@ end
 function DrawData:renderFill()
 
     --[[if self.pathsCanvas ~= nil then
-        local bounds = self:getPathDataBounds()
+        local bounds = self:getPathDataBoundsInPixelCoordinates()
         local pathsImageData = self.pathsCanvas:newImageData()
         local pathsImage = love.graphics.newImage(pathsImageData)
         love.graphics.draw(pathsImage, bounds.minX / self.fillPixelsPerUnit, bounds.minY / self.fillPixelsPerUnit, 0.0, 1.0 / self.fillPixelsPerUnit, 1.0 / self.fillPixelsPerUnit)

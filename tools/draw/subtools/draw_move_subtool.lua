@@ -89,6 +89,7 @@ function MoveTool.handlers:onTouch(component, touchData)
 
             self:drawData():resetGraphics()
             self:drawData():resetFill()
+            self:drawData():updateBounds()
             self:saveDrawing("move", component)
         end
 
