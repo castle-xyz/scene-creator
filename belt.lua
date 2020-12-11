@@ -28,7 +28,7 @@ function Common:startBelt()
     self.beltCursorX = 0
     self.beltCursorVX = 0
 
-    self.beltVisible = false
+    self.beltVisible = true
 
     self.beltTop = nil -- Initialized on first update
     self.beltBottom = nil
@@ -98,38 +98,6 @@ function Common:startBelt()
         }
     ]])
 end
-
--- Show / hide
-
-jsEvents.listen(
-    "SHOW_BELT",
-    function()
-        local self = currentInstance()
-        if self then
-            --self.beltVisible = true
-        end
-    end
-)
-
-jsEvents.listen(
-    "HIDE_BELT",
-    function()
-        local self = currentInstance()
-        if self then
-            self.beltVisible = false
-        end
-    end
-)
-
-jsEvents.listen(
-    "TOGGLE_BELT",
-    function()
-        local self = currentInstance()
-        if self then
-            self.beltVisible = not self.beltVisible
-        end
-    end
-)
 
 -- Focus
 
@@ -223,12 +191,7 @@ function Common:updateBelt(dt)
     self:syncBelt()
 
     if next(self.selectedActorIds) then
-        -- For now we'll dismiss belt when something is selected. Should make it so
-        -- the inspector and the belt never try to be visible at the same time.
-        self.beltVisible = false
-
-        -- Focus the blueprint of some selected actor so that we'll be on it
-        -- if the user opens the belt again
+        -- Focus the blueprint of some selected actor
         local needToFocus = true
         for actorId in pairs(self.selectedActorIds) do
             local actor = self.actors[actorId]
@@ -418,7 +381,6 @@ function Common:updateBelt(dt)
                 placeElem.placeX, placeElem.placeY = nil, nil
                 placeElem.placeRelX, placeElem.placeRelY = nil, nil
                 self:_addBlueprintToScene(placeElem.entryId, touch.x, touch.y)
-                self.beltVisible = false
             end
         end
     else
