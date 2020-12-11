@@ -132,6 +132,9 @@ end
 function Common:syncBelt()
     -- Synchronize belt data with library entries
 
+    if not self.isEditable then
+        return
+    end
     if not self.beltDirty then
         return
     end
@@ -180,6 +183,13 @@ function Common:syncBelt()
 end
 
 function Common:updateBelt(dt)
+    if not self.isEditable then
+        return
+    end
+    if not self.performing then
+        return
+    end
+
     -- Make belt snap quicker. Resorted to making time faster after tuning the
     -- other constants for spring damping + deceleration...
     local origDt = dt
@@ -444,6 +454,10 @@ end
 local titleFont = love.graphics.newFont(32)
 
 function Common:drawBelt()
+    if self.performing then
+        return
+    end
+
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
     -- Highlighting
