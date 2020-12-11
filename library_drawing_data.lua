@@ -3,67 +3,10 @@ local DrawingData = {
       base64Png = "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEABAMAAACuXLVVAAAAFVBMVEUAAAAJKDcST28bd6Ykn94knt0kndxydfh2AAAAB3RSTlMAQIC////+2XIY7gAABJtJREFUeJztnQt6nDAMhDctB8imPQDZ+ACb0AOwhfb+R2oISzBgwA9pxv2CLjB/pJHsJWCfTkf8z3Hu45Gi/VK1VlQXKMX55Ve7iAbGcK6W6neGZ4D8k+OPt9OgLH/elFfPwsOufBe/1bzww0e+C506PLz46r8nQUPfK/1DNKW0/lOIfBfCBN7lVyKI0BcliNIXJIjUFyOI1hcaCAn6Ijn4lqIvQJCon0wQNv9ckTiVTap+IkFnwD+pBK/x+skG6KOM1U83QB/RRTAy+tEE36X0I4sgVYAumhiAn3L6UUUQ6oAhymAAIwsQnAJBB/YRmAJJB/YR6ENRB/ZxC0qAvH7bhvxiU0hAUApUEhCSApUEBKRAKQH+KVBKgHcK1BLgmwK1BHimQDEBfilQTEDb1h4Amvo+K4L4MjiN6y6A0QXY3RcIb4SWUXITsNuJqj34ETs2LNQBdmxo9AE2bahuwS62pqHqFBxiqwbie2FXbNgQUoGtUWAwAOujAKO/XgNQBdZrAOmBLtZqAOmBLlZqAKvA2iwqQOp/12aRAQG0a+sBTr9tyRZwN6JBArgaEQrgaERoBVyNCAZYNqLBAixNgNVfmgBcgaUJlH8SLmNuAoMGqNkA8+UArT9fDuAenLuwwANMXWjwANNRBNsOjjEZRfqPBRxB9uDUhQUDwHahYQDc2AC2Cxn6NgDFg7YL6QAFB2BsA8MBqNkAYx8SVoIuxjbg6I8ApCYY24AOULAArrkAGBbALRcA0hgY+5Clzwe470spW+I+HrlzKAOA8gMA/mxijCt3EGYA0O+JYP8oWcaNO4mzAaAtBcOTKp7+fTE4AL4yQJsFAHE7kAHA4wFwABwAB8AB8OUBsliOvzQAfUuWCQD9lxEdwLAB6M8HiAD0JyQ1+xnRNY/HdESAMo8npfSH1USATP5fwFsMhvfJDBuANgqH/5oVLID6DkCbRGUuALRB8PkWCwtg0GcNgvG1UlIf0gHqTwBSG5T5AJD68DQGpQ0aNoD9cjelDWoLoGAA2C+1UtqgtADoLzYzXDj9wIDgwilAgQeoJwCEn2flBID+iQfehfOPXOAurGcA8FE0swB+FJ3mATbB8rNXsAnmFoCbYG4BuAkW+mATuL58hppgaQGwCZYWAJvAoZ/Bx+8FDsD9+T+wBi4LnICNuHYcDawR6xUA+jEgqBqsHwgEqsFaBTI4DAdTg60jmegHItGPhKIfioVYkzcs2IW6/t75fOo23DukkX44Hv14QG0b7iZAeRr6nJusmoL9EyKVd2Ye+vyDUvlHxdIPy+UfF0w/MJl/ZDT90Gz+seEaKfAZglawj46X3xeUgQD06wOkUxBx1ZioD6MuUzFy+nH3iAgWoYwCkEtB9G02QgTx9/kIFSHhsr3g+9xcETiDp2HS9ROuMxIhSL3oL9UGTfJti+xrxRIJkgwoQJBowCEuZP1oAjH9SALRC0/DfZDef2kE0vrvBIarfwqayoL2s8N3bWzOOvrv4XXb7Kvmxcv7Tqi0733euXBZL/sWwmoWKoR8Fw8Xx7XX1TP2+vGnS/VZjKZ6Q/3ts+gvXudoHyEV/wDH2DHZdglO0QAAAABJRU5ErkJggg==",
       Drawing2 = {
          drawData = {
-           color = { 0.14360261804917, 0.62352941176471, 0.87058823529412, 1 },
-           fillCanvasSize = 256,
-           fillPng = "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAABlBMVEUAAAAkn94NkT71AAAAAXRSTlMAQObYZgAAAopJREFUeJztmkGOwjAMRUEsWHKEHCVHS4/GUXoEll1UzUwpIYlj+2fkqmIksvUD7G8LGn9Op78dF+OkxW/x9zzk+Dk+zyACfgNmKX6Jr3OXM9yOlGd8Hz5+zcCopSinGaP+GdcS4D7DlQBXRyiBpY2fY3UGPQUuCVcDbRKhBtokIjk0iQsF7gS4UYDOlaMAzTJQgGZJ47RfTY40y2sLjHqONEvfAvVUNUXQMtp4XcaZAwa9iLqMphPrKbvBVFnXyVRZ18lUWdfJxcs62SrLOplerueuy1AKwcpQCuF4IAvheSALEXggC8HHsxCCDFkIQYYOICkl6JSVEnTKSjkEeAmYEJCkDBKQpJTiGIhA6SSlKGSSEgKi0klrUekO4KG3ImntDcCst6IDWEArXs1AgNKrrVsQUHq1dQsCSjO3bkFAaebWTgg4EzDp3e4A5h4gaMCyC6DFnxNjBtSBWkfKDqgTt86cHVBHsgMYdwDUoe4AHjsAzghMHwF4IzD/DyB8PrB8gS+wK7DH0PovED/luxoCB/zqWYE9fv2twB5PQRA44GHvgEfWIx68vQZ03Q6cBkw9gP0aBQH7Xc9+37Tfee33bny19wZg7ttgQAAuSSAAFzX2XRBcN8GFFV55BQR4CUhrNycBUy8Al4dw/QgXmHBHKgKndCAQ+Hhe5HoeyKtgxwN5mQzX0XChDVficKkO1/J4se85oLQGHAeU5gK0J1gh7gUALRJosmCbhqmzdoKYMmrHC5pNTD+rIrDhhS0zpxfBlDESABp/TZY0TrNsbViSZetIEy2bFLCFCk1YbONWSbQpnLCVXE4Vb3hDOxsa4thSf2s1CEB6C/m/A/CPAVshoxx/Dpbyevb8ADwrn93OGkmmAAAAAElFTkSuQmCC",
-           gridSize = 15,
-           lineColor = { 0.66037992589614, 0.4, 0.93333333333333, 1 },
-           nextPathId = 4,
-           pathDataList = { {
-               color = { 0.14360261804917, 0.62352941176471, 0.87058823529412, 1 },
-               id = 1,
-               points = { {
-                   x = 5,
-                   y = 0
-                 }, {
-                   x = 10,
-                   y = 5
-                 } },
-               style = 2
-             }, {
-               color = { 0.14360261804917, 0.62352941176471, 0.87058823529412, 1 },
-               id = 2,
-               points = { {
-                   x = 10,
-                   y = 5
-                 }, {
-                   x = 5,
-                   y = 10
-                 } },
-               style = 3
-             }, {
-               color = { 0.14360261804917, 0.62352941176471, 0.87058823529412, 1 },
-               id = 3,
-               points = { {
-                   x = 5,
-                   y = 10
-                 }, {
-                   x = 0,
-                   y = 5
-                 } },
-               style = 3
-             }, {
-               color = { 0.14360261804917, 0.62352941176471, 0.87058823529412, 1 },
-               id = 4,
-               points = { {
-                   x = 0,
-                   y = 5
-                 }, {
-                   x = 5,
-                   y = 0
-                 } },
-               style = 2
-             } },
-           scale = 10
+           version = 2,
          },
          physicsBodyData = {
-           scale = 10,
-           shapes = { {
-               radius = 5,
-               type = "circle",
-               x = 5,
-               y = 5
-             } }
+          version = 2,
          },
      },
    },

@@ -33,37 +33,21 @@ function DrawData:roundGlobalCoordinatesToGrid(x, y)
     gridX = math.floor(gridX + 0.5)
     gridY = math.floor(gridY + 0.5)
 
-    -- TODO: fix bounds
-    --[[
-    if gridX <= 0 then
-        gridX = 1
-    elseif gridX > self.gridSize then
-        gridX = self.gridSize
-    end
-
-    if gridY <= 0 then
-        gridY = 1
-    elseif gridY > self.gridSize then
-        gridY = self.gridSize
-    end]]--
-
-    return self:gridToGlobalCoordinates(gridX, gridY)
+    return self:clampGlobalCoordinates(self:gridToGlobalCoordinates(gridX, gridY))
 end
 
 function DrawData:clampGlobalCoordinates(x, y)
-    -- TODO: fix bounds
-    --[[
-    if x < 0 then
-        x = 0
-    elseif x > self.scale then
-        x = self.scale
+    if x < -DRAW_MAX_SIZE then
+        x = -DRAW_MAX_SIZE
+    elseif x > DRAW_MAX_SIZE then
+        x = DRAW_MAX_SIZE
     end
 
-    if y < 0 then
-        y = 0
-    elseif y > self.scale then
-        y = self.scale
-    end]]--
+    if y < -DRAW_MAX_SIZE then
+        y = -DRAW_MAX_SIZE
+    elseif y > DRAW_MAX_SIZE then
+        y = DRAW_MAX_SIZE
+    end
 
     return x, y
 end
