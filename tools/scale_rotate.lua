@@ -364,7 +364,7 @@ end
 function ScaleRotateTool:drawGrid()
     if self._gridEnabled then
         love.graphics.setColor(0, 0, 0, 0.5)
-        drawGrid(self._gridSize, self.game:getViewScale(), self.game.viewX, self.game.viewY, 0.5 * self.game.viewWidth, self.game:getYOffset(), 2, false)
+        drawGrid(self._gridSize, -1, self.game:getViewScale(), self.game.viewX, self.game.viewY, 0.5 * self.game.viewWidth, self.game:getYOffset(), 2, false)
     end
 end
 

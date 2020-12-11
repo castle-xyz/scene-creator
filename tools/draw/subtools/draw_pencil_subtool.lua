@@ -28,7 +28,7 @@ function PencilTool.handlers:onTouch(component, touchData)
     local newAngle = (angleRoundedTo8Directions * (math.pi * 2.0) / 8.0)
     local direction = {x = math.cos(newAngle), y = math.sin(newAngle)}
 
-    local cellSize = self:drawData().scale / self:drawData().gridSize
+    local cellSize = self:drawData():gridCellSize()
 
     if distFromOriginalPoint > cellSize then
         if self._currentPathData ~= nil and (self._currentPathData.points[1].x ~= self._currentPathData.points[2].x or self._currentPathData.points[1].y ~= self._currentPathData.points[2].y) then
