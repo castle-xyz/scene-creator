@@ -2,10 +2,9 @@
 
 local OS = love.system.getOS()
 
-local BELT_HEIGHT = 200
-
-local ELEM_SIZE = 170
+local BELT_HEIGHT = 160
 local ELEM_GAP = 20
+local ELEM_SIZE = BELT_HEIGHT - 30
 
 local DECEL_X = 2200
 
@@ -231,18 +230,23 @@ function Common:updateBelt(dt)
         local touchId, touch = next(self.touches)
 
         if touch.screenY < self.beltBottom then -- Touch on belt
+            if next(self.selectedActorIds) then
+                self:deselectAllActors({ noDeselectBelt = true })
+            end
+
             touch.beltUsed = true -- Grab / scale-rotate steal even if `touch.used`
             touch.used = true
 
             local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
             local touchBeltIndex = math.floor(touchBeltX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
 
-            -- Cancel existing target on press, track new target on tap
+            -- Cancel existing target on press, track new target on tap. Also enable highlight
             if touch.pressed then
                 self.beltTargetIndex = nil
             end
             if touch.released and not touch.movedNear and currTime - touch.pressTime < 0.2 then
                 self.beltTargetIndex = touchBeltIndex
+                self.beltHighlightEnabled = true
             end
 
             -- Track which element the touch begins on
@@ -261,7 +265,7 @@ function Common:updateBelt(dt)
                 local totalDY = touch.screenY - touch.initialScreenY
                 local totalDLen2 = totalDX * totalDX + totalDY * totalDY
                 local long = totalDLen2 > (0.25 * ELEM_SIZE) * (0.25 * ELEM_SIZE)
-                local vertical = totalDY > 0 and math.abs(totalDY) > 1.8 * math.abs(totalDX)
+                local vertical = totalDY > 0 and math.abs(totalDY) > 1.5 * math.abs(totalDX)
                 if long and vertical then
                     touch.beltPlacing = true
                 end
@@ -323,11 +327,11 @@ function Common:updateBelt(dt)
     -- TODO(nikki): Shares logic with "Scroll to target immedately" above, refactor out?
     local targetMode = false
     local targetElem = self.beltElems[self.beltTargetIndex]
-    if targetElem ~= nil then
+    if targetElem then
         self.beltEntryId = targetElem.entryId
         if math.abs(targetElem.x - self.beltCursorX) <= 3 then
             -- Reached target
-            self.targetElem = nil
+            self.beltTargetIndex = nil
             self.beltCursorX = targetElem.x
             self.beltCursorVX = 0
         else
@@ -338,17 +342,19 @@ function Common:updateBelt(dt)
     else
         self.beltTargetIndex = nil -- Invalid target index
 
-        -- Set entry id based on cursor position
-        local cursorIndex = math.floor(self.beltCursorX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
-        if cursorIndex < 1 then
-            cursorIndex = 1
-        end
-        if cursorIndex > #self.beltElems then
-            cursorIndex = self.beltElems
-        end
-        local cursorElem = self.beltElems[cursorIndex]
-        if cursorElem then
-            self.beltEntryId = cursorElem.entryId
+        -- If have current entry, update based on cursor position
+        if self.beltEntryId then
+            local cursorIndex = math.floor(self.beltCursorX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
+            if cursorIndex < 1 then
+                cursorIndex = 1
+            end
+            if cursorIndex > #self.beltElems then
+                cursorIndex = self.beltElems
+            end
+            local cursorElem = self.beltElems[cursorIndex]
+            if cursorElem then
+                self.beltEntryId = cursorElem.entryId
+            end
         end
     end
 
@@ -445,6 +451,11 @@ function Common:updateBelt(dt)
                 self.beltLastVibrated = currTime
             end
         end
+    end
+
+    -- Disable highlight when no entry selected, or if some actor is selected
+    if not self.beltEntryId or next(self.selectedActorIds) then
+        self.beltHighlightEnabled = false
     end
 end
 
@@ -588,12 +599,14 @@ function Common:drawBelt()
     end
 
     -- Highlight box
-    love.graphics.setColor(0, 1, 0)
-    love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
-    local boxSize = 1.05 * ELEM_SIZE
-    love.graphics.rectangle("line",
-        0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
-        boxSize, boxSize)
+    if self.beltEntryId then
+        love.graphics.setColor(0, 1, 0)
+        love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
+        local boxSize = 1.05 * ELEM_SIZE
+        love.graphics.rectangle("line",
+            0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
+            boxSize, boxSize)
+    end
 
     -- Title for current element
     love.graphics.setColor(1, 1, 1)
