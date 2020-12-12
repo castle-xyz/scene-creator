@@ -41,6 +41,8 @@ function Common:startBelt()
     self.beltHighlightCanvas = nil -- Set up lazily
     self.beltHighlightCanvas2 = nil
 
+    self.beltHapticsGesture = false -- Whether current gesture should fire haptics
+
     -- Renders grey if the pixel is fully transparent, and white otherwise.
     -- Used with a multiply blend mode to darken the screen.
     self.beltHighlightShader = love.graphics.newShader([[
@@ -236,6 +238,8 @@ function Common:updateBelt(dt)
 
             touch.beltUsed = true -- Grab / scale-rotate steal even if `touch.used`
             touch.used = true
+            self.beltHapticsGesture = true
+            self.beltHighlightEnabled = true -- Enable highlight on belt touch
 
             local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
             local touchBeltIndex = math.floor(touchBeltX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
@@ -246,7 +250,6 @@ function Common:updateBelt(dt)
             end
             if touch.released and not touch.movedNear and currTime - touch.pressTime < 0.2 then
                 self.beltTargetIndex = touchBeltIndex
-                self.beltHighlightEnabled = true
             end
 
             -- Track which element the touch begins on
@@ -429,7 +432,7 @@ function Common:updateBelt(dt)
     end
 
     -- Vibrate when we go across elements
-    if ENABLE_HAPTICS and currTime - self.beltLastVibrated > 0.03 then
+    if ENABLE_HAPTICS and self.beltHapticsGesture and currTime - self.beltLastVibrated > 0.03 then
         local offset
         if self.beltCursorX < prevBeltCursorX then
             offset = 0.5 + 0.32
@@ -451,6 +454,9 @@ function Common:updateBelt(dt)
                 self.beltLastVibrated = currTime
             end
         end
+    end
+    if math.abs(self.beltCursorVX) <= 1 then
+        self.beltHapticsGesture = false -- Scroll ended
     end
 
     -- Disable highlight when no entry selected, or if some actor is selected
