@@ -231,7 +231,7 @@ function Common:updateBelt(dt)
     if self.numTouches == 1 and self.maxNumTouches == 1 then -- Single touch
         local touchId, touch = next(self.touches)
 
-        if touch.screenY < self.beltBottom then -- Touch on belt
+        if touch.beltIndex or touch.screenY < self.beltBottom then -- Touch on belt
             if next(self.selectedActorIds) then
                 self:deselectAllActors({ noDeselectBelt = true })
             end
@@ -239,7 +239,6 @@ function Common:updateBelt(dt)
             touch.beltUsed = true -- Grab / scale-rotate steal even if `touch.used`
             touch.used = true
             self.beltHapticsGesture = true
-            self.beltHighlightEnabled = true -- Enable highlight on belt touch
 
             local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
             local touchBeltIndex = math.floor(touchBeltX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
@@ -250,6 +249,7 @@ function Common:updateBelt(dt)
             end
             if touch.released and not touch.movedNear and currTime - touch.pressTime < 0.2 then
                 self.beltTargetIndex = touchBeltIndex
+                self.beltHighlightEnabled = true -- Enable highlight on belt touch
             end
 
             -- Track which element the touch begins on
@@ -268,7 +268,7 @@ function Common:updateBelt(dt)
                 local totalDY = touch.screenY - touch.initialScreenY
                 local totalDLen2 = totalDX * totalDX + totalDY * totalDY
                 local long = totalDLen2 > (0.25 * ELEM_SIZE) * (0.25 * ELEM_SIZE)
-                local vertical = totalDY > 0 and math.abs(totalDY) > 1.5 * math.abs(totalDX)
+                local vertical = math.abs(totalDY) > 1.5 * math.abs(totalDX)
                 if long and vertical then
                     touch.beltPlacing = true
                 end
@@ -309,7 +309,7 @@ function Common:updateBelt(dt)
             placeElem.placeY = touch.screenY + placeElem.placeRelY
 
             -- Touch dragged far enough into scene? Place actor!
-            if touch.screenY > self.beltBottom + 0.1 * BELT_HEIGHT then
+            if touch.screenY > self.beltBottom + 0.6 * BELT_HEIGHT then
                 touch.beltUsed = false
                 touch.beltPlacing = nil
                 touch.beltIndex = nil
@@ -355,7 +355,8 @@ function Common:updateBelt(dt)
                 cursorIndex = self.beltElems
             end
             local cursorElem = self.beltElems[cursorIndex]
-            if cursorElem then
+            if cursorElem and cursorElem.entryId ~= self.beltEntryId then
+                self.beltHighlightEnabled = true
                 self.beltEntryId = cursorElem.entryId
             end
         end
