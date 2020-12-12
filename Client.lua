@@ -726,6 +726,8 @@ function Client:draw()
             networkText = networkText .. "    mem: " .. math.floor(collectgarbage("count")) .. "kb"
         end
 
+        love.graphics.push("all")
+        love.graphics.translate(0, self.beltBottom)
         love.graphics.setFont(debugFont)
         love.graphics.setColor(1, 1, 1)
         love.graphics.rectangle("fill", windowWidth - 110, 0, 110, 50)
@@ -735,6 +737,7 @@ function Client:draw()
             windowWidth - 100,
             16
         )
+        love.graphics.pop()
     end
 
     if not sentGameLoadedEvent then

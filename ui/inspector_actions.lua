@@ -243,8 +243,8 @@ function Client:deleteSelection()
         end
 
         -- Deselect and remove actors
+        self:deselectAllActors()
         for _, save in ipairs(saves) do
-            self:deselectActor(save.actorId)
             self:send('removeActor', self.clientId, save.actorId)
         end
     end, function()
