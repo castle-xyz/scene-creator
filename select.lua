@@ -178,13 +178,17 @@ function Client:selectActor(actorId)
 end
 
 function Client:deselectActor(actorId)
-   if self.selectedActorIds[actorId] then
-       self.selectionChanged = true
+    if self.selectedActorIds[actorId] then
+        self.selectionChanged = true
     end
     self.selectedActorIds[actorId] = nil
 end
 
-function Client:deselectAllActors()
+function Client:deselectAllActors(opts)
+    opts = opts or {}
+    if not opts.noDeselectBelt then
+        self.beltEntryId = nil
+    end
     for actorId in pairs(self.selectedActorIds) do
         self:deselectActor(actorId)
     end
