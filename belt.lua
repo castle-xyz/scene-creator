@@ -106,7 +106,7 @@ jsEvents.listen(
     function()
         local self = currentInstance()
         if self then
-            self.beltVisible = true
+            --self.beltVisible = true
         end
     end
 )
@@ -141,7 +141,7 @@ function Common:focusEntryInBelt(entryId, opts)
             self.beltTargetIndex = i
             self.beltEntryId = entryId
             if not opts.noShow then
-                self.beltVisible = true
+                --self.beltVisible = true
             end
             break
         end
