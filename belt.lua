@@ -37,6 +37,8 @@ function Common:startBelt()
 
     self.beltLastVibrated = love.timer.getTime()
 
+    self.beltHighlightEnabled = false
+
     self.beltHighlightCanvas = nil -- Set up lazily
     self.beltHighlightCanvas2 = nil
 
@@ -132,7 +134,7 @@ end
 function Common:syncBelt()
     -- Synchronize belt data with library entries
 
-    if not self.isEditable then
+    if self.performing then
         return
     end
     if not self.beltDirty then
@@ -183,10 +185,7 @@ function Common:syncBelt()
 end
 
 function Common:updateBelt(dt)
-    if not self.isEditable then
-        return
-    end
-    if not self.performing then
+    if self.performing then
         return
     end
 
@@ -262,7 +261,7 @@ function Common:updateBelt(dt)
                 local totalDY = touch.screenY - touch.initialScreenY
                 local totalDLen2 = totalDX * totalDX + totalDY * totalDY
                 local long = totalDLen2 > (0.25 * ELEM_SIZE) * (0.25 * ELEM_SIZE)
-                local vertical = totalDY > 0 and math.abs(totalDY) > 1.2 * math.abs(totalDX)
+                local vertical = totalDY > 0 and math.abs(totalDY) > 1.8 * math.abs(totalDX)
                 if long and vertical then
                     touch.beltPlacing = true
                 end
@@ -457,11 +456,14 @@ function Common:drawBelt()
     if self.performing then
         return
     end
+    if not self.beltVisible then
+        return
+    end
 
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
     -- Highlighting
-    if self.beltVisible then
+    if self.beltHighlightEnabled then
         -- Set up and render to highlight canvas
         if not self.beltHighlightCanvas then
             self.beltHighlightCanvas = love.graphics.newCanvas()
@@ -546,7 +548,7 @@ function Common:drawBelt()
     love.graphics.push("all")
 
     -- Background
-    love.graphics.setColor(0, 0, 0, 0.4)
+    love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle("fill",
         0, self.beltTop,
         windowWidth, BELT_HEIGHT)
