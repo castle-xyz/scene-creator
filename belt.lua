@@ -521,11 +521,11 @@ function Common:drawBelt()
             love.graphics.applyTransform(self.viewTransform)
 
             local drawBehaviors = self.behaviorsByHandler["drawComponent"] or {}
-            self:forEachActorByDrawOrder(function(actor)
-                -- Render actor if it uses the currently highlighted blueprint
-                if actor and actor.parentEntryId and actor.parentEntryId == self.beltEntryId then
-                    local entry = self.library[actor.parentEntryId]
-                    if not entry.isCore then
+            local entry = self.library[self.beltEntryId]
+            if entry and not entry.isCore then
+                self:forEachActorByDrawOrder(function(actor)
+                    -- Render actor if it uses the currently highlighted blueprint
+                    if actor and actor.parentEntryId and actor.parentEntryId == self.beltEntryId then
                         for behaviorId, behavior in pairs(drawBehaviors) do
                             local component = actor.components[behaviorId]
                             if component then
@@ -533,8 +533,8 @@ function Common:drawBelt()
                             end
                         end
                     end
-                end
-            end)
+                end)
+            end
 
             love.graphics.pop()
         end)
