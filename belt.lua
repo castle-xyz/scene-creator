@@ -2,7 +2,7 @@
 
 local OS = love.system.getOS()
 
-local BELT_HEIGHT = 160
+BELT_HEIGHT = 160
 local ELEM_GAP = 20
 local ELEM_SIZE = BELT_HEIGHT - 30
 
@@ -13,6 +13,8 @@ local SNAP_THRESHOLD_VX = 200
 local SHOW_HIDE_VY = 1200
 
 local ENABLE_HAPTICS = true
+
+local DEBUG_TOUCHES = true
 
 -- Start / stop
 
@@ -99,6 +101,17 @@ function Common:startBelt()
         }
     ]])
 end
+
+-- Layout
+
+function Common:getBeltYOffset()
+    if self.isEditable and not self:isActiveToolFullscreen() then
+        return BELT_HEIGHT
+    end
+    return 0
+end
+
+-- Haptics
 
 function Common:fireBeltHaptic()
     local currTime = love.timer.getTime()
@@ -240,7 +253,7 @@ function Common:updateBelt(dt)
     local skipApplyVel = false
 
     local dragScrolling = false
-    if self.numTouches == 1 and self.maxNumTouches == 1 then -- Single touch
+    if not self:isActiveToolFullscreen() and self.numTouches == 1 and self.maxNumTouches == 1 then -- Single touch
         local touchId, touch = next(self.touches)
 
         if touch.beltIndex or touch.screenY < self.beltBottom then -- Touch on belt
@@ -479,7 +492,7 @@ end
 local titleFont = love.graphics.newFont(32)
 
 function Common:drawBelt()
-    if self.performing then
+    if self:isActiveToolFullscreen() then
         return
     end
     if not self.beltVisible then
@@ -489,13 +502,13 @@ function Common:drawBelt()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
     -- Highlighting
-    if self.beltHighlightEnabled then
+    if not self.performing and self.beltHighlightEnabled then
         -- Set up and render to highlight canvas
         if not self.beltHighlightCanvas then
-            self.beltHighlightCanvas = love.graphics.newCanvas()
+            self.beltHighlightCanvas = love.graphics.newCanvas(windowWidth, windowHeight - BELT_HEIGHT)
         end
         if not self.beltHighlightCanvas2 then
-            self.beltHighlightCanvas2 = love.graphics.newCanvas()
+            self.beltHighlightCanvas2 = love.graphics.newCanvas(windowWidth, windowHeight - BELT_HEIGHT)
         end
         self.beltHighlightCanvas:renderTo(function()
             love.graphics.push("all")
@@ -526,12 +539,12 @@ function Common:drawBelt()
         -- Render highlight canvas to screen
         love.graphics.push("all") -- Transparent overlay (to make obscured actors visible)
         love.graphics.setColor(1, 1, 1, 0.7)
-        love.graphics.draw(self.beltHighlightCanvas)
+        love.graphics.draw(self.beltHighlightCanvas, 0, BELT_HEIGHT)
         love.graphics.pop()
         love.graphics.push("all") -- Darken other actors
         love.graphics.setBlendMode("multiply", "premultiplied")
         love.graphics.setShader(self.beltHighlightShader)
-        love.graphics.draw(self.beltHighlightCanvas)
+        love.graphics.draw(self.beltHighlightCanvas, 0, BELT_HEIGHT)
         love.graphics.pop()
 
         -- Glow
@@ -567,7 +580,7 @@ function Common:drawBelt()
         end)
         love.graphics.push("all")
         love.graphics.setBlendMode("add") -- Glow
-        love.graphics.draw(self.beltHighlightCanvas)
+        love.graphics.draw(self.beltHighlightCanvas, 0, BELT_HEIGHT)
         love.graphics.pop()
     end
 
@@ -579,65 +592,69 @@ function Common:drawBelt()
         0, self.beltTop,
         windowWidth, BELT_HEIGHT)
 
-    local elemsY = self.beltTop + 0.5 * BELT_HEIGHT
+    if not self.performing then -- Empty when playtesting
+        local elemsY = self.beltTop + 0.5 * BELT_HEIGHT
 
-    -- Elements
-    love.graphics.setColor(1, 1, 1)
-    local function drawElem(elem)
-        if elem.image then
-            local imgW, imgH = elem.image:getDimensions()
-            local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
+        -- Elements
+        love.graphics.setColor(1, 1, 1)
+        local function drawElem(elem)
+            if elem.image then
+                local imgW, imgH = elem.image:getDimensions()
+                local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
 
-            local x = 0.5 * windowWidth + elem.x - self.beltCursorX
-            local y = elemsY
+                local x = 0.5 * windowWidth + elem.x - self.beltCursorX
+                local y = elemsY
 
-            if elem.placeX and elem.placeY then
-                -- Use placing coordinates if we're placing
-                x, y = elem.placeX, elem.placeY
+                if elem.placeX and elem.placeY then
+                    -- Use placing coordinates if we're placing
+                    x, y = elem.placeX, elem.placeY
+                end
+
+                love.graphics.draw(elem.image,
+                    x, y,
+                    0, scale, scale, 0.5 * imgW, 0.5 * imgH)
             end
-
-            love.graphics.draw(elem.image,
-                x, y,
-                0, scale, scale, 0.5 * imgW, 0.5 * imgH)
         end
-    end
-    local placeElem -- If we have a placing elem, draw it on top of others
-    for i, elem in ipairs(self.beltElems) do
-        if elem.placeX and elem.placeY then
-            placeElem = elem
-        else
-            drawElem(elem)
+        local placeElem -- If we have a placing elem, draw it on top of others
+        for i, elem in ipairs(self.beltElems) do
+            if elem.placeX and elem.placeY then
+                placeElem = elem
+            else
+                drawElem(elem)
+            end
         end
-    end
-    if placeElem then
-        drawElem(placeElem)
-    end
+        if placeElem then
+            drawElem(placeElem)
+        end
 
-    -- Highlight box
-    if self.beltEntryId then
-        love.graphics.setColor(0, 1, 0)
-        love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
-        local boxSize = 1.05 * ELEM_SIZE
-        love.graphics.rectangle("line",
-            0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
-            boxSize, boxSize)
-    end
+        -- Highlight box
+        if self.beltEntryId then
+            love.graphics.setColor(0, 1, 0)
+            love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
+            local boxSize = 1.05 * ELEM_SIZE
+            love.graphics.rectangle("line",
+                0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
+                boxSize, boxSize)
+        end
 
-    -- Title for current element
-    love.graphics.setColor(1, 1, 1)
-    local currEntry = self.library[self.beltEntryId]
-    if currEntry and currEntry.title then
-        local w = titleFont:getWidth(currEntry.title)
-        local h = titleFont:getHeight()
-        love.graphics.print(currEntry.title, titleFont,
-            0.5 * windowWidth - 0.5 * w,
-            self.beltBottom + 0.2 * h)
-    end
+        -- Title for current element
+        love.graphics.setColor(1, 1, 1)
+        local currEntry = self.library[self.beltEntryId]
+        if currEntry and currEntry.title then
+            local w = titleFont:getWidth(currEntry.title)
+            local h = titleFont:getHeight()
+            love.graphics.print(currEntry.title, titleFont,
+                0.5 * windowWidth - 0.5 * w,
+                self.beltBottom + 0.2 * h)
+        end
 
-    -- Touch overlay
-    love.graphics.setColor(1, 0, 1, 0.5)
-    for _, touch in pairs(self.touches) do
-        love.graphics.circle('fill', touch.screenX, touch.screenY, ELEM_SIZE * 0.2)
+        -- Debug touch overlay
+        if DEBUG_TOUCHES and not self:isActiveToolFullscreen() then
+            love.graphics.setColor(1, 0, 1, 0.5)
+            for _, touch in pairs(self.touches) do
+                love.graphics.circle('fill', touch.screenX, touch.screenY, ELEM_SIZE * 0.2)
+            end
+        end
     end
 
     love.graphics.pop()
