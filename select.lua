@@ -159,6 +159,8 @@ function Client:applySelections()
     self:addToolComponents()
     
     self.selectionChanged = false
+
+    self:syncSelectionsWithBelt()
 end
 
 function Client:selectActor(actorId)
