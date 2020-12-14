@@ -297,7 +297,7 @@ function Common:updateBelt(dt)
                 local totalDY = touch.screenY - touch.initialScreenY
                 local totalDLen2 = totalDX * totalDX + totalDY * totalDY
                 local long = totalDLen2 > (0.25 * ELEM_SIZE) * (0.25 * ELEM_SIZE)
-                local vertical = math.abs(totalDY) > 1.5 * math.abs(totalDX)
+                local vertical = touch.screenY > self.beltBottom + 0.6 * BELT_HEIGHT or math.abs(totalDY) > 1.5 * math.abs(totalDX)
                 if long and vertical then
                     touch.beltPlacing = true
                 end
