@@ -765,7 +765,7 @@ function Client:draw()
             self.roundedCornersCanvas = love.graphics.newCanvas(cardWidth, cardHeight)
             self.roundedCornersCanvas:renderTo(function()
                 love.graphics.clear(0, 0, 0, 1)
-                local br = 12 * love.graphics.getDPIScale()
+                local br = 18 * love.graphics.getDPIScale()
                 love.graphics.rectangle('fill', 0, 0, cardWidth, cardHeight, br)
             end)
         end
