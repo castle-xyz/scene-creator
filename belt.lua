@@ -100,6 +100,18 @@ function Common:startBelt()
     ]])
 end
 
+function Common:fireBeltHaptic()
+    local currTime = love.timer.getTime()
+    if currTime - self.beltLastVibrated > 0.03 then
+        if OS == 'iOS' then
+            love.system.vibrate(0.71) -- Tuned for our iOS vibration patch
+        else
+            love.system.vibrate(0.04)
+        end
+        self.beltLastVibrated = currTime
+    end
+end
+
 -- Focus
 
 function Common:focusEntryInBelt(entryId, opts)
@@ -250,6 +262,7 @@ function Common:updateBelt(dt)
             if touch.released and not touch.movedNear and currTime - touch.pressTime < 0.2 then
                 self.beltTargetIndex = touchBeltIndex
                 self.beltHighlightEnabled = true -- Enable highlight on belt touch
+                self:fireBeltHaptic()
             end
 
             -- Track which element the touch begins on
@@ -433,7 +446,7 @@ function Common:updateBelt(dt)
     end
 
     -- Vibrate when we go across elements
-    if ENABLE_HAPTICS and self.beltHapticsGesture and currTime - self.beltLastVibrated > 0.03 then
+    if ENABLE_HAPTICS and self.beltHapticsGesture then
         local offset
         if self.beltCursorX < prevBeltCursorX then
             offset = 0.5 + 0.32
@@ -447,12 +460,7 @@ function Common:updateBelt(dt)
             local prevIndex = math.floor(prevBeltCursorX / (ELEM_SIZE + ELEM_GAP) + offset)
             prevIndex = math.max(-1, math.min(prevIndex, #self.beltElems))
             if currIndex ~= prevIndex then
-                if OS == 'iOS' then
-                    love.system.vibrate(0.71) -- Tuned for our iOS vibration patch
-                else
-                    love.system.vibrate(0.04)
-                end
-                self.beltLastVibrated = currTime
+                self:fireBeltHaptic()
             end
         end
     end
