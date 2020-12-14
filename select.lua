@@ -256,7 +256,20 @@ function Client:selectActorAtPoint(x, y, hits)
     if next(hits) then -- Pick the next unselected hit in draw order
         local order = {}
         for actorId in pairs(hits) do
-            table.insert(order, actorId)
+            local skip = false
+            if self.beltHighlightEnabled then
+                -- If highlighting, filter to actors with the belt blueprint
+                local entry = self.library[self.beltEntryId]
+                if not entry.isCore then
+                    local actor = self.actors[actorId]
+                    if actor and actor.parentEntryId ~= self.beltEntryId then
+                        skip = true
+                    end
+                end
+            end
+            if not skip then
+                table.insert(order, actorId)
+            end
         end
         table.sort(
             order,
