@@ -253,28 +253,29 @@ end
 function Client:selectActorAtPoint(x, y, hits)
     local hits = hits or self.behaviorsByName.Body:getActorsAtPoint(x, y)
     local pick
-    if next(hits) then -- Pick the next unselected hit in draw order
+    if next(hits) then -- Pick the next unselected hit in draw order. Belt-highlighted actors get priority.
         local order = {}
         for actorId in pairs(hits) do
-            local skip = false
-            if self.beltHighlightEnabled then
-                -- If highlighting, filter to actors with the belt blueprint
-                local entry = self.library[self.beltEntryId]
-                if not entry.isCore then
-                    local actor = self.actors[actorId]
-                    if actor and actor.parentEntryId ~= self.beltEntryId then
-                        skip = true
-                    end
-                end
-            end
-            if not skip then
-                table.insert(order, actorId)
-            end
+            table.insert(order, actorId)
+        end
+        local highlightEntry = self.beltHighlightEnabled and self.library[self.beltEntryId]
+        if hightlightEntry and highlightEntry.isCore then
+            highlightEntry = nil
         end
         table.sort(
             order,
             function(actorId1, actorId2)
                 local actor1, actor2 = self.actors[actorId1], self.actors[actorId2]
+                if highlightEntry then
+                    local highlight1 = actor1.parentEntryId == highlightEntry.entryId
+                    local highlight2 = actor2.parentEntryId == highlightEntry.entryId
+                    if highlight1 and not highlight2 then
+                        return false
+                    end
+                    if highlight2 and not highlight1 then
+                        return true
+                    end
+                end
                 return actor1.drawOrder < actor2.drawOrder
             end
         )
