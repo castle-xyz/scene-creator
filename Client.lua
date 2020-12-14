@@ -558,7 +558,7 @@ function love.draw()
     end)
 end
 
-function Client:draw()
+function Client:drawInner()
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
     --if not self.connected then -- Not connected?
@@ -714,8 +714,6 @@ function Client:draw()
     love.graphics.pop()
 
     do -- Screen-space overlay
-        self:drawBelt()
-
         self:drawNotify()
     end
 
@@ -727,7 +725,6 @@ function Client:draw()
         end
 
         love.graphics.push("all")
-        love.graphics.translate(0, self.beltBottom)
         love.graphics.setFont(debugFont)
         love.graphics.setColor(1, 1, 1)
         love.graphics.rectangle("fill", windowWidth - 110, 0, 110, 50)
@@ -747,3 +744,37 @@ function Client:draw()
     end
 end
 
+function Client:draw()
+    if self.isEditable then
+        local windowWidth, windowHeight = love.graphics.getDimensions()
+        local cardWidth, cardHeight = windowWidth, windowHeight - BELT_HEIGHT
+
+        -- Draw to a canvas then render that canvas with a Y offset, to leave space for the belt above
+        if not self.innerCanvas then
+            self.innerCanvas = love.graphics.newCanvas(cardWidth, cardHeight)
+        end
+        self.innerCanvas:renderTo(function()
+            self:drawInner()
+        end)
+        love.graphics.draw(self.innerCanvas, 0, self:getBeltYOffset())
+
+        -- Rounded corners
+        love.graphics.push("all")
+        love.graphics.setColor(1, 1, 1)
+        if not self.roundedCornersCanvas then
+            self.roundedCornersCanvas = love.graphics.newCanvas(cardWidth, cardHeight)
+            self.roundedCornersCanvas:renderTo(function()
+                love.graphics.clear(0, 0, 0, 1)
+                local br = 12 * love.graphics.getDPIScale()
+                love.graphics.rectangle('fill', 0, 0, cardWidth, cardHeight, br)
+            end)
+        end
+        love.graphics.setBlendMode("multiply", "premultiplied")
+        love.graphics.draw(self.roundedCornersCanvas, 0, self:getBeltYOffset())
+        love.graphics.pop()
+
+        self:drawBelt()
+    else
+        self:drawInner()
+    end
+end
