@@ -210,19 +210,7 @@ function Common:syncBelt()
     self.beltDirty = false
 end
 
-function Common:updateBelt(dt)
-    if self.performing then
-        return
-    end
-
-    -- Make belt snap quicker. Resorted to making time faster after tuning the
-    -- other constants for spring damping + deceleration...
-    local origDt = dt
-    dt = 1.6 * dt 
-
-    -- Stay in sync
-    self:syncBelt()
-
+function Common:syncSelectionsWithBelt()
     if next(self.selectedActorIds) then
         -- Focus the blueprint of some selected actor
         local needToFocus = true
@@ -243,6 +231,21 @@ function Common:updateBelt(dt)
             end
         end
     end
+end
+
+function Common:updateBelt(dt)
+    if self.performing then
+        return
+    end
+
+    -- Make belt snap quicker. Resorted to making time faster after tuning the
+    -- other constants for spring damping + deceleration...
+    local origDt = dt
+    dt = 1.6 * dt 
+
+    -- Stay in sync
+    self:syncBelt()
+    self:syncSelectionsWithBelt()
 
     local currTime = love.timer.getTime()
     local windowWidth, windowHeight = love.graphics.getDimensions()
