@@ -21,16 +21,20 @@ local function _createScreenshotCanvas(opts)
 end
 
 function Client:_drawScreenshot(opts)
-   local screenshotWidth = 1350
+    local screenshotWidth = 1350
     if opts ~= nil and opts.width ~= nil then
         screenshotWidth = opts.width
     end
+    local cameraX, cameraY = self:getCameraPosition()
    love.graphics.push("all")
 
    love.graphics.origin()
    love.graphics.scale(screenshotWidth / DEFAULT_VIEW_WIDTH)
    love.graphics.translate(0, 0)
    love.graphics.translate(0.5 * DEFAULT_VIEW_WIDTH, self:getDefaultYOffset())
+   if self.performing then
+      love.graphics.translate(-cameraX, -cameraY)
+   end
 
    love.graphics.clear(0.0, 0.0, 0.0, 0.0)
    self:drawScene()
