@@ -266,7 +266,6 @@ function Common:updateBelt(dt)
 
             touch.beltUsed = true -- Grab / scale-rotate steal even if `touch.used`
             touch.used = true
-            self.beltHapticsGesture = true
 
             local touchBeltX = touch.screenX - 0.5 * windowWidth + self.beltCursorX
             local touchBeltIndex = math.floor(touchBeltX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
@@ -293,6 +292,8 @@ function Common:updateBelt(dt)
 
             -- Start placing if the touch began on an element and it's a long-ish vertical drag
             if touch.beltIndex and not touch.beltPlacing then
+                self.beltHapticsGesture = false -- Don't distract user with haptics in placing mode
+
                 local totalDX = touch.screenX - touch.initialScreenX
                 local totalDY = touch.screenY - touch.initialScreenY
                 local totalDLen2 = totalDX * totalDX + totalDY * totalDY
@@ -305,6 +306,8 @@ function Common:updateBelt(dt)
 
             -- This is a drag scroll if not placing
             if not touch.beltPlacing then
+                self.beltHapticsGesture = true -- Enable haptics on a scroll
+
                 self.beltCursorX = self.beltCursorX - touch.screenDX
                 skipApplyVel = true
                 dragScrolling = true
@@ -462,7 +465,7 @@ function Common:updateBelt(dt)
     end
 
     -- Vibrate when we go across elements
-    if ENABLE_HAPTICS and self.beltHapticsGesture then
+    if ENABLE_HAPTICS and self.beltHapticsGesture and self.beltEntryId then
         local offset
         if self.beltCursorX < prevBeltCursorX then
             offset = 0.5 + 0.32
