@@ -21,12 +21,14 @@ function CircleShapeBehavior.handlers:addComponent(component, bp, opts)
     end
 
     if opts.isOrigin then
-        self.dependencies.Body:setShapes(component.actorId, {{
-            shapeType = "circle",
-            x = 0.0,
-            y = 0.0,
-            radius = 0.5,
-        }})
+        if not self.dependencies.Body:isCircleShape(component.actorId) then
+            self.dependencies.Body:setShapes(component.actorId, {{
+                shapeType = "circle",
+                x = 0.0,
+                y = 0.0,
+                radius = 0.5,
+            }})
+        end
     end
 end
 

@@ -1,7 +1,6 @@
 DrawData = {}
 local FILL_CANVAS_SIZE = 256
 local DEBUG_FILL_IMAGE_SIZE = false
-local EDITOR_BOUNDS_PADDING = 0.1
 
 function DrawData:gridCellSize()
     return self.gridSize
@@ -547,16 +546,6 @@ end
 function DrawData:updateBounds()
     self.bounds = self:getPathDataBounds()
     return self.bounds
-end
-
-function DrawData:getEditorBounds()
-    local bounds = self:updateBounds()
-    return {
-        minX = bounds.minX - EDITOR_BOUNDS_PADDING,
-        minY = bounds.minY - EDITOR_BOUNDS_PADDING,
-        maxX = bounds.maxX + EDITOR_BOUNDS_PADDING,
-        maxY = bounds.maxY + EDITOR_BOUNDS_PADDING,
-    }
 end
 
 function DrawData:getPathDataBounds()
