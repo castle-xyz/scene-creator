@@ -14,6 +14,7 @@ function PhysicsBodyData:new(obj)
         scale = obj.scale or DRAW_DATA_SCALE,
         tempShape = nil,
         version = obj.version or nil,
+        zeroShapesInV1 = obj.zeroShapesInV1 or false,
     }
 
     newObj = util.deepCopyTable(newObj)
@@ -41,17 +42,9 @@ function PhysicsBodyData:migrateV1ToV2()
     end
 
     if #self.shapes == 0 then
-        --[[table.insert(self.shapes, {
-            type = "rectangle",
-            p1 = {
-                x = -self.scale / 2.0,
-                y = -self.scale / 2.0,
-            },
-            p2 = {
-                x = self.scale / 2.0,
-                y = self.scale / 2.0,
-            },
-        })]]--
+        self.zeroShapesInV1 = true
+    else
+        self.zeroShapesInV1 = false
     end
 end
 
@@ -60,6 +53,7 @@ function PhysicsBodyData:serialize()
         shapes = self.shapes,
         scale = self.scale,
         version = self.version,
+        zeroShapesInV1 = self.zeroShapesInV1,
     }
 
     return data
@@ -573,6 +567,17 @@ function PhysicsBodyData:getShapesForBody()
                 points = self:_pointsForShape(shape),
             })
         end
+    end
+
+    if #shapes == 0 then
+        if self.zeroShapesInV1 then
+            return nil
+        end
+    else
+        -- if we ever get above zero shapes, turn this flag off.
+        -- after this point, going back to zero shapes will override
+        -- body fixtures
+        self.zeroShapesInV1 = false
     end
 
     return shapes

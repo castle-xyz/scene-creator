@@ -83,7 +83,9 @@ function Drawing2Behavior:deserialize(payload)
     return result
 end
 
-function Drawing2Behavior:updateBodyShape(component)
+function Drawing2Behavior:updateBodyShape(componentOrActorId)
+    local component = type(componentOrActorId) == "table" and componentOrActorId or self.components[componentOrActorId]
+
     local data = self:cacheDrawing(component, component.properties)
     local drawData = data.drawData
     local physicsBodyData = data.physicsBodyData
