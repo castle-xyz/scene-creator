@@ -125,23 +125,6 @@ function Common:fireBeltHaptic()
     end
 end
 
--- Focus
-
-function Common:focusEntryInBelt(entryId, opts)
-    opts = opts or {}
-    self:syncBelt() -- Often called right after a change, so let's sync
-    for i, elem in ipairs(self.beltElems) do
-        if elem.entryId == entryId then
-            self.beltTargetIndex = i
-            self.beltEntryId = entryId
-            if not opts.noShow then
-                --self.beltVisible = true
-            end
-            break
-        end
-    end
-end
-
 -- Update
 
 function Common:updateBeltElemImage(elem, entry)
@@ -212,22 +195,26 @@ end
 
 function Common:syncSelectionsWithBelt()
     if next(self.selectedActorIds) then
-        -- Focus the blueprint of some selected actor
-        local needToFocus = true
+        -- Don't do anything if we're already focused on a selected actor's blueprint
         for actorId in pairs(self.selectedActorIds) do
             local actor = self.actors[actorId]
             if actor and actor.parentEntryId == self.beltEntryId then
-                -- `next(...)` below may not consistently give us the same
-                -- item, so prevent trashing
-                needToFocus = false
+                return
             end
         end
-        if needToFocus then
-            local actorId = next(self.selectedActorIds)
-            local actor = self.actors[actorId]
-            local entry = actor and actor.parentEntryId and self.library[actor.parentEntryId]
-            if entry and not entry.isCore then
-                self:focusEntryInBelt(entry.entryId, { noShow = true })
+
+        -- Pick some selected actor and focus its blueprint
+        local actorId = next(self.selectedActorIds)
+        local actor = self.actors[actorId]
+        local entry = actor and actor.parentEntryId and self.library[actor.parentEntryId]
+        if entry and not entry.isCore then
+            -- Find element and target it
+            for i, elem in ipairs(self.beltElems) do
+                if elem.entryId == entry.entryId then
+                    self.beltTargetIndex = i
+                    self.beltEntryId = entry.entryId
+                    break
+                end
             end
         end
     end
