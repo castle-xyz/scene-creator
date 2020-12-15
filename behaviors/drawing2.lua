@@ -89,7 +89,7 @@ function Drawing2Behavior:updateBodyShape(component)
     local physicsBodyData = data.physicsBodyData
 
     self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
-    self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:updateBounds()) 
+    self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getEditorBounds())
     self.dependencies.Body:setShapes(component.actorId, physicsBodyData:getShapesForBody())
 
     component._hash = component.properties.hash

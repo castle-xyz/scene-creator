@@ -1,6 +1,7 @@
 DrawData = {}
 local FILL_CANVAS_SIZE = 256
 local DEBUG_FILL_IMAGE_SIZE = false
+local EDITOR_BOUNDS_PADDING = 0.1
 
 function DrawData:gridCellSize()
     return self.gridSize
@@ -508,6 +509,11 @@ function DrawData:migrateV1ToV2()
             pathData.points[j].x = pathData.points[j].x - self.scale / 2.0
             pathData.points[j].y = pathData.points[j].y - self.scale / 2.0
         end
+
+        if pathData.bendPoint then
+            pathData.bendPoint.x = pathData.bendPoint.x - self.scale / 2.0
+            pathData.bendPoint.y = pathData.bendPoint.y - self.scale / 2.0
+        end
     end
 
     local boundsPathData1 = {}
@@ -541,6 +547,16 @@ end
 function DrawData:updateBounds()
     self.bounds = self:getPathDataBounds()
     return self.bounds
+end
+
+function DrawData:getEditorBounds()
+    local bounds = self:updateBounds()
+    return {
+        minX = bounds.minX - EDITOR_BOUNDS_PADDING,
+        minY = bounds.minY - EDITOR_BOUNDS_PADDING,
+        maxX = bounds.maxX + EDITOR_BOUNDS_PADDING,
+        maxY = bounds.maxY + EDITOR_BOUNDS_PADDING,
+    }
 end
 
 function DrawData:getPathDataBounds()

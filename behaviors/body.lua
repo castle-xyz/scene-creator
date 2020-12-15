@@ -250,7 +250,7 @@ function BodyBehavior.handlers:postAddComponents(actorId)
         return
     end
 
-    -- TODO test
+    --[[
     if not component.properties.isNewDrawingTool then
         local bodyId, body = self:getBody(component)
         local fixtures = body:getFixtures()
@@ -263,7 +263,7 @@ function BodyBehavior.handlers:postAddComponents(actorId)
             component.properties.width = width
             component.properties.height = height
         end
-    end
+    end]]--
 
     if component.properties.widthScale == nil or component.properties.heightScale == nil then
         if component.properties.editorBounds == nil then
@@ -272,8 +272,8 @@ function BodyBehavior.handlers:postAddComponents(actorId)
             component.properties.editorBounds = {
                 minX = -halfWidth,
                 minY = -halfHeight,
-                minX = halfWidth,
-                minY = halfHeight,
+                maxX = halfWidth,
+                maxY = halfHeight,
             }
 
             component.properties.widthScale = 1.0
@@ -794,7 +794,6 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
         -- this can happen when Drawing2 calls setShapes before this component has been
         -- migrated. this function will get called again at the end of the migration so
         -- we can exit here
-
         return
     end
 
@@ -940,7 +939,7 @@ function BodyBehavior:resetShapes(actorId)
 
     self:setShapes(
         componentOrActorId,
-        {
+        {{
             shapeType = "polygon",
             points = {
                 0.5, 0.5,
@@ -948,7 +947,7 @@ function BodyBehavior:resetShapes(actorId)
                 -0.5, -0.5,
                 0.5, -0.5,
             }
-        }
+        }}
     )
 end
 
@@ -1039,22 +1038,6 @@ function BodyBehavior:getMembers(componentOrActorId)
     }
 end
 
--- only used for legacy drawings
-local function getRectangleSizeFromFixture(fixture)
-    local shape = fixture:getShape()
-    if shape:getType() == "polygon" then
-        local p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, p5x = shape:getPoints()
-        if p4y ~= nil and p5x == nil then
-            if
-                (p1y == p2y and p1x == -p2x and p1x == p4x and p1y == -p4y and p2x == p3x and p2y == -p3y) or
-                    (p1x == p2x and p1y == -p2y and p1y == p4y and p1x == -p4x and p2y == p3y and p2x == -p3x)
-             then
-                return 2 * math.abs(p1x) + BODY_RECTANGLE_SLOP, 2 * math.abs(p1y) + BODY_RECTANGLE_SLOP
-            end
-        end
-    end
-end
-
 function BodyBehavior:getSize(actorId)
     -- TODO
     --print('BodyBehavior:getSize is deprecated')
@@ -1072,34 +1055,24 @@ function BodyBehavior:getFixtureBoundingBoxSize(actorId)
     -- Get bounding box size, whatever the shape of the body
 
     local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
-    local bodyId, body = self:getBody(component)
-    local fixtures = body:getFixtures()
+    local fixtures = component.properties.fixtures
     local firstFixture = fixtures[1]
     if not firstFixture then
         return 0, 0
     end
 
-    local firstShape = firstFixture:getShape()
-    local firstShapeType = firstShape:getType()
+    local firstFixtureType = firstFixture.shapeType
 
-    if not component.properties.isNewDrawingTool then
-        local rectangleWidth, rectangleHeight = getRectangleSizeFromFixture(firstFixture, component)
-        if rectangleHeight and rectangleHeight then
-            return rectangleWidth, rectangleHeight
-        end
-
-        if firstShapeType == "circle" then
-            local radius = firstShape:getRadius()
-            return 2 * radius, 2 * radius
-        end
+    if firstFixtureType == "circle" then
+        local radius = firstFixture.radius
+        return 2 * radius, 2 * radius
     end
 
-    local points = {firstShape:getPoints()}
+    local points = firstFixture.points
     local minX, minY, maxX, maxY = points[1], points[2], points[1], points[2]
 
     for _, fixture in pairs(fixtures) do
-        local shape = fixture:getShape()
-        points = {shape:getPoints()}
+        points = fixture.points
 
         for i = 3, #points - 1, 2 do
             minX, minY = math.min(minX, points[i]), math.min(minY, points[i + 1])

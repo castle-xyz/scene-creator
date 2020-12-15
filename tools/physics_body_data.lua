@@ -42,10 +42,15 @@ function PhysicsBodyData:migrateV1ToV2()
 
     if #self.shapes == 0 then
         table.insert(self.shapes, {
-            type = "circle",
-            x = 0.0,
-            y = 0.0,
-            radius = self.scale / 2.0,
+            type = "rectangle",
+            p1 = {
+                x = -self.scale / 2.0,
+                y = -self.scale / 2.0,
+            },
+            p2 = {
+                x = self.scale / 2.0,
+                y = self.scale / 2.0,
+            },
         })
     end
 end

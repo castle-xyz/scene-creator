@@ -21,12 +21,12 @@ function CircleShapeBehavior.handlers:addComponent(component, bp, opts)
     end
 
     if opts.isOrigin then
-        self.dependencies.Body:setShapes(component.actorId, {
+        self.dependencies.Body:setShapes(component.actorId, {{
             shapeType = "circle",
             x = 0.0,
             y = 0.0,
             radius = 0.5,
-        })
+        }})
     end
 end
 
@@ -43,12 +43,12 @@ end
 function CircleShapeBehavior.setters:radius(component, value)
    value = math.max(0.5 * MIN_BODY_SIZE, math.min(value, 0.5 * MAX_BODY_SIZE))
    local actorId = component.actorId
-   self.dependencies.Body:setShapes(actorId, {
+   self.dependencies.Body:setShapes(actorId, {{
         shapeType = "circle",
         x = 0.0,
         y = 0.0,
         radius = value,
-    })
+    }})
 end
 
 function CircleShapeBehavior.getters:radius(component)
