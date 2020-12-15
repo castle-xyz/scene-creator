@@ -956,15 +956,18 @@ end
 function BodyBehavior:resetShapes(actorId)
     local component = self:getComponent(actorId)
 
+    local width = (component.properties.width or UNIT) * 0.5
+    local height = (component.properties.height or UNIT) * 0.5
+
     self:setShapes(
         componentOrActorId,
         {{
             shapeType = "polygon",
             points = {
-                0.5, 0.5,
-                -0.5, 0.5,
-                -0.5, -0.5,
-                0.5, -0.5,
+                width, height,
+                -width, height,
+                -width, -height,
+                width, -height,
             }
         }}
     )
