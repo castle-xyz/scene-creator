@@ -83,6 +83,7 @@ local BodyBehavior =
        isNewDrawingTool = {},
        isInViewport = {},
        sensor = {},
+       editorBounds = {},
     },
 }
 
@@ -215,8 +216,6 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         self._physics:setUserData(bodyId, component.actorId)
         self:sendSetProperties(component.actorId, "bodyId", bodyId)
 
-        self:updatePhysicsFixturesFromProperties(component.actorId)
-
         local width, height
         if bp.width then
             width = bp.width
@@ -229,6 +228,7 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         component.properties.height = height
         component.properties.widthScale = bp.widthScale or nil
         component.properties.heightScale = bp.heightScale or nil
+        component.properties.editorBounds = bp.editorBounds or nil
         component.properties.isNewDrawingTool = false
         if bp.visible == nil then
            component.properties.visible = true
@@ -242,6 +242,53 @@ function BodyBehavior.handlers:addComponent(component, bp, opts)
         end
         component.properties.isInViewport = false
     end
+end
+
+function BodyBehavior.handlers:postAddComponents(actorId)
+    local component = self.components[actorId]
+    if not component then
+        return
+    end
+
+    -- TODO test
+    if not component.properties.isNewDrawingTool then
+        local bodyId, body = self:getBody(component)
+        local fixtures = body:getFixtures()
+        local fixture = fixtures[1]
+        local shape = fixture:getShape()
+        local shapeType = shape:getType()
+
+        if shapeType == 'circle' then
+            local width, height = self:getFixtureBoundingBoxSize(actorId)
+            component.properties.width = width
+            component.properties.height = height
+        end
+    end
+
+    if component.properties.widthScale == nil or component.properties.heightScale == nil then
+        if component.properties.editorBounds == nil then
+            local halfWidth = component.properties.width * 0.5
+            local halfHeight = component.properties.height * 0.5
+            component.properties.editorBounds = {
+                minX = -halfWidth,
+                minY = -halfHeight,
+                minX = halfWidth,
+                minY = halfHeight,
+            }
+
+            component.properties.widthScale = 1.0
+            component.properties.heightScale = 1.0
+        else
+            local bounds = component.properties.editorBounds
+            local boundsWidth = bounds.maxX - bounds.minX
+            local boundsHeight = bounds.maxY - bounds.minY
+
+            component.properties.widthScale = component.properties.width / boundsWidth
+            component.properties.heightScale = component.properties.height / boundsHeight
+        end
+    end
+
+    self:updatePhysicsFixturesFromProperties(component.actorId)
 end
 
 function BodyBehavior:_assignLegacyComponentProps(component, bp, firstFixtureBp)
@@ -318,6 +365,7 @@ function BodyBehavior.handlers:blueprintComponent(component, bp)
     bp.height = component.properties.height
     bp.widthScale = component.properties.widthScale
     bp.heightScale = component.properties.heightScale
+    bp.editorBounds = component.properties.editorBounds
     bp.visible = component.properties.visible
     bp.layerName = component.properties.layerName
 end
@@ -721,20 +769,6 @@ function BodyBehavior.setters:angle(component, value)
    members.physics:setAngle(members.bodyId, value * math.pi / 180)
 end
 
-function BodyBehavior.setters:width(component, value)
-   component.properties.width = value
-   local actorId = component.actorId
-   local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
-   self:setRectangleShape(actorId, value, rectangleHeight)
-end
-
-function BodyBehavior.setters:height(component, value)
-    component.properties.height = value
-   local actorId = component.actorId
-   local rectangleWidth, rectangleHeight = self:getRectangleSize(actorId)
-   self:setRectangleShape(actorId, rectangleWidth, value)
-end
-
 function BodyBehavior.setters:relativeToCamera(component, value)
     if value then
         component.properties.layerName = CAMERA_LAYER
@@ -745,7 +779,25 @@ function BodyBehavior.setters:relativeToCamera(component, value)
     component.properties.relativeToCamera = value
 end
 
+function BodyBehavior.setters:editorBounds(component, value)
+    component.properties.editorBounds = value
+end
+
+local function floatEquals(f1, f2)
+    return f1 > f2 - 0.001 and f1 < f2 + 0.001
+end
+
 function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
+    local component = self:getComponent(componentOrActorId)
+
+    if component.properties.widthScale == nil or component.properties.heightScale == nil then
+        -- this can happen when Drawing2 calls setShapes before this component has been
+        -- migrated. this function will get called again at the end of the migration so
+        -- we can exit here
+
+        return
+    end
+
     local bodyId, body = self:getBody(componentOrActorId)
     local bodyFixtures = body:getFixtures()
 
@@ -754,18 +806,47 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
         self._physics:destroyObject(fixtureId)
     end
 
-    local component = self:getComponent(componentOrActorId)
+    if self.game.performing then
+        local widthScale = component.properties.widthScale
+        local heightScale = component.properties.heightScale
 
-    if self.game.performing or not component.properties.isNewDrawingTool then
         for _, fixtureBp in ipairs(component.properties.fixtures) do
             local shapeId
             local shapeType = fixtureBp.shapeType
 
             if shapeType == "circle" then
-                shapeId =
-                    self._physics:newCircleShape(fixtureBp.x or 0, fixtureBp.y or 0, fixtureBp.radius or 0.5 * UNIT)
+                if floatEquals(widthScale, heightScale) then
+                    shapeId =
+                        self._physics:newCircleShape((fixtureBp.x or 0) * widthScale, (fixtureBp.y or 0) * heightScale, (fixtureBp.radius or 0.5) * widthScale)
+                else
+                    -- approximate a stretched circle with a polygon
+                    local centerX = fixtureBp.x
+                    local centerY = fixtureBp.y
+                    local radius = fixtureBp.radius
+
+                    local angle = 0
+                    local points = {}
+                    for i = 1, 8 do
+                        local diffX = radius * math.cos(angle)
+                        local diffY = radius * math.sin(angle)
+                        table.insert(points, (centerX + diffX) * widthScale)
+                        table.insert(points, (centerY + diffY) * heightScale)
+
+                        angle = angle - math.pi * 2.0 / 8.0
+                    end
+
+                    shapeId = self._physics:newPolygonShape(points)
+                end
             elseif shapeType == "polygon" then
-                shapeId = self._physics:newPolygonShape(unpack(assert(fixtureBp.points)))
+                local points = fixtureBp.points
+                local newPoints = {}
+
+                for i = 1, #points, 2 do
+                    table.insert(newPoints, points[i] * widthScale)
+                    table.insert(newPoints, points[i + 1] * heightScale)
+                end
+
+                shapeId = self._physics:newPolygonShape(newPoints)
             elseif shapeType == "edge" then
                 shapeId = self._physics:newEdgeShape(unpack(assert(fixtureBp.points)))
                 self._physics:setPreviousVertex(unpack(assert(fixtureBp.previousVertex)))
@@ -782,12 +863,33 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
             self._physics:destroyObject(shapeId)
         end
     else
-        local shapeId = self._physics:newRectangleShape(component.properties.width, component.properties.height)
-        local fixtureId = self._physics:newFixture(bodyId, shapeId, 1)
-        self:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
-
+        local bounds = self:getScaledEditorBounds(component)
+        local middleX = (bounds.maxX + bounds.minX) / 2.0
+        local middleY = (bounds.maxY + bounds.minY) / 2.0
+        local width = bounds.maxX - bounds.minX
+        local height = bounds.maxY - bounds.minY
+        local shapeId = self._physics:newRectangleShape(middleX, middleY, width, height, 0)
+    
+        self._physics:newFixture(bodyId, shapeId, 1)
         self._physics:destroyObject(shapeId)
     end
+end
+
+function BodyBehavior:getScaledEditorBounds(component)
+    local bounds = component.properties.editorBounds
+    local middleX = (bounds.maxX + bounds.minX) / 2.0
+    local middleY = (bounds.maxY + bounds.minY) / 2.0
+    local width = (bounds.maxX - bounds.minX) * component.properties.widthScale
+    local height = (bounds.maxY - bounds.minY) * component.properties.heightScale
+    local halfWidth = width * 0.5
+    local halfHeight = height * 0.5
+
+    return {
+        minX = middleX - halfWidth,
+        minY = middleY - halfHeight,
+        maxX = middleX + halfWidth,
+        maxY = middleY + halfHeight,
+    }
 end
 
 function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
@@ -804,45 +906,15 @@ function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixt
    body:resetMassData()
 end
 
--- TODO: this is inefficient. it should take serialized fixtures instead of
--- actual physics objects
-function BodyBehavior:setShapes(componentOrActorId, newShapeIds)
-    local bodyId, body = self:getBody(componentOrActorId)
-    local fixtures = body:getFixtures()
-
+function BodyBehavior:setShapes(componentOrActorId, fixtures)
     local component = self:getComponent(componentOrActorId)
-
-    local density = 1 -- default density may get overridden by motion component
-
-    for _, fixture in pairs(fixtures) do
-        local fixtureId = self._physics:idForObject(fixture)
-        self._physics:destroyObject(fixtureId)
-    end
-
-    for _, newShapeId in pairs(newShapeIds) do
-        local newFixtureId = self._physics:newFixture(bodyId, newShapeId, density)
-        self._physics:destroyObject(newShapeId)
-        self:updatePhysicsFixtureFromDependentBehaviors(component, newFixtureId)
-    end
-
-    component.properties.fixtures = {}
-    for _, fixture in ipairs(body:getFixtures()) do
-        table.insert(component.properties.fixtures, self:serializeFixture(component, fixture))
-    end
-
+    component.properties.fixtures = fixtures
     self:updatePhysicsFixturesFromProperties(componentOrActorId)
 end
 
-function BodyBehavior:setRectangleShape(componentOrActorId, newWidth, newHeight)
-    newWidth = math.max(MIN_BODY_SIZE, math.min(newWidth, MAX_BODY_SIZE))
-    newHeight = math.max(MIN_BODY_SIZE, math.min(newHeight, MAX_BODY_SIZE))
-    self:setShapes(
-        componentOrActorId,
-        {self._physics:newRectangleShape(newWidth - BODY_RECTANGLE_SLOP, newHeight - BODY_RECTANGLE_SLOP)}
-    )
-end
-
 function BodyBehavior:resize(componentOrActorId, newWidth, newHeight)
+    -- TODO FIX
+    --[[
     local members = self:getMembers(componentOrActorId)
     local component = self:getComponent(componentOrActorId)
     local newShapes = {}
@@ -860,12 +932,24 @@ function BodyBehavior:resize(componentOrActorId, newWidth, newHeight)
 
     self:setShapes(componentOrActorId, newShapes)
     self:sendSetProperties(component.actorId, "width", newWidth)
-    self:sendSetProperties(component.actorId, "height", newHeight)
+    self:sendSetProperties(component.actorId, "height", newHeight)]]--
 end
 
 function BodyBehavior:resetShapes(actorId)
     local component = self:getComponent(actorId)
-    self:setRectangleShape(actorId, component.properties.width or UNIT, component.properties.height or UNIT)
+
+    self:setShapes(
+        componentOrActorId,
+        {
+            shapeType = "polygon",
+            points = {
+                0.5, 0.5,
+                -0.5, 0.5,
+                -0.5, -0.5,
+                0.5, -0.5,
+            }
+        }
+    )
 end
 
 -- Getters
@@ -886,16 +970,6 @@ function BodyBehavior.getters:angle(component)
    local actorId = component.actorId
    local members = self:getMembers(actorId)
    return members.body:getAngle() * 180 / math.pi
-end
-
-function BodyBehavior.getters:width(component)
-   local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
-   return rectangleWidth or 0
-end
-
-function BodyBehavior.getters:height(component)
-   local rectangleWidth, rectangleHeight = self:getRectangleSize(component.actorId)
-   return rectangleHeight or 0
 end
 
 function BodyBehavior:getPhysics()
@@ -965,6 +1039,7 @@ function BodyBehavior:getMembers(componentOrActorId)
     }
 end
 
+-- only used for legacy drawings
 local function getRectangleSizeFromFixture(fixture)
     local shape = fixture:getShape()
     if shape:getType() == "polygon" then
@@ -981,28 +1056,18 @@ local function getRectangleSizeFromFixture(fixture)
 end
 
 function BodyBehavior:getSize(actorId)
-    local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
-    local bodyId, body = self:getBody(component)
-    local fixtures = body:getFixtures()
-
-    if not component.properties.isNewDrawingTool then
-        local fixture = fixtures[1]
-        local shape = fixture:getShape()
-        local shapeType = shape:getType()
-
-        if shapeType == 'circle' then
-            return self:getFixtureBoundingBoxSize(actorId)
-        end
-    end
-    
-    return component.properties.width, component.properties.height
-end
-
-function BodyBehavior:getComponentSize(actorId)
+    -- TODO
+    --print('BodyBehavior:getSize is deprecated')
     local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
     return component.properties.width, component.properties.height
 end
 
+function BodyBehavior:getScale(actorId)
+    local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
+    return component.properties.widthScale, component.properties.heightScale
+end
+
+-- only used for legacy drawings
 function BodyBehavior:getFixtureBoundingBoxSize(actorId)
     -- Get bounding box size, whatever the shape of the body
 
@@ -1043,34 +1108,6 @@ function BodyBehavior:getFixtureBoundingBoxSize(actorId)
     end
 
     return maxX - minX, maxY - minY
-end
-
-function BodyBehavior:getRectangleSize(componentOrActorId)
-    -- Return width and height of rectangle shape if rectangle-shaped, else `nil`
-    local component = self:getComponent(componentOrActorId)
-    if self:getShapeType(component.actorId) == 'circle' then
-        return nil
-    end
-
-    return component.properties.width, component.properties.height
-end
-
-function BodyBehavior:getShapeType(actorId)
-    local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
-    local bodyId, body = self:getBody(actorId)
-    local fixtures = body:getFixtures()
-
-    if component.properties.isNewDrawingTool then
-        return "polygon"
-    end
-
-    local fixture = fixtures[1]
-    if fixture then
-        local shape = fixture:getShape()
-        if shape then
-            return shape:getType()
-        end
-    end
 end
 
 function BodyBehavior:getActorForBody(body)
@@ -1158,27 +1195,21 @@ end
 -- Draw
 
 function BodyBehavior:drawBodyOutline(componentOrActorId)
+    local component = self:getComponent(componentOrActorId)
     local bodyId, body = self:getBody(componentOrActorId)
-    local rectangleWidth, rectangleHeight = self:getRectangleSize(componentOrActorId)
-    if rectangleHeight and rectangleHeight then
-        -- Draw rectangles directly to account for slop
-        local hh = 0.5 * rectangleHeight
-        local hw = 0.5 * rectangleWidth
-        love.graphics.polygon("line", body:getWorldPoints(-hw, -hh, -hw, hh, hw, hh, hw, -hh))
-    else
-        local fixtures = body:getFixtures()
-        for _, fixture in pairs(fixtures) do
-            local shape = fixture:getShape()
-            local ty = shape:getType()
-            if ty == "circle" then
-                love.graphics.circle("line", body:getX(), body:getY(), shape:getRadius())
-            elseif ty == "polygon" then
-                love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
-            elseif ty == "edge" then
-                love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
-            elseif ty == "chain" then
-                love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
-            end
+
+    local fixtures = body:getFixtures()
+    for _, fixture in pairs(fixtures) do
+        local shape = fixture:getShape()
+        local ty = shape:getType()
+        if ty == "circle" then
+            love.graphics.circle("line", body:getX(), body:getY(), shape:getRadius())
+        elseif ty == "polygon" then
+            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+        elseif ty == "edge" then
+            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
+        elseif ty == "chain" then
+            love.graphics.polygon("line", body:getWorldPoints(shape:getPoints()))
         end
     end
 end

@@ -3,7 +3,7 @@ require('profiler')
 
 -- Initial params
 
-DEBUG_PHYSICS_BODIES = false
+DEBUG_PHYSICS_BODIES = true
 
 function castle.onQuit()
 end

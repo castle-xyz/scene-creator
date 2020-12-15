@@ -83,15 +83,15 @@ function Drawing2Behavior:deserialize(payload)
     return result
 end
 
-function Drawing2Behavior:updateBodyShape(component, physicsBodyData)
-    local physics = self.dependencies.Body:getPhysics()
-    local width, height = self.dependencies.Body:getComponentSize(component.actorId)
-    local shapes, numShapes = physicsBodyData:getShapesForBody(physics, width, height)
+function Drawing2Behavior:updateBodyShape(component)
+    local data = self:cacheDrawing(component, component.properties)
+    local drawData = data.drawData
+    local physicsBodyData = data.physicsBodyData
 
-    if numShapes > 0 then
-        self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
-        self.dependencies.Body:setShapes(component.actorId, shapes)
-    end
+    self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
+    self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:updateBounds()) 
+    self.dependencies.Body:setShapes(component.actorId, physicsBodyData:getShapesForBody())
+
     component._hash = component.properties.hash
 end
 
@@ -105,8 +105,7 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
 end
 
 function Drawing2Behavior.handlers:enableComponent(component, opts)
-    local data = self:cacheDrawing(component, component.properties)
-    self:updateBodyShape(component, data.physicsBodyData)
+    self:updateBodyShape(component)
 end
 
 function Drawing2Behavior.handlers:disableComponent(component, opts)
@@ -152,7 +151,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
     end
 
     -- Body attributes
-    local bodyWidth, bodyHeight = self.dependencies.Body:getSize(component.actorId)
+    local bodyWidthScale, bodyHeightScale = self.dependencies.Body:getScale(component.actorId)
     local bodyId, body = self.dependencies.Body:getBody(component.actorId)
     local bodyX, bodyY = body:getPosition()
     local bodyAngle = body:getAngle()
@@ -164,7 +163,8 @@ function Drawing2Behavior.handlers:drawComponent(component)
         bodyY = bodyY + cameraY
     end
 
-
+    -- TODO: fix for scale conversion
+    --[[
     if self.game.performing then
         local cameraCornerX, cameraCornerY = self.game:getCameraCornerPosition()
         local cameraWidth, cameraHeight = self.game:getCameraSize()
@@ -176,28 +176,26 @@ function Drawing2Behavior.handlers:drawComponent(component)
         if bodyX + bodySizeForCamera < cameraCornerX or bodyX - bodySizeForCamera > cameraCornerX + cameraWidth or bodyY + bodySizeForCamera < cameraCornerY or bodyY - bodySizeForCamera > cameraCornerY + cameraHeight then
             return
         end
-    end
+    end]]--
 
     local data = self:cacheDrawing(component, component.properties)
     local drawData = data.drawData
 
     if component._hash ~= component.properties.hash then
-        self:updateBodyShape(component, data.physicsBodyData)
+        self:updateBodyShape(component)
     end
 
     component._drawData = drawData -- Maintain strong reference
-    local graphicsSize = drawData.scale or 10
 
     -- Push transform
     love.graphics.push("all")
     love.graphics.translate(bodyX, bodyY)
     love.graphics.rotate(bodyAngle)
-    love.graphics.translate(-bodyWidth / 2.0, -bodyHeight / 2.0)
-    love.graphics.scale(bodyWidth / graphicsSize, bodyHeight / graphicsSize)
+    love.graphics.scale(bodyWidthScale, bodyHeightScale)
 
     -- Draw!
     love.graphics.setColor(1, 1, 1, 1)
-    drawData:render(bodyWidth, bodyHeight)
+    drawData:render()
 
     -- Pop transform
     love.graphics.pop()

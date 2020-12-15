@@ -540,6 +540,7 @@ end
 
 function DrawData:updateBounds()
     self.bounds = self:getPathDataBounds()
+    return self.bounds
 end
 
 function DrawData:getPathDataBounds()
@@ -963,7 +964,7 @@ function DrawData:preload()
     self:graphics()
 end
 
-function DrawData:render(width, height)
+function DrawData:render()
     self:renderFill()
     self:graphics():draw()
 end
