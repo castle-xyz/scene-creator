@@ -41,7 +41,7 @@ function PhysicsBodyData:migrateV1ToV2()
     end
 
     if #self.shapes == 0 then
-        table.insert(self.shapes, {
+        --[[table.insert(self.shapes, {
             type = "rectangle",
             p1 = {
                 x = -self.scale / 2.0,
@@ -51,7 +51,7 @@ function PhysicsBodyData:migrateV1ToV2()
                 x = self.scale / 2.0,
                 y = self.scale / 2.0,
             },
-        })
+        })]]--
     end
 end
 

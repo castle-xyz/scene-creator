@@ -14,6 +14,7 @@ BODY_POLYGON_SKIN = love.physics.newRectangleShape(UNIT, UNIT):getRadius()
 BODY_RECTANGLE_SLOP = 2.01 * BODY_POLYGON_SKIN
 local DEFAULT_LAYER = "main"
 local CAMERA_LAYER = "camera"
+local EDITOR_BOUNDS_MIN_SIZE = 0.5
 
 local BodyBehavior =
     defineCoreBehavior {
@@ -250,20 +251,16 @@ function BodyBehavior.handlers:postAddComponents(actorId)
         return
     end
 
-    --[[
     if not component.properties.isNewDrawingTool then
-        local bodyId, body = self:getBody(component)
-        local fixtures = body:getFixtures()
+        local fixtures = component.properties.fixtures
         local fixture = fixtures[1]
-        local shape = fixture:getShape()
-        local shapeType = shape:getType()
 
-        if shapeType == 'circle' then
+        if fixture.shapeType == 'circle' then
             local width, height = self:getFixtureBoundingBoxSize(actorId)
             component.properties.width = width
             component.properties.height = height
         end
-    end]]--
+    end
 
     if component.properties.widthScale == nil or component.properties.heightScale == nil then
         if component.properties.editorBounds == nil then
@@ -867,6 +864,14 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
         local middleY = (bounds.maxY + bounds.minY) / 2.0
         local width = bounds.maxX - bounds.minX
         local height = bounds.maxY - bounds.minY
+
+        if width < EDITOR_BOUNDS_MIN_SIZE then
+            width = EDITOR_BOUNDS_MIN_SIZE
+        end
+        if height < EDITOR_BOUNDS_MIN_SIZE then
+            height = EDITOR_BOUNDS_MIN_SIZE
+        end
+
         local shapeId = self._physics:newRectangleShape(middleX, middleY, width, height, 0)
     
         self._physics:newFixture(bodyId, shapeId, 1)
@@ -909,6 +914,20 @@ function BodyBehavior:setShapes(componentOrActorId, fixtures)
     local component = self:getComponent(componentOrActorId)
     component.properties.fixtures = fixtures
     self:updatePhysicsFixturesFromProperties(componentOrActorId)
+end
+
+function BodyBehavior:isCircleShape(componentOrActorId)
+    local component = self:getComponent(componentOrActorId)
+
+    if component.properties.fixtures == nil then
+        return false
+    end
+
+    if #component.properties.fixtures ~= 1 then
+        return false
+    end
+
+    return component.properties.fixtures[1].shapeType == 'circle'
 end
 
 function BodyBehavior:resize(componentOrActorId, newWidth, newHeight)
