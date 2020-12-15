@@ -39,6 +39,15 @@ function PhysicsBodyData:migrateV1ToV2()
         local shape = self.shapes[i]
         self.shapes[i] = self:moveShapeByIgnoreBounds(shape, d, d)
     end
+
+    if #self.shapes == 0 then
+        table.insert(self.shapes, {
+            type = "circle",
+            x = 0.0,
+            y = 0.0,
+            radius = self.scale / 2.0,
+        })
+    end
 end
 
 function PhysicsBodyData:serialize()
@@ -541,70 +550,25 @@ function PhysicsBodyData:getCircleShape(p1, p2, roundFn, roundDistFn, roundDx, r
     end
 end
 
-function PhysicsBodyData:getShapesForBody(physics, width, height)
+function PhysicsBodyData:getShapesForBody()
     local shapes = {}
-
-    local convertXCoord = function (x)
-        return (x * 1.0 / self.scale - 1.0 / 2.0) * width
-    end
-    local convertYCoord = function (y)
-        return (y * 1.0 / self.scale - 1.0 / 2.0) * height
-    end
-    local convertWidthScale = function (s)
-        return (s / self.scale) * width
-    end
-    local convertHeightScale = function (s)
-        return (s / self.scale) * height
-    end
 
     for _, shape in pairs(self.shapes) do
         local ty = shape.type
         if ty == "circle" then
-            if floatEquals(width, height) then
-                table.insert(shapes, physics:newCircleShape(convertXCoord(shape.x), convertYCoord(shape.y), convertWidthScale(shape.radius)))
-            else
-                -- approximate a stretched circle with a polygon
-                local centerX = convertXCoord(shape.x)
-                local centerY = convertYCoord(shape.y)
-
-                local angle = 0
-                local points = {}
-                for i = 1, 8 do
-                    local diffX = convertWidthScale(shape.radius * math.cos(angle))
-                    local diffY = convertHeightScale(shape.radius * math.sin(angle))
-                    table.insert(points, centerX + diffX)
-                    table.insert(points, centerY + diffY)
-
-                    angle = angle - math.pi * 2.0 / 8.0
-                end
-
-                table.insert(shapes, physics:newPolygonShape(points))
-            end
+            table.insert(shapes, {
+                shapeType = "circle",
+                x = shape.x,
+                y = shape.y,
+                radius = shape.radius,
+            })
         else
-            local points = self:_pointsForShape(shape)
-            local newPoints = {}
-
-            for i = 1, #points, 2 do
-                table.insert(newPoints, convertXCoord(points[i]))
-                table.insert(newPoints, convertYCoord(points[i + 1]))
-            end
-
-            table.insert(shapes, physics:newPolygonShape(newPoints))
-
-            --[[if ty == "polygon" then
-                table.insert(shapes, physics:newPolygonShape(newPoints))
-            elseif ty == "edge" then
-                table.insert(shapes, physics:newEdgeShape(newPoints))
-            elseif ty == "chain" then
-                table.insert(shapes, physics:newChainShape(newPoints))
-            end--]]
+            table.insert(shapes, {
+                shapeType = "polygon",
+                points = self:_pointsForShape(shape),
+            })
         end
     end
 
-    local numShapes = #shapes
-    if #shapes == 0 then
-        table.insert(shapes, physics:newCircleShape(0, 0, math.min(width, height) * 0.5))
-    end
-
-    return shapes, numShapes
+    return shapes
 end

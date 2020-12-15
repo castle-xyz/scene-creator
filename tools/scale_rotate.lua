@@ -54,22 +54,7 @@ function ScaleRotateTool:getHandles()
 
     if singleActorId then
         -- Figure out shape type and dimensions
-        local shapeType
-        local width, height = self.dependencies.Body:getRectangleSize(singleActorId)
-        if width and height then
-            shapeType = "rectangle"
-        else
-            width, height = self.dependencies.Body:getSize(singleActorId)
-            local bodyId, body = self.dependencies.Body:getBody(singleActorId)
-            local fixture = body:getFixtures()[1]
-            if fixture then
-                local shape = fixture:getShape()
-                shapeType = shape:getType()
-            end
-        end
-        if not shapeType then
-            return {}
-        end
+        local width, height = self.dependencies.Body:getSize(singleActorId)
 
         -- Resizing
         local bodyId, body = self.dependencies.Body:getBody(singleActorId)
@@ -90,10 +75,9 @@ function ScaleRotateTool:getHandles()
                     singleActorId = singleActorId,
                     width = width,
                     height = height,
-                    shapeType = shapeType,
                     touchRadius = handleTouchRadius
                 }
-                if shapeType == "rectangle" and i ~= 0 and j ~= 0 then -- Corner
+                if i ~= 0 and j ~= 0 then -- Corner
                     handle.handleType = "corner"
                     table.insert(handles, handle)
                 elseif i ~= 0 and j == 0 then -- Width edge
@@ -232,103 +216,63 @@ function ScaleRotateTool.handlers:update(dt)
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
                 local angle = body:getAngle()
 
-                if handle.shapeType == "rectangle" then
-                    local desiredWidth, desiredHeight = handle.width, handle.height
+                local desiredWidth, desiredHeight = handle.width, handle.height
 
-                    --math.abs(touch.x - handle.oppositeX), math.abs(touch.y - handle.oppositeY)
-                    if handle.handleType == "corner" then
-                        -- rotate touch around handle
-                        local touchOffsetX = touch.x - handle.oppositeX
-                        local touchOffsetY = touch.y - handle.oppositeY
-                        local rotatedTouchOffsetX = math.cos(-angle) * touchOffsetX - math.sin(-angle) * touchOffsetY
-                        local rotatedTouchOffsetY = math.cos(-angle) * touchOffsetY + math.sin(-angle) * touchOffsetX
+                --math.abs(touch.x - handle.oppositeX), math.abs(touch.y - handle.oppositeY)
+                if handle.handleType == "corner" then
+                    -- rotate touch around handle
+                    local touchOffsetX = touch.x - handle.oppositeX
+                    local touchOffsetY = touch.y - handle.oppositeY
+                    local rotatedTouchOffsetX = math.cos(-angle) * touchOffsetX - math.sin(-angle) * touchOffsetY
+                    local rotatedTouchOffsetY = math.cos(-angle) * touchOffsetY + math.sin(-angle) * touchOffsetX
 
-                        desiredWidth, desiredHeight = math.abs(rotatedTouchOffsetX), math.abs(rotatedTouchOffsetY)
-                    elseif handle.handleType == "width" then
-                        desiredWidth = math.sqrt(math.pow(touch.x - handle.oppositeX, 2.0) + math.pow(touch.y - handle.oppositeY, 2.0))
-                    elseif handle.handleType == "height" then
-                        desiredHeight = math.sqrt(math.pow(touch.x - handle.oppositeX, 2.0) + math.pow(touch.y - handle.oppositeY, 2.0))
-                    end
+                    desiredWidth, desiredHeight = math.abs(rotatedTouchOffsetX), math.abs(rotatedTouchOffsetY)
+                elseif handle.handleType == "width" then
+                    desiredWidth = math.sqrt(math.pow(touch.x - handle.oppositeX, 2.0) + math.pow(touch.y - handle.oppositeY, 2.0))
+                elseif handle.handleType == "height" then
+                    desiredHeight = math.sqrt(math.pow(touch.x - handle.oppositeX, 2.0) + math.pow(touch.y - handle.oppositeY, 2.0))
+                end
 
-                    if self._gridEnabled then
-                        desiredWidth = util.quantize(desiredWidth, self._gridSize)
-                        desiredHeight = util.quantize(desiredHeight, self._gridSize)
-                    end
-                    desiredWidth = math.max(MIN_BODY_SIZE, math.min(desiredWidth, MAX_BODY_SIZE))
-                    desiredHeight = math.max(MIN_BODY_SIZE, math.min(desiredHeight, MAX_BODY_SIZE))
+                if self._gridEnabled then
+                    desiredWidth = util.quantize(desiredWidth, self._gridSize)
+                    desiredHeight = util.quantize(desiredHeight, self._gridSize)
+                end
+                desiredWidth = math.max(MIN_BODY_SIZE, math.min(desiredWidth, MAX_BODY_SIZE))
+                desiredHeight = math.max(MIN_BODY_SIZE, math.min(desiredHeight, MAX_BODY_SIZE))
 
-                    local newWidth, newHeight
-                    if handle.handleType == "corner" then
-                        local s = math.max(desiredWidth / handle.width, desiredHeight / handle.height)
-                        newWidth, newHeight = s * handle.width, s * handle.height
-                    elseif handle.handleType == "width" then
-                        newWidth, newHeight = desiredWidth, handle.height
-                    elseif handle.handleType == "height" then
-                        newWidth, newHeight = handle.width, desiredHeight
-                    end
+                local newWidth, newHeight
+                if handle.handleType == "corner" then
+                    local s = math.max(desiredWidth / handle.width, desiredHeight / handle.height)
+                    newWidth, newHeight = s * handle.width, s * handle.height
+                elseif handle.handleType == "width" then
+                    newWidth, newHeight = desiredWidth, handle.height
+                elseif handle.handleType == "height" then
+                    newWidth, newHeight = handle.width, desiredHeight
+                end
 
-                    local offsetX = newWidth * handle.unitVecX * 0.5
-                    local offsetY = newHeight * handle.unitVecY * 0.5
+                local offsetX = newWidth * handle.unitVecX * 0.5
+                local offsetY = newHeight * handle.unitVecY * 0.5
 
-                    local newx = handle.oppositeX + math.cos(angle) * offsetX - math.sin(angle) * offsetY
-                    local newy = handle.oppositeY + math.cos(angle) * offsetY + math.sin(angle) * offsetX
+                local newx = handle.oppositeX + math.cos(angle) * offsetX - math.sin(angle) * offsetY
+                local newy = handle.oppositeY + math.cos(angle) * offsetY + math.sin(angle) * offsetX
 
-                    if newWidth and newHeight then
-                        self:command(
-                            "resize",
-                            {
-                                coalesceSuffix = touchData.gestureId .. "-" .. actorId,
-                                paramOverrides = {
-                                    ["do"] = {width = newWidth, height = newHeight, position = {x = newx, y = newy}},
-                                    ["undo"] = {width = handle.width, height = handle.height, position = {x = worldx, y = worldy}}
-                                },
-                                params = {
-                                    gestureEnded = touchData.allTouchesReleased
-                                }
-                            },
-                            function(params)
-                                self.dependencies.Body:resize(actorId, params.width, params.height)
-
-                                local physics = self.dependencies.Body:getPhysics()
-                                local reliable = params.gestureEnded or not live
-                                local sendOpts = {
-                                    reliable = reliable,
-                                    channel = reliable and physics.reliableChannel or nil
-                                }
-                                local bodyId, body = self.dependencies.Body:getBody(actorId)
-                                physics:setPosition(sendOpts, bodyId, params.position.x, params.position.y)
-                            end
-                        )
-                    end
-                elseif handle.shapeType == "circle" then
-                    local desiredRadius = 0.5 * math.sqrt(math.pow(touch.x - handle.oppositeX, 2.0) + math.pow(touch.y - handle.oppositeY, 2.0))
-                    if self._gridEnabled then
-                        desiredRadius = util.quantize(desiredRadius, 0.5 * self._gridSize)
-                    end
-                    desiredRadius = math.max(0.5 * MIN_BODY_SIZE, math.min(desiredRadius, 0.5 * MAX_BODY_SIZE))
-
-                    local offsetX = desiredRadius * handle.unitVecX
-                    local offsetY = desiredRadius * handle.unitVecY
-
-                    local newx = handle.oppositeX + math.cos(angle) * offsetX - math.sin(angle) * offsetY
-                    local newy = handle.oppositeY + math.cos(angle) * offsetY + math.sin(angle) * offsetX
-
+                if newWidth and newHeight then
                     self:command(
                         "resize",
                         {
                             coalesceSuffix = touchData.gestureId .. "-" .. actorId,
                             paramOverrides = {
-                                ["do"] = {radius = desiredRadius, position = {x = newx, y = newy}},
-                                ["undo"] = {radius = 0.5 * handle.width, position = {x = worldx, y = worldy}}
+                                ["do"] = {width = newWidth, height = newHeight, position = {x = newx, y = newy}},
+                                ["undo"] = {width = handle.width, height = handle.height, position = {x = worldx, y = worldy}}
                             },
                             params = {
                                 gestureEnded = touchData.allTouchesReleased
                             }
                         },
                         function(params)
-                            local physics = self.dependencies.Body:getPhysics()
-                            self.dependencies.Body:setShapes(actorId, {physics:newCircleShape(params.radius)})
+                            self.dependencies.Body:resize(actorId, params.width, params.height)
 
+                            local physics = self.dependencies.Body:getPhysics()
                             local reliable = params.gestureEnded or not live
                             local sendOpts = {
                                 reliable = reliable,

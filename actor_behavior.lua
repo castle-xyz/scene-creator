@@ -198,6 +198,10 @@ function Common.receivers:postAddActor(time, actorId)
    self:callHandlers("postAddActor", actorId)
 end
 
+function Common.receivers:postAddComponents(time, actorId)
+    self:callHandlers("postAddComponents", actorId)
+end
+
 function Common.receivers:removeActor(time, clientId, actorId, opts)
     opts = opts or {}
 
@@ -656,6 +660,8 @@ function Common:sendAddActor(bp, opts)
     if not hasTags then
         self:send("addComponent", self.clientId, actorId, self.behaviorsByName.Tags.behaviorId, {})
     end
+
+    self:send("postAddComponents", actorId)
     
     if self.performing then
         self:send("postAddActor", actorId)
