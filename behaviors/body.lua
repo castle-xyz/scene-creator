@@ -282,6 +282,23 @@ function BodyBehavior.handlers:postAddComponents(actorId)
 
             component.properties.widthScale = component.properties.width / boundsWidth
             component.properties.heightScale = component.properties.height / boundsHeight
+
+            -- need to scale our own fixtures, because there are some cases
+            -- where body has fixtures, draw2 has no fixtures, and so body's
+            -- fixtures never get overridden. see the purple background in remy's pinball game
+            for _, fixture in ipairs(component.properties.fixtures) do
+                if fixture.shapeType ~= 'circle' then
+                    for i = 1, #fixture.points, 2 do
+                        fixture.points[i] = fixture.points[i] / component.properties.widthScale
+                        fixture.points[i + 1] = fixture.points[i + 1] / component.properties.heightScale
+                    end
+                end
+            end
+
+            -- most of the time we want to grab the fixtures from draw2 again
+            -- otherwise the previous step would have incorrectly scaled the draw2
+            -- fixtures
+            self.game.behaviorsByName.Drawing2:updateBodyShape(component.actorId)
         end
     end
 
@@ -911,6 +928,10 @@ function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixt
 end
 
 function BodyBehavior:setShapes(componentOrActorId, fixtures)
+    if fixtures == nil then
+        return
+    end
+
     local component = self:getComponent(componentOrActorId)
     component.properties.fixtures = fixtures
     self:updatePhysicsFixturesFromProperties(componentOrActorId)
