@@ -889,30 +889,37 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
             self._physics:destroyObject(shapeId)
         end
     else
-        local bounds = util.deepCopyTable(component.properties.editorBounds)
-        bounds.minX = bounds.minX * component.properties.widthScale
-        bounds.maxX = bounds.maxX * component.properties.widthScale
-        bounds.minY = bounds.minY * component.properties.heightScale
-        bounds.maxY = bounds.maxY * component.properties.heightScale
+        local bounds = self:getScaledEditorBounds(component)
+        local shapeId = self._physics:newRectangleShape(bounds.centerX, bounds.centerY, bounds.width, bounds.height, 0)
 
-        local middleX = (bounds.maxX + bounds.minX) / 2.0
-        local middleY = (bounds.maxY + bounds.minY) / 2.0
-
-        local width = math.abs(bounds.maxX - bounds.minX)
-        local height = math.abs(bounds.maxY - bounds.minY)
-
-        if width < EDITOR_BOUNDS_MIN_SIZE then
-            width = EDITOR_BOUNDS_MIN_SIZE
-        end
-        if height < EDITOR_BOUNDS_MIN_SIZE then
-            height = EDITOR_BOUNDS_MIN_SIZE
-        end
-
-        local shapeId = self._physics:newRectangleShape(middleX, middleY, width, height, 0)
-    
         self._physics:newFixture(bodyId, shapeId, 1)
         self._physics:destroyObject(shapeId)
     end
+end
+
+function BodyBehavior:getScaledEditorBounds(componentOrActorId)
+    local component = self:getComponent(componentOrActorId)
+
+    local bounds = util.deepCopyTable(component.properties.editorBounds)
+    bounds.minX = bounds.minX * component.properties.widthScale
+    bounds.maxX = bounds.maxX * component.properties.widthScale
+    bounds.minY = bounds.minY * component.properties.heightScale
+    bounds.maxY = bounds.maxY * component.properties.heightScale
+
+    bounds.centerX = (bounds.maxX + bounds.minX) / 2.0
+    bounds.centerY = (bounds.maxY + bounds.minY) / 2.0
+
+    bounds.width = math.abs(bounds.maxX - bounds.minX)
+    bounds.height = math.abs(bounds.maxY - bounds.minY)
+
+    if bounds.width < EDITOR_BOUNDS_MIN_SIZE then
+        bounds.width = EDITOR_BOUNDS_MIN_SIZE
+    end
+    if bounds.height < EDITOR_BOUNDS_MIN_SIZE then
+        bounds.height = EDITOR_BOUNDS_MIN_SIZE
+    end
+
+    return bounds
 end
 
 function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
