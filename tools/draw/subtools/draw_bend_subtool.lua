@@ -37,8 +37,8 @@ function BendTool.handlers:onTouch(component, touchData)
         if self._isUsingBendPoint then
             self._grabbedPaths[1].style = 1
             self._grabbedPaths[1].bendPoint = {
-                x = touchData.touchX,
-                y = touchData.touchY,
+                x = touchData.clampedX,
+                y = touchData.clampedY,
             }
         end
         self._grabbedPaths[1].tovePath = nil
