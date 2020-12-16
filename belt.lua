@@ -46,7 +46,7 @@ function Common:startBelt()
     self.beltHapticsGesture = false -- Whether current gesture should fire haptics
 
     self.beltGhostActorId = nil -- Actor ID for 'ghost' actor to edit blueprints through
-    self.beltLastGhostCreateTime = love.timer.getTime()
+    self.beltLastGhostCreateTime = nil
 
     -- Renders grey if the pixel is fully transparent, and white otherwise.
     -- Used with a multiply blend mode to darken the screen.
@@ -228,7 +228,7 @@ end
 
 function Common:syncBeltGhostActor()
     local currTime = love.timer.getTime()
-    if currTime - self.beltLastGhostCreateTime < 0.2 then
+    if self.beltLastGhostCreateTime and currTime - self.beltLastGhostCreateTime < 0.2 then
         return
     end
 
@@ -326,6 +326,7 @@ function Common:updateBelt(dt)
                 self.beltTargetIndex = touchBeltIndex
                 self.beltHighlightEnabled = true -- Enable highlight on belt touch
                 self:fireBeltHaptic()
+                self.beltLastGhostCreateTime = nil -- Inspect it immediately
             end
 
             -- Track which element the touch begins on
