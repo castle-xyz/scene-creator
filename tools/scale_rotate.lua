@@ -54,14 +54,14 @@ function ScaleRotateTool:getHandles()
 
     if singleActorId then
         -- Figure out shape type and dimensions
-        local width, height = self.dependencies.Body:getSize(singleActorId)
+        local bounds = self.dependencies.Body:getScaledEditorBounds(singleActorId)
 
         -- Resizing
         local bodyId, body = self.dependencies.Body:getBody(singleActorId)
         for i = -1, 1, 1 do
             for j = -1, 1, 1 do
-                local x, y = body:getWorldPoint(i * 0.5 * width, j * 0.5 * height)
-                local oppositeX, oppositeY = body:getWorldPoint(i * -0.5 * width, j * -0.5 * height)
+                local x, y = body:getWorldPoint(bounds.centerX + i * 0.5 * bounds.width, bounds.centerY + j * 0.5 * bounds.height)
+                local oppositeX, oppositeY = body:getWorldPoint(bounds.centerX + i * -0.5 * bounds.width, bounds.centerY + j * -0.5 * bounds.height)
                 local unitVecX = i
                 local unitVecY = j
 
@@ -73,8 +73,8 @@ function ScaleRotateTool:getHandles()
                     unitVecX = unitVecX,
                     unitVecY = unitVecY,
                     singleActorId = singleActorId,
-                    width = width,
-                    height = height,
+                    width = bounds.width,
+                    height = bounds.height,
                     touchRadius = handleTouchRadius
                 }
                 if i ~= 0 and j ~= 0 then -- Corner
@@ -91,9 +91,8 @@ function ScaleRotateTool:getHandles()
         end
 
         -- Rotation
-        local centerX, centerY = body:getWorldPoint(0, 0)
-        local x, y = body:getWorldPoint(0, -0.5 * height - 6 * handleDrawRadius)
-        local endX, endY = body:getWorldPoint(0, -0.5 * height)
+        local centerX, centerY = body:getX(), body:getY()
+        local x, y = body:getWorldPoint(0, -0.5 * bounds.height - 6 * handleDrawRadius)
         table.insert(
             handles,
             {
@@ -103,8 +102,8 @@ function ScaleRotateTool:getHandles()
                 touchRadius = 1.5 * handleTouchRadius, -- Make rotate handles a bit easier to touch
                 pivotX = centerX,
                 pivotY = centerY,
-                endX = endX,
-                endY = endY
+                endX = centerX,
+                endY = centerY
             }
         )
         return handles
