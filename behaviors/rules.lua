@@ -1199,7 +1199,7 @@ function RulesBehavior:validateResponseForActor(actorId, response)
       response.params.nextResponse = self:validateResponseForActor(actorId, response.params.nextResponse)
       response.params.body = self:validateResponseForActor(actorId, response.params.body)
       response.params["then"] = self:validateResponseForActor(actorId, response.params["then"])
-      response.params["else"] = self:validateResponseForActor(actorid, response.params["else"])
+      response.params["else"] = self:validateResponseForActor(actorId, response.params["else"])
       return response
    else
       -- target actor doesn't have the behavior for this response, delete it and move to next
