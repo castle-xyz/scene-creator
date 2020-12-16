@@ -1,6 +1,5 @@
 require 'love.system'
 require 'love.image'
-local jsEvents = require '__ghost__.jsEvents'
 
 local Capture = {
    running = false,
@@ -18,8 +17,12 @@ function Client:startCapture()
    if not Capture.running then
       Capture.running = true
       Capture.intervalSinceCapture = 0
-      Capture.buffer = {}
+      self:clearCapture()
    end
+end
+
+function Client:clearCapture()
+   Capture.buffer = {}
 end
 
 function Client:isCapturing()
@@ -29,31 +32,31 @@ end
 function Client:stopCapture()
    if Capture.running then
       Capture.running = false
-      -- local channel = love.thread.getChannel("SCENE_CREATOR_ENCODE_CAPTURE")
-      -- channel:push(Capture.buffer)
-      -- love.thread.originalNewThread(
-          -- require 'love.system'
-          -- require 'love.image'
-          -- local channel = love.thread.getChannel('SCENE_CREATOR_ENCODE_CAPTURE')
-      print('rendering capture buffer...')
-      local buffer = Capture.buffer -- channel:pop()
-      if buffer then
-         local baseFilename = 'capture-'
-         for index, imageData in ipairs(buffer) do
-            if imageData then
-               local filename = baseFilename .. index .. '.png'
-               imageData:encode('png', filename)
-            end
-         end
-         jsEvents.send('GHOST_CAPTURE', {
+      local channel = love.thread.getChannel("SCENE_CREATOR_ENCODE_CAPTURE")
+      channel:push(Capture.buffer)
+      love.thread.originalNewThread([[
+          require 'love.system'
+          require 'love.image'
+          local jsEvents = require '__ghost__.jsEvents'
+          local channel = love.thread.getChannel('SCENE_CREATOR_ENCODE_CAPTURE')
+          print('rendering capture buffer...')
+          local buffer = channel:pop()
+          if buffer then
+             local baseFilename = 'capture-'
+             for index, imageData in ipairs(buffer) do
+                if imageData then
+                   local filename = baseFilename .. index .. '.png'
+                   imageData:encode('png', filename)
+                end
+             end
+             jsEvents.send('GHOST_CAPTURE', {
                           path = love.filesystem.getSaveDirectory() .. '/' .. baseFilename,
                           numFrames = #buffer,
-         })
-      end
-      -- ):start()
-
-      print('finished rendering capture buffer')
-      Capture.buffer = {}
+             })
+          end
+          print('finished rendering capture buffer')
+          ]]):start()
+      -- TODO: clear: Capture.buffer = {}
    end
 end
 

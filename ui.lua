@@ -81,6 +81,10 @@ function Client:uiGlobalActions()
       self:startCapture()
    end
 
+   actions['clearCapture'] = function()
+      self:clearCapture()
+   end
+
    -- TODO: dup of some logic in inspector_actions
    local tools = {}
     for _, tool in pairs(self.tools) do
