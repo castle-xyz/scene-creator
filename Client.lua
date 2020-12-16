@@ -647,14 +647,16 @@ function Client:drawInner()
                     love.graphics.setLineWidth(1.25 * self:getPixelScale())
                     love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
                     for actorId, component in pairs(self.behaviorsByName.Body.components) do
-                        self.behaviorsByName.Body:drawBodyOutline(component)
+                        if not self.actors[actorId].isGhost then
+                            self.behaviorsByName.Body:drawBodyOutline(component)
+                        end
                     end
 
                     -- Selection outlines
                     love.graphics.setLineWidth(2 * self:getPixelScale())
                     love.graphics.setColor(0, 1, 0, 0.8)
                     for actorId in pairs(self.selectedActorIds) do
-                        if self.behaviorsByName.Body:has(actorId) then
+                        if not self.actors[actorId].isGhost and self.behaviorsByName.Body:has(actorId) then
                             if activeTool then
                                 local component = activeTool.components[actorId]
                                 if component and self.clientId ~= component.clientId then

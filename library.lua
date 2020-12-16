@@ -261,6 +261,7 @@ function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, 
                             actorId = actorId,
                             parentEntryId = entryId,
                             drawOrder = actor.drawOrder,
+                            isGhost = actor.isGhost,
                         }
                     )
                 end
