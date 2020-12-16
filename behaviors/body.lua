@@ -58,12 +58,12 @@ local BodyBehavior =
        widthScale = {
           method = 'numberInput',
           label = 'Width Scale',
-          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2 },
+          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2, step = 0.05 },
        },
        heightScale = {
           method = 'numberInput',
           label = 'Height Scale',
-          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2 },
+          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2, step = 0.05 },
        },
        visible = {
           method = 'toggle',
@@ -795,8 +795,19 @@ function BodyBehavior.setters:relativeToCamera(component, value)
     component.properties.relativeToCamera = value
 end
 
+function BodyBehavior.setters:widthScale(component, value)
+    component.properties.widthScale = value
+    self:updatePhysicsFixturesFromProperties(component.actorId)
+end
+
+function BodyBehavior.setters:heightScale(component, value)
+    component.properties.heightScale = value
+    self:updatePhysicsFixturesFromProperties(component.actorId)
+end
+
 function BodyBehavior.setters:editorBounds(component, value)
     component.properties.editorBounds = value
+    self:updatePhysicsFixturesFromProperties(component.actorId)
 end
 
 local function floatEquals(f1, f2)
@@ -830,9 +841,9 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
             local shapeType = fixtureBp.shapeType
 
             if shapeType == "circle" then
-                if floatEquals(widthScale, heightScale) then
+                if floatEquals(math.abs(widthScale), math.abs(heightScale)) then
                     shapeId =
-                        self._physics:newCircleShape((fixtureBp.x or 0) * widthScale, (fixtureBp.y or 0) * heightScale, (fixtureBp.radius or 0.5) * widthScale)
+                        self._physics:newCircleShape((fixtureBp.x or 0) * widthScale, (fixtureBp.y or 0) * heightScale, math.abs((fixtureBp.radius or 0.5) * widthScale))
                 else
                     -- approximate a stretched circle with a polygon
                     local centerX = fixtureBp.x
@@ -878,11 +889,17 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
             self._physics:destroyObject(shapeId)
         end
     else
-        local bounds = self:getScaledEditorBounds(component)
+        local bounds = util.deepCopyTable(component.properties.editorBounds)
+        bounds.minX = bounds.minX * component.properties.widthScale
+        bounds.maxX = bounds.maxX * component.properties.widthScale
+        bounds.minY = bounds.minY * component.properties.heightScale
+        bounds.maxY = bounds.maxY * component.properties.heightScale
+
         local middleX = (bounds.maxX + bounds.minX) / 2.0
         local middleY = (bounds.maxY + bounds.minY) / 2.0
-        local width = bounds.maxX - bounds.minX
-        local height = bounds.maxY - bounds.minY
+
+        local width = math.abs(bounds.maxX - bounds.minX)
+        local height = math.abs(bounds.maxY - bounds.minY)
 
         if width < EDITOR_BOUNDS_MIN_SIZE then
             width = EDITOR_BOUNDS_MIN_SIZE
@@ -896,23 +913,6 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
         self._physics:newFixture(bodyId, shapeId, 1)
         self._physics:destroyObject(shapeId)
     end
-end
-
-function BodyBehavior:getScaledEditorBounds(component)
-    local bounds = component.properties.editorBounds
-    local middleX = (bounds.maxX + bounds.minX) / 2.0
-    local middleY = (bounds.maxY + bounds.minY) / 2.0
-    local width = (bounds.maxX - bounds.minX) * component.properties.widthScale
-    local height = (bounds.maxY - bounds.minY) * component.properties.heightScale
-    local halfWidth = width * 0.5
-    local halfHeight = height * 0.5
-
-    return {
-        minX = middleX - halfWidth,
-        minY = middleY - halfHeight,
-        maxX = middleX + halfWidth,
-        maxY = middleY + halfHeight,
-    }
 end
 
 function BodyBehavior:updatePhysicsFixtureFromDependentBehaviors(component, fixtureId)
