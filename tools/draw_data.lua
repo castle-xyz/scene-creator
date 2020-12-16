@@ -732,6 +732,14 @@ function DrawData:getFillImageDataSizedToPathBounds()
     local width = pathBounds.maxX - pathBounds.minX
     local height = pathBounds.maxY - pathBounds.minY
 
+    -- imagedata can't have 0 width/height
+    if width < 1 then
+        width = 1
+    end
+    if height < 1 then
+        height = 1
+    end
+
     if self.fillImageData == nil then
         self.fillImageData = love.image.newImageData(width, height)
     elseif self.fillImageData:getWidth() ~= width or self.fillImageData:getHeight() ~= height then
@@ -886,6 +894,14 @@ function DrawData:updatePathsCanvas()
     local bounds = self:getPathDataBoundsInPixelCoordinates()
     local width = bounds.maxX - bounds.minX
     local height = bounds.maxY - bounds.minY
+
+    -- canvas can't have 0 width/height
+    if width < 1 then
+        width = 1
+    end
+    if height < 1 then
+        height = 1
+    end
 
     if self.pathsCanvas == nil or self.pathsCanvas:getWidth() ~= width or self.pathsCanvas:getHeight() ~= height then
         if self.pathsCanvas ~= nil then

@@ -11,7 +11,10 @@ local CORE_LIBRARY = {
         actorBlueprint = {
             components = {
                 Drawing2 = DrawingData.Wall.Drawing2,
-                Body = {},
+                Body = {
+                    widthScale = 0.1,
+                    heightScale = 0.1,
+                },
                 Solid = {},
                 Tags = {},
             }
@@ -26,7 +29,11 @@ local CORE_LIBRARY = {
         actorBlueprint = {
             components = {
                 Drawing2 = DrawingData.Ball.Drawing2,
-                Body = {gravityScale = 1},
+                Body = {
+                    gravityScale = 1,
+                    widthScale = 0.1,
+                    heightScale = 0.1,
+                },
                 Solid = {},
                 Falling = {},
                 Tags = {},
