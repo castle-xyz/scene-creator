@@ -308,6 +308,8 @@ function Common:updateBelt(dt)
         local touchId, touch = next(self.touches)
 
         if touch.beltIndex or touch.screenY < self.beltBottom then -- Touch on belt
+            ui.setUpdatesPaused(false) -- Update inspector eagerly to reflect focused blueprint
+
             if next(self.selectedActorIds) then
                 self:deselectAllActors({ noDeselectBelt = true })
             end
