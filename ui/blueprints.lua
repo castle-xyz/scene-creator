@@ -58,6 +58,11 @@ function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
             skipActorId = actorId,
         })
     end)
+<<<<<<< HEAD
+=======
+    self:deselectAllActors({ noDeselectBelt = true })
+    self:applySelections()
+>>>>>>> belt: create 'ghost' actor for editing uninstantiated blueprints
 end
 
 function Client:_addBlueprint(actor, saveBlueprintData)
@@ -75,6 +80,11 @@ function Client:_addBlueprint(actor, saveBlueprintData)
         base64Png = base64Png,
     })
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
+<<<<<<< HEAD
+=======
+    self:deselectAllActors({ noDeselectBelt = true })
+    self:applySelections()
+>>>>>>> belt: create 'ghost' actor for editing uninstantiated blueprints
 end
 
 function Client:uiBlueprints()

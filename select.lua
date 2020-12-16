@@ -192,7 +192,16 @@ function Client:deselectAllActors(opts)
         self.beltEntryId = nil
     end
     for actorId in pairs(self.selectedActorIds) do
-        self:deselectActor(actorId)
+        local skip = false
+        if opts.noDeselectBelt then
+            local actor = self.actors[actorId]
+            if actor and actor.isGhost then
+                skip = true
+            end
+        end
+        if not skip then
+            self:deselectActor(actorId)
+        end
     end
 end
 

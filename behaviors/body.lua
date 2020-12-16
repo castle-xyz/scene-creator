@@ -1168,7 +1168,8 @@ function BodyBehavior:getActorsAtBoundingBox(minX, minY, maxX, maxY)
                 tempMaxY,
                 function(fixture)
                     local actorId = self:getActorForBody(fixture:getBody())
-                    if actorId then
+                    local actor = self.game.actors[actorId]
+                    if actor and not actor.isGhost then
                         hits[actorId] = true
                     end
                     return true
@@ -1203,7 +1204,8 @@ function BodyBehavior:getActorsAtPoint(x, y)
                 function(fixture)
                     if fixture:testPoint(tempX, tempY) then
                         local actorId = self:getActorForBody(fixture:getBody())
-                        if actorId then
+                        local actor = self.game.actors[actorId]
+                        if actor and not actor.isGhost then
                             hits[actorId] = true
                         end
                     end
