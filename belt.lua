@@ -46,6 +46,7 @@ function Common:startBelt()
     self.beltHapticsGesture = false -- Whether current gesture should fire haptics
 
     self.beltGhostActorId = nil -- Actor ID for 'ghost' actor to edit blueprints through
+    self.beltLastGhostCreateTime = love.timer.getTime()
 
     -- Renders grey if the pixel is fully transparent, and white otherwise.
     -- Used with a multiply blend mode to darken the screen.
@@ -226,8 +227,8 @@ function Common:syncSelectionsWithBelt()
 end
 
 function Common:syncBeltGhostActor()
-    -- Debounce ghost creation when scrolling through belt
-    if math.abs(self.beltCursorVX) >= ELEM_SIZE / 8 then
+    local currTime = love.timer.getTime()
+    if currTime - self.beltLastGhostCreateTime < 0.2 then
         return
     end
 
@@ -248,7 +249,7 @@ function Common:syncBeltGhostActor()
         if ghostActor then
             local oldEntry = self.library[ghostActor.parentEntryId]
             local oldTitle = (oldEntry and not oldEntry.isCore and oldEntry.title) or "(none)"
-            print("destroyed ghost for '" .. oldTitle .. "'")
+            --print("destroyed ghost for '" .. oldTitle .. "'")
             self:send('removeActor', self.clientId, self.beltGhostActorId)
             self.beltGhostActorId = nil
         end
@@ -268,7 +269,8 @@ function Common:syncBeltGhostActor()
                 isGhost = true,
             })
             self.beltGhostActorId = newActorId
-            print("created ghost for '" .. newEntry.title .. "'")
+            self.beltLastGhostCreateTime = currTime
+            --print("created ghost for '" .. newEntry.title .. "'")
         end
     end
 
@@ -700,15 +702,15 @@ function Common:drawBelt()
         end
 
         -- Title for current element
-        love.graphics.setColor(1, 1, 1)
-        local currEntry = self.library[self.beltEntryId]
-        if currEntry and currEntry.title then
-            local w = titleFont:getWidth(currEntry.title)
-            local h = titleFont:getHeight()
-            love.graphics.print(currEntry.title, titleFont,
-                0.5 * windowWidth - 0.5 * w,
-                self.beltBottom + 0.2 * h)
-        end
+        --love.graphics.setColor(1, 1, 1)
+        --local currEntry = self.library[self.beltEntryId]
+        --if currEntry and currEntry.title then
+        --    local w = titleFont:getWidth(currEntry.title)
+        --    local h = titleFont:getHeight()
+        --    love.graphics.print(currEntry.title, titleFont,
+        --        0.5 * windowWidth - 0.5 * w,
+        --        self.beltBottom + 0.2 * h)
+        --end
 
         -- Debug touch overlay
         if DEBUG_TOUCHES and not self:isActiveToolFullscreen() then
