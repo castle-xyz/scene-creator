@@ -251,18 +251,18 @@ function BodyBehavior.handlers:postAddComponents(actorId)
         return
     end
 
-    if not component.properties.isNewDrawingTool then
-        local fixtures = component.properties.fixtures
-        local fixture = fixtures[1]
-
-        if fixture.shapeType == 'circle' then
-            local width, height = self:getFixtureBoundingBoxSize(actorId)
-            component.properties.width = width
-            component.properties.height = height
-        end
-    end
-
     if component.properties.widthScale == nil or component.properties.heightScale == nil then
+        if not component.properties.isNewDrawingTool then
+            local fixtures = component.properties.fixtures
+            local fixture = fixtures[1]
+
+            if fixture.shapeType == 'circle' then
+                local width, height = self:getFixtureBoundingBoxSize(actorId)
+                component.properties.width = width
+                component.properties.height = height
+            end
+        end
+
         if component.properties.editorBounds == nil then
             local halfWidth = component.properties.width * 0.5
             local halfHeight = component.properties.height * 0.5

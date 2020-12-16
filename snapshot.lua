@@ -12,6 +12,11 @@ function Common:setLastSuccessfulSaveSnapshot(snapshot)
 end
 
 function Common:restoreSnapshot(snapshot)
+    -- We had a bug where something in the body behavior was modifying the snapshot
+    -- directly which caused issues when restarting a card. Easiest for now
+    -- to just create a duplicate object since it only takes ~10ms
+    snapshot = util.deepCopyTable(snapshot)
+
     self:send("clearScene")
 
     -- Clear existing library entries
