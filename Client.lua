@@ -757,6 +757,7 @@ function Client:draw()
         end
         self.innerCanvas:renderTo(function()
             self:drawInner()
+            self:drawBeltHighlight()
         end)
         love.graphics.draw(self.innerCanvas, 0, self:getBeltYOffset())
 
