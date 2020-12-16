@@ -178,12 +178,17 @@ end
 
 -- Message receivers
 
-function Common.receivers:addActor(time, clientId, actorId, parentEntryId)
+function Common.receivers:addActor(time, clientId, actorId, parentEntryId, isGhost)
     assert(not self.actors[actorId], "addActor: this `actorId` is already used")
 
     local actor = {}
     actor.actorId = actorId
     actor.parentEntryId = parentEntryId
+    if isGhost ~= nil then
+        actor.isGhost = isGhost
+    else
+        actor.isGhost = false
+    end
     actor.components = {}
 
     self.actors[actorId] = actor
@@ -619,7 +624,7 @@ end
 function Common:sendAddActor(bp, opts)
     local actorId = opts.actorId or self:generateActorId()
 
-    self:send("addActor", self.clientId, actorId, opts.parentEntryId)
+    self:send("addActor", self.clientId, actorId, opts.parentEntryId, opts.isGhost)
 
     -- Set draw order if given
     if opts.drawOrder then
@@ -730,7 +735,7 @@ function Common:forEachActorByDrawOrder(func)
     local nextNewDrawOrder = 1 -- The next 'dense' draw order
     for i = 1, table.maxn(self.actorsByDrawOrder) do
         local actor = self.actorsByDrawOrder[i]
-        if actor then
+        if actor and not actor.isGhost then
             if i ~= nextNewDrawOrder then -- Sift down if needed
                 self.actorsByDrawOrder[i] = nil
                 self.actorsByDrawOrder[nextNewDrawOrder] = actor
