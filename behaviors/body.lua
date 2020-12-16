@@ -287,7 +287,9 @@ function BodyBehavior.handlers:postAddComponents(actorId)
             -- where body has fixtures, draw2 has no fixtures, and so body's
             -- fixtures never get overridden. see the purple background in remy's pinball game
             for _, fixture in ipairs(component.properties.fixtures) do
-                if fixture.shapeType ~= 'circle' then
+                if fixture.shapeType == 'circle' then
+                    fixture.radius = fixture.radius / component.properties.widthScale
+                else
                     for i = 1, #fixture.points, 2 do
                         fixture.points[i] = fixture.points[i] / component.properties.widthScale
                         fixture.points[i + 1] = fixture.points[i + 1] / component.properties.heightScale
