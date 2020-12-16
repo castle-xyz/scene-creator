@@ -228,7 +228,7 @@ end
 
 function Common:syncBeltGhostActor()
     local currTime = love.timer.getTime()
-    if self.beltLastGhostCreateTime and currTime - self.beltLastGhostCreateTime < 0.2 then
+    if math.abs(self.beltCursorVX) > 10 and self.beltLastGhostCreateTime and currTime - self.beltLastGhostCreateTime < 0.2 then
         return
     end
 
