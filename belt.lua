@@ -558,7 +558,7 @@ end
 
 local titleFont = love.graphics.newFont(32)
 
-function Common:drawBelt()
+function Common:drawBeltHighlight()
     if self:isActiveToolFullscreen() then
         return
     end
@@ -568,7 +568,6 @@ function Common:drawBelt()
 
     local windowWidth, windowHeight = love.graphics.getDimensions()
 
-    -- Highlighting
     if not self.performing and self.beltHighlightEnabled then
         -- Set up and render to highlight canvas
         if not self.beltHighlightCanvas then
@@ -606,12 +605,12 @@ function Common:drawBelt()
         -- Render highlight canvas to screen
         love.graphics.push("all") -- Transparent overlay (to make obscured actors visible)
         love.graphics.setColor(1, 1, 1, 0.7)
-        love.graphics.draw(self.beltHighlightCanvas, 0, BELT_HEIGHT)
+        love.graphics.draw(self.beltHighlightCanvas)
         love.graphics.pop()
         love.graphics.push("all") -- Darken other actors
         love.graphics.setBlendMode("multiply", "premultiplied")
         love.graphics.setShader(self.beltHighlightShader)
-        love.graphics.draw(self.beltHighlightCanvas, 0, BELT_HEIGHT)
+        love.graphics.draw(self.beltHighlightCanvas)
         love.graphics.pop()
 
         -- Glow
@@ -647,9 +646,20 @@ function Common:drawBelt()
         end)
         love.graphics.push("all")
         love.graphics.setBlendMode("add") -- Glow
-        love.graphics.draw(self.beltHighlightCanvas, 0, BELT_HEIGHT)
+        love.graphics.draw(self.beltHighlightCanvas)
         love.graphics.pop()
     end
+end
+
+function Common:drawBelt()
+    if self:isActiveToolFullscreen() then
+        return
+    end
+    if not self.beltVisible then
+        return
+    end
+
+    local windowWidth, windowHeight = love.graphics.getDimensions()
 
     love.graphics.push("all")
 
