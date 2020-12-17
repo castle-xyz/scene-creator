@@ -94,7 +94,12 @@ function ScaleRotateTool:getHandles()
 
         -- Rotation
         local centerX, centerY = body:getX(), body:getY()
-        local x, y = body:getWorldPoint(0, -0.5 * bounds.height - 6 * handleDrawRadius)
+        local rotateYPosition = bounds.minY
+        if rotateYPosition > 0 then
+            rotateYPosition = 0
+        end
+
+        local x, y = body:getWorldPoint(0, rotateYPosition - 8 * handleDrawRadius)
         table.insert(
             handles,
             {
@@ -358,7 +363,8 @@ function ScaleRotateTool.handlers:drawOverlay()
             love.graphics.circle("line", handle.endX, handle.endY, circleRadius)
 
             -- arcRadius could also be a fn of dist?
-            local arcRadius = 1.0
+            local zoomAmount = self.game:getZoomAmount()
+            local arcRadius = 1.0 * zoomAmount
             local arcAngle = 0.7
             local arcCenterX = handle.x + arcRadius * unitX
             local arcCenterY = handle.y + arcRadius * unitY
@@ -367,7 +373,7 @@ function ScaleRotateTool.handlers:drawOverlay()
             love.graphics.arc("line", "open", arcCenterX, arcCenterY, arcRadius, angle, angle - arcAngle, 10)
 
             local arrowAngle = 0.15
-            local arrowRadius = 0.15
+            local arrowRadius = 0.15 * zoomAmount
 
             -- right arrow
             drawArrow(arcCenterX, arcCenterY, arcRadius, arcRadius + arrowRadius, angle + arcAngle, angle + arcAngle - arrowAngle)

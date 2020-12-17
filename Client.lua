@@ -455,6 +455,10 @@ function Client:resetViewSize()
     self.viewWidth = DEFAULT_VIEW_WIDTH
 end
 
+function Client:getZoomAmount()
+    return self.viewWidth / DEFAULT_VIEW_WIDTH
+end
+
 function Client:resetView()
     self:resetViewPosition()
     self:resetViewSize()
