@@ -975,8 +975,9 @@ function BodyBehavior:resize(componentOrActorId, newScaledBoundsWidth, newScaled
     local oldWidth = oldBounds.width
     local oldHeight = oldBounds.height
 
-    self:sendSetProperties(component.actorId, "widthScale", component.properties.widthScale * newScaledBoundsWidth / oldWidth)
-    self:sendSetProperties(component.actorId, "heightScale", component.properties.heightScale * newScaledBoundsHeight / oldHeight)
+    component.properties.widthScale = component.properties.widthScale * newScaledBoundsWidth / oldWidth
+    component.properties.heightScale = component.properties.heightScale * newScaledBoundsHeight / oldHeight
+    self:updatePhysicsFixturesFromProperties(component.actorId)
 end
 
 function BodyBehavior:resetShapes(actorId)
