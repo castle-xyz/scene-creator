@@ -772,6 +772,7 @@ function DrawData:getFillImage()
     end
 
     self.fillImage = love.graphics.newImage(self.fillImageData)
+    self.fillImage:setFilter('nearest', 'nearest')
     return self.fillImage
 end
 
