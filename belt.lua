@@ -416,6 +416,10 @@ function Common:updateBelt(dt)
                 placeElem.placeX, placeElem.placeY = nil, nil
                 placeElem.placeRelX, placeElem.placeRelY = nil, nil
                 self:_addBlueprintToScene(placeElem.entryId, touch.x, touch.y)
+
+                -- Sync immediately with placed actor
+                self:syncSelectionsWithBelt()
+                self.beltLastGhostCreateTime = nil
             end
         end
     else
