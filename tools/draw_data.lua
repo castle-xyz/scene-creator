@@ -791,6 +791,7 @@ function DrawData:updateFillImageWithFillImageData()
     end
 
     self.fillImage = love.graphics.newImage(self.fillImageData)
+    self.fillImage:setFilter('nearest', 'nearest')
 end
 
 function DrawData:compressFillCanvas()
