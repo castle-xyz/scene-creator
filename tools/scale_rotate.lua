@@ -353,7 +353,8 @@ function ScaleRotateTool.handlers:drawOverlay()
     for _, handle in ipairs(self:getHandles()) do
         love.graphics.circle("fill", handle.x, handle.y, handleDrawRadius)
         if handle.endX and handle.endY then
-            local circleRadius = 0.3
+            local zoomAmount = self.game:getZoomAmount()
+            local circleRadius = 0.3 * zoomAmount
             local dist = math.sqrt(math.pow(handle.x - handle.endX, 2.0) + math.pow(handle.y - handle.endY, 2.0))
             local unitX = (handle.endX - handle.x) / dist
             local unitY = (handle.endY - handle.y) / dist
@@ -363,7 +364,6 @@ function ScaleRotateTool.handlers:drawOverlay()
             love.graphics.circle("line", handle.endX, handle.endY, circleRadius)
 
             -- arcRadius could also be a fn of dist?
-            local zoomAmount = self.game:getZoomAmount()
             local arcRadius = 1.0 * zoomAmount
             local arcAngle = 0.7
             local arcCenterX = handle.x + arcRadius * unitX
