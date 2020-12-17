@@ -54,7 +54,17 @@ function Common:startBelt()
         vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
             color = Texel(texture, texCoords);
             if (color.a == 0.0) {
-                color = vec4(0.35, 0.35, 0.35, 1.0);
+                //#define DIAGS
+                #ifdef DIAGS
+                    float xPix = texCoords.x * love_ScreenSize.x;
+                    float yPix = texCoords.y * love_ScreenSize.y;
+                    float diag = (xPix + yPix) / 20.0;
+                    float f = abs(diag - floor(diag) - 0.5);
+                    float c = 0.3 + f * 0.4;
+                    color = vec4(c, c, c, 1.0);
+                #else
+                    color = vec4(0.35, 0.35, 0.35, 1.0);
+                #endif
             } else {
                 color = vec4(1.0, 1.0, 1.0, 1.0);
             }
