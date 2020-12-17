@@ -7,10 +7,10 @@ local Capture = {
    intervalSinceCapture = 0
 }
 
-local CAPTURE_FPS = 8
-local CAPTURE_MAX_FRAMES = 12
+local CAPTURE_FPS = 12
+local CAPTURE_MAX_FRAMES = 24
 local CAPTURE_OPTS = {
-   width = 768,
+   width = 512,
 }
 
 function Client:startCapture()
