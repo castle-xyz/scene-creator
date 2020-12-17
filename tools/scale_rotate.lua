@@ -196,6 +196,10 @@ function ScaleRotateTool.handlers:preUpdate(dt)
     end
 end
 
+local function rotatePoint(x, y, angle)
+    return math.cos(angle) * x - math.sin(angle) * y, math.cos(angle) * y + math.sin(angle) * x
+end
+
 function ScaleRotateTool.handlers:update(dt)
     if not self:isActive() then
         return
@@ -252,11 +256,18 @@ function ScaleRotateTool.handlers:update(dt)
                     newWidth, newHeight = handle.width, desiredHeight
                 end
 
+                -- world coordinates
                 local oldDistToOriginX = handle.bodyX - handle.oppositeX
                 local oldDistToOriginY = handle.bodyY - handle.oppositeY
 
-                local newDistToOriginX = oldDistToOriginX * newWidth / handle.width
-                local newDistToOriginY = oldDistToOriginY * newHeight / handle.height
+                -- body coordinates
+                local oldDistToOriginXUnrotated, oldDistToOriginYUnrotated = rotatePoint(oldDistToOriginX, oldDistToOriginY, -angle)
+
+                local newDistToOriginXUnrotated = oldDistToOriginXUnrotated * newWidth / handle.width
+                local newDistToOriginYUnrotated = oldDistToOriginYUnrotated * newHeight / handle.height
+
+                -- back to world coordinates
+                local newDistToOriginX, newDistToOriginY = rotatePoint(newDistToOriginXUnrotated, newDistToOriginYUnrotated, angle)
 
                 local newx = newDistToOriginX + handle.oppositeX
                 local newy = newDistToOriginY + handle.oppositeY
