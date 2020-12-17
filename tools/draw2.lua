@@ -312,28 +312,20 @@ function DrawTool:twoFingerPan(touchData)
             touch1.initialScreenX - touch2.initialScreenX,
             touch1.initialScreenY - touch2.initialScreenY
         local initialPL = math.sqrt(initialPX * initialPX + initialPY * initialPY)
-        if
-            (touch1.zooming or touch2.zooming or
-                not (self.viewWidth == DEFAULT_VIEW_WIDTH and math.abs(initialPL - pl) <= 0.175 * initialPL))
-         then
-            -- Don't zoom if close to 1:1
-            local prevPL = math.sqrt(prevPX * prevPX + prevPY * prevPY)
-            if not (touch1.zooming and touch2.zooming) then
-                touch1.zooming = true
-                touch2.zooming = true
-                prevPL = initialPL
-            end
-            scale = prevPL / pl
+
+        local prevPL = math.sqrt(prevPX * prevPX + prevPY * prevPY)
+        if not (touch1.zooming and touch2.zooming) then
+            touch1.zooming = true
+            touch2.zooming = true
+            prevPL = initialPL
         end
+        scale = prevPL / pl
 
         centerX, centerY = self._viewTransform:inverseTransformPoint(centerSX, centerSY)
 
         if scale then
             local prevViewWidth = self.viewWidth
             self.viewWidth = math.max(MIN_VIEW_WIDTH, math.min(scale * self.viewWidth, DRAW_MAX_VIEW_WIDTH))
-            if math.abs(self.viewWidth - DEFAULT_VIEW_WIDTH) < 0.1 * DEFAULT_VIEW_WIDTH then
-                self.viewWidth = DEFAULT_VIEW_WIDTH
-            end
             scale = self.viewWidth / prevViewWidth -- Recompute to account for clamping above
             moveX = moveX - (1 - scale) * (centerX - self.viewX)
             moveY = moveY - (1 - scale) * (centerY - self.viewY)
@@ -341,15 +333,6 @@ function DrawTool:twoFingerPan(touchData)
         if not (touch1.noPan or touch2.noPan) then
             local prevX, prevY = self.viewX, self.viewY
             self.viewX, self.viewY = self.viewX - moveX, self.viewY - moveY
-            if self.viewWidth == DEFAULT_VIEW_WIDTH then -- Move snap only when zoom is 1:1
-                local prevL = math.sqrt(prevX * prevX + prevY * prevY)
-                local l = math.sqrt(self.viewX * self.viewX + self.viewY * self.viewY)
-                if l < prevL and l < 0.2 * UNIT then -- Moved close to center? Snap and disable pan for rest of gesture.
-                    self.viewX, self.viewY = 0, 0
-                    touch1.noPan = true
-                    touch2.noPan = true
-                end
-            end
 
             if self.viewX < -DRAW_MAX_SIZE then
                 self.viewX = -DRAW_MAX_SIZE
