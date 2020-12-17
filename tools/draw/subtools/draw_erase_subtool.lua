@@ -3,8 +3,15 @@ local EraseTool = defineDrawSubtool {
     name = "erase",
 }
 
+local ERASE_RADIUS = 1.2
+
+function EraseTool:getRadius()
+    return ERASE_RADIUS * self:getZoomAmount()
+end
+
 function EraseTool.handlers:addSubtool()
     self._didChange = false
+    self._lastTouchPosition = nil
 end
 
 function EraseTool.handlers:onSelected()
@@ -12,12 +19,16 @@ function EraseTool.handlers:onSelected()
 end
 
 function EraseTool.handlers:onTouch(component, touchData)
+    self._lastTouchPosition = {
+        x = touchData.touchX,
+        y = touchData.touchY,
+    }
+
     for i = 1, #self:drawData().pathDataList do
-        if self:drawData().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, 0.5) then
+        if self:drawData().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, self:getRadius()) then
             self:removePathData(self:drawData().pathDataList[i])
             self:drawData():resetGraphics()
             self._didChange = true
-            break
         end
     end
 
@@ -33,5 +44,13 @@ function EraseTool.handlers:onTouch(component, touchData)
             self:saveDrawing("erase", component)
         end
         self._didChange = false
+        self._lastTouchPosition = nil
+    end
+end
+
+function EraseTool.handlers:drawOverlay()
+    if self._lastTouchPosition then
+        love.graphics.setColor(1.0, 1.0, 1.0, 0.3)
+        love.graphics.circle('fill', self._lastTouchPosition.x, self._lastTouchPosition.y, self:getRadius())
     end
 end
