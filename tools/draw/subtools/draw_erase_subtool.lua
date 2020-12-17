@@ -24,7 +24,7 @@ function EraseTool.handlers:onTouch(component, touchData)
         y = touchData.touchY,
     }
 
-    for i = 1, #self:drawData().pathDataList do
+    for i = #self:drawData().pathDataList, 1, -1 do
         if self:drawData().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, self:getRadius()) then
             self:removePathData(self:drawData().pathDataList[i])
             self:drawData():resetGraphics()
