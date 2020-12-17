@@ -2,9 +2,6 @@ DRAW_DATA_SCALE = 10.0
 local DRAW_MAX_VIEW_WIDTH = DEFAULT_VIEW_WIDTH * 2
 DRAW_MAX_SIZE = 10.0
 
---local BACKGROUND_COLOR = {r = 62.0 / 255.0, g = 52.0 / 255.0, b = 81.0 / 255.0}
-local BACKGROUND_COLOR = {r = 0.0, g = 0.0, b = 0.0}
-
 local HANDLE_DRAW_RADIUS = 12
 
 local SUBTOOLS = {}
@@ -478,7 +475,8 @@ function DrawTool.handlers:drawOverlay()
     self._viewTransform:translate(0.5 * self.viewWidth, topOffset)
     love.graphics.applyTransform(self._viewTransform)
 
-    love.graphics.clear(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b)
+    local bgColor = self.game.sceneProperties.backgroundColor
+    love.graphics.clear(bgColor.r, bgColor.g, bgColor.b)
 
     love.graphics.setColor(1, 1, 1, 1)
 
@@ -494,7 +492,7 @@ function DrawTool.handlers:drawOverlay()
     -- grid
     --if self._selectedSubtools.root ~= 'artwork' or (self._selectedSubtools.artwork_draw == 'line' or self._selectedSubtools.artwork_draw == 'pencil' or self._selectedSubtools.artwork_move == 'move' or self._selectedSubtools.artwork_draw == 'rectangle' or self._selectedSubtools.artwork_draw == 'circle' or self._selectedSubtools.artwork_draw == 'triangle') then
         love.graphics.setColor(0.3, 0.3, 0.3, 1.0)
-        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 4, true)
+        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true)
 
     --end
 
