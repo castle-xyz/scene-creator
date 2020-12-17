@@ -6,7 +6,7 @@ local HANDLE_DRAW_RADIUS = 12
 
 local SUBTOOLS = {}
 local FUNCTIONS_TO_ADD_TO_SUBTOOLS = {
-    "drawData", "saveDrawing", "addPathData", "clearTempGraphics", "resetTempGraphics", "addTempPathData", "bind", "removePathData", "physicsBodyData", "scaleRotateData", "getPixelScale", "selectedSubtools"
+    "drawData", "saveDrawing", "addPathData", "clearTempGraphics", "resetTempGraphics", "addTempPathData", "bind", "removePathData", "physicsBodyData", "scaleRotateData", "getPixelScale", "selectedSubtools", "getZoomAmount"
 }
 
 function defineDrawSubtool(subtoolSpec)
@@ -142,6 +142,10 @@ end
 
 function DrawTool:selectedSubtools()
     return self._selectedSubtools
+end
+
+function DrawTool:getZoomAmount()
+    return self.viewWidth / DEFAULT_VIEW_WIDTH
 end
 
 function DrawTool:addPathData(pathData)
@@ -540,6 +544,12 @@ function DrawTool.handlers:drawOverlay()
                 end
             end
         end
+    end
+
+    local subtool = self:getCurrentSubtool()
+    if subtool then
+        love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+        self:callSubtoolHandler(subtool, "drawOverlay")
     end
 
     if TEST_POINT ~= nil then
