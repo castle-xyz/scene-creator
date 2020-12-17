@@ -242,6 +242,7 @@ function DrawTool.handlers:onSetActive()
     self:clearTempGraphics()
     self._scaleRotateData = {}
     self.viewWidth = DEFAULT_VIEW_WIDTH
+    self.hasResetViewWidth = false
     self.viewX, self.viewY = 0, 0
 end
 
@@ -361,6 +362,30 @@ function DrawTool:loadLastSave()
 
     if self._scaleRotateData and self._scaleRotateData.index and self._scaleRotateData.index > self._physicsBodyData:getNumShapes() then
         self._scaleRotateData.index = self._physicsBodyData:getNumShapes()
+    end
+
+    if not self.hasResetViewWidth then
+        self.hasResetViewWidth = true
+
+        local bounds = self._drawData:getPathDataBounds()
+        local maxBound = 1.0
+
+        if math.abs(bounds.minX) > maxBound then
+            maxBound = math.abs(bounds.minX)
+        end
+        if math.abs(bounds.maxX) > maxBound then
+            maxBound = math.abs(bounds.maxX)
+        end
+        if math.abs(bounds.minY) > maxBound then
+            maxBound = math.abs(bounds.minY)
+        end
+        if math.abs(bounds.maxY) > maxBound then
+            maxBound = math.abs(bounds.maxY)
+        end
+
+        if maxBound > 1.0 then
+            self.viewWidth = maxBound * 2.0
+        end
     end
 end
 
