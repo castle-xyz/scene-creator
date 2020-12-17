@@ -68,6 +68,8 @@ function ScaleRotateTool:getHandles()
                 local handle = {
                     x = x,
                     y = y,
+                    bodyX = body:getX(),
+                    bodyY = body:getY(),
                     oppositeX = oppositeX,
                     oppositeY = oppositeY,
                     unitVecX = unitVecX,
@@ -212,6 +214,7 @@ function ScaleRotateTool.handlers:update(dt)
                 local bodyId, body = self.dependencies.Body:getBody(actorId)
 
                 local worldx, worldy = body:getPosition()
+
                 local lx, ly = body:getLocalPoint(touch.x, touch.y)
                 local angle = body:getAngle()
 
@@ -249,11 +252,14 @@ function ScaleRotateTool.handlers:update(dt)
                     newWidth, newHeight = handle.width, desiredHeight
                 end
 
-                local offsetX = newWidth * handle.unitVecX * 0.5
-                local offsetY = newHeight * handle.unitVecY * 0.5
+                local oldDistToOriginX = handle.bodyX - handle.oppositeX
+                local oldDistToOriginY = handle.bodyY - handle.oppositeY
 
-                local newx = handle.oppositeX + math.cos(angle) * offsetX - math.sin(angle) * offsetY
-                local newy = handle.oppositeY + math.cos(angle) * offsetY + math.sin(angle) * offsetX
+                local newDistToOriginX = oldDistToOriginX * newWidth / handle.width
+                local newDistToOriginY = oldDistToOriginY * newHeight / handle.height
+
+                local newx = newDistToOriginX + handle.oppositeX
+                local newy = newDistToOriginY + handle.oppositeY
 
                 if newWidth and newHeight then
                     self:command(

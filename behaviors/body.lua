@@ -960,27 +960,15 @@ function BodyBehavior:isCircleShape(componentOrActorId)
     return component.properties.fixtures[1].shapeType == 'circle'
 end
 
-function BodyBehavior:resize(componentOrActorId, newWidth, newHeight)
-    -- TODO FIX
-    --[[
-    local members = self:getMembers(componentOrActorId)
+function BodyBehavior:resize(componentOrActorId, newScaledBoundsWidth, newScaledBoundsHeight)
     local component = self:getComponent(componentOrActorId)
-    local newShapes = {}
+    local oldBounds = self:getScaledEditorBounds(component)
 
-    for _, fixture in pairs(members.fixtures) do
-        local points = {fixture:getShape():getPoints()}
+    local oldWidth = oldBounds.width
+    local oldHeight = oldBounds.height
 
-        for i = 1, #points, 2 do
-            points[i] = points[i] * newWidth / component.properties.width
-            points[i + 1] = points[i + 1] * newHeight / component.properties.height
-        end
-
-        table.insert(newShapes, self._physics:newPolygonShape(points))
-    end
-
-    self:setShapes(componentOrActorId, newShapes)
-    self:sendSetProperties(component.actorId, "width", newWidth)
-    self:sendSetProperties(component.actorId, "height", newHeight)]]--
+    self:sendSetProperties(component.actorId, "widthScale", component.properties.widthScale * newScaledBoundsWidth / oldWidth)
+    self:sendSetProperties(component.actorId, "heightScale", component.properties.heightScale * newScaledBoundsHeight / oldHeight)
 end
 
 function BodyBehavior:resetShapes(actorId)
