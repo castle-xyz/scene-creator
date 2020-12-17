@@ -59,11 +59,19 @@ local BodyBehavior =
           method = 'numberInput',
           label = 'Width Scale',
           props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2, step = 0.25 },
+          rules = {
+            get = true,
+            set = true,
+         },
        },
        heightScale = {
           method = 'numberInput',
           label = 'Height Scale',
           props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2, step = 0.25 },
+          rules = {
+            get = true,
+            set = true,
+         },
        },
        visible = {
           method = 'toggle',
