@@ -58,12 +58,12 @@ local BodyBehavior =
        widthScale = {
           method = 'numberInput',
           label = 'Width Scale',
-          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2, step = 0.05 },
+          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2, step = 0.25 },
        },
        heightScale = {
           method = 'numberInput',
           label = 'Height Scale',
-          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2, step = 0.05 },
+          props = { min = MIN_BODY_SCALE, max = MAX_BODY_SCALE, decimalDigits = 2, step = 0.25 },
        },
        visible = {
           method = 'toggle',
@@ -796,12 +796,12 @@ function BodyBehavior.setters:relativeToCamera(component, value)
 end
 
 function BodyBehavior.setters:widthScale(component, value)
-    component.properties.widthScale = value
+    component.properties.widthScale = value / 10.0
     self:updatePhysicsFixturesFromProperties(component.actorId)
 end
 
 function BodyBehavior.setters:heightScale(component, value)
-    component.properties.heightScale = value
+    component.properties.heightScale = value / 10.0
     self:updatePhysicsFixturesFromProperties(component.actorId)
 end
 
@@ -1009,6 +1009,14 @@ function BodyBehavior.getters:angle(component)
    local actorId = component.actorId
    local members = self:getMembers(actorId)
    return members.body:getAngle() * 180 / math.pi
+end
+
+function BodyBehavior.getters:widthScale(component)
+    return component.properties.widthScale * 10.0
+end
+
+function BodyBehavior.getters:heightScale(component)
+    return component.properties.heightScale * 10.0
 end
 
 function BodyBehavior:getPhysics()
