@@ -323,9 +323,26 @@ function Common:updateBelt(dt)
             -- Cancel existing target on press, track new target on tap. Also enable highlight
             if touch.pressed then
                 self.beltTargetIndex = nil
+                touch.beltStartVX = self.beltCursorVX
             end
             if touch.released and not touch.movedNear and currTime - touch.pressTime < 0.2 then
-                self.beltTargetIndex = touchBeltIndex
+                if math.abs(touch.beltStartVX) > ELEM_SIZE / 0.1 then
+                    -- Scrolling pretty fast, likely the user just wanted to 'stop' and not actually target at tap.
+                    -- So just target the element under the cursor.
+                    local cursorIndex = math.floor(self.beltCursorX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
+                    cursorIndex = math.max(1, math.min(cursorIndex, #self.beltElems))
+                    local cursorElemX = self.beltElems[cursorIndex].x
+                    if cursorElemX < self.beltCursorX and touch.beltStartVX > 0 then
+                        cursorIndex = cursorIndex + 1
+                    elseif cursorElemX > self.beltCursorX and touch.beltStartVX < 0 then
+                        cursorIndex = cursorIndex - 1
+                    end
+                    cursorIndex = math.max(1, math.min(cursorIndex, #self.beltElems))
+                    self.beltTargetIndex = cursorIndex
+                else
+                    -- Scrolling slow, target the tapped element
+                    self.beltTargetIndex = touchBeltIndex
+                end
                 self.beltHighlightEnabled = true -- Enable highlight on belt touch
                 self:fireBeltHaptic()
                 self.beltLastGhostCreateTime = nil -- Inspect it immediately
@@ -430,12 +447,7 @@ function Common:updateBelt(dt)
         -- If have current entry, update based on cursor position
         if self.beltEntryId then
             local cursorIndex = math.floor(self.beltCursorX / (ELEM_SIZE + ELEM_GAP) + 0.5) + 1
-            if cursorIndex < 1 then
-                cursorIndex = 1
-            end
-            if cursorIndex > #self.beltElems then
-                cursorIndex = self.beltElems
-            end
+            cursorIndex = math.max(1, math.min(cursorIndex, #self.beltElems))
             local cursorElem = self.beltElems[cursorIndex]
             if cursorElem and cursorElem.entryId ~= self.beltEntryId then
                 self.beltHighlightEnabled = true
