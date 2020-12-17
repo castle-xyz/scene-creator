@@ -549,41 +549,14 @@ function DrawData:updateBounds()
 end
 
 function DrawData:getPathDataBounds()
-    local minX = -1
-    local minY = -1
-    local maxX = -1
-    local maxY = -1
-
-    for i = 1, #self.pathDataList do
-        local pathData = self.pathDataList[i]
-
-        for j = 1, #pathData.points do
-            local x = pathData.points[j].x
-            local y = pathData.points[j].y
-
-            if minX == -1 or x < minX then
-                minX = x
-            end
-
-            if minY == -1 or y < minY then
-                minY = y
-            end
-
-            if maxX == -1 or x > maxX then
-                maxX = x
-            end
-
-            if maxY == -1 or y > maxY then
-                maxY = y
-            end
-        end
-    end
+    -- https://poke1024.github.io/tove2d-api/classes/Graphics.html#Graphics:computeAABB
+    local x0, y0, x1, y1 = self:graphics():computeAABB()
 
     return {
-        minX = minX,
-        minY = minY,
-        maxX = maxX,
-        maxY = maxY,
+        minX = x0,
+        minY = y0,
+        maxX = x1,
+        maxY = y1,
     }
 end
 
