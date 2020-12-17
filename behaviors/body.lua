@@ -1079,8 +1079,6 @@ function BodyBehavior:getMembers(componentOrActorId)
 end
 
 function BodyBehavior:getSize(actorId)
-    -- TODO
-    --print('BodyBehavior:getSize is deprecated')
     local component = assert(self.components[actorId], "this actor doesn't have a `Body` component")
     return component.properties.width, component.properties.height
 end
