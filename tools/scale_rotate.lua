@@ -16,7 +16,7 @@ local ScaleRotateTool =
 }
 
 local HANDLE_TOUCH_RADIUS = 30
-local HANDLE_DRAW_RADIUS = 12
+local HANDLE_DRAW_RADIUS = 10
 
 -- Behavior management
 
@@ -328,6 +328,14 @@ function ScaleRotateTool:drawGrid()
     end
 end
 
+local function drawArrow(arcCenterX, arcCenterY, startRadius, endRadius, startAngle, endAngle)
+    local startX = arcCenterX + startRadius * math.cos(startAngle)
+    local startY = arcCenterY + startRadius * math.sin(startAngle)
+    local endX = arcCenterX + endRadius * math.cos(endAngle)
+    local endY = arcCenterY + endRadius * math.sin(endAngle)
+    love.graphics.line(startX, startY, endX, endY)
+end
+
 function ScaleRotateTool.handlers:drawOverlay()
     if not self:isActive() then
         return
@@ -335,11 +343,39 @@ function ScaleRotateTool.handlers:drawOverlay()
 
     self:drawGrid()
 
+    love.graphics.setColor(0, 1, 0, 0.8)
     local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
     for _, handle in ipairs(self:getHandles()) do
         love.graphics.circle("fill", handle.x, handle.y, handleDrawRadius)
         if handle.endX and handle.endY then
-            love.graphics.line(handle.x, handle.y, handle.endX, handle.endY)
+            local circleRadius = 0.3
+            local dist = math.sqrt(math.pow(handle.x - handle.endX, 2.0) + math.pow(handle.y - handle.endY, 2.0))
+            local unitX = (handle.endX - handle.x) / dist
+            local unitY = (handle.endY - handle.y) / dist
+            local distToInnerCircle = dist - circleRadius
+
+            love.graphics.line(handle.x, handle.y, handle.x + distToInnerCircle * unitX, handle.y + distToInnerCircle * unitY)
+            love.graphics.circle("line", handle.endX, handle.endY, circleRadius)
+
+            -- arcRadius could also be a fn of dist?
+            local arcRadius = 1.0
+            local arcAngle = 0.7
+            local arcCenterX = handle.x + arcRadius * unitX
+            local arcCenterY = handle.y + arcRadius * unitY
+            local angle = math.atan2(handle.y - arcCenterY, handle.x - arcCenterX)
+            love.graphics.arc("line", "open", arcCenterX, arcCenterY, arcRadius, angle, angle + arcAngle, 10)
+            love.graphics.arc("line", "open", arcCenterX, arcCenterY, arcRadius, angle, angle - arcAngle, 10)
+
+            local arrowAngle = 0.15
+            local arrowRadius = 0.15
+
+            -- right arrow
+            drawArrow(arcCenterX, arcCenterY, arcRadius, arcRadius + arrowRadius, angle + arcAngle, angle + arcAngle - arrowAngle)
+            drawArrow(arcCenterX, arcCenterY, arcRadius, arcRadius - arrowRadius, angle + arcAngle, angle + arcAngle - arrowAngle)
+
+            -- left arrow
+            drawArrow(arcCenterX, arcCenterY, arcRadius, arcRadius + arrowRadius, angle - arcAngle, angle - arcAngle + arrowAngle)
+            drawArrow(arcCenterX, arcCenterY, arcRadius, arcRadius - arrowRadius, angle - arcAngle, angle - arcAngle + arrowAngle)
         end
     end
 end
