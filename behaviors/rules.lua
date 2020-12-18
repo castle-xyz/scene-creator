@@ -84,6 +84,8 @@ end
 local interactiveTriggers = {
    'tap',
    'press',
+   'touch up',
+   'touch down',
 }
 function RulesBehavior.getters:isInteractive(component)
    for _, triggerName in ipairs(interactiveTriggers) do
