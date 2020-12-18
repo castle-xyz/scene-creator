@@ -652,17 +652,19 @@ function Client:draw()
             if not self.performing then
                 local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
                 love.graphics.setLineWidth(2 * self:getPixelScale())
-                love.graphics.setColor(0, 1, 0, 0.8)
+                local oppositeColor = self:getOppositeColorOfBackground()
+                love.graphics.setColor(oppositeColor.r, oppositeColor.g, oppositeColor.b, 0.8)
+
                 for actorId in pairs(self.selectedActorIds) do
                     if self.behaviorsByName.Body:has(actorId) then
-                        if activeTool then
+                        --[[if activeTool then
                             local component = activeTool.components[actorId]
                             if component and self.clientId ~= component.clientId then
                                 love.graphics.setColor(1, 0, 0, 0.8)
                             else
                                 love.graphics.setColor(0, 1, 0, 0.8)
                             end
-                        end
+                        end]]--
                         self.behaviorsByName.Body:drawBodyOutline(actorId)
                     end
                 end

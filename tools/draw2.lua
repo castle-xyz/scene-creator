@@ -462,12 +462,6 @@ function DrawTool:drawShapes()
     end
 end
 
-function DrawTool:getIsBackgroundDark()
-    local bgColor = self.game.sceneProperties.backgroundColor
-    local brightness = (bgColor.r * 299 + bgColor.g * 587 + bgColor.b * 114) / 1000;
-    return brightness < 0.5
-end
-
 function DrawTool.handlers:drawOverlay()
     if not self:isActive() then
         return
@@ -500,7 +494,7 @@ function DrawTool.handlers:drawOverlay()
     end
 
     -- grid
-    if self:getIsBackgroundDark() then
+    if self.game:isBackgroundDark() then
         love.graphics.setColor(1.0, 1.0, 1.0, 0.2)
         drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.5)
     else
