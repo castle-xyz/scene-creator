@@ -4,11 +4,12 @@ if GRID_SHADER then
     gridShader = GRID_SHADER
 elseif love.graphics then
     gridShader =
-        love.graphics.newShader(
+    love.graphics.newShader(
         [[
         uniform float gridCellSize;
         uniform float gridSize;
         uniform float dotRadius;
+        uniform float axesAlpha;
         uniform vec2 offset;
         uniform vec2 viewOffset;
         uniform bool highlightAxes;
@@ -25,7 +26,7 @@ elseif love.graphics then
             }
 
             if (highlightAxes && (abs(distToAxis.x) < dotRadius || abs(distToAxis.y) < dotRadius)) {
-                return vec4(0.7, 0.7, 0.7, s * color.a);
+                return vec4(color.rgb, s * axesAlpha);
             } else {
                 return vec4(color.rgb, s * color.a);
             }
@@ -40,7 +41,7 @@ elseif love.graphics then
     )
 end
 
-function drawGrid(gridCellSize, gridSize, viewScale, viewX, viewY, offsetX, offsetY, dotRadius, highlightAxes)
+function drawGrid(gridCellSize, gridSize, viewScale, viewX, viewY, offsetX, offsetY, dotRadius, highlightAxes, axesAlpha)
     if gridCellSize > 0 then
         love.graphics.push("all")
 
@@ -65,6 +66,7 @@ function drawGrid(gridCellSize, gridSize, viewScale, viewX, viewY, offsetX, offs
             }
         )
         gridShader:send("highlightAxes", highlightAxes)
+        gridShader:send("axesAlpha", axesAlpha)
         love.graphics.setShader(gridShader)
 
         love.graphics.origin()

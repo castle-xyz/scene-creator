@@ -137,7 +137,7 @@ end
 function GrabTool:drawGrid()
     if self._gridEnabled and self._gridSize > 0 then
         love.graphics.setColor(0, 0, 0, 0.5)
-        drawGrid(self._gridSize * 2, -1, self.game:getViewScale(), self.game.viewX, self.game.viewY, 0.5 * self.game.viewWidth, self.game:getYOffset(), 2, false)
+        drawGrid(self._gridSize * 2, -1, self.game:getViewScale(), self.game.viewX, self.game.viewY, 0.5 * self.game.viewWidth, self.game:getYOffset(), 2, false, 0.0)
     end
 end
 

@@ -462,6 +462,12 @@ function DrawTool:drawShapes()
     end
 end
 
+function DrawTool:getIsBackgroundDark()
+    local bgColor = self.game.sceneProperties.backgroundColor
+    local brightness = (bgColor.r * 299 + bgColor.g * 587 + bgColor.b * 114) / 1000;
+    return brightness < 0.5
+end
+
 function DrawTool.handlers:drawOverlay()
     if not self:isActive() then
         return
@@ -494,11 +500,14 @@ function DrawTool.handlers:drawOverlay()
     end
 
     -- grid
-    --if self._selectedSubtools.root ~= 'artwork' or (self._selectedSubtools.artwork_draw == 'line' or self._selectedSubtools.artwork_draw == 'pencil' or self._selectedSubtools.artwork_move == 'move' or self._selectedSubtools.artwork_draw == 'rectangle' or self._selectedSubtools.artwork_draw == 'circle' or self._selectedSubtools.artwork_draw == 'triangle') then
-        love.graphics.setColor(0.3, 0.3, 0.3, 1.0)
-        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true)
+    if self:getIsBackgroundDark() then
+        love.graphics.setColor(1.0, 1.0, 1.0, 0.2)
+        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.5)
+    else
+        love.graphics.setColor(0.0, 0.0, 0.0, 0.1)
+        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.3)
+    end
 
-    --end
 
     if self._selectedSubtools.root == 'artwork' then
         love.graphics.setColor(1, 1, 1, 1)
