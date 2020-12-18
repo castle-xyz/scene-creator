@@ -234,15 +234,14 @@ function Client:getActiveTool()
 end
 
 function Client:isActiveToolFullscreen()
-    local activeTool = self:getActiveTool()
-    if activeTool then
-        --print(activeTool)
+    if self.activeToolBehaviorId then
+        local activeTool = self.tools[self.activeToolBehaviorId]
+        if activeTool and activeTool.handlers['isFullScreen'] and activeTool.handlers['isFullScreen'](activeTool) then
+            return true
+        end
     end
-    if activeTool and activeTool.isFullScreen then
-        return true
-    else
-        return false
-    end
+
+    return false
 end
 
 function Client:selectActorAtPoint(x, y, hits)

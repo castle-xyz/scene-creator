@@ -639,31 +639,32 @@ function Client:draw()
                 )
             end
 
-            -- All body outlines
-            if not self.performing then
-                love.graphics.setLineWidth(1.25 * self:getPixelScale())
-                love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
-                for actorId, component in pairs(self.behaviorsByName.Body.components) do
-                    self.behaviorsByName.Body:drawBodyOutline(component)
-                end
-            end
-
-            -- Selection outlines
             if not self.performing then
                 local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
-                love.graphics.setLineWidth(2 * self:getPixelScale())
-                love.graphics.setColor(0, 1, 0, 0.8)
-                for actorId in pairs(self.selectedActorIds) do
-                    if self.behaviorsByName.Body:has(actorId) then
-                        if activeTool then
-                            local component = activeTool.components[actorId]
-                            if component and self.clientId ~= component.clientId then
-                                love.graphics.setColor(1, 0, 0, 0.8)
-                            else
-                                love.graphics.setColor(0, 1, 0, 0.8)
+
+                if not activeTool.tool or not activeTool.tool.hideBodyOutline then
+                    -- All body outlines
+                    love.graphics.setLineWidth(1.25 * self:getPixelScale())
+                    love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
+                    for actorId, component in pairs(self.behaviorsByName.Body.components) do
+                        self.behaviorsByName.Body:drawBodyOutline(component)
+                    end
+
+                    -- Selection outlines
+                    love.graphics.setLineWidth(2 * self:getPixelScale())
+                    love.graphics.setColor(0, 1, 0, 0.8)
+                    for actorId in pairs(self.selectedActorIds) do
+                        if self.behaviorsByName.Body:has(actorId) then
+                            if activeTool then
+                                local component = activeTool.components[actorId]
+                                if component and self.clientId ~= component.clientId then
+                                    love.graphics.setColor(1, 0, 0, 0.8)
+                                else
+                                    love.graphics.setColor(0, 1, 0, 0.8)
+                                end
                             end
+                            self.behaviorsByName.Body:drawBodyOutline(actorId)
                         end
-                        self.behaviorsByName.Body:drawBodyOutline(actorId)
                     end
                 end
             end

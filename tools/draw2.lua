@@ -44,7 +44,7 @@ local DrawTool =
         icon = "pencil-alt",
         iconFamily = "FontAwesome5",
         needsPerformingOff = true,
-        isFullScreen = true,
+        hideBodyOutline = true,
     }
 }
 
@@ -245,6 +245,7 @@ function DrawTool.handlers:onSetActive()
     self.viewWidth = DEFAULT_VIEW_WIDTH
     self.hasResetViewWidth = false
     self.viewX, self.viewY = 0, 0
+    self.viewInContext = false
 end
 
 function DrawTool.handlers:preUpdate(dt)
@@ -468,8 +469,16 @@ function DrawTool:getIsBackgroundDark()
     return brightness < 0.5
 end
 
+function DrawTool.handlers:isFullScreen()
+    return not self.viewInContext
+end
+
 function DrawTool.handlers:drawOverlay()
     if not self:isActive() then
+        return
+    end
+
+    if self.viewInContext then
         return
     end
 
@@ -586,6 +595,7 @@ function DrawTool.handlers:uiData()
     local actions = {}
 
     actions['onSelectSubtool'] = function(s)
+        self.viewInContext = false
         category, name = s:match("([^:]+):([^:]+)")
 
         if self._selectedSubtools[category] ~= name then
@@ -596,6 +606,14 @@ function DrawTool.handlers:uiData()
                 self:callSubtoolHandler(subtool, "addSubtool")
                 self:callSubtoolHandler(subtool, "onSelected")
             end
+        end
+    end
+
+    actions['onViewInContext'] = function(viewInContext)
+        if viewInContext == 'true' then
+            self.viewInContext = true
+        else
+            self.viewInContext = false
         end
     end
 
