@@ -260,7 +260,7 @@ function BodyBehavior.handlers:postAddComponents(actorId)
     end
 
     if component.properties.widthScale == nil or component.properties.heightScale == nil then
-        if not component.properties.isNewDrawingTool then
+        if (not component.properties.isNewDrawingTool) or self.game.actors[actorId].components[self.game.behaviorsByName.CircleShape.behaviorId] then
             local fixtures = component.properties.fixtures
             local fixture = fixtures[1]
 
