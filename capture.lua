@@ -1,5 +1,6 @@
 require 'love.system'
 require 'love.image'
+local jsEvents = require '__ghost__.jsEvents'
 
 local Capture = {
    running = false,
@@ -32,6 +33,8 @@ end
 function Client:stopCapture()
    if Capture.running then
       Capture.running = false
+      jsEvents.send('GHOST_CAPTURE_PENDING', {})
+
       local channel = love.thread.getChannel("SCENE_CREATOR_ENCODE_CAPTURE")
       channel:push(Capture.buffer)
       love.thread.originalNewThread([[
@@ -56,7 +59,6 @@ function Client:stopCapture()
           end
           print('finished rendering capture buffer')
           ]]):start()
-      -- TODO: clear: Capture.buffer = {}
    end
 end
 
