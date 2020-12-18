@@ -348,9 +348,7 @@ function ScaleRotateTool.handlers:drawOverlay()
 
     self:drawGrid()
 
-    local oppositeColor = self.game:getOppositeColorOfBackground()
-    love.graphics.setColor(oppositeColor.r, oppositeColor.g, oppositeColor.b, 0.8)
-
+    love.graphics.setColor(0, 1, 0, 0.8)
     local handleDrawRadius = HANDLE_DRAW_RADIUS * self.game:getPixelScale()
     for _, handle in ipairs(self:getHandles()) do
         love.graphics.circle("fill", handle.x, handle.y, handleDrawRadius)

@@ -58,30 +58,3 @@ end
 function Common.receivers:setSceneProperty(time, clientId, name, val)
    self.sceneProperties[name] = util.deepCopyTable(val)
 end
-
-function Common:getOppositeColorOfBackground()
-   local bgColor = self.sceneProperties.backgroundColor
-   local oppositeColor = {
-       r = 0.0,
-       g = 0.0,
-       b = 0.0,
-   }
-
-   if bgColor.r < 0.5 then
-       oppositeColor.r = 1.0
-   end
-   if bgColor.g < 0.5 then
-       oppositeColor.g = 1.0
-   end
-   if bgColor.b < 0.5 then
-       oppositeColor.b = 1.0
-   end
-
-   return oppositeColor
-end
-
-function Common:isBackgroundDark()
-   local bgColor = self.sceneProperties.backgroundColor
-   local brightness = (bgColor.r * 299 + bgColor.g * 587 + bgColor.b * 114) / 1000;
-   return brightness < 0.5
-end
