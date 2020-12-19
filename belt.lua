@@ -242,17 +242,23 @@ function Common:syncBeltGhostActor()
         return
     end
 
+    local needApplySelections = false
+
     -- Figure out what entry to base ghost on, or `nil` if none
     local ghostEntryId = self.beltEntryId
     for actorId in pairs(self.selectedActorIds) do
         local actor = self.actors[actorId]
         if not actor.isGhost then
+            -- If any non-ghost actor is selected, we don't need a ghost
             ghostEntryId = nil
         end
     end
 
     -- Update ghost if not in sync
     local ghostActor = self.beltGhostActorId and self.actors[self.beltGhostActorId]
+    if not ghostActor then
+        self.beltGhostActorId = nil
+    end
     if not ((ghostEntryId == nil and ghostActor == nil) or
             (ghostEntryId ~= nil and ghostActor and ghostActor.parentEntryId == ghostEntryId)) then
         -- Destroy old ghost if exists
@@ -260,6 +266,8 @@ function Common:syncBeltGhostActor()
             local oldEntry = self.library[ghostActor.parentEntryId]
             local oldTitle = (oldEntry and not oldEntry.isCore and oldEntry.title) or "(none)"
             --print("destroyed ghost for '" .. oldTitle .. "'")
+            self:deselectActor(self.beltGhostActorId)
+            needApplySelections = true
             self:send('removeActor', self.clientId, self.beltGhostActorId)
             self.beltGhostActorId = nil
         end
@@ -285,8 +293,12 @@ function Common:syncBeltGhostActor()
     end
 
     -- Select ghost if needed
-    if self.beltGhostActorId and not self.selectedActorIds[self.beltGhostActorId] then
+    if ghostEntryId and self.beltGhostActorId and not next(self.selectedActorIds) then
         self:selectActor(self.beltGhostActorId)
+        needApplySelections = true
+    end
+
+    if needApplySelections then
         self:applySelections()
     end
 end
