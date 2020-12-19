@@ -15,6 +15,7 @@ local SHOW_HIDE_VY = 1200
 local ENABLE_HAPTICS = true
 
 local DEBUG_TOUCHES = true
+local DEBUG_GHOST_ACTORS = false
 
 -- Start / stop
 
@@ -263,9 +264,12 @@ function Common:syncBeltGhostActor()
             (ghostEntryId ~= nil and ghostActor and ghostActor.parentEntryId == ghostEntryId)) then
         -- Destroy old ghost if exists
         if ghostActor then
-            local oldEntry = self.library[ghostActor.parentEntryId]
-            local oldTitle = (oldEntry and not oldEntry.isCore and oldEntry.title) or "(none)"
-            --print("destroyed ghost for '" .. oldTitle .. "'")
+            if DEBUG_GHOST_ACTORS then
+                local oldEntry = self.library[ghostActor.parentEntryId]
+                local oldTitle = (oldEntry and not oldEntry.isCore and oldEntry.title) or "(none)"
+                print("destroyed ghost for '" .. oldTitle .. "'")
+            end
+
             self:deselectActor(self.beltGhostActorId)
             needApplySelections = true
             self:send('removeActor', self.clientId, self.beltGhostActorId)
@@ -288,7 +292,10 @@ function Common:syncBeltGhostActor()
             })
             self.beltGhostActorId = newActorId
             self.beltLastGhostCreateTime = currTime
-            --print("created ghost for '" .. newEntry.title .. "'")
+
+            if DEBUG_GHOST_ACTORS then
+                print("created ghost for '" .. newEntry.title .. "'")
+            end
         end
     end
 
@@ -300,6 +307,20 @@ function Common:syncBeltGhostActor()
 
     if needApplySelections then
         self:applySelections()
+    end
+
+    if DEBUG_GHOST_ACTORS then
+        self.beltLastNumGhostActors = self.beltLastNumGhostActors or 0
+        local numGhostActors = 0
+        for _, actor in pairs(self.actors) do
+            if actor.isGhost then
+                numGhostActors = numGhostActors + 1
+            end
+        end
+        if numGhostActors ~= self.beltLastNumGhostActors then
+            print("# ghost actors changed to " .. numGhostActors)
+            self.beltLastNumGhostActors = numGhostActors
+        end
     end
 end
 
