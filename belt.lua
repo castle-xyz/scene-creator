@@ -489,7 +489,7 @@ function Common:updateBelt(dt)
 
         -- Snap cursor to nearest elem
         local skipDecelerate = false
-        if not rubberBandMode and not dragScrolling then
+        if self.beltEntryId and not rubberBandMode and not dragScrolling then
             if math.abs(self.beltCursorVX) <= SNAP_THRESHOLD_VX then
                 local projX = self.beltCursorX
 
