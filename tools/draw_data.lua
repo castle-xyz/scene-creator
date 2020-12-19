@@ -548,6 +548,10 @@ function DrawData:updateBounds()
     return self.bounds
 end
 
+function DrawData:getBounds()
+    return self.bounds
+end
+
 function DrawData:getPathDataBounds()
     -- https://poke1024.github.io/tove2d-api/classes/Graphics.html#Graphics:computeAABB
     local minX, minY, maxX, maxY = self:graphics():computeAABB()
