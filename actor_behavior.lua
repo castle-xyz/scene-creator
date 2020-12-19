@@ -735,7 +735,7 @@ function Common:forEachActorByDrawOrder(func)
     local nextNewDrawOrder = 1 -- The next 'dense' draw order
     for i = 1, table.maxn(self.actorsByDrawOrder) do
         local actor = self.actorsByDrawOrder[i]
-        if actor and not actor.isGhost then
+        if actor then
             if i ~= nextNewDrawOrder then -- Sift down if needed
                 self.actorsByDrawOrder[i] = nil
                 self.actorsByDrawOrder[nextNewDrawOrder] = actor
@@ -743,7 +743,7 @@ function Common:forEachActorByDrawOrder(func)
             end
             nextNewDrawOrder = nextNewDrawOrder + 1
 
-            if func then
+            if func and not actor.isGhost then
                 func(actor)
             end
         end
