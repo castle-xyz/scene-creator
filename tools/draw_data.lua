@@ -402,7 +402,9 @@ end
 
 function DrawData:new(obj)
     if not obj or obj == nil then
-        obj = {}
+        obj = {
+            version = 2
+        }
     end
 
     local newObj = {
@@ -411,17 +413,27 @@ function DrawData:new(obj)
         pathDataList = obj.pathDataList or {},
         color = obj.color or obj.fillColor or {hexStringToRgb("f9a31b")},
         lineColor = obj.lineColor or {hexStringToRgb("f9a31b")},
-        gridSize = obj.gridSize or 0.5,
+        gridSize = obj.gridSize or 0.71428571428571,
         scale = obj.scale or DRAW_DATA_SCALE,
         pathsCanvas = nil,
         fillImageData = nil,
         fillImage = nil,
-        fillImageBounds = obj.fillImageBounds or nil,
+        fillImageBounds = obj.fillImageBounds or {
+            maxX = 0,
+            maxY = 0,
+            minX = 0,
+            minY = 0
+        },
         fillCanvasSize = obj.fillCanvasSize or FILL_CANVAS_SIZE,
         fillPng = obj.fillPng or nil,
         version = obj.version or nil,
         fillPixelsPerUnit = obj.fillPixelsPerUnit or 25.6,
-        bounds =  obj.bounds or nil,
+        bounds =  obj.bounds or {
+            maxX = 0,
+            maxY = 0,
+            minX = 0,
+            minY = 0
+        },
     }
 
     

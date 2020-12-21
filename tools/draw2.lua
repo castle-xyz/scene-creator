@@ -505,8 +505,7 @@ function DrawTool.handlers:drawOverlay()
         self:drawShapes()
 
         love.graphics.setColor(0, 0, 0, 0.5)
-        local padding = 1
-        love.graphics.rectangle('fill', -DRAW_MAX_SIZE - padding, -DRAW_MAX_SIZE - padding, (DRAW_MAX_SIZE + padding) * 2.0, (DRAW_MAX_SIZE + padding) * 2.0)
+        love.graphics.rectangle('fill', -DRAW_MAX_SIZE * 2.0, -DRAW_MAX_SIZE * 2.0, DRAW_MAX_SIZE * 4.0, DRAW_MAX_SIZE * 4.0)
     end
 
     -- grid
@@ -621,6 +620,16 @@ function DrawTool.handlers:uiData()
     actions['updateColor'] = function(opts)
         self._drawData:updateColor(opts.r, opts.g, opts.b)
         self:saveDrawing("update color", c)
+    end
+
+    actions['onClearArtwork'] = function()
+        self._drawData = DrawData:new()
+        self:saveDrawing('clear all artwork', c)
+    end
+
+    actions['onClearCollisionShapes'] = function()
+        self._physicsBodyData = PhysicsBodyData:new()
+        self:saveDrawing('clear all collision shapes', c)
     end
 
     ui.data({

@@ -6,7 +6,9 @@ end
 
 function PhysicsBodyData:new(obj)
     if not obj or obj == nil then
-        obj = {}
+        obj = {
+            version = 2,
+        }
     end
 
     local newObj = {
