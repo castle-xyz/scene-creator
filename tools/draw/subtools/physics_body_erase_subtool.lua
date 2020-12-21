@@ -1,6 +1,6 @@
 local EraseTool = defineDrawSubtool {
     category = "collision",
-    name = "erase",
+    name = "collision_erase",
 }
 
 function EraseTool.handlers:addSubtool()

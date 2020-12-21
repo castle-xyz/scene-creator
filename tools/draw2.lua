@@ -90,6 +90,7 @@ function DrawTool.handlers:addBehavior(opts)
         artwork = "artwork_draw",
         artwork_draw = "pencil_no_grid",
         artwork_move = "move",
+        artwork_erase = "erase_medium",
         collision = "collision_draw",
         collision_draw = "rectangle",
         collision_move = "move",
