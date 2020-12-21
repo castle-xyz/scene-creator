@@ -532,7 +532,7 @@ function DrawTool.handlers:drawOverlay()
 
         for i = 1, #self._drawData.pathDataList do
             if not self._drawData.pathDataList[i].isFreehand then
-                for p = 1, 2 do
+                for p = 1, #self._drawData.pathDataList[i].points do
                     table.insert(movePoints, self._drawData.pathDataList[i].points[p].x)
                     table.insert(movePoints, self._drawData.pathDataList[i].points[p].y)
                 end

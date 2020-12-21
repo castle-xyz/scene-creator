@@ -19,7 +19,7 @@ function BendTool.handlers:onTouch(component, touchData)
         self._isUsingBendPoint = false
 
         for i = 1, #self:drawData().pathDataList do
-            if not self:drawData().pathDataList[i].isFreehand and self:drawData().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, 0.5) then
+            if not self:drawData().pathDataList[i].isFreehand and self:drawData().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, 0.5 * self:getZoomAmount()) then
                 table.insert(self._grabbedPaths, self:drawData().pathDataList[i])
                 self:removePathData(self:drawData().pathDataList[i])
                 self:drawData():resetGraphics()
@@ -29,7 +29,7 @@ function BendTool.handlers:onTouch(component, touchData)
     end
 
     local distance = math.sqrt(math.pow(self._initialCoord.x - touchData.touchX, 2.0) + math.pow(self._initialCoord.y - touchData.touchY, 2.0))
-    if distance > 0.1 then
+    if distance > 0.1 * self:getZoomAmount() then
         self._isUsingBendPoint = true
     end
 

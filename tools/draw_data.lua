@@ -111,30 +111,7 @@ function DrawData:drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
     addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
 end
 
-function DrawData:updatePathDataRendering(pathData)
-    if pathData.tovePath and pathData.tovePath ~= nil then
-        return
-    end
-
-    local path = tove.newPath()
-    if pathData.color then
-        path:setLineColor(pathData.color[1], pathData.color[2], pathData.color[3], 1.0)
-    else
-        path:setLineColor(self.lineColor[1], self.lineColor[2], self.lineColor[3], 1.0)
-    end
-    path:setLineWidth(0.2)
-    path:setMiterLimit(1)
-    path:setLineJoin("round")
-    pathData.tovePath = path
-
-    pathData.subpathDataList = {}
-
-    if pathData.isTransparent then
-        return
-    end
-
-    local p1 = pathData.points[1]
-    local p2 = pathData.points[2]
+function DrawData:addSubpathDataForPoints(pathData, p1, p2)
     local style = pathData.style
     local bendPoint = pathData.bendPoint
 
@@ -181,7 +158,6 @@ function DrawData:updatePathDataRendering(pathData)
     
         if circleCenterX == nil then
             addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
-            makeSubpathsFromSubpathData(pathData)
             return
         end
     
@@ -189,7 +165,6 @@ function DrawData:updatePathDataRendering(pathData)
     
         if radius > 50 then
             addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
-            makeSubpathsFromSubpathData(pathData)
             return
         end
     
@@ -207,7 +182,6 @@ function DrawData:updatePathDataRendering(pathData)
         end
 
         addCircleSubpathData(pathData, circleCenterX, circleCenterY, radius, startAngle, endAngle)
-        makeSubpathsFromSubpathData(pathData)
 
         --[[
         for i = 1, pathData.tovePath.subpaths.count do
@@ -234,7 +208,6 @@ function DrawData:updatePathDataRendering(pathData)
     else
         if style == 1 then
             addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
-            makeSubpathsFromSubpathData(pathData)
             return
         end
 
@@ -383,29 +356,43 @@ function DrawData:updatePathDataRendering(pathData)
             addCircleSubpathData(pathData, circleCenter.x, circleCenter.y, radius, startAngle, startAngle + math.pi / 2.0)
         end
     end
+end
+
+function DrawData:updatePathDataRendering(pathData)
+    if pathData.tovePath and pathData.tovePath ~= nil then
+        return
+    end
+
+    local path = tove.newPath()
+    if pathData.color then
+        path:setLineColor(pathData.color[1], pathData.color[2], pathData.color[3], 1.0)
+    else
+        path:setLineColor(self.lineColor[1], self.lineColor[2], self.lineColor[3], 1.0)
+    end
+    path:setLineWidth(0.2)
+    path:setMiterLimit(1)
+    path:setLineJoin("round")
+    pathData.tovePath = path
+
+    pathData.subpathDataList = {}
+
+    if pathData.isTransparent then
+        return
+    end
+
+    for i = 1, #pathData.points - 1 do
+        local p1 = pathData.points[i]
+        local p2 = pathData.points[i + 1]
+
+        self:addSubpathDataForPoints(pathData, p1, p2)
+    end
 
     makeSubpathsFromSubpathData(pathData)
-end
-
-function DrawData:getNextPathId()
-    self.nextPathId = self.nextPathId + 1
-    return self.nextPathId
-end
-
-function DrawData:updatePathDataIds(pathData)
-    if not pathData.id then
-        pathData.id = self:getNextPathId()
-    end
-
-    for i = 1, #pathData.subpathDataList do
-        pathData.subpathDataList[i].id = pathData.id .. '*' .. i
-    end
 end
 
 function DrawData:cleanUpPaths()
     for i = 1, #self.pathDataList do
         self:updatePathDataRendering(self.pathDataList[i])
-        self:updatePathDataIds(self.pathDataList[i])
     end
 end
 
@@ -422,7 +409,6 @@ function DrawData:new(obj)
         _graphics = nil,
         _graphicsNeedsReset = true,
         pathDataList = obj.pathDataList or {},
-        nextPathId = obj.nextPathId or 0,
         color = obj.color or obj.fillColor or {hexStringToRgb("f9a31b")},
         lineColor = obj.lineColor or {hexStringToRgb("f9a31b")},
         gridSize = obj.gridSize or 0.5,
@@ -438,6 +424,7 @@ function DrawData:new(obj)
         bounds =  obj.bounds or nil,
     }
 
+    
     local newPathDataList = {}
     for i = 1, #newObj.pathDataList do
         local pathData = newObj.pathDataList[i]
@@ -458,6 +445,9 @@ function DrawData:new(obj)
     end
 
     newObj.pathDataList = newPathDataList
+
+
+
 
     setmetatable(newObj, self)
     self.__index = self
@@ -683,7 +673,6 @@ end
 function DrawData:serialize()
     local data = {
         pathDataList = {},
-        nextPathId = self.nextPathId,
         color = self.color,
         lineColor = self.lineColor,
         gridSize = self.gridSize,
@@ -703,7 +692,6 @@ function DrawData:serialize()
             points = util.deepCopyTable(pathData.points),
             style = pathData.style,
             bendPoint = roundFloatArray(pathData.bendPoint),
-            id = pathData.id,
             isFreehand = pathData.isFreehand,
             color = roundFloatArray(pathData.color),
             isTransparent = pathData.isTransparent,
@@ -866,18 +854,15 @@ function DrawData:floodFill(x, y)
     return pixelCount > 0
 end
 
-function DrawData:floodClear(x, y)
+function DrawData:floodClear(x, y, radius)
     self:updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
 
-    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFill(
+    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFillErase(
         math.floor(x * self.fillPixelsPerUnit - self.fillImageBounds.minX),
         math.floor(y * self.fillPixelsPerUnit - self.fillImageBounds.minY),
-        pathsImageData,
-        0.0,
-        0.0,
-        0.0,
-        0.0
+        math.floor(radius * self.fillPixelsPerUnit),
+        pathsImageData
     )
     self:compressFillCanvas()
     self:updateFillImageWithFillImageData()

@@ -32,7 +32,7 @@ function EraseTool.handlers:onTouch(component, touchData)
         end
     end
 
-    if self:drawData():floodClear(touchData.touchX, touchData.touchY) then
+    if self:drawData():floodClear(touchData.touchX, touchData.touchY, self:getRadius()) then
         self._didChange = true
     end
 

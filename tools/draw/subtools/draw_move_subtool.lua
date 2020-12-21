@@ -13,7 +13,7 @@ function MoveTool.handlers:onTouch(component, touchData)
 
         for i = 1, #self:drawData().pathDataList do
             if not self:drawData().pathDataList[i].isFreehand then
-                for p = 1, 2 do
+                for p = 1, #self:drawData().pathDataList[i].points do
                     local distance = math.sqrt(math.pow(touchData.touchX - self:drawData().pathDataList[i].points[p].x, 2.0) + math.pow(touchData.touchY - self:drawData().pathDataList[i].points[p].y, 2.0))
 
                     if distance < self:drawData().scale * 0.05 then
@@ -33,7 +33,7 @@ function MoveTool.handlers:onTouch(component, touchData)
             for i = 1, #self:drawData().pathDataList do
                 if not self:drawData().pathDataList[i].isFreehand then
                     local pathData = self:drawData().pathDataList[i]
-                    local distance, t, subpath = pathData.tovePath:nearest(touchData.touchX, touchData.touchY, 0.5)
+                    local distance, t, subpath = pathData.tovePath:nearest(touchData.touchX, touchData.touchY, 0.5 * self:getZoomAmount())
                     if subpath then
                         local pointX, pointY = subpath:position(t)
                         self:removePathData(pathData)
