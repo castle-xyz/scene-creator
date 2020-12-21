@@ -642,7 +642,7 @@ function Client:draw()
             if not self.performing then
                 local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
 
-                if not activeTool.tool or not activeTool.tool.hideBodyOutline then
+                if not activeTool or not activeTool.tool or not activeTool.tool.hideBodyOutline then
                     -- All body outlines
                     love.graphics.setLineWidth(1.25 * self:getPixelScale())
                     love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
