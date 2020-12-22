@@ -1,5 +1,6 @@
 DrawData = {}
 local FILL_CANVAS_SIZE = 256
+DRAW_LINE_WIDTH = 0.2
 local DEBUG_FILL_IMAGE_SIZE = false
 
 function DrawData:gridCellSize()
@@ -369,7 +370,7 @@ function DrawData:updatePathDataRendering(pathData)
     else
         path:setLineColor(self.lineColor[1], self.lineColor[2], self.lineColor[3], 1.0)
     end
-    path:setLineWidth(0.2)
+    path:setLineWidth(DRAW_LINE_WIDTH)
     path:setMiterLimit(1)
     path:setLineJoin("round")
     pathData.tovePath = path

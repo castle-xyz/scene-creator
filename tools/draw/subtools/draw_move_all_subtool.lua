@@ -23,10 +23,10 @@ function MoveTool.handlers:onTouch(component, touchData)
 
         local pathDataBounds = self:drawData():getPathDataBounds()
         self._bounds = {
-            minX = -DRAW_MAX_SIZE - pathDataBounds.minX,
-            minY = -DRAW_MAX_SIZE - pathDataBounds.minY,
-            maxX = DRAW_MAX_SIZE - pathDataBounds.maxX,
-            maxY = DRAW_MAX_SIZE - pathDataBounds.maxY,
+            minX = -DRAW_MAX_SIZE - pathDataBounds.minX - DRAW_LINE_WIDTH * 0.5,
+            minY = -DRAW_MAX_SIZE - pathDataBounds.minY - DRAW_LINE_WIDTH * 0.5,
+            maxX = DRAW_MAX_SIZE - pathDataBounds.maxX + DRAW_LINE_WIDTH * 0.5,
+            maxY = DRAW_MAX_SIZE - pathDataBounds.maxY + DRAW_LINE_WIDTH * 0.5,
         }
     end
 
