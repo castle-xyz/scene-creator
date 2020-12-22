@@ -105,8 +105,8 @@ function DrawData:drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
     end
 
     -- TODO: fix
-    p1x, p1y = self:roundGlobalCoordinatesToGrid(p1x, p1y)
-    p2x, p2y = self:roundGlobalCoordinatesToGrid(p2x, p2y)
+    --p1x, p1y = self:roundGlobalCoordinatesToGrid(p1x, p1y)
+    --p2x, p2y = self:roundGlobalCoordinatesToGrid(p2x, p2y)
 
     addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
 end
