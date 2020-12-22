@@ -7,7 +7,16 @@ function DrawDataFrame:cleanUpPaths()
 end
 
 -- should this be combination of all frames?
-function DrawDataFrame:getPathDataBounds()
+function DrawDataFrame:getPathDataBounds(bounds)
+    if not bounds or bounds == nil then
+        bounds = {
+            minX = DRAW_MAX_SIZE,
+            minY = DRAW_MAX_SIZE,
+            maxX = -DRAW_MAX_SIZE,
+            maxY = -DRAW_MAX_SIZE,
+        }
+    end
+
     -- https://poke1024.github.io/tove2d-api/classes/Graphics.html#Graphics:computeAABB
     local minX, minY, maxX, maxY = self:graphics():computeAABB()
 
@@ -19,30 +28,38 @@ function DrawDataFrame:getPathDataBounds()
             local x = pathData.points[j].x
             local y = pathData.points[j].y
 
-            if minX == -1 or x < minX then
+            if x < minX then
                 minX = x
             end
 
-            if minY == -1 or y < minY then
+            if y < minY then
                 minY = y
             end
 
-            if maxX == -1 or x > maxX then
+            if x > maxX then
                 maxX = x
             end
 
-            if maxY == -1 or y > maxY then
+            if y > maxY then
                 maxY = y
             end
         end
     end
 
-    return {
-        minX = minX,
-        minY = minY,
-        maxX = maxX,
-        maxY = maxY,
-    }
+    if minX < bounds.minX then
+        bounds.minX = minX
+    end
+    if minY < bounds.minY then
+        bounds.minY = minY
+    end
+    if maxX > bounds.maxX then
+        bounds.maxX = maxX
+    end
+    if maxY > bounds.maxY then
+        bounds.maxY = maxY
+    end
+
+    return bounds
 end
 
 function DrawDataFrame:getPathDataBoundsInPixelCoordinates()
@@ -268,7 +285,7 @@ function DrawDataFrame:updatePathsCanvas()
 end
 
 function DrawDataFrame:graphics()
-    if self._graphicsNeedsReset then
+    if self._graphicsNeedsReset or not self._graphics then
         self._graphicsNeedsReset = false
         self:cleanUpPaths()
 
@@ -291,6 +308,10 @@ function DrawDataFrame:renderFill()
 end
 
 function DrawDataFrame:renderPreviewPng(size)
+    if not size then
+        size = 256
+    end
+
     local previewCanvas = love.graphics.newCanvas(
         size,
         size,

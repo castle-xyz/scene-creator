@@ -166,6 +166,15 @@ function Client:uiupdate()
       uiSelf:applySelections()
    end)
 
+   if self.activeToolBehaviorId == self.behaviorsByName.Draw2.behaviorId then
+      profileFunction('uiupdate.uiActiveTool', function()
+         -- Active "tool" ui (only drawing at time of writing)
+         ui.pane('sceneCreatorTool', function() uiSelf:uiActiveTool() end)
+      end)
+
+      return
+   end
+
    profileFunction('uiupdate.uiBlueprints', function()
       -- Blueprints
       ui.pane('sceneCreatorBlueprints', function()
@@ -210,10 +219,5 @@ function Client:uiupdate()
       ui.pane('sceneCreatorSettings', function()
          uiSelf:uiSettings()
       end)
-   end)
-
-   profileFunction('uiupdate.uiActiveTool', function()
-      -- Active "tool" ui (only drawing at time of writing)
-      ui.pane('sceneCreatorTool', function() uiSelf:uiActiveTool() end)
    end)
 end

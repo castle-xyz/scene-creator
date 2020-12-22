@@ -398,25 +398,11 @@ function DrawData:clone()
 end
 
 function DrawData:currentLayerFrame()
-    return self.layers[self._currentLayer].frames[self._currentFrame]
+    return self.layers[self.selectedLayer].frames[self.selectedFrame]
 end
 
 function DrawData:currentPathDataList()
     return self:currentLayerFrame().pathDataList
-end
-
-function DrawData:forEachLayer(fn)
-    for l = 1, #self.layers do
-        fn(self.layers[l].frames[self._currentFrame])
-    end
-end
-
-function DrawData:forEachFrame(fn)
-    for l = 1, #self.layers do
-        for f = 1, #self.layers[l].frames do
-            fn(self.layers[l].frames[f])
-        end
-    end
 end
 
 function DrawData:new(obj)
@@ -454,8 +440,12 @@ function DrawData:new(obj)
             minY = 0
         },
         layers = obj.layers or {},
-        _currentLayer = 1,
-        _currentFrame = 1,
+        numTotalLayers = obj.numTotalLayers or 1,
+        selectedLayer = obj.selectedLayer or 1,
+        selectedFrame = obj.selectedFrame or 1,
+        initialFrame = obj.initialFrame or 1,
+        _layerDataChanged = true,
+        _layerData = nil,
     }
 
     for l = 1, #newObj.layers do
@@ -521,6 +511,8 @@ function DrawData:new(obj)
                 local fileData = love.filesystem.newFileData(fileDataString, "fill.png")
                 frame.fillImageData = love.image.newImageData(fileData)
             end
+
+            frame.base64Png = frame:renderPreviewPng()
         end
     end
 
@@ -601,8 +593,6 @@ function DrawData:migrateV2ToV3()
     self.layers = {{
         title = "Layer 1",
         frames = {util.deepCopyTable({
-            _graphics = nil,
-            _graphicsNeedsReset = true,
             pathDataList = self.pathDataList,
             pathsCanvas = self.pathsCanvas,
             fillImageData = self.fillImageData,
@@ -622,9 +612,49 @@ function DrawData:migrateV2ToV3()
     self.fillPng = nil
 end
 
--- TODO this should be a combination of every layer in the default frame
+function DrawData:getLayerData()
+    if self._layerDataChanged then
+        self._layerDataChanged = false
+
+        local data = {
+            selectedLayer = self.selectedLayer,
+            selectedFrame = self.selectedFrame,
+            layers = {}
+        }
+
+        for l = 1, #self.layers do
+            local layer = self.layers[l]
+            local layerData = {
+                title = layer.title,
+                frames = {}
+            }
+
+            for f = 1, #layer.frames do
+                local frame = layer.frames[f]
+                local frameData = {
+                    base64Png = frame.base64Png,
+                }
+                table.insert(layerData.frames, frameData)
+            end
+
+            table.insert(data.layers, layerData)
+        end
+
+        self._layerData = data
+    end
+
+    return self._layerData
+end
+
 function DrawData:updateBounds()
-    self.bounds = self:currentLayerFrame():getPathDataBounds()
+    local bounds = nil
+    for l = 1, #self.layers do
+        local layer = self.layers[l]
+        local frame = layer.frames[self.initialFrame]
+        bounds = frame:getPathDataBounds(bounds)
+    end
+
+    self.bounds = bounds
     return self.bounds
 end
 
@@ -729,6 +759,10 @@ function DrawData:serialize()
         version = self.version,
         fillPixelsPerUnit = self.fillPixelsPerUnit,
         bounds = self.bounds,
+        numTotalLayers = self.numTotalLayers,
+        selectedLayer = self.selectedLayer,
+        selectedFrame = self.selectedFrame,
+        initialFrame = self.initialFrame,
         layers = {},
     }
 
@@ -786,6 +820,43 @@ function DrawData:serialize()
     return data
 end
 
+function DrawData:touchLayerData()
+    self._layerDataChanged = true
+end
+
+function DrawData:updateFramePreview()
+    self:touchLayerData()
+    self:currentLayerFrame().base64Png = self:currentLayerFrame():renderPreviewPng()
+end
+
+function DrawData:addLayer()
+    self.numTotalLayers = self.numTotalLayers + 1
+
+    local newFrame = {
+        pathDataList = {},
+        fillImageBounds = {
+            maxX = 0,
+            maxY = 0,
+            minX = 0,
+            minY = 0
+        },
+    }
+
+    setmetatable(newFrame, {__index = DrawDataFrame})
+    newFrame.parent = function()
+        return self
+    end
+
+    local newLayer = {
+        title = 'Layer ' .. self.numTotalLayers,
+        frames = {newFrame},
+    }
+
+    table.insert(self.layers, newLayer)
+    self.selectedLayer = #self.layers
+    self:touchLayerData()
+end
+
 function DrawData:graphics()
     return self:currentLayerFrame():graphics()
 end
@@ -795,36 +866,91 @@ function DrawData:preload()
 end
 
 function DrawData:render()
-    self:renderFill()
-    self:renderPaths()
+    for l = 1, #self.layers do
+        local frame = self.layers[l].frames[self.selectedFrame]
+        frame:renderFill()
+        frame:graphics():draw()
+    end
 end
 
-function DrawData:renderFill()
-    self:forEachLayer(function (frame)
-        frame:renderFill()
-    end)
+function DrawData:renderWithoutCurrentLayer()
+    for l = 1, #self.layers do
+        if l ~= self.selectedLayer then
+            local frame = self.layers[l].frames[self.selectedFrame]
+            frame:renderFill()
+            frame:graphics():draw()
+        end
+    end
+end
+
+function DrawData:renderCurrentLayer()
+    local frame = self.layers[self.selectedLayer].frames[self.selectedFrame]
+    frame:renderFill()
+    frame:graphics():draw()
 end
 
 function DrawData:renderPreviewPng(size)
-    return self:currentLayerFrame():renderPreviewPng(size)
-end
+    if not size then
+        size = 256
+    end
 
-function DrawData:renderPaths()
-    self:forEachLayer(function (frame)
-        frame:graphics():draw()
-    end)
+    local previewCanvas = love.graphics.newCanvas(
+        size,
+        size,
+        {
+            dpiscale = 1,
+            msaa = 4
+        }
+    )
+
+    previewCanvas:renderTo(
+        function()
+            local pathBounds = self:getBounds()
+
+            local width = pathBounds.maxX - pathBounds.minX
+            local height = pathBounds.maxY - pathBounds.minY
+
+            local maxDimension = width
+            if height > maxDimension then
+                maxDimension = height
+            end
+
+            local widthPadding = (maxDimension - width) / 2.0
+            local heightPadding = (maxDimension - height) / 2.0
+
+            local padding = maxDimension * 0.025
+
+            love.graphics.push("all")
+
+            love.graphics.origin()
+            love.graphics.scale(size / (maxDimension * 1.05))
+            love.graphics.translate(padding - pathBounds.minX + widthPadding, padding - pathBounds.minY + heightPadding)
+
+            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
+            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+            self:render()
+
+            love.graphics.pop()
+        end
+    )
+
+    local fileData = previewCanvas:newImageData():encode("png")
+    return love.data.encode("string", "base64", fileData:getString())
 end
 
 function DrawData:clearGraphics()
-    self:forEachFrame(function (frame)
-        frame._graphics = nil
-        frame._graphicsNeedsReset = true
+    for l = 1, #self.layers do
+        for f = 1, #self.layers[l].frames do
+            local frame = self.layers[l].frames[f]
+            frame._graphics = nil
+            frame._graphicsNeedsReset = true
 
-        for i = 1, #frame.pathDataList do
-            frame.pathDataList[i].tovePath = nil
-            frame.pathDataList[i].subpathDataList = nil
+            for i = 1, #frame.pathDataList do
+                frame.pathDataList[i].tovePath = nil
+                frame.pathDataList[i].subpathDataList = nil
+            end
         end
-    end)
+    end
 end
 
 function DrawData:updateColor(r, g, b)

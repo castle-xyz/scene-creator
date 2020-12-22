@@ -210,6 +210,7 @@ function DrawTool:physicsBodyData()
 end
 
 function DrawTool:saveDrawing(commandDescription, c)
+    self._drawData:updateFramePreview()
     local actorId = c.actorId
     local newDrawData = self._drawData:serialize()
     local newPhysicsBodyData = self._physicsBodyData:serialize()
@@ -469,16 +470,6 @@ end
 
 -- Draw
 
-function DrawTool:drawShapes()
-    love.graphics.setColor(1, 1, 1, 1)
-
-    self._drawData:graphics():draw()
-
-    if self._tempGraphics ~= nil then
-        self._tempGraphics:draw()
-    end
-end
-
 function DrawTool:getIsBackgroundDark()
     local bgColor = self.game.sceneProperties.backgroundColor
     local brightness = (bgColor.r * 299 + bgColor.g * 587 + bgColor.b * 114) / 1000;
@@ -500,7 +491,7 @@ function DrawTool.handlers:drawOverlay()
 
     local windowWidth, windowHeight = love.graphics.getDimensions()
     -- DrawingCardHeader.js height is 180 and DrawingCardBottomActions.js height is 80
-    local topOffset = 0.5 * (self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO - ((180 + 80) / (windowWidth / self.viewWidth)))
+    local topOffset = 0.5 * (self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO - ((200 + 64) / (windowWidth / self.viewWidth)))
 
     love.graphics.push()
 
@@ -516,8 +507,7 @@ function DrawTool.handlers:drawOverlay()
     love.graphics.setColor(1, 1, 1, 1)
 
     if self._selectedSubtools.root ~= 'artwork' then
-        self._drawData:renderFill()
-        self:drawShapes()
+        self._drawData:render()
 
         love.graphics.setColor(0, 0, 0, 0.5)
         love.graphics.rectangle('fill', -DRAW_MAX_SIZE * 2.0, -DRAW_MAX_SIZE * 2.0, DRAW_MAX_SIZE * 4.0, DRAW_MAX_SIZE * 4.0)
@@ -536,11 +526,16 @@ function DrawTool.handlers:drawOverlay()
     if self._selectedSubtools.root == 'artwork' then
         love.graphics.setColor(1, 1, 1, 1)
 
+        self._drawData:renderWithoutCurrentLayer()
+
         love.graphics.push()
         love.graphics.translate(self.tempTranslateX, self.tempTranslateY)
-        self._drawData:renderFill()
-        self:drawShapes()
+        self._drawData:renderCurrentLayer()
         love.graphics.pop()
+
+        if self._tempGraphics ~= nil then
+            self._tempGraphics:draw()
+        end
 
         self._physicsBodyData:draw()
     end
@@ -658,4 +653,17 @@ function DrawTool.handlers:uiData()
     }, {
         actions = actions,
     })
+
+    local layerActions = {}
+
+    layerActions['onAddLayer'] = function()
+        self._drawData:addLayer()
+        self:saveDrawing('add layer', c)
+    end
+
+    ui.pane('drawingLayers', function()
+        ui.data(self._drawData:getLayerData(), {
+            actions = layerActions,
+        })
+    end)
 end
