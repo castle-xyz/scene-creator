@@ -158,6 +158,47 @@ function Common.receivers:removeLibraryEntry(time, entryId)
     self:markBeltDirty()
 end
 
+function Common:updateBlueprintFromActor(actorId, opts)
+    opts = opts or {}
+
+    local actor = self.actors[actorId]
+    if not actor then
+        print('tried to update blueprint from non-existent actor')
+        return
+    end
+
+    local oldEntry = actor.parentEntryId and self.library[actor.parentEntryId]
+    if not oldEntry then
+        print('tried to update blueprint from actor without parent entry id')
+        return
+    end
+
+    -- Blueprint the actor and zero-out layout x, y
+    local newActorBp = self:blueprintActor(actorId)
+    if newActorBp.components.Body then
+        newActorBp.components.Body.x, newActorBp.components.Body.y = nil, nil
+    end
+
+    -- Compute base64Png if needed
+    local base64Png = oldEntry.base64Png
+    if opts.updateBase64Png then
+        base64Png = self:actorBlueprintPng(actorId)
+    end
+
+    local newEntry = {
+        entryType = 'actorBlueprint',
+        title = opts.title or oldEntry.title or '',
+        description = opts.description or oldEntry.description or '',
+        actorBlueprint = newActorBp,
+        base64Png = base64Png,
+    }
+
+    self:send('updateLibraryEntry', self.clientId, oldEntry.entryId, newEntry, {
+        updateActors = true,
+        skipActorId = actorId,
+    })
+end
+
 function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, opts)
     local oldEntry = self.library[entryId]
     assert(oldEntry.entryType == newEntry.entryType, "updateLibraryEntry: cannot change entry type")
