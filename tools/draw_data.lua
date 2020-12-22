@@ -393,10 +393,6 @@ function DrawData:updatePathDataRendering(pathData)
     makeSubpathsFromSubpathData(pathData)
 end
 
-function DrawData:clone()
-    return DrawData:new(self)
-end
-
 function DrawData:currentLayerFrame()
     return self.layers[self.selectedLayer].frames[self.selectedFrame]
 end
@@ -457,6 +453,8 @@ function DrawData:new(obj)
         end
     end
 
+    newObj = util.deepCopyTable(newObj)
+
     setmetatable(newObj, self)
     self.__index = self
 
@@ -464,7 +462,6 @@ function DrawData:new(obj)
     newObj:migrateV2ToV3()
 
     newObj:clearGraphics()
-    newObj = util.deepCopyTable(newObj)
 
     setmetatable(newObj, self)
     self.__index = self
@@ -626,6 +623,7 @@ function DrawData:getLayerData()
             local layer = self.layers[l]
             local layerData = {
                 title = layer.title,
+                id = l,
                 frames = {}
             }
 
@@ -637,7 +635,7 @@ function DrawData:getLayerData()
                 table.insert(layerData.frames, frameData)
             end
 
-            table.insert(data.layers, layerData)
+            data.layers['id' .. l] = layerData
         end
 
         self._layerData = data
@@ -827,6 +825,12 @@ end
 function DrawData:updateFramePreview()
     self:touchLayerData()
     self:currentLayerFrame().base64Png = self:currentLayerFrame():renderPreviewPng()
+end
+
+function DrawData:selectLayer(layerId)
+    print('selected ' ..layerId)
+    self.selectedLayer = layerId
+    self:touchLayerData()
 end
 
 function DrawData:addLayer()
