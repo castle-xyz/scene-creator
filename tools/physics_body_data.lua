@@ -17,6 +17,8 @@ function PhysicsBodyData:new(obj)
         tempShape = nil,
         version = obj.version or nil,
         zeroShapesInV1 = obj.zeroShapesInV1 or false,
+        tempTranslateX = 0,
+        tempTranslateY = 0,
     }
 
     newObj = util.deepCopyTable(newObj)
@@ -59,6 +61,11 @@ function PhysicsBodyData:serialize()
     }
 
     return data
+end
+
+function PhysicsBodyData:setTempTranslation(x, y)
+    self.tempTranslateX = x
+    self.tempTranslateY = y
 end
 
 function PhysicsBodyData:getCenterOfShape(shape)
@@ -260,6 +267,9 @@ function PhysicsBodyData:_drawShape(shape)
 end
 
 function PhysicsBodyData:draw()
+    love.graphics.push()
+    love.graphics.translate(self.tempTranslateX, self.tempTranslateY)
+
     for _, shape in pairs(self.shapes) do
         self:_drawShape(shape)
     end
@@ -267,6 +277,8 @@ function PhysicsBodyData:draw()
     if self.tempShape then
         self:_drawShape(self.tempShape)
     end
+
+    love.graphics.pop()
 end
 
 local function _isBetweenNumbers(x, n1, n2)
@@ -549,6 +561,50 @@ function PhysicsBodyData:getCircleShape(p1, p2, roundFn, roundDistFn, roundDx, r
     else
         return nil
     end
+end
+
+function PhysicsBodyData:getBounds()
+    local minX = DRAW_MAX_SIZE
+    local minY = DRAW_MAX_SIZE
+    local maxX = -DRAW_MAX_SIZE
+    local maxY = -DRAW_MAX_SIZE
+
+    local addPoint = function (x, y)
+        if x < minX then
+            minX = x
+        end
+        if y < minY then
+            minY = y
+        end
+        if x > maxX then
+            maxX = x
+        end
+        if y > maxY then
+            maxY = y
+        end
+    end
+
+    for _, shape in pairs(self.shapes) do
+        local ty = shape.type
+        if ty == "circle" then
+            addPoint(shape.x + shape.radius, shape.y)
+            addPoint(shape.x, shape.y + shape.radius)
+            addPoint(shape.x - shape.radius, shape.y)
+            addPoint(shape.x, shape.y - shape.radius)
+        else
+            local points = self:_pointsForShape(shape)
+            for i = 1, #points, 2 do
+                addPoint(points[i], points[i + 1])
+            end
+        end
+    end
+
+    return {
+        minX = minX,
+        minY = minY,
+        maxX = maxX,
+        maxY = maxY,
+    }
 end
 
 function PhysicsBodyData:getShapesForBody()

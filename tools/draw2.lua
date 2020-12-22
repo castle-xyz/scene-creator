@@ -30,6 +30,7 @@ require('tools.draw.subtools.draw_fill_subtool')
 require('tools.draw.subtools.draw_erase_subtool')
 require('tools.draw.subtools.physics_body_shapes_subtool')
 require('tools.draw.subtools.physics_body_move_subtool')
+require('tools.draw.subtools.physics_body_move_all_subtool')
 require('tools.draw.subtools.physics_body_scale_rotate_subtool')
 require('tools.draw.subtools.physics_body_erase_subtool')
 
