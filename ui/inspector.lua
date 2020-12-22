@@ -98,6 +98,7 @@ function Client:_removeBehavior(actorId, component, behavior)
             end
             self:send('removeComponent', self.clientId, actorId, behaviorId)
             self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+            self:updateBlueprintFromActor(actorId)
         end, function()
             local behavior = self.behaviors[behaviorId]
             if behavior.components[actorId] then
@@ -105,6 +106,7 @@ function Client:_removeBehavior(actorId, component, behavior)
             end
             self:send('addComponent', self.clientId, actorId, behaviorId, componentBp)
             self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+            self:updateBlueprintFromActor(actorId)
         end)
     end
 end
@@ -128,6 +130,7 @@ function Client:_addBehavior(actor, behaviorId, blueprint)
             })
         end
         self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+        self:updateBlueprintFromActor(actorId)
     end, function()
         local behavior = self.behaviors[behaviorId]
         if not behavior.components[actorId] then
@@ -137,6 +140,7 @@ function Client:_addBehavior(actor, behaviorId, blueprint)
             self:send('removeComponent', self.clientId, actorId, order[i])
         end
         self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+        self:updateBlueprintFromActor(actorId)
     end)
 end
 
@@ -171,6 +175,7 @@ function Client:_swapBehavior(actor, component, newBehaviorId, blueprint)
             })
         end
         self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+        self:updateBlueprintFromActor(actorId)
     end, function()
         if not self.behaviors[newBehaviorId].components[actorId] then
             return 'new behavior was removed'
@@ -183,6 +188,7 @@ function Client:_swapBehavior(actor, component, newBehaviorId, blueprint)
         end
         self:send('addComponent', self.clientId, actorId, oldBehaviorId, oldComponentBp)
         self.updateCounts[actorId] = (self.updateCounts[actorId] or 1) + 1
+        self:updateBlueprintFromActor(actorId)
     end)
 end
 
@@ -197,10 +203,12 @@ function Client:_setProperty(actorId, behaviorId, propertyName, oldValue, newVal
       function()
          local behavior = self.behaviors[behaviorId]
          behavior:sendSetProperties(actorId, propertyName, newValue)
+         self:updateBlueprintFromActor(actorId)
       end,
       function()
          local behavior = self.behaviors[behaviorId]
          behavior:sendSetProperties(actorId, propertyName, oldValue)
+         self:updateBlueprintFromActor(actorId)
       end
    )
 end
@@ -214,9 +222,11 @@ function Client:_enableComponent(actorId, behavior)
       },
       function()
          self:send('enableComponent', self.clientId, actorId, behaviorId)
+         self:updateBlueprintFromActor(actorId)
       end,
       function()
          self:send('disableComponent', self.clientId, actorId, behaviorId)
+         self:updateBlueprintFromActor(actorId)
       end
    )
 end
@@ -230,9 +240,11 @@ function Client:_disableComponent(actorId, behavior)
       },
       function()
          self:send('disableComponent', self.clientId, actorId, behaviorId)
+         self:updateBlueprintFromActor(actorId)
       end,
       function()
          self:send('enableComponent', self.clientId, actorId, behaviorId)
+         self:updateBlueprintFromActor(actorId)
       end
    )
 end
