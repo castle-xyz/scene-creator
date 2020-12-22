@@ -8,7 +8,7 @@ local function addSubtool(obj)
 end
 
 local function onSelected(obj)
-    obj:drawData():updatePathsCanvas()
+    obj:drawDataFrame():updatePathsCanvas()
 end
 
 local function isPointInCircle(p, circleX, circleY, circleR)
@@ -23,9 +23,9 @@ local function onTouch(obj, component, touchData)
         y = touchData.touchY,
     }
 
-    for i = #obj:drawData():currentPathDataList(), 1, -1 do
-        if obj:drawData():currentPathDataList()[i].tovePath:nearest(touchData.touchX, touchData.touchY, obj:getRadius()) then
-            local pathData = obj:drawData():currentPathDataList()[i]
+    for i = #obj:drawDataFrame().pathDataList, 1, -1 do
+        if obj:drawDataFrame().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, obj:getRadius()) then
+            local pathData = obj:drawDataFrame().pathDataList[i]
             obj:removePathData(pathData)
 
             if pathData.bendPoint == nil and pathData.style == 1 then
@@ -88,19 +88,19 @@ local function onTouch(obj, component, touchData)
                 end
             end
 
-            obj:drawData():resetGraphics()
+            obj:drawDataFrame():resetGraphics()
             obj._didChange = true
         end
     end
 
-    if obj:drawData():floodClear(touchData.touchX, touchData.touchY, obj:getRadius()) then
+    if obj:drawDataFrame():floodClear(touchData.touchX, touchData.touchY, obj:getRadius()) then
         obj._didChange = true
     end
 
     if touchData.touch.released then
         if obj._didChange then
-            obj:drawData():resetGraphics()
-            obj:drawData():resetFill()
+            obj:drawDataFrame():resetGraphics()
+            obj:drawDataFrame():resetFill()
             obj:drawData():updateBounds()
             obj:saveDrawing("erase", component)
         end

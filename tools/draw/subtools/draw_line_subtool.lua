@@ -18,8 +18,8 @@ function LineTool.handlers:onTouch(component, touchData)
 
     if touchData.touch.released then
         self:addPathData(pathData)
-        self:drawData():resetGraphics()
-        self:drawData():resetFill()
+        self:drawDataFrame():resetGraphics()
+        self:drawDataFrame():resetFill()
         self:drawData():updateBounds()
         self:saveDrawing("line", component)
 

@@ -37,8 +37,8 @@ local function onTouch(obj, component, touchData)
             obj:addPathData(obj._currentPathDataList[i])
         end
 
-        obj:drawData():resetGraphics()
-        obj:drawData():resetFill()
+        obj:drawDataFrame():resetGraphics()
+        obj:drawDataFrame():resetFill()
         obj:drawData():updateBounds()
         obj:saveDrawing('add ' .. obj:selectedSubtools().artwork_draw, component)
 

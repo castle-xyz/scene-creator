@@ -6,7 +6,7 @@ local HANDLE_DRAW_RADIUS = 12
 
 local SUBTOOLS = {}
 local FUNCTIONS_TO_ADD_TO_SUBTOOLS = {
-    "drawData", "saveDrawing", "addPathData", "clearTempGraphics", "resetTempGraphics", "addTempPathData", "bind", "removePathData", "physicsBodyData", "scaleRotateData", "getPixelScale", "selectedSubtools", "getZoomAmount", "setTempTranslation"
+    "drawData", "saveDrawing", "addPathData", "clearTempGraphics", "resetTempGraphics", "addTempPathData", "bind", "removePathData", "physicsBodyData", "scaleRotateData", "getPixelScale", "selectedSubtools", "getZoomAmount", "setTempTranslation", "drawDataFrame"
 }
 
 function defineDrawSubtool(subtoolSpec)
@@ -197,6 +197,10 @@ function DrawTool:drawData()
     return self._drawData
 end
 
+function DrawTool:drawDataFrame()
+    return self._drawData:currentLayerFrame()
+end
+
 function DrawTool:scaleRotateData()
     return self._scaleRotateData
 end
@@ -381,7 +385,7 @@ function DrawTool:loadLastSave()
     if not self.hasResetViewWidth then
         self.hasResetViewWidth = true
 
-        local bounds = self._drawData:getPathDataBounds()
+        local bounds = self:drawDataFrame():getPathDataBounds()
         local maxBound = 1.0
 
         if math.abs(bounds.minX) > maxBound then

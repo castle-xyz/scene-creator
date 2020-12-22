@@ -12,63 +12,63 @@ function FillTool.handlers:addSubtool()
 end
 
 function FillTool.handlers:onSelected()
-    self:drawData():updatePathsCanvas()
+    self:drawDataFrame():updatePathsCanvas()
 end
 
 function FillTool.handlers:onTouch(component, touchData)
-    for i = #self:drawData():currentPathDataList(), 1, -1 do
-        if self:drawData():currentPathDataList()[i].tovePath:nearest(touchData.touchX, touchData.touchY, self:getRadius()) then
-            if not floatArrayEquals(self:drawData().color, self:drawData():currentPathDataList()[i].color) then
-                self:drawData():currentPathDataList()[i].shouldFill = true
+    for i = #self:drawDataFrame().pathDataList, 1, -1 do
+        if self:drawDataFrame().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, self:getRadius()) then
+            if not floatArrayEquals(self:drawData().color, self:drawDataFrame().pathDataList[i].color) then
+                self:drawDataFrame().pathDataList[i].shouldFill = true
             end
         end
     end
 
-    for i = #self:drawData():currentPathDataList(), 1, -1 do
-        if self:drawData():currentPathDataList()[i].shouldFill then
+    for i = #self:drawDataFrame().pathDataList, 1, -1 do
+        if self:drawDataFrame().pathDataList[i].shouldFill then
             for j = i - 1, 1, -1 do
-                if self:drawData():currentPathDataList()[j].shouldFill then
+                if self:drawDataFrame().pathDataList[j].shouldFill then
                     break
                 end
 
-                if not self:drawData():arePathDatasFloodFillable(self:drawData():currentPathDataList()[j], self:drawData():currentPathDataList()[j + 1]) then
+                if not self:drawData():arePathDatasFloodFillable(self:drawDataFrame().pathDataList[j], self:drawDataFrame().pathDataList[j + 1]) then
                     break
                 end
 
-                self:drawData():currentPathDataList()[j].shouldFill = true
+                self:drawDataFrame().pathDataList[j].shouldFill = true
             end
 
-            for j = i + 1, #self:drawData():currentPathDataList() do
-                if self:drawData():currentPathDataList()[j].shouldFill then
+            for j = i + 1, #self:drawDataFrame().pathDataList do
+                if self:drawDataFrame().pathDataList[j].shouldFill then
                     break
                 end
 
-                if not self:drawData():arePathDatasFloodFillable(self:drawData():currentPathDataList()[j - 1], self:drawData():currentPathDataList()[j]) then
+                if not self:drawData():arePathDatasFloodFillable(self:drawDataFrame().pathDataList[j - 1], self:drawDataFrame().pathDataList[j]) then
                     break
                 end
 
-                self:drawData():currentPathDataList()[j].shouldFill = true
+                self:drawDataFrame().pathDataList[j].shouldFill = true
             end
         end
     end
 
     local filledPath = false
-    for i = #self:drawData():currentPathDataList(), 1, -1 do
-        if self:drawData():currentPathDataList()[i].shouldFill then
-            self:drawData():currentPathDataList()[i].tovePath = nil
-            self:drawData():currentPathDataList()[i].color = util.deepCopyTable(self:drawData().color)
-            self:drawData():currentPathDataList()[i].shouldFill = nil
+    for i = #self:drawDataFrame().pathDataList, 1, -1 do
+        if self:drawDataFrame().pathDataList[i].shouldFill then
+            self:drawDataFrame().pathDataList[i].tovePath = nil
+            self:drawDataFrame().pathDataList[i].color = util.deepCopyTable(self:drawData().color)
+            self:drawDataFrame().pathDataList[i].shouldFill = nil
             filledPath = true
         end
     end
 
     if filledPath then
         self._didChange = true
-        self:drawData():resetGraphics()
+        self:drawDataFrame():resetGraphics()
     else
         -- don't allow filling both path and fill in the same frame.
         -- makes it easier to fill only a path
-        if self:drawData():currentLayerFrame():floodFill(touchData.touchX, touchData.touchY) then
+        if self:drawDataFrame():floodFill(touchData.touchX, touchData.touchY) then
             self._didChange = true
         end
     end

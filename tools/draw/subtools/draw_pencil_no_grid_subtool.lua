@@ -45,8 +45,8 @@ function PencilNoGridTool.handlers:onTouch(component, touchData)
             self._currentPathDataList[i].tovePath = nil
             self:addPathData(self._currentPathDataList[i])
         end
-        self:drawData():resetGraphics()
-        self:drawData():resetFill()
+        self:drawDataFrame():resetGraphics()
+        self:drawDataFrame():resetFill()
         self:drawData():updateBounds()
         self:saveDrawing("freehand pencil", component)
 
