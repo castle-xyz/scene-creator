@@ -18,7 +18,9 @@ end
 function FillTool.handlers:onTouch(component, touchData)
     for i = #self:drawData().pathDataList, 1, -1 do
         if self:drawData().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, self:getRadius()) then
-            self:drawData().pathDataList[i].shouldFill = true
+            if not floatArrayEquals(self:drawData().color, self:drawData().pathDataList[i].color) then
+                self:drawData().pathDataList[i].shouldFill = true
+            end
         end
     end
 

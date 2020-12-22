@@ -624,7 +624,7 @@ local function roundFloatArray(a)
     return a
 end
 
-local function floatArrayEquals(a1, a2)
+function floatArrayEquals(a1, a2)
     if a1 == nil and a2 == nil then
         return true
     end
