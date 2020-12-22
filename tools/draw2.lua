@@ -636,7 +636,7 @@ function DrawTool.handlers:uiData()
     end
 
     actions['onClearArtwork'] = function()
-        self._drawData = DrawData:new()
+        self._drawData:clearFrame()
         self:saveDrawing('clear all artwork', c)
     end
 

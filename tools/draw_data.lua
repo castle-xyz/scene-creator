@@ -828,14 +828,11 @@ function DrawData:updateFramePreview()
 end
 
 function DrawData:selectLayer(layerId)
-    print('selected ' ..layerId)
     self.selectedLayer = layerId
     self:touchLayerData()
 end
 
-function DrawData:addLayer()
-    self.numTotalLayers = self.numTotalLayers + 1
-
+function DrawData:_newFrame()
     local newFrame = {
         pathDataList = {},
         fillImageBounds = {
@@ -851,6 +848,14 @@ function DrawData:addLayer()
         return self
     end
 
+    return newFrame
+end
+
+function DrawData:addLayer()
+    self.numTotalLayers = self.numTotalLayers + 1
+
+    local newFrame = self:_newFrame()
+
     local newLayer = {
         title = 'Layer ' .. self.numTotalLayers,
         frames = {newFrame},
@@ -859,6 +864,10 @@ function DrawData:addLayer()
     table.insert(self.layers, newLayer)
     self.selectedLayer = #self.layers
     self:touchLayerData()
+end
+
+function DrawData:clearFrame()
+    self.layers[self.selectedLayer].frames[self.selectedFrame] = self:_newFrame()
 end
 
 function DrawData:graphics()
