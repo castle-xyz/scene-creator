@@ -4,8 +4,7 @@ local FillTool = defineDrawSubtool {
 }
 
 function FillTool:getRadius()
-    -- don't multiply by zoom amount! want people to be able to fill lines easily
-    return 0.5
+    return 0.5 * self:getZoomAmount()
 end
 
 function FillTool.handlers:addSubtool()

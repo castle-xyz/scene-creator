@@ -6,7 +6,7 @@ local HANDLE_DRAW_RADIUS = 12
 
 local SUBTOOLS = {}
 local FUNCTIONS_TO_ADD_TO_SUBTOOLS = {
-    "drawData", "saveDrawing", "addPathData", "clearTempGraphics", "resetTempGraphics", "addTempPathData", "bind", "removePathData", "physicsBodyData", "scaleRotateData", "getPixelScale", "selectedSubtools", "getZoomAmount"
+    "drawData", "saveDrawing", "addPathData", "clearTempGraphics", "resetTempGraphics", "addTempPathData", "bind", "removePathData", "physicsBodyData", "scaleRotateData", "getPixelScale", "selectedSubtools", "getZoomAmount", "setTempTranslation"
 }
 
 function defineDrawSubtool(subtoolSpec)
@@ -24,6 +24,7 @@ require('tools.draw.subtools.draw_pencil_no_grid_subtool')
 require('tools.draw.subtools.draw_line_subtool')
 require('tools.draw.subtools.draw_pencil_subtool')
 require('tools.draw.subtools.draw_move_subtool')
+require('tools.draw.subtools.draw_move_all_subtool')
 require('tools.draw.subtools.draw_bend_subtool')
 require('tools.draw.subtools.draw_fill_subtool')
 require('tools.draw.subtools.draw_erase_subtool')
@@ -137,6 +138,11 @@ end
 
 -- Methods
 
+function DrawTool:setTempTranslation(x, y)
+    self.tempTranslateX = x
+    self.tempTranslateY = y
+end
+
 function DrawTool:getPixelScale()
     return self.game:getPixelScale()
 end
@@ -151,6 +157,9 @@ end
 
 function DrawTool:addPathData(pathData)
     if pathData.points[1].x ~= pathData.points[2].x or pathData.points[1].y ~= pathData.points[2].y then
+        -- deep copy so that each point is a different object
+        -- otherwise, "move all" will move some points twice
+        pathData = util.deepCopyTable(pathData)
         if not pathData.color then
             pathData.color = util.deepCopyTable(self._drawData.color)
         end
@@ -247,6 +256,7 @@ function DrawTool.handlers:onSetActive()
     self.hasResetViewWidth = false
     self.viewX, self.viewY = 0, 0
     self.viewInContext = false
+    self.tempTranslateX, self.tempTranslateY = 0, 0
 end
 
 function DrawTool.handlers:preUpdate(dt)
@@ -520,8 +530,13 @@ function DrawTool.handlers:drawOverlay()
 
     if self._selectedSubtools.root == 'artwork' then
         love.graphics.setColor(1, 1, 1, 1)
+
+        love.graphics.push()
+        love.graphics.translate(self.tempTranslateX, self.tempTranslateY)
         self._drawData:renderFill()
         self:drawShapes()
+        love.graphics.pop()
+
         self._physicsBodyData:draw()
     end
 
