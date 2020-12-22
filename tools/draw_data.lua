@@ -1,5 +1,6 @@
+require('tools.draw_data_frame')
+
 DrawData = {}
-DrawDataFrame = {}
 local FILL_CANVAS_SIZE = 256
 DRAW_LINE_WIDTH = 0.2
 local DEBUG_FILL_IMAGE_SIZE = false
@@ -392,12 +393,6 @@ function DrawData:updatePathDataRendering(pathData)
     makeSubpathsFromSubpathData(pathData)
 end
 
-function DrawData:cleanUpPaths(frame)
-    for i = 1, #frame.pathDataList do
-        self:updatePathDataRendering(frame.pathDataList[i])
-    end
-end
-
 function DrawData:clone()
     return DrawData:new(self)
 end
@@ -487,6 +482,12 @@ function DrawData:new(obj)
     for l = 1, #newObj.layers do
         for f = 1, #newObj.layers[l].frames do
             local frame = newObj.layers[l].frames[f]
+
+            setmetatable(frame, {__index = DrawDataFrame})
+            frame.parent = function()
+                return newObj
+            end
+
             local newPathDataList = {}
             for i = 1, #frame.pathDataList do
                 local pathData = frame.pathDataList[i]
@@ -515,12 +516,6 @@ function DrawData:new(obj)
     for l = 1, #newObj.layers do
         for f = 1, #newObj.layers[l].frames do
             local frame = newObj.layers[l].frames[f]
-
-            setmetatable(frame, {__index = DrawDataFrame})
-            frame.parent = function()
-                return newObj
-            end
-
             if frame.fillPng then
                 local fileDataString = love.data.decode("string", "base64", frame.fillPng)
                 local fileData = love.filesystem.newFileData(fileDataString, "fill.png")
@@ -627,68 +622,14 @@ function DrawData:migrateV2ToV3()
     self.fillPng = nil
 end
 
+-- TODO this should be a combination of every layer in the default frame
 function DrawData:updateBounds()
-    self.bounds = self:getPathDataBounds()
+    self.bounds = self:currentLayerFrame():getPathDataBounds()
     return self.bounds
 end
 
 function DrawData:getBounds()
     return self.bounds
-end
-
--- should this be combination of all frames?
-function DrawData:getPathDataBounds()
-    -- https://poke1024.github.io/tove2d-api/classes/Graphics.html#Graphics:computeAABB
-    local minX, minY, maxX, maxY = self:graphics():computeAABB()
-
-    -- we still need this because of isTransparent
-    local frame = self:currentLayerFrame()
-    for i = 1, #frame.pathDataList do
-        local pathData = frame.pathDataList[i]
-
-        for j = 1, #pathData.points do
-            local x = pathData.points[j].x
-            local y = pathData.points[j].y
-
-            if minX == -1 or x < minX then
-                minX = x
-            end
-
-            if minY == -1 or y < minY then
-                minY = y
-            end
-
-            if maxX == -1 or x > maxX then
-                maxX = x
-            end
-
-            if maxY == -1 or y > maxY then
-                maxY = y
-            end
-        end
-    end
-
-    return {
-        minX = minX,
-        minY = minY,
-        maxX = maxX,
-        maxY = maxY,
-    }
-end
-
-function DrawData:getPathDataBoundsInPixelCoordinates()
-    local bounds = self:getPathDataBounds()
-
-    return {
-        minX = math.floor(bounds.minX * self.fillPixelsPerUnit),
-        minY = math.floor(bounds.minY * self.fillPixelsPerUnit),
-        maxX = math.ceil(bounds.maxX * self.fillPixelsPerUnit),
-        maxY = math.ceil(bounds.maxY * self.fillPixelsPerUnit),
-    }
-end
-
-function DrawData:resetGraphics()
-    self:currentLayerFrame()._graphicsNeedsReset = true
 end
 
 local function round(num, numDecimalPlaces)
@@ -845,257 +786,8 @@ function DrawData:serialize()
     return data
 end
 
-function DrawData:getFillImageDataSizedToPathBounds()
-    local pathBounds = self:getPathDataBoundsInPixelCoordinates()
-    local width = pathBounds.maxX - pathBounds.minX
-    local height = pathBounds.maxY - pathBounds.minY
-
-    -- imagedata can't have 0 width/height
-    if width < 1 then
-        width = 1
-    end
-    if height < 1 then
-        height = 1
-    end
-
-    if self:currentLayerFrame().fillImageData == nil then
-        self:currentLayerFrame().fillImageData = love.image.newImageData(width, height)
-    elseif self:currentLayerFrame().fillImageData:getWidth() ~= width or self:currentLayerFrame().fillImageData:getHeight() ~= height then
-        local newFillImageData = love.image.newImageData(width, height)
-
-        -- sourceX, sourceY, sourceWidth, sourceHeight, destX, destY
-        newFillImageData:copyImageData(
-            self:currentLayerFrame().fillImageData,
-            0,
-            0,
-            self:currentLayerFrame().fillImageBounds.maxX - self:currentLayerFrame().fillImageBounds.minX,
-            self:currentLayerFrame().fillImageBounds.maxY - self:currentLayerFrame().fillImageBounds.minY,
-            self:currentLayerFrame().fillImageBounds.minX - pathBounds.minX,
-            self:currentLayerFrame().fillImageBounds.minY - pathBounds.minY)
-        self:currentLayerFrame().fillImageData:release()
-        self:currentLayerFrame().fillImageData = newFillImageData
-    end
-
-    self:currentLayerFrame().fillImageBounds = util.deepCopyTable(pathBounds)
-
-    return self:currentLayerFrame().fillImageData
-end
-
-function DrawData:getFillImage(frame)
-    if frame.fillImage ~= nil then
-        return frame.fillImage
-    end
-
-    if frame.fillImageData == nil then
-        return nil
-    end
-
-    frame.fillImage = love.graphics.newImage(frame.fillImageData)
-    frame.fillImage:setFilter('nearest', 'nearest')
-    return frame.fillImage
-end
-
-function DrawData:updateFillImageWithFillImageData()
-    if self:currentLayerFrame().fillImageData == nil then
-        return
-    end
-
-    if self:currentLayerFrame().fillImage ~= nil then
-        if self:currentLayerFrame().fillImage:getWidth() == self:currentLayerFrame().fillImageData:getWidth() and self:currentLayerFrame().fillImage:getHeight() == self:currentLayerFrame().fillImageData:getHeight() then
-            self:currentLayerFrame().fillImage:replacePixels(self:currentLayerFrame().fillImageData)
-            return
-        end
-
-        self:currentLayerFrame().fillImage:release()
-    end
-
-    self:currentLayerFrame().fillImage = love.graphics.newImage(self:currentLayerFrame().fillImageData)
-    self:currentLayerFrame().fillImage:setFilter('nearest', 'nearest')
-end
-
-function DrawData:compressFillCanvas()
-    if self:currentLayerFrame().fillImageData == nil then
-        return
-    end
-
-    if self:currentLayerFrame().fillImageData:isEmpty() then
-        self:currentLayerFrame().fillImageData:release()
-        if self:currentLayerFrame().fillImage ~= nil then
-            self:currentLayerFrame().fillImage:release()
-        end
-
-        self:currentLayerFrame().fillImageData = nil
-        self:currentLayerFrame().fillImage = nil
-    else
-        local minX, minY, maxX, maxY = self:currentLayerFrame().fillImageData:getBounds()
-        local width = maxX - minX + 1
-        local height = maxY - minY + 1
-
-        local newFillImageData = love.image.newImageData(width, height)
-
-        -- sourceX, sourceY, sourceWidth, sourceHeight, destX, destY
-        newFillImageData:copyImageData(
-            self:currentLayerFrame().fillImageData,
-            minX,
-            minY,
-            width,
-            height,
-            0,
-            0)
-
-        if DEBUG_FILL_IMAGE_SIZE then
-            for x = 0, width - 1 do
-                newFillImageData:setPixel(x, 0, 1.0, 0.0, 0.0, 1.0)
-            end
-
-            for y = 0, height - 1 do
-                newFillImageData:setPixel(0, y, 1.0, 0.0, 0.0, 1.0)
-            end
-        end
-
-        self:currentLayerFrame().fillImageData:release()
-        self:currentLayerFrame().fillImageData = newFillImageData
-        self:currentLayerFrame().fillImageBounds.minX = self:currentLayerFrame().fillImageBounds.minX + minX
-        self:currentLayerFrame().fillImageBounds.minY = self:currentLayerFrame().fillImageBounds.minY + minY
-        self:currentLayerFrame().fillImageBounds.maxX = self:currentLayerFrame().fillImageBounds.maxX + minX
-        self:currentLayerFrame().fillImageBounds.maxY = self:currentLayerFrame().fillImageBounds.maxY + minY
-    end
-end
-
-function DrawDataFrame:floodFill(x, y)
-    self:parent():updatePathsCanvas()
-    local pathsImageData = self.pathsCanvas:newImageData()
-
-    local pixelCount = self:parent():getFillImageDataSizedToPathBounds():floodFill(
-        math.floor(x * self:parent().fillPixelsPerUnit - self.fillImageBounds.minX),
-        math.floor(y * self:parent().fillPixelsPerUnit - self.fillImageBounds.minY),
-        pathsImageData,
-        self:parent().color[1],
-        self:parent().color[2],
-        self:parent().color[3],
-        1.0
-    )
-    self:parent():compressFillCanvas()
-    self:parent():updateFillImageWithFillImageData()
-
-    return pixelCount > 0
-end
-
-function DrawData:floodClear(x, y, radius)
-    self:updatePathsCanvas()
-    local pathsImageData = self:currentLayerFrame().pathsCanvas:newImageData()
-
-    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFillErase(
-        math.floor(x * self.fillPixelsPerUnit - self:currentLayerFrame().fillImageBounds.minX),
-        math.floor(y * self.fillPixelsPerUnit - self:currentLayerFrame().fillImageBounds.minY),
-        math.floor(radius * self.fillPixelsPerUnit),
-        pathsImageData
-    )
-    self:compressFillCanvas()
-    self:updateFillImageWithFillImageData()
-
-    return pixelCount > 0
-end
-
-function DrawData:resetFill()
-    self:cleanUpPaths(self:currentLayerFrame())
-    self:updatePathsCanvas()
-    local pathsImageData = self:currentLayerFrame().pathsCanvas:newImageData()
-
-    self:getFillImageDataSizedToPathBounds():updateFloodFillForNewPaths(pathsImageData)
-    self:compressFillCanvas()
-    self:updateFillImageWithFillImageData()
-end
-
-function DrawData:updatePathsCanvas()
-    local bounds = self:getPathDataBoundsInPixelCoordinates()
-    local width = bounds.maxX - bounds.minX
-    local height = bounds.maxY - bounds.minY
-
-    -- canvas can't have 0 width/height
-    if width < 1 then
-        width = 1
-    end
-    if height < 1 then
-        height = 1
-    end
-
-    if self:currentLayerFrame().pathsCanvas == nil or self:currentLayerFrame().pathsCanvas:getWidth() ~= width or self:currentLayerFrame().pathsCanvas:getHeight() ~= height then
-        if self:currentLayerFrame().pathsCanvas ~= nil then
-            self:currentLayerFrame().pathsCanvas:release()
-        end
-
-        self:currentLayerFrame().pathsCanvas = love.graphics.newCanvas(
-            width,
-            height,
-            {
-                dpiscale = 1,
-                msaa = 4
-            }
-        )
-    end
-
-    self:currentLayerFrame().pathsCanvas:renderTo(
-        function()
-            love.graphics.push("all")
-
-            love.graphics.origin()
-            love.graphics.translate(-bounds.minX, -bounds.minY)
-            love.graphics.scale(self.fillPixelsPerUnit)
-
-            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
-            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
-            self:graphics():draw()
-
-            love.graphics.pop()
-        end
-    )
-end
-
-function DrawData:renderPreviewPng(size)
-    local previewCanvas = love.graphics.newCanvas(
-        size,
-        size,
-        {
-            dpiscale = 1,
-            msaa = 4
-        }
-    )
-
-    previewCanvas:renderTo(
-        function()
-            local pathBounds = self:getPathDataBounds()
-
-            local width = pathBounds.maxX - pathBounds.minX
-            local height = pathBounds.maxY - pathBounds.minY
-
-            local maxDimension = width
-            if height > maxDimension then
-                maxDimension = height
-            end
-
-            local widthPadding = (maxDimension - width) / 2.0
-            local heightPadding = (maxDimension - height) / 2.0
-
-            local padding = maxDimension * 0.025
-
-            love.graphics.push("all")
-
-            love.graphics.origin()
-            love.graphics.scale(size / (maxDimension * 1.05))
-            love.graphics.translate(padding - pathBounds.minX + widthPadding, padding - pathBounds.minY + heightPadding)
-
-            love.graphics.clear(0.0, 0.0, 0.0, 0.0)
-            love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
-            self:renderFill()
-            self:renderPaths()
-
-            love.graphics.pop()
-        end
-    )
-
-    local fileData = previewCanvas:newImageData():encode("png")
-    return love.data.encode("string", "base64", fileData:getString())
+function DrawData:graphics()
+    return self:currentLayerFrame():graphics()
 end
 
 function DrawData:preload()
@@ -1108,46 +800,19 @@ function DrawData:render()
 end
 
 function DrawData:renderFill()
-
-    --[[if self:currentLayerFrame().pathsCanvas ~= nil then
-        local bounds = self:getPathDataBoundsInPixelCoordinates()
-        local pathsImageData = self:currentLayerFrame().pathsCanvas:newImageData()
-        local pathsImage = love.graphics.newImage(pathsImageData)
-        love.graphics.draw(pathsImage, bounds.minX / self.fillPixelsPerUnit, bounds.minY / self.fillPixelsPerUnit, 0.0, 1.0 / self.fillPixelsPerUnit, 1.0 / self.fillPixelsPerUnit)
-    end]]--
-
     self:forEachLayer(function (frame)
-        local fillImage = self:getFillImage(frame)
-        if fillImage ~= nil then
-            love.graphics.draw(fillImage, frame.fillImageBounds.minX / self.fillPixelsPerUnit, frame.fillImageBounds.minY / self.fillPixelsPerUnit, 0.0, 1.0 / self.fillPixelsPerUnit, 1.0 / self.fillPixelsPerUnit)
-        end
+        frame:renderFill()
     end)
+end
+
+function DrawData:renderPreviewPng(size)
+    return self:currentLayerFrame():renderPreviewPng(size)
 end
 
 function DrawData:renderPaths()
     self:forEachLayer(function (frame)
-        self:graphicsForFrame(frame):draw()
+        frame:graphics():draw()
     end)
-end
-
-function DrawData:graphics()
-    return self:graphicsForFrame(self:currentLayerFrame())
-end
-
-function DrawData:graphicsForFrame(frame)
-    if frame._graphicsNeedsReset then
-        frame._graphicsNeedsReset = false
-        self:cleanUpPaths(frame)
-
-        frame._graphics = tove.newGraphics()
-        frame._graphics:setDisplay("mesh", 1024)
-
-        for i = 1, #frame.pathDataList do
-            frame._graphics:addPath(frame.pathDataList[i].tovePath)
-        end
-    end
-    
-    return frame._graphics
 end
 
 function DrawData:clearGraphics()

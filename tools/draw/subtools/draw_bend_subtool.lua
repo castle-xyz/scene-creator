@@ -18,11 +18,11 @@ function BendTool.handlers:onTouch(component, touchData)
         }
         self._isUsingBendPoint = false
 
-        for i = 1, #self:drawData():currentPathDataList() do
-            if not self:drawData():currentPathDataList()[i].isFreehand and self:drawData():currentPathDataList()[i].tovePath:nearest(touchData.touchX, touchData.touchY, 0.5 * self:getZoomAmount()) then
-                table.insert(self._grabbedPaths, self:drawData():currentPathDataList()[i])
-                self:removePathData(self:drawData():currentPathDataList()[i])
-                self:drawData():resetGraphics()
+        for i = 1, #self:drawDataFrame().pathDataList do
+            if not self:drawDataFrame().pathDataList[i].isFreehand and self:drawDataFrame().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, 0.5 * self:getZoomAmount()) then
+                table.insert(self._grabbedPaths, self:drawDataFrame().pathDataList[i])
+                self:removePathData(self:drawDataFrame().pathDataList[i])
+                self:drawDataFrame():resetGraphics()
                 break
             end
         end
@@ -60,8 +60,8 @@ function BendTool.handlers:onTouch(component, touchData)
 
             self:addPathData(self._grabbedPaths[1])
 
-            self:drawData():resetFill()
-            self:drawData():resetGraphics()
+            self:drawDataFrame():resetFill()
+            self:drawDataFrame():resetGraphics()
             self:drawData():updateBounds()
             self:saveDrawing("bend", component)
         end

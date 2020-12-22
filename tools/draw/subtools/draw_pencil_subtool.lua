@@ -59,8 +59,8 @@ function PencilTool.handlers:onTouch(component, touchData)
             newPathDataList[i].tovePath = nil
             self:addPathData(newPathDataList[i])
         end
-        self:drawData():resetGraphics()
-        self:drawData():resetFill()
+        self:drawDataFrame():resetGraphics()
+        self:drawDataFrame():resetFill()
         self:drawData():updateBounds()
         self:saveDrawing("pencil", component)
 

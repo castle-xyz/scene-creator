@@ -11,14 +11,14 @@ function MoveTool.handlers:onTouch(component, touchData)
     if self._grabbedPaths == nil then
         self._grabbedPaths = {}
 
-        for i = 1, #self:drawData():currentPathDataList() do
-            if not self:drawData():currentPathDataList()[i].isFreehand then
-                for p = 1, #self:drawData():currentPathDataList()[i].points do
-                    local distance = math.sqrt(math.pow(touchData.touchX - self:drawData():currentPathDataList()[i].points[p].x, 2.0) + math.pow(touchData.touchY - self:drawData():currentPathDataList()[i].points[p].y, 2.0))
+        for i = 1, #self:drawDataFrame().pathDataList do
+            if not self:drawDataFrame().pathDataList[i].isFreehand then
+                for p = 1, #self:drawDataFrame().pathDataList[i].points do
+                    local distance = math.sqrt(math.pow(touchData.touchX - self:drawDataFrame().pathDataList[i].points[p].x, 2.0) + math.pow(touchData.touchY - self:drawDataFrame().pathDataList[i].points[p].y, 2.0))
 
                     if distance < self:drawData().scale * 0.05 then
-                        self:drawData():currentPathDataList()[i].grabPointIndex = p
-                        table.insert(self._grabbedPaths, self:drawData():currentPathDataList()[i])
+                        self:drawDataFrame().pathDataList[i].grabPointIndex = p
+                        table.insert(self._grabbedPaths, self:drawDataFrame().pathDataList[i])
                         break
                     end
                 end
@@ -30,9 +30,9 @@ function MoveTool.handlers:onTouch(component, touchData)
         end
 
         if #self._grabbedPaths == 0 then
-            for i = 1, #self:drawData():currentPathDataList() do
-                if not self:drawData():currentPathDataList()[i].isFreehand then
-                    local pathData = self:drawData():currentPathDataList()[i]
+            for i = 1, #self:drawDataFrame().pathDataList do
+                if not self:drawDataFrame().pathDataList[i].isFreehand then
+                    local pathData = self:drawDataFrame().pathDataList[i]
                     local distance, t, subpath = pathData.tovePath:nearest(touchData.touchX, touchData.touchY, 0.5 * self:getZoomAmount())
                     if subpath then
                         local pointX, pointY = subpath:position(t)
@@ -70,7 +70,7 @@ function MoveTool.handlers:onTouch(component, touchData)
         end
 
         if #self._grabbedPaths > 0 then
-            self:drawData():resetGraphics()
+            self:drawDataFrame():resetGraphics()
         end
     end
 
@@ -87,8 +87,8 @@ function MoveTool.handlers:onTouch(component, touchData)
                 self:addPathData(self._grabbedPaths[i])
             end
 
-            self:drawData():resetGraphics()
-            self:drawData():resetFill()
+            self:drawDataFrame():resetGraphics()
+            self:drawDataFrame():resetFill()
             self:drawData():updateBounds()
             self:saveDrawing("move", component)
         end
