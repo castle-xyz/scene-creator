@@ -16,48 +16,48 @@ function FillTool.handlers:onSelected()
 end
 
 function FillTool.handlers:onTouch(component, touchData)
-    for i = #self:drawData().pathDataList, 1, -1 do
-        if self:drawData().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, self:getRadius()) then
-            if not floatArrayEquals(self:drawData().color, self:drawData().pathDataList[i].color) then
-                self:drawData().pathDataList[i].shouldFill = true
+    for i = #self:drawData():currentPathDataList(), 1, -1 do
+        if self:drawData():currentPathDataList()[i].tovePath:nearest(touchData.touchX, touchData.touchY, self:getRadius()) then
+            if not floatArrayEquals(self:drawData().color, self:drawData():currentPathDataList()[i].color) then
+                self:drawData():currentPathDataList()[i].shouldFill = true
             end
         end
     end
 
-    for i = #self:drawData().pathDataList, 1, -1 do
-        if self:drawData().pathDataList[i].shouldFill then
+    for i = #self:drawData():currentPathDataList(), 1, -1 do
+        if self:drawData():currentPathDataList()[i].shouldFill then
             for j = i - 1, 1, -1 do
-                if self:drawData().pathDataList[j].shouldFill then
+                if self:drawData():currentPathDataList()[j].shouldFill then
                     break
                 end
 
-                if not self:drawData():arePathDatasFloodFillable(self:drawData().pathDataList[j], self:drawData().pathDataList[j + 1]) then
+                if not self:drawData():arePathDatasFloodFillable(self:drawData():currentPathDataList()[j], self:drawData():currentPathDataList()[j + 1]) then
                     break
                 end
 
-                self:drawData().pathDataList[j].shouldFill = true
+                self:drawData():currentPathDataList()[j].shouldFill = true
             end
 
-            for j = i + 1, #self:drawData().pathDataList do
-                if self:drawData().pathDataList[j].shouldFill then
+            for j = i + 1, #self:drawData():currentPathDataList() do
+                if self:drawData():currentPathDataList()[j].shouldFill then
                     break
                 end
 
-                if not self:drawData():arePathDatasFloodFillable(self:drawData().pathDataList[j - 1], self:drawData().pathDataList[j]) then
+                if not self:drawData():arePathDatasFloodFillable(self:drawData():currentPathDataList()[j - 1], self:drawData():currentPathDataList()[j]) then
                     break
                 end
 
-                self:drawData().pathDataList[j].shouldFill = true
+                self:drawData():currentPathDataList()[j].shouldFill = true
             end
         end
     end
 
     local filledPath = false
-    for i = #self:drawData().pathDataList, 1, -1 do
-        if self:drawData().pathDataList[i].shouldFill then
-            self:drawData().pathDataList[i].tovePath = nil
-            self:drawData().pathDataList[i].color = util.deepCopyTable(self:drawData().color)
-            self:drawData().pathDataList[i].shouldFill = nil
+    for i = #self:drawData():currentPathDataList(), 1, -1 do
+        if self:drawData():currentPathDataList()[i].shouldFill then
+            self:drawData():currentPathDataList()[i].tovePath = nil
+            self:drawData():currentPathDataList()[i].color = util.deepCopyTable(self:drawData().color)
+            self:drawData():currentPathDataList()[i].shouldFill = nil
             filledPath = true
         end
     end
@@ -68,7 +68,7 @@ function FillTool.handlers:onTouch(component, touchData)
     else
         -- don't allow filling both path and fill in the same frame.
         -- makes it easier to fill only a path
-        if self:drawData():floodFill(touchData.touchX, touchData.touchY) then
+        if self:drawData():currentLayerFrame():floodFill(touchData.touchX, touchData.touchY) then
             self._didChange = true
         end
     end

@@ -164,7 +164,7 @@ function DrawTool:addPathData(pathData)
         if not pathData.color then
             pathData.color = util.deepCopyTable(self._drawData.color)
         end
-        table.insert(self._drawData.pathDataList, pathData)
+        table.insert(self._drawData:currentPathDataList(), pathData)
     end
 end
 
@@ -177,9 +177,9 @@ function DrawTool:addTempPathData(pathData)
 end
 
 function DrawTool:removePathData(pathData)
-    for i = #self._drawData.pathDataList, 1, -1 do
-        if self._drawData.pathDataList[i] == pathData then
-            table.remove(self._drawData.pathDataList, i)
+    for i = #self._drawData:currentPathDataList(), 1, -1 do
+        if self._drawData:currentPathDataList()[i] == pathData then
+            table.remove(self._drawData:currentPathDataList(), i)
         end
     end
 end
@@ -546,11 +546,11 @@ function DrawTool.handlers:drawOverlay()
     if self._selectedSubtools.root == "artwork" and self._selectedSubtools.artwork == "artwork_move" and self._selectedSubtools.artwork_move == "move" then
         local movePoints = {}
 
-        for i = 1, #self._drawData.pathDataList do
-            if not self._drawData.pathDataList[i].isFreehand then
-                for p = 1, #self._drawData.pathDataList[i].points do
-                    table.insert(movePoints, self._drawData.pathDataList[i].points[p].x)
-                    table.insert(movePoints, self._drawData.pathDataList[i].points[p].y)
+        for i = 1, #self._drawData:currentPathDataList() do
+            if not self._drawData:currentPathDataList()[i].isFreehand then
+                for p = 1, #self._drawData:currentPathDataList()[i].points do
+                    table.insert(movePoints, self._drawData:currentPathDataList()[i].points[p].x)
+                    table.insert(movePoints, self._drawData:currentPathDataList()[i].points[p].y)
                 end
             end
         end

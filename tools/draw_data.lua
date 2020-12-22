@@ -1,4 +1,5 @@
 DrawData = {}
+DrawDataFrame = {}
 local FILL_CANVAS_SIZE = 256
 DRAW_LINE_WIDTH = 0.2
 local DEBUG_FILL_IMAGE_SIZE = false
@@ -391,14 +392,36 @@ function DrawData:updatePathDataRendering(pathData)
     makeSubpathsFromSubpathData(pathData)
 end
 
-function DrawData:cleanUpPaths()
-    for i = 1, #self.pathDataList do
-        self:updatePathDataRendering(self.pathDataList[i])
+function DrawData:cleanUpPaths(frame)
+    for i = 1, #frame.pathDataList do
+        self:updatePathDataRendering(frame.pathDataList[i])
     end
 end
 
 function DrawData:clone()
     return DrawData:new(self)
+end
+
+function DrawData:currentLayerFrame()
+    return self.layers[self._currentLayer].frames[self._currentFrame]
+end
+
+function DrawData:currentPathDataList()
+    return self:currentLayerFrame().pathDataList
+end
+
+function DrawData:forEachLayer(fn)
+    for l = 1, #self.layers do
+        fn(self.layers[l].frames[self._currentFrame])
+    end
+end
+
+function DrawData:forEachFrame(fn)
+    for l = 1, #self.layers do
+        for f = 1, #self.layers[l].frames do
+            fn(self.layers[l].frames[f])
+        end
+    end
 end
 
 function DrawData:new(obj)
@@ -429,41 +452,31 @@ function DrawData:new(obj)
         fillPng = obj.fillPng or nil,
         version = obj.version or nil,
         fillPixelsPerUnit = obj.fillPixelsPerUnit or 25.6,
-        bounds =  obj.bounds or {
+        bounds = obj.bounds or {
             maxX = 0,
             maxY = 0,
             minX = 0,
             minY = 0
         },
+        layers = obj.layers or {},
+        _currentLayer = 1,
+        _currentFrame = 1,
     }
 
-    
-    local newPathDataList = {}
-    for i = 1, #newObj.pathDataList do
-        local pathData = newObj.pathDataList[i]
-        if #pathData.points > 2 then
-            local pathData = util.deepCopyTable(pathData)
-            pathData.subpathDataList = nil
-            pathData.tovePath = nil
-
-            for j = 1, #pathData.points - 1 do
-                local newPathData = util.deepCopyTable(pathData)
-                newPathData.points = {pathData.points[j], pathData.points[j + 1]}
-
-                table.insert(newPathDataList, newPathData)
-            end
-        else
-            table.insert(newPathDataList, pathData)
+    for l = 1, #newObj.layers do
+        for f = 1, #newObj.layers[l].frames do
+            local frame = newObj.layers[l].frames[f]
+            frame.pathsCanvas = nil
+            frame.fillImageData = nil
+            frame.fillImage = nil
         end
     end
 
-    newObj.pathDataList = newPathDataList
-
-
-
-
     setmetatable(newObj, self)
     self.__index = self
+
+    newObj:migrateV1ToV2()
+    newObj:migrateV2ToV3()
 
     newObj:clearGraphics()
     newObj = util.deepCopyTable(newObj)
@@ -471,13 +484,49 @@ function DrawData:new(obj)
     setmetatable(newObj, self)
     self.__index = self
 
-    newObj:migrateV1ToV2()
+    for l = 1, #newObj.layers do
+        for f = 1, #newObj.layers[l].frames do
+            local frame = newObj.layers[l].frames[f]
+            local newPathDataList = {}
+            for i = 1, #frame.pathDataList do
+                local pathData = frame.pathDataList[i]
+                if #pathData.points > 2 then
+                    local pathData = util.deepCopyTable(pathData)
+                    pathData.subpathDataList = nil
+                    pathData.tovePath = nil
+
+                    for j = 1, #pathData.points - 1 do
+                        local newPathData = util.deepCopyTable(pathData)
+                        newPathData.points = {pathData.points[j], pathData.points[j + 1]}
+
+                        table.insert(newPathDataList, newPathData)
+                    end
+                else
+                    table.insert(newPathDataList, pathData)
+                end
+            end
+
+            frame.pathDataList = newPathDataList
+        end
+    end
+    
     newObj:graphics()
 
-    if obj.fillPng then
-        local fileDataString = love.data.decode("string", "base64", obj.fillPng)
-        local fileData = love.filesystem.newFileData(fileDataString, "fill.png")
-        newObj.fillImageData = love.image.newImageData(fileData)
+    for l = 1, #newObj.layers do
+        for f = 1, #newObj.layers[l].frames do
+            local frame = newObj.layers[l].frames[f]
+
+            setmetatable(frame, {__index = DrawDataFrame})
+            frame.parent = function()
+                return newObj
+            end
+
+            if frame.fillPng then
+                local fileDataString = love.data.decode("string", "base64", frame.fillPng)
+                local fileData = love.filesystem.newFileData(fileDataString, "fill.png")
+                frame.fillImageData = love.image.newImageData(fileData)
+            end
+        end
     end
 
     return newObj
@@ -546,6 +595,38 @@ function DrawData:migrateV1ToV2()
     table.insert(self.pathDataList, boundsPathData2)
 end
 
+function DrawData:migrateV2ToV3()
+    if self.version >= 3 then
+        return
+    end
+
+    self.version = 3
+
+    self.frames = 1
+    self.layers = {{
+        title = "Layer 1",
+        frames = {util.deepCopyTable({
+            _graphics = nil,
+            _graphicsNeedsReset = true,
+            pathDataList = self.pathDataList,
+            pathsCanvas = self.pathsCanvas,
+            fillImageData = self.fillImageData,
+            fillImage = self.fillImage,
+            fillImageBounds = self.fillImageBounds,
+            fillCanvasSize = self.fillCanvasSize,
+            fillPng = self.fillPng,
+        })}
+    }}
+
+    self.pathDataList = nil
+    self.pathsCanvas = nil
+    self.fillImageData = nil
+    self.fillImage = nil
+    self.fillImageBounds = nil
+    self.fillCanvasSize = nil
+    self.fillPng = nil
+end
+
 function DrawData:updateBounds()
     self.bounds = self:getPathDataBounds()
     return self.bounds
@@ -555,13 +636,15 @@ function DrawData:getBounds()
     return self.bounds
 end
 
+-- should this be combination of all frames?
 function DrawData:getPathDataBounds()
     -- https://poke1024.github.io/tove2d-api/classes/Graphics.html#Graphics:computeAABB
     local minX, minY, maxX, maxY = self:graphics():computeAABB()
 
     -- we still need this because of isTransparent
-    for i = 1, #self.pathDataList do
-        local pathData = self.pathDataList[i]
+    local frame = self:currentLayerFrame()
+    for i = 1, #frame.pathDataList do
+        local pathData = frame.pathDataList[i]
 
         for j = 1, #pathData.points do
             local x = pathData.points[j].x
@@ -605,7 +688,7 @@ function DrawData:getPathDataBoundsInPixelCoordinates()
 end
 
 function DrawData:resetGraphics()
-    self._graphicsNeedsReset = true
+    self:currentLayerFrame()._graphicsNeedsReset = true
 end
 
 local function round(num, numDecimalPlaces)
@@ -702,42 +785,61 @@ function DrawData:serialize()
         lineColor = self.lineColor,
         gridSize = self.gridSize,
         scale = self.scale,
-        fillImageBounds = self.fillImageBounds,
-        fillCanvasSize = self.fillCanvasSize,
         version = self.version,
         fillPixelsPerUnit = self.fillPixelsPerUnit,
         bounds = self.bounds,
+        layers = {},
     }
 
-    local lastSerializedPathData = nil
-    for i = 1, #self.pathDataList do
-        local pathData = self.pathDataList[i]
-
-        local serializedPathData = {
-            points = util.deepCopyTable(pathData.points),
-            style = pathData.style,
-            bendPoint = roundFloatArray(pathData.bendPoint),
-            isFreehand = pathData.isFreehand,
-            color = roundFloatArray(pathData.color),
-            isTransparent = pathData.isTransparent,
+    for l = 1, #self.layers do
+        local layerData = {
+            title = self.layers[l].title,
+            frames = {},
         }
 
-        for j = 1, #serializedPathData.points do
-            serializedPathData.points[j].x = round(serializedPathData.points[j].x, 4)
-            serializedPathData.points[j].y = round(serializedPathData.points[j].y, 4)
+        for f = 1, #self.layers[l].frames do
+            local frame = self.layers[l].frames[f]
+            local frameData = {
+                pathDataList = {},
+                fillImageBounds = frame.fillImageBounds,
+                fillCanvasSize = frame.fillCanvasSize,
+            }
+
+            local lastSerializedPathData = nil
+            for i = 1, #frame.pathDataList do
+                local pathData = frame.pathDataList[i]
+        
+                local serializedPathData = {
+                    points = util.deepCopyTable(pathData.points),
+                    style = pathData.style,
+                    bendPoint = roundFloatArray(pathData.bendPoint),
+                    isFreehand = pathData.isFreehand,
+                    color = roundFloatArray(pathData.color),
+                    isTransparent = pathData.isTransparent,
+                }
+        
+                for j = 1, #serializedPathData.points do
+                    serializedPathData.points[j].x = round(serializedPathData.points[j].x, 4)
+                    serializedPathData.points[j].y = round(serializedPathData.points[j].y, 4)
+                end
+        
+                if lastSerializedPathData ~= nil and self:arePathDatasMergable(lastSerializedPathData, serializedPathData) then
+                    table.insert(lastSerializedPathData.points, serializedPathData.points[2])
+                else
+                    table.insert(frameData.pathDataList, serializedPathData)
+                    lastSerializedPathData = serializedPathData
+                end
+            end
+        
+            if frame.fillImageData then
+                local fileData = frame.fillImageData:encode("png")
+                frameData.fillPng = love.data.encode("string", "base64", fileData:getString())
+            end
+
+            table.insert(layerData.frames, frameData)
         end
 
-        if lastSerializedPathData ~= nil and self:arePathDatasMergable(lastSerializedPathData, serializedPathData) then
-            table.insert(lastSerializedPathData.points, serializedPathData.points[2])
-        else
-            table.insert(data.pathDataList, serializedPathData)
-            lastSerializedPathData = serializedPathData
-        end
-    end
-
-    if self.fillImageData then
-        local fileData = self.fillImageData:encode("png")
-        data.fillPng = love.data.encode("string", "base64", fileData:getString())
+        table.insert(data.layers, layerData)
     end
 
     return data
@@ -756,76 +858,76 @@ function DrawData:getFillImageDataSizedToPathBounds()
         height = 1
     end
 
-    if self.fillImageData == nil then
-        self.fillImageData = love.image.newImageData(width, height)
-    elseif self.fillImageData:getWidth() ~= width or self.fillImageData:getHeight() ~= height then
+    if self:currentLayerFrame().fillImageData == nil then
+        self:currentLayerFrame().fillImageData = love.image.newImageData(width, height)
+    elseif self:currentLayerFrame().fillImageData:getWidth() ~= width or self:currentLayerFrame().fillImageData:getHeight() ~= height then
         local newFillImageData = love.image.newImageData(width, height)
 
         -- sourceX, sourceY, sourceWidth, sourceHeight, destX, destY
         newFillImageData:copyImageData(
-            self.fillImageData,
+            self:currentLayerFrame().fillImageData,
             0,
             0,
-            self.fillImageBounds.maxX - self.fillImageBounds.minX,
-            self.fillImageBounds.maxY - self.fillImageBounds.minY,
-            self.fillImageBounds.minX - pathBounds.minX,
-            self.fillImageBounds.minY - pathBounds.minY)
-        self.fillImageData:release()
-        self.fillImageData = newFillImageData
+            self:currentLayerFrame().fillImageBounds.maxX - self:currentLayerFrame().fillImageBounds.minX,
+            self:currentLayerFrame().fillImageBounds.maxY - self:currentLayerFrame().fillImageBounds.minY,
+            self:currentLayerFrame().fillImageBounds.minX - pathBounds.minX,
+            self:currentLayerFrame().fillImageBounds.minY - pathBounds.minY)
+        self:currentLayerFrame().fillImageData:release()
+        self:currentLayerFrame().fillImageData = newFillImageData
     end
 
-    self.fillImageBounds = util.deepCopyTable(pathBounds)
+    self:currentLayerFrame().fillImageBounds = util.deepCopyTable(pathBounds)
 
-    return self.fillImageData
+    return self:currentLayerFrame().fillImageData
 end
 
-function DrawData:getFillImage()
-    if self.fillImage ~= nil then
-        return self.fillImage
+function DrawData:getFillImage(frame)
+    if frame.fillImage ~= nil then
+        return frame.fillImage
     end
 
-    if self.fillImageData == nil then
+    if frame.fillImageData == nil then
         return nil
     end
 
-    self.fillImage = love.graphics.newImage(self.fillImageData)
-    self.fillImage:setFilter('nearest', 'nearest')
-    return self.fillImage
+    frame.fillImage = love.graphics.newImage(frame.fillImageData)
+    frame.fillImage:setFilter('nearest', 'nearest')
+    return frame.fillImage
 end
 
 function DrawData:updateFillImageWithFillImageData()
-    if self.fillImageData == nil then
+    if self:currentLayerFrame().fillImageData == nil then
         return
     end
 
-    if self.fillImage ~= nil then
-        if self.fillImage:getWidth() == self.fillImageData:getWidth() and self.fillImage:getHeight() == self.fillImageData:getHeight() then
-            self.fillImage:replacePixels(self.fillImageData)
+    if self:currentLayerFrame().fillImage ~= nil then
+        if self:currentLayerFrame().fillImage:getWidth() == self:currentLayerFrame().fillImageData:getWidth() and self:currentLayerFrame().fillImage:getHeight() == self:currentLayerFrame().fillImageData:getHeight() then
+            self:currentLayerFrame().fillImage:replacePixels(self:currentLayerFrame().fillImageData)
             return
         end
 
-        self.fillImage:release()
+        self:currentLayerFrame().fillImage:release()
     end
 
-    self.fillImage = love.graphics.newImage(self.fillImageData)
-    self.fillImage:setFilter('nearest', 'nearest')
+    self:currentLayerFrame().fillImage = love.graphics.newImage(self:currentLayerFrame().fillImageData)
+    self:currentLayerFrame().fillImage:setFilter('nearest', 'nearest')
 end
 
 function DrawData:compressFillCanvas()
-    if self.fillImageData == nil then
+    if self:currentLayerFrame().fillImageData == nil then
         return
     end
 
-    if self.fillImageData:isEmpty() then
-        self.fillImageData:release()
-        if self.fillImage ~= nil then
-            self.fillImage:release()
+    if self:currentLayerFrame().fillImageData:isEmpty() then
+        self:currentLayerFrame().fillImageData:release()
+        if self:currentLayerFrame().fillImage ~= nil then
+            self:currentLayerFrame().fillImage:release()
         end
 
-        self.fillImageData = nil
-        self.fillImage = nil
+        self:currentLayerFrame().fillImageData = nil
+        self:currentLayerFrame().fillImage = nil
     else
-        local minX, minY, maxX, maxY = self.fillImageData:getBounds()
+        local minX, minY, maxX, maxY = self:currentLayerFrame().fillImageData:getBounds()
         local width = maxX - minX + 1
         local height = maxY - minY + 1
 
@@ -833,7 +935,7 @@ function DrawData:compressFillCanvas()
 
         -- sourceX, sourceY, sourceWidth, sourceHeight, destX, destY
         newFillImageData:copyImageData(
-            self.fillImageData,
+            self:currentLayerFrame().fillImageData,
             minX,
             minY,
             width,
@@ -851,41 +953,41 @@ function DrawData:compressFillCanvas()
             end
         end
 
-        self.fillImageData:release()
-        self.fillImageData = newFillImageData
-        self.fillImageBounds.minX = self.fillImageBounds.minX + minX
-        self.fillImageBounds.minY = self.fillImageBounds.minY + minY
-        self.fillImageBounds.maxX = self.fillImageBounds.maxX + minX
-        self.fillImageBounds.maxY = self.fillImageBounds.maxY + minY
+        self:currentLayerFrame().fillImageData:release()
+        self:currentLayerFrame().fillImageData = newFillImageData
+        self:currentLayerFrame().fillImageBounds.minX = self:currentLayerFrame().fillImageBounds.minX + minX
+        self:currentLayerFrame().fillImageBounds.minY = self:currentLayerFrame().fillImageBounds.minY + minY
+        self:currentLayerFrame().fillImageBounds.maxX = self:currentLayerFrame().fillImageBounds.maxX + minX
+        self:currentLayerFrame().fillImageBounds.maxY = self:currentLayerFrame().fillImageBounds.maxY + minY
     end
 end
 
-function DrawData:floodFill(x, y)
-    self:updatePathsCanvas()
+function DrawDataFrame:floodFill(x, y)
+    self:parent():updatePathsCanvas()
     local pathsImageData = self.pathsCanvas:newImageData()
 
-    local pixelCount = self:getFillImageDataSizedToPathBounds():floodFill(
-        math.floor(x * self.fillPixelsPerUnit - self.fillImageBounds.minX),
-        math.floor(y * self.fillPixelsPerUnit - self.fillImageBounds.minY),
+    local pixelCount = self:parent():getFillImageDataSizedToPathBounds():floodFill(
+        math.floor(x * self:parent().fillPixelsPerUnit - self.fillImageBounds.minX),
+        math.floor(y * self:parent().fillPixelsPerUnit - self.fillImageBounds.minY),
         pathsImageData,
-        self.color[1],
-        self.color[2],
-        self.color[3],
+        self:parent().color[1],
+        self:parent().color[2],
+        self:parent().color[3],
         1.0
     )
-    self:compressFillCanvas()
-    self:updateFillImageWithFillImageData()
+    self:parent():compressFillCanvas()
+    self:parent():updateFillImageWithFillImageData()
 
     return pixelCount > 0
 end
 
 function DrawData:floodClear(x, y, radius)
     self:updatePathsCanvas()
-    local pathsImageData = self.pathsCanvas:newImageData()
+    local pathsImageData = self:currentLayerFrame().pathsCanvas:newImageData()
 
     local pixelCount = self:getFillImageDataSizedToPathBounds():floodFillErase(
-        math.floor(x * self.fillPixelsPerUnit - self.fillImageBounds.minX),
-        math.floor(y * self.fillPixelsPerUnit - self.fillImageBounds.minY),
+        math.floor(x * self.fillPixelsPerUnit - self:currentLayerFrame().fillImageBounds.minX),
+        math.floor(y * self.fillPixelsPerUnit - self:currentLayerFrame().fillImageBounds.minY),
         math.floor(radius * self.fillPixelsPerUnit),
         pathsImageData
     )
@@ -896,9 +998,9 @@ function DrawData:floodClear(x, y, radius)
 end
 
 function DrawData:resetFill()
-    self:cleanUpPaths()
+    self:cleanUpPaths(self:currentLayerFrame())
     self:updatePathsCanvas()
-    local pathsImageData = self.pathsCanvas:newImageData()
+    local pathsImageData = self:currentLayerFrame().pathsCanvas:newImageData()
 
     self:getFillImageDataSizedToPathBounds():updateFloodFillForNewPaths(pathsImageData)
     self:compressFillCanvas()
@@ -918,12 +1020,12 @@ function DrawData:updatePathsCanvas()
         height = 1
     end
 
-    if self.pathsCanvas == nil or self.pathsCanvas:getWidth() ~= width or self.pathsCanvas:getHeight() ~= height then
-        if self.pathsCanvas ~= nil then
-            self.pathsCanvas:release()
+    if self:currentLayerFrame().pathsCanvas == nil or self:currentLayerFrame().pathsCanvas:getWidth() ~= width or self:currentLayerFrame().pathsCanvas:getHeight() ~= height then
+        if self:currentLayerFrame().pathsCanvas ~= nil then
+            self:currentLayerFrame().pathsCanvas:release()
         end
 
-        self.pathsCanvas = love.graphics.newCanvas(
+        self:currentLayerFrame().pathsCanvas = love.graphics.newCanvas(
             width,
             height,
             {
@@ -933,7 +1035,7 @@ function DrawData:updatePathsCanvas()
         )
     end
 
-    self.pathsCanvas:renderTo(
+    self:currentLayerFrame().pathsCanvas:renderTo(
         function()
             love.graphics.push("all")
 
@@ -986,7 +1088,7 @@ function DrawData:renderPreviewPng(size)
             love.graphics.clear(0.0, 0.0, 0.0, 0.0)
             love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
             self:renderFill()
-            self:graphics():draw()
+            self:renderPaths()
 
             love.graphics.pop()
         end
@@ -1002,48 +1104,62 @@ end
 
 function DrawData:render()
     self:renderFill()
-    self:graphics():draw()
+    self:renderPaths()
 end
 
 function DrawData:renderFill()
 
-    --[[if self.pathsCanvas ~= nil then
+    --[[if self:currentLayerFrame().pathsCanvas ~= nil then
         local bounds = self:getPathDataBoundsInPixelCoordinates()
-        local pathsImageData = self.pathsCanvas:newImageData()
+        local pathsImageData = self:currentLayerFrame().pathsCanvas:newImageData()
         local pathsImage = love.graphics.newImage(pathsImageData)
         love.graphics.draw(pathsImage, bounds.minX / self.fillPixelsPerUnit, bounds.minY / self.fillPixelsPerUnit, 0.0, 1.0 / self.fillPixelsPerUnit, 1.0 / self.fillPixelsPerUnit)
     end]]--
 
-    local fillImage = self:getFillImage()
-    if fillImage ~= nil then
-        love.graphics.draw(fillImage, self.fillImageBounds.minX / self.fillPixelsPerUnit, self.fillImageBounds.minY / self.fillPixelsPerUnit, 0.0, 1.0 / self.fillPixelsPerUnit, 1.0 / self.fillPixelsPerUnit)
-    end
+    self:forEachLayer(function (frame)
+        local fillImage = self:getFillImage(frame)
+        if fillImage ~= nil then
+            love.graphics.draw(fillImage, frame.fillImageBounds.minX / self.fillPixelsPerUnit, frame.fillImageBounds.minY / self.fillPixelsPerUnit, 0.0, 1.0 / self.fillPixelsPerUnit, 1.0 / self.fillPixelsPerUnit)
+        end
+    end)
+end
+
+function DrawData:renderPaths()
+    self:forEachLayer(function (frame)
+        self:graphicsForFrame(frame):draw()
+    end)
 end
 
 function DrawData:graphics()
-    if self._graphicsNeedsReset then
-        self._graphicsNeedsReset = false
-        self:cleanUpPaths()
+    return self:graphicsForFrame(self:currentLayerFrame())
+end
 
-        self._graphics = tove.newGraphics()
-        self._graphics:setDisplay("mesh", 1024)
+function DrawData:graphicsForFrame(frame)
+    if frame._graphicsNeedsReset then
+        frame._graphicsNeedsReset = false
+        self:cleanUpPaths(frame)
 
-        for i = 1, #self.pathDataList do
-            self._graphics:addPath(self.pathDataList[i].tovePath)
+        frame._graphics = tove.newGraphics()
+        frame._graphics:setDisplay("mesh", 1024)
+
+        for i = 1, #frame.pathDataList do
+            frame._graphics:addPath(frame.pathDataList[i].tovePath)
         end
     end
     
-    return self._graphics
+    return frame._graphics
 end
 
 function DrawData:clearGraphics()
-    self._graphics = nil
-    self._graphicsNeedsReset = true
+    self:forEachFrame(function (frame)
+        frame._graphics = nil
+        frame._graphicsNeedsReset = true
 
-    for i = 1, #self.pathDataList do
-        self.pathDataList[i].tovePath = nil
-        self.pathDataList[i].subpathDataList = nil
-    end
+        for i = 1, #frame.pathDataList do
+            frame.pathDataList[i].tovePath = nil
+            frame.pathDataList[i].subpathDataList = nil
+        end
+    end)
 end
 
 function DrawData:updateColor(r, g, b)

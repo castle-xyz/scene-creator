@@ -23,9 +23,9 @@ local function onTouch(obj, component, touchData)
         y = touchData.touchY,
     }
 
-    for i = #obj:drawData().pathDataList, 1, -1 do
-        if obj:drawData().pathDataList[i].tovePath:nearest(touchData.touchX, touchData.touchY, obj:getRadius()) then
-            local pathData = obj:drawData().pathDataList[i]
+    for i = #obj:drawData():currentPathDataList(), 1, -1 do
+        if obj:drawData():currentPathDataList()[i].tovePath:nearest(touchData.touchX, touchData.touchY, obj:getRadius()) then
+            local pathData = obj:drawData():currentPathDataList()[i]
             obj:removePathData(pathData)
 
             if pathData.bendPoint == nil and pathData.style == 1 then

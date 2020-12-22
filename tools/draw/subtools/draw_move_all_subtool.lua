@@ -54,8 +54,8 @@ function MoveTool.handlers:onTouch(component, touchData)
 
     if touchData.touch.released then
         if not floatEquals(self._clampedDiff.x, 0.0) or not floatEquals(self._clampedDiff.y, 0.0) then
-            for i = 1, #self:drawData().pathDataList do
-                local pathData = self:drawData().pathDataList[i]
+            for i = 1, #self:drawData():currentPathDataList() do
+                local pathData = self:drawData():currentPathDataList()[i]
                 pathData.tovePath = nil
 
                 for j = 1, #pathData.points do
@@ -68,21 +68,15 @@ function MoveTool.handlers:onTouch(component, touchData)
                     pathData.bendPoint.y = pathData.bendPoint.y + self._clampedDiff.y
                 end
             end
-
-            self:drawData().bounds = {
-                minX = self:drawData().bounds.minX + self._clampedDiff.x,
-                minY = self:drawData().bounds.minY + self._clampedDiff.y,
-                maxX = self:drawData().bounds.maxX + self._clampedDiff.x,
-                maxY = self:drawData().bounds.maxY + self._clampedDiff.y,
-            }
         
-            self:drawData().fillImageBounds = {
-                minX = self:drawData().fillImageBounds.minX + self:drawData().fillPixelsPerUnit * self._clampedDiff.x,
-                minY = self:drawData().fillImageBounds.minY + self:drawData().fillPixelsPerUnit * self._clampedDiff.y,
-                maxX = self:drawData().fillImageBounds.maxX + self:drawData().fillPixelsPerUnit * self._clampedDiff.x,
-                maxY = self:drawData().fillImageBounds.maxY + self:drawData().fillPixelsPerUnit * self._clampedDiff.y,
+            self:drawData():currentLayerFrame().fillImageBounds = {
+                minX = self:drawData():currentLayerFrame().fillImageBounds.minX + self:drawData().fillPixelsPerUnit * self._clampedDiff.x,
+                minY = self:drawData():currentLayerFrame().fillImageBounds.minY + self:drawData().fillPixelsPerUnit * self._clampedDiff.y,
+                maxX = self:drawData():currentLayerFrame().fillImageBounds.maxX + self:drawData().fillPixelsPerUnit * self._clampedDiff.x,
+                maxY = self:drawData():currentLayerFrame().fillImageBounds.maxY + self:drawData().fillPixelsPerUnit * self._clampedDiff.y,
             }
 
+            self:drawData():updateBounds()
             self:drawData():resetGraphics()
             self:saveDrawing("move all", component)
         end
