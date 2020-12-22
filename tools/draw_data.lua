@@ -658,7 +658,19 @@ local function coordinatesEqual(c1, c2)
     return true
 end
 
-local function arePathDatasMergable(pd1, pd2)
+function DrawData:arePathDatasFloodFillable(pd1, pd2)
+    if not coordinatesEqual(pd1.points[#pd1.points], pd2.points[1]) then
+        return false
+    end
+
+    if not floatArrayEquals(pd1.color, pd2.color) then
+        return false
+    end
+
+    return true
+end
+
+function DrawData:arePathDatasMergable(pd1, pd2)
     if not coordinatesEqual(pd1.points[#pd1.points], pd2.points[1]) then
         return false
     end
@@ -714,7 +726,7 @@ function DrawData:serialize()
             serializedPathData.points[j].y = round(serializedPathData.points[j].y, 4)
         end
 
-        if lastSerializedPathData ~= nil and arePathDatasMergable(lastSerializedPathData, serializedPathData) then
+        if lastSerializedPathData ~= nil and self:arePathDatasMergable(lastSerializedPathData, serializedPathData) then
             table.insert(lastSerializedPathData.points, serializedPathData.points[2])
         else
             table.insert(data.pathDataList, serializedPathData)
