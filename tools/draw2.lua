@@ -230,11 +230,13 @@ function DrawTool:saveDrawing(commandDescription, c)
             self:sendSetProperties(actorId, "drawData", newDrawData)
             self:sendSetProperties(actorId, "physicsBodyData", newPhysicsBodyData)
             self:sendSetProperties(actorId, "hash", newHash)
+            self.game:updateBlueprintFromActor(actorId, { updateBase64Png = true })
         end,
         function()
             self:sendSetProperties(actorId, "drawData", oldDrawData)
             self:sendSetProperties(actorId, "physicsBodyData", oldPhysicsBodyData)
             self:sendSetProperties(actorId, "hash", oldHash)
+            self.game:updateBlueprintFromActor(actorId, { updateBase64Png = true })
         end
     )
 end
