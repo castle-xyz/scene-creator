@@ -373,11 +373,10 @@ end
 function DrawTool:loadLastSave()
     local c = self:getSingleComponent()
     local drawingComponent = self.dependencies.Drawing2:get(c.actorId)
-    local data = self.dependencies.Drawing2:cacheDrawing(drawingComponent, drawingComponent.properties)
 
     c._lastHash = drawingComponent.properties.hash
-    self._drawData = data.drawData:clone()
-    self._physicsBodyData = data.physicsBodyData:clone()
+    self._drawData = DrawData:new(drawingComponent.properties.drawData or {})
+    self._physicsBodyData = PhysicsBodyData:new(drawingComponent.properties.physicsBodyData or {})
 
     if self._scaleRotateData and self._scaleRotateData.index and self._scaleRotateData.index > self._physicsBodyData:getNumShapes() then
         self._scaleRotateData.index = self._physicsBodyData:getNumShapes()
@@ -522,7 +521,6 @@ function DrawTool.handlers:drawOverlay()
         drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.3)
     end
 
-
     if self._selectedSubtools.root == 'artwork' then
         love.graphics.setColor(1, 1, 1, 1)
 
@@ -659,6 +657,10 @@ function DrawTool.handlers:uiData()
     layerActions['onAddLayer'] = function()
         self._drawData:addLayer()
         self:saveDrawing('add layer', c)
+    end
+
+    layerActions['onSelectLayer'] = function(layerId)
+        self._drawData:selectLayer(tonumber(layerId))
     end
 
     ui.pane('drawingLayers', function()
