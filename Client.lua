@@ -715,7 +715,10 @@ function Client:drawInner()
 
     love.graphics.pop()
 
-    do -- Screen-space overlay
+    -- Screen-space edit overlays
+    if not self.performing then
+        self:drawBeltHighlight()
+
         self:drawNotify()
     end
 
@@ -757,7 +760,6 @@ function Client:draw()
         end
         self.innerCanvas:renderTo(function()
             self:drawInner()
-            self:drawBeltHighlight()
         end)
         love.graphics.draw(self.innerCanvas, 0, self:getBeltYOffset())
 
