@@ -860,6 +860,34 @@ function DrawData:selectLayer(layerId)
     self:touchLayerData()
 end
 
+function DrawData:deleteLayer(layerId)
+    local layerIndex = 1
+    for i = 1, #self.layers do
+        if self.layers[i].id == layerId then
+            layerIndex = i
+        end
+    end
+
+    table.remove(self.layers, layerIndex)
+
+    if #self.layers == 0 then
+        self:addLayer()
+        return
+    end
+
+    if self.selectedLayerId == layerId then
+        self.selectedLayerId = self.layers[1].id
+
+        if layerIndex <= #self.layers then
+            self.selectedLayerId = self.layers[layerIndex].id
+        elseif layerIndex > 1 then
+            self.selectedLayerId = self.layers[layerIndex - 1].id
+        end
+    end
+
+    self:touchLayerData()
+end
+
 function DrawData:setLayerIsVisible(layerId, isVisible)
     self:layerForId(layerId).isVisible = isVisible
     self:touchLayerData()
