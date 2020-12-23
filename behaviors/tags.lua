@@ -166,3 +166,29 @@ TagsBehavior.responses["remove tag"] = {
       end
    end,
 }
+
+TagsBehavior.responses["has tag"] = {
+    description = "If this has a tag",
+    category = "state",
+    returnType = "boolean",
+    paramSpecs = {
+       tag = {
+         method = "tagPicker",
+         label = "Tag",
+         initialValue = "",
+         props = { singleSelect = true },
+      },
+    },
+    run = function(self, actorId, params, context)
+       local component = self.components[actorId]
+       if not component then return false end
+       
+       if params.tag ~= nil and params.tag ~= '' then
+           local tag = params.tag:lower()
+           if component._tags[tag] == nil or not component._tags[tag] then
+               return false
+           end
+       end
+       return true
+    end,
+}
