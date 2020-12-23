@@ -15,7 +15,6 @@ local SHOW_HIDE_VY = 1200
 local ENABLE_HAPTICS = true
 
 local DEBUG_TOUCHES = true
-local DEBUG_GHOST_ACTORS = false
 
 -- Start / stop
 
@@ -24,6 +23,9 @@ function Common:startBelt()
 
     -- Each elem holds `entryId` + non-persistent info like renderable image, x position etc. 
     self.beltElems = {} 
+
+    self.beltGhostActorIds = {} -- `entryId` -> `actorId` for ghost actors
+    self.beltLastGhostSelectTime = nil
 
     self.beltCursorX = 0
     self.beltCursorVX = 0
@@ -45,9 +47,6 @@ function Common:startBelt()
     self.beltHighlightCanvas2 = nil
 
     self.beltHapticsGesture = false -- Whether current gesture should fire haptics
-
-    self.beltGhostActorId = nil -- Actor ID for 'ghost' actor to edit blueprints through
-    self.beltLastGhostCreateTime = nil
 
     -- Renders grey if the pixel is fully transparent, and white otherwise.
     -- Used with a multiply blend mode to darken the screen.
@@ -204,6 +203,43 @@ function Common:syncBelt()
         elem.x = (ELEM_SIZE + ELEM_GAP) * (i - 1)
     end
 
+    -- Update ghost actors
+    for entryId, entry in pairs(self.library) do
+        if not entry.isCore and not self.beltGhostActorIds[entryId] then
+            -- Use a stable mapping from entry id -> ghost actor id so that
+            -- it's preserved across undo / redo
+            local ghostActorId = 'ghost:' .. entryId
+
+            -- Remove existing actor with this id just in case
+            if self.actors[ghostActorId] then
+                self:send('removeActor', self.clientId, ghostActorId)
+            end
+
+            -- Add new ghost actor
+            local bp = util.deepCopyTable(entry.actorBlueprint)
+            if bp.components.Body then
+                bp.components.Body.x = 0
+                bp.components.Body.y = 0
+            end
+            self:sendAddActor(bp, {
+                actorId = ghostActorId,
+                parentEntryId = entryId,
+                isGhost = true,
+            })
+
+            self.beltGhostActorIds[entryId] = ghostActorId
+        end
+    end
+    for entryId, ghostActorId in pairs(self.beltGhostActorIds) do
+        if not self.library[entryId] then
+            -- Remove associations for removed entries
+            if self.actors[ghostActorId] then
+                self:send('removeActor', self.clientId, ghostActorId)
+            end
+            self.beltGhostActorIds[entryId] = nil
+        end
+    end
+
     self.beltDirty = false
 end
 
@@ -217,7 +253,7 @@ function Common:syncSelectionsWithBelt()
             end
         end
 
-        -- Pick some selected non-ghost actor and focus its blueprint
+        -- Try to pick some selected non-ghost actor and focus its blueprint
         for actorId in pairs(self.selectedActorIds) do
             local actor = self.actors[actorId]
             if not actor.isGhost then
@@ -228,8 +264,25 @@ function Common:syncSelectionsWithBelt()
                         if elem.entryId == entry.entryId then
                             self.beltTargetIndex = i
                             self.beltEntryId = entry.entryId
-                            return
                         end
+                    end
+                end
+                return
+            end
+        end
+
+        -- If only non-ghost actors are selected, do the same but also enable highlight
+        for actorId in pairs(self.selectedActorIds) do
+            local actor = self.actors[actorId]
+            local entry = actor and actor.parentEntryId and self.library[actor.parentEntryId]
+            if entry and not entry.isCore then
+                -- Find element and target it and enable highlight
+                for i, elem in ipairs(self.beltElems) do
+                    if elem.entryId == entry.entryId then
+                        self.beltTargetIndex = i
+                        self.beltEntryId = entry.entryId
+                        self.beltHighlightEnabled = true
+                        return
                     end
                 end
             end
@@ -237,89 +290,29 @@ function Common:syncSelectionsWithBelt()
     end
 end
 
-function Common:syncBeltGhostActor()
+function Common:syncBeltGhostSelection()
+    -- Don't select too rapidly
     local currTime = love.timer.getTime()
-    if math.abs(self.beltCursorVX) > 10 and self.beltLastGhostCreateTime and currTime - self.beltLastGhostCreateTime < 0.2 then
+    if math.abs(self.beltCursorVX) > 10 and self.beltLastGhostSelectTime and currTime - self.beltLastGhostSelectTime < 0.2 then
         return
     end
 
-    local needApplySelections = false
-
-    -- Figure out what entry to base ghost on, or `nil` if none
-    local ghostEntryId = self.beltEntryId
+    -- If any non-ghost actor is selected, we don't need a ghost
     for actorId in pairs(self.selectedActorIds) do
         local actor = self.actors[actorId]
         if not actor.isGhost then
-            -- If any non-ghost actor is selected, we don't need a ghost
-            ghostEntryId = nil
+            return
         end
     end
 
-    -- Update ghost if not in sync
-    local ghostActor = self.beltGhostActorId and self.actors[self.beltGhostActorId]
-    if not ghostActor then
-        self.beltGhostActorId = nil
-    end
-    if not ((ghostEntryId == nil and ghostActor == nil) or
-            (ghostEntryId ~= nil and ghostActor and ghostActor.parentEntryId == ghostEntryId)) then
-        -- Destroy old ghost if exists
-        if ghostActor then
-            if DEBUG_GHOST_ACTORS then
-                local oldEntry = self.library[ghostActor.parentEntryId]
-                local oldTitle = (oldEntry and not oldEntry.isCore and oldEntry.title) or "(none)"
-                print("destroyed ghost for '" .. oldTitle .. "'")
-            end
-
-            self:deselectActor(self.beltGhostActorId)
-            needApplySelections = true
-            self:send('removeActor', self.clientId, self.beltGhostActorId)
-            self.beltGhostActorId = nil
-        end
-
-        -- Create new ghost if needed
-        local newEntry = self.library[ghostEntryId]
-        if newEntry and not newEntry.isCore then
-            local newActorId = self:generateActorId()
-            local bp = util.deepCopyTable(newEntry.actorBlueprint)
-            if bp.components.Body then
-                bp.components.Body.x = 0
-                bp.components.Body.y = 0
-            end
-            self:sendAddActor(bp, {
-                actorId = newActorId,
-                parentEntryId = ghostEntryId,
-                isGhost = true,
-            })
-            self.beltGhostActorId = newActorId
-            self.beltLastGhostCreateTime = currTime
-
-            if DEBUG_GHOST_ACTORS then
-                print("created ghost for '" .. newEntry.title .. "'")
-            end
-        end
-    end
-
-    -- Select ghost if needed
-    if ghostEntryId and self.beltGhostActorId and not next(self.selectedActorIds) then
-        self:selectActor(self.beltGhostActorId)
-        needApplySelections = true
-    end
-
-    if needApplySelections then
-        self:applySelections()
-    end
-
-    if DEBUG_GHOST_ACTORS then
-        self.beltLastNumGhostActors = self.beltLastNumGhostActors or 0
-        local numGhostActors = 0
-        for _, actor in pairs(self.actors) do
-            if actor.isGhost then
-                numGhostActors = numGhostActors + 1
-            end
-        end
-        if numGhostActors ~= self.beltLastNumGhostActors then
-            print("# ghost actors changed to " .. numGhostActors)
-            self.beltLastNumGhostActors = numGhostActors
+    -- If ghost isn't selected, deselect all and select it
+    if self.beltGhostActorIds[self.beltEntryId] then
+        local ghostActorId = self.beltGhostActorIds[self.beltEntryId]
+        if not self.selectedActorIds[ghostActorId] then
+            self:deselectAllActors({ noDeselectBelt = true })
+            self:selectActor(ghostActorId)
+            self:applySelections()
+            self.beltLastGhostSelectTime = currTime
         end
     end
 end
@@ -391,7 +384,7 @@ function Common:updateBelt(dt)
                 if self.beltTargetIndex then
                     self.beltHighlightEnabled = true -- Enable highlight on belt touch
                     self:fireBeltHaptic()
-                    self.beltLastGhostCreateTime = nil -- Inspect it immediately
+                    self.beltLastGhostSelectTime = nil -- Inspect it immediately
                 end
             end
 
@@ -466,7 +459,7 @@ function Common:updateBelt(dt)
 
                 -- Sync immediately with placed actor
                 self:syncSelectionsWithBelt()
-                self.beltLastGhostCreateTime = nil
+                self.beltLastGhostSelectTime = nil
             end
         end
     else
@@ -613,8 +606,7 @@ function Common:updateBelt(dt)
         end
     end
 
-    -- Instantiate ghost actor for selected entry if needed
-    self:syncBeltGhostActor()
+    self:syncBeltGhostSelection()
 end
 
 -- Draw
