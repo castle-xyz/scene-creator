@@ -280,25 +280,8 @@ function Common:syncSelectionsWithBelt()
                         if elem.entryId == entry.entryId then
                             self.beltTargetIndex = i
                             self.beltEntryId = entry.entryId
+                            return
                         end
-                    end
-                end
-                return
-            end
-        end
-
-        -- If only non-ghost actors are selected, do the same but also enable highlight
-        for actorId in pairs(self.selectedActorIds) do
-            local actor = self.actors[actorId]
-            local entry = actor and actor.parentEntryId and self.library[actor.parentEntryId]
-            if entry and not entry.isCore then
-                -- Find element and target it and enable highlight
-                for i, elem in ipairs(self.beltElems) do
-                    if elem.entryId == entry.entryId then
-                        self.beltTargetIndex = i
-                        self.beltEntryId = entry.entryId
-                        self.beltHighlightEnabled = true
-                        return
                     end
                 end
             end
