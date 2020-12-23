@@ -112,35 +112,13 @@ function Client:uiBlueprints()
    ui.data(data, { actions = actions })
 end
 
-function Client:haveLibraryEntryWithTitle(title)
-    for _, entry in pairs(self.library) do
-        if entry.title == title then
-            return true
-        end
-    end
-    return false
-end
-
 function Client:_addBlueprintToScene(entryId, x, y)
    local entry = self.library[entryId]
 
    -- If core entry, duplicate the entry and use that instead
    if entry.isCore then
-       local newEntry = util.deepCopyTable(entry)
-       newEntry.entryId = util.uuid()
-       newEntry.isCore = nil
-       newEntry.beltOrder = nil
-
-       local titleSuffix = 1
-       while self:haveLibraryEntryWithTitle(entry.title .. ' ' .. titleSuffix) do
-           titleSuffix = titleSuffix + 1
-       end
-       newEntry.title = entry.title .. ' ' .. titleSuffix
-
-       self:send('addLibraryEntry', newEntry.entryId, newEntry)
-
-       entryId = newEntry.entryId
-       entry = newEntry
+       entry = self:duplicateBlueprint(entry)
+       entryId = entry.entryId
    end
    
    -- Set up actor blueprint and id
