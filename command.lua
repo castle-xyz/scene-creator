@@ -235,5 +235,30 @@ function Common:runCommand(mode, command, live)
                 self:selectActor(actorId)
             end
         end
+
+        -- If the resulting selection consists solely of ghost actors, select some corresponding belt entry
+        local allGhosts = true
+        for actorId in pairs(self.selectedActorIds) do
+            local actor = self.actors[actorId]
+            if actor and not actor.isGhost then
+                allGhosts = false
+            end
+        end
+        local someSelectedActorId = next(self.selectedActorIds)
+        if allGhosts and someSelectedActorId then
+            local actor = self.actors[someSelectedActorId]
+            local entry = actor and actor.parentEntryId and self.library[actor.parentEntryId]
+            if entry and not entry.isCore then
+                -- Find element and target it
+                for i, elem in ipairs(self.beltElems) do
+                    if elem.entryId == entry.entryId then
+                        self.beltTargetIndex = i
+                        self.beltEntryId = entry.entryId
+                        self.beltHighlightEnabled = true
+                        return
+                    end
+                end
+            end
+        end
     end
 end
