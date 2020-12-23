@@ -27,18 +27,20 @@ function Client:uiTextActorsData()
    local textActorsContent = self.behaviorsByName.Text:parseComponentsContent(self.performing)
    for actorId, component in pairs(self.behaviorsByName.Text.components) do
       local actor = self.actors[actorId]
-      local visible = true
-      if self.performing then
-         visible = component.properties.visible or false
+      if not (actor.isGhost and not self.selectedActorIds[actorId]) then -- Skip if unselected ghost
+          local visible = true
+          if self.performing then
+             visible = component.properties.visible or false
+          end
+          textActors[actorId] = {
+             content = textActorsContent[actorId],
+             order = component.properties.order,
+             visible = visible,
+             actor = actor,
+             isSelected = self.selectedActorIds[actorId] ~= nil,
+             hasTapTrigger = self:_textActorHasTapTrigger(actor),
+          }
       end
-      textActors[actorId] = {
-         content = textActorsContent[actorId],
-         order = component.properties.order,
-         visible = visible,
-         actor = actor,
-         isSelected = self.selectedActorIds[actorId] ~= nil,
-         hasTapTrigger = self:_textActorHasTapTrigger(actor),
-      }
    end
    ui.data({ textActors = textActors })
 end
