@@ -181,12 +181,12 @@ function Client:duplicateSelection()
                     for i, elem in ipairs(self.beltElems) do
                         if elem.entryId == newEntryId then
                             self.beltTargetIndex = i
-                            self.beltEntryId = entry.entryId
+                            self.beltEntryId = newEntryId
                             self.beltHighlightEnabled = true
-                            return
+                            break
                         end
                     end
-                    self:syncSelectionsWithBelt()
+                    self:syncBeltGhostSelection()
                 end
             end, function()
                 self:send('removeLibraryEntry', newEntryId)
