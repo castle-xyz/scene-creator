@@ -209,6 +209,7 @@ function Common:runCommand(mode, command, live)
 
     -- Restore selections if not a live run
     if not live and command.selections[mode] then
+        self:syncBelt() -- Ensure ghost actors exist before selecting
 
        local needsReset = false
        -- if the command includes a selection that's not already selected, reset
