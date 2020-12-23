@@ -663,6 +663,11 @@ function DrawTool.handlers:uiData()
         self._drawData:setLayerIsVisible(opts.layerId, opts.isVisible)
     end
 
+    layerActions['onReorderLayers'] = function(opts)
+        self._drawData:reorderLayers(opts)
+        self:saveDrawing('reorder layer', c)
+    end
+
     ui.pane('drawingLayers', function()
         ui.data(self._drawData:getLayerData(), {
             actions = layerActions,

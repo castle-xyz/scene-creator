@@ -650,6 +650,7 @@ function DrawData:getLayerData()
             local layerData = {
                 title = layer.title,
                 id = layer.id,
+                order = l,
                 isVisible = layer.isVisible,
                 frames = {}
             }
@@ -883,6 +884,22 @@ function DrawData:deleteLayer(layerId)
         elseif layerIndex > 1 then
             self.selectedLayerId = self.layers[layerIndex - 1].id
         end
+    end
+
+    self:touchLayerData()
+end
+
+function DrawData:reorderLayers(layerIds)
+    local layerIdToLayer = {}
+
+    for i = 1, #self.layers do
+        layerIdToLayer[self.layers[i].id] = self.layers[i]
+    end
+
+    self.layers = {}
+
+    for i = 1, #layerIds do
+        table.insert(self.layers, layerIdToLayer[layerIds[i]])
     end
 
     self:touchLayerData()
