@@ -393,8 +393,22 @@ function DrawData:updatePathDataRendering(pathData)
     makeSubpathsFromSubpathData(pathData)
 end
 
+function DrawData:selectedLayer()
+    return self:layerForId(self.selectedLayerId)
+end
+
+function DrawData:layerForId(id)
+    for i = 1, #self.layers do
+        if self.layers[i].id == id then
+            return self.layers[i]
+        end
+    end
+
+    return nil
+end
+
 function DrawData:currentLayerFrame()
-    return self.layers[self.selectedLayer].frames[self.selectedFrame]
+    return self:selectedLayer().frames[self.selectedFrame]
 end
 
 function DrawData:currentPathDataList()
@@ -437,7 +451,7 @@ function DrawData:new(obj)
         },
         layers = obj.layers or {},
         numTotalLayers = obj.numTotalLayers or 1,
-        selectedLayer = obj.selectedLayer or 1,
+        selectedLayerId = obj.selectedLayerId or nil,
         selectedFrame = obj.selectedFrame or 1,
         initialFrame = obj.initialFrame or 1,
         _layerDataChanged = true,
@@ -467,6 +481,14 @@ function DrawData:new(obj)
     self.__index = self
 
     for l = 1, #newObj.layers do
+        local layer = newObj.layers[l]
+        if not layer.isVisible then
+            layer.isVisible = true
+        end
+        if not layer.id then
+            layer.id = 'layer' .. l
+        end
+
         for f = 1, #newObj.layers[l].frames do
             local frame = newObj.layers[l].frames[f]
 
@@ -496,6 +518,10 @@ function DrawData:new(obj)
 
             frame.pathDataList = newPathDataList
         end
+    end
+
+    if newObj.selectedLayerId == nil then
+        newObj.selectedLayerId = newObj.layers[1].id
     end
     
     newObj:graphics()
@@ -614,7 +640,7 @@ function DrawData:getLayerData()
         self._layerDataChanged = false
 
         local data = {
-            selectedLayer = self.selectedLayer,
+            selectedLayerId = self.selectedLayerId,
             selectedFrame = self.selectedFrame,
             layers = {}
         }
@@ -623,7 +649,8 @@ function DrawData:getLayerData()
             local layer = self.layers[l]
             local layerData = {
                 title = layer.title,
-                id = l,
+                id = layer.id,
+                isVisible = layer.isVisible,
                 frames = {}
             }
 
@@ -635,7 +662,7 @@ function DrawData:getLayerData()
                 table.insert(layerData.frames, frameData)
             end
 
-            data.layers['id' .. l] = layerData
+            data.layers[layer.id] = layerData
         end
 
         self._layerData = data
@@ -758,7 +785,7 @@ function DrawData:serialize()
         fillPixelsPerUnit = self.fillPixelsPerUnit,
         bounds = self.bounds,
         numTotalLayers = self.numTotalLayers,
-        selectedLayer = self.selectedLayer,
+        selectedLayerId = self.selectedLayerId,
         selectedFrame = self.selectedFrame,
         initialFrame = self.initialFrame,
         layers = {},
@@ -767,6 +794,7 @@ function DrawData:serialize()
     for l = 1, #self.layers do
         local layerData = {
             title = self.layers[l].title,
+            id = self.layers[l].id,
             frames = {},
         }
 
@@ -828,7 +856,12 @@ function DrawData:updateFramePreview()
 end
 
 function DrawData:selectLayer(layerId)
-    self.selectedLayer = layerId
+    self.selectedLayerId = layerId
+    self:touchLayerData()
+end
+
+function DrawData:setLayerIsVisible(layerId, isVisible)
+    self:layerForId(layerId).isVisible = isVisible
     self:touchLayerData()
 end
 
@@ -858,16 +891,18 @@ function DrawData:addLayer()
 
     local newLayer = {
         title = 'Layer ' .. self.numTotalLayers,
+        id = 'layer' .. self.numTotalLayers,
+        isVisible = true,
         frames = {newFrame},
     }
 
     table.insert(self.layers, newLayer)
-    self.selectedLayer = #self.layers
+    self.selectedLayerId = newLayer.id
     self:touchLayerData()
 end
 
 function DrawData:clearFrame()
-    self.layers[self.selectedLayer].frames[self.selectedFrame] = self:_newFrame()
+    self:selectedLayer().frames[self.selectedFrame] = self:_newFrame()
 end
 
 function DrawData:graphics()
@@ -886,20 +921,28 @@ function DrawData:render()
     end
 end
 
-function DrawData:renderWithoutCurrentLayer()
+function DrawData:renderForTool(tempTranslateX, tempTranslateY, tempGraphics)
     for l = 1, #self.layers do
-        if l ~= self.selectedLayer then
-            local frame = self.layers[l].frames[self.selectedFrame]
-            frame:renderFill()
-            frame:graphics():draw()
+        local layer = self.layers[l]
+        local frame = self.layers[l].frames[self.selectedFrame]
+
+        if layer.isVisible then
+            if layer.id == self.selectedLayerId then
+                love.graphics.push()
+                love.graphics.translate(tempTranslateX, tempTranslateY)
+                frame:renderFill()
+                frame:graphics():draw()
+                love.graphics.pop()
+
+                if tempGraphics ~= nil then
+                    tempGraphics:draw()
+                end
+            else
+                frame:renderFill()
+                frame:graphics():draw()
+            end
         end
     end
-end
-
-function DrawData:renderCurrentLayer()
-    local frame = self.layers[self.selectedLayer].frames[self.selectedFrame]
-    frame:renderFill()
-    frame:graphics():draw()
 end
 
 function DrawData:renderPreviewPng(size)

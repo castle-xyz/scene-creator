@@ -524,16 +524,7 @@ function DrawTool.handlers:drawOverlay()
     if self._selectedSubtools.root == 'artwork' then
         love.graphics.setColor(1, 1, 1, 1)
 
-        self._drawData:renderWithoutCurrentLayer()
-
-        love.graphics.push()
-        love.graphics.translate(self.tempTranslateX, self.tempTranslateY)
-        self._drawData:renderCurrentLayer()
-        love.graphics.pop()
-
-        if self._tempGraphics ~= nil then
-            self._tempGraphics:draw()
-        end
+        self._drawData:renderForTool(self.tempTranslateX, self.tempTranslateY, self._tempGraphics)
 
         self._physicsBodyData:draw()
     end
@@ -660,7 +651,11 @@ function DrawTool.handlers:uiData()
     end
 
     layerActions['onSelectLayer'] = function(layerId)
-        self._drawData:selectLayer(tonumber(layerId))
+        self._drawData:selectLayer(layerId)
+    end
+
+    layerActions['onSetLayerIsVisible'] = function(opts)
+        self._drawData:setLayerIsVisible(opts.layerId, opts.isVisible)
     end
 
     ui.pane('drawingLayers', function()
