@@ -507,7 +507,7 @@ function DrawData:new(obj)
 
                     for j = 1, #pathData.points - 1 do
                         local newPathData = util.deepCopyTable(pathData)
-                        newPathData.points = {pathData.points[j], pathData.points[j + 1]}
+                        newPathData.points = util.deepCopyTable({pathData.points[j], pathData.points[j + 1]})
 
                         table.insert(newPathDataList, newPathData)
                     end
