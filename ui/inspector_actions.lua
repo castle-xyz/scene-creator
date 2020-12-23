@@ -164,11 +164,33 @@ function Client:moveActorToBack(actorId)
 end
 
 function Client:duplicateSelection()
-    -- Skip if any ghosts
+    -- Got a ghost? Duplicate the blueprint
     for actorId in pairs(self.selectedActorIds) do
         local actor = self.actors[actorId]
         if actor and actor.isGhost then
-            self:notify("duplicating blueprint not supported yet")
+            local oldEntry = self.library[actor.parentEntryId]
+            local newEntryId = util.uuid()
+            self:command('duplicate blueprint', {
+                params = { 'oldEntry', 'newEntryId' },
+            }, function(params, live)
+                self:duplicateBlueprint(oldEntry, { newEntryId = newEntryId })
+                if live then
+                    -- Immediately select entry
+                    self:syncBelt()
+                    self:deselectAllActors()
+                    for i, elem in ipairs(self.beltElems) do
+                        if elem.entryId == newEntryId then
+                            self.beltTargetIndex = i
+                            self.beltEntryId = entry.entryId
+                            self.beltHighlightEnabled = true
+                            return
+                        end
+                    end
+                    self:syncSelectionsWithBelt()
+                end
+            end, function()
+                self:send('removeLibraryEntry', newEntryId)
+            end)
             return
         end
     end
