@@ -308,7 +308,9 @@ function Common:syncBeltGhostSelection()
     if self.beltGhostActorIds[self.beltEntryId] then
         local ghostActorId = self.beltGhostActorIds[self.beltEntryId]
         if not self.selectedActorIds[ghostActorId] then
-            self:deselectAllActors({ noDeselectBelt = true })
+            local theBeltEntryId = self.beltEntryId -- Save and restore this across deselection
+            self:deselectAllActors()
+            self.beltEntryId = theBeltEntryId
             self:selectActor(ghostActorId)
             self:applySelections()
             self.beltLastGhostSelectTime = currTime
