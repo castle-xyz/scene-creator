@@ -654,6 +654,11 @@ function DrawTool.handlers:uiData()
         self._drawData:selectLayer(layerId)
     end
 
+    layerActions['onDeleteLayer'] = function(layerId)
+        self._drawData:deleteLayer(layerId)
+        self:saveDrawing('delete layer', c)
+    end
+
     layerActions['onSetLayerIsVisible'] = function(opts)
         self._drawData:setLayerIsVisible(opts.layerId, opts.isVisible)
     end
