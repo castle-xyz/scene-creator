@@ -61,8 +61,8 @@ function TagsBehavior.setters:tagsString(component, newTagsString)
 
     -- Update indices
     for tag in pairs(component._tags) do
-       tag = tag:lower()
-       self._tagToActorIds[tag][component.actorId] = nil
+        tag = tag:lower()
+        self._tagToActorIds[tag][component.actorId] = nil
         if not next(self._tagToActorIds[tag]) then
             self._tagToActorIds[tag] = nil
         end
@@ -118,6 +118,32 @@ end
 
 -- Rules
 
+TagsBehavior.triggers["gain tag"] = {
+   description = "When this gains a tag",
+   category = "state",
+   paramSpecs = {
+      tag = {
+         method = "tagPicker",
+         label = "Tag",
+         initialValue = "",
+         props = { singleSelect = true },
+      },
+   },
+}
+
+TagsBehavior.triggers["lose tag"] = {
+   description = "When this loses a tag",
+   category = "state",
+   paramSpecs = {
+      tag = {
+         method = "tagPicker",
+         label = "Tag",
+         initialValue = "",
+         props = { singleSelect = true },
+      },
+   },
+}
+
 TagsBehavior.responses["add tag"] = {
    description = "Add tags to this actor",
    category = "general",
@@ -133,11 +159,22 @@ TagsBehavior.responses["add tag"] = {
       if params.tag ~= nil and params.tag ~= '' then
          for tag in params.tag:gmatch("%S+") do
             tag = tag:lower()
+            local gainedTag = component._tags[tag] ~= true
             component._tags[tag] = true
             if not self._tagToActorIds[tag] then
                self._tagToActorIds[tag] = {}
             end
             self._tagToActorIds[tag][actorId] = true
+
+            if gainedTag then
+               self:fireTrigger("gain tag", actorId, {},
+                  {
+                     filter = function(params)
+                        return params.tag ~= nil and params.tag:lower() == tag
+                     end,
+                  }
+               )
+            end
          end
       end
    end,
@@ -158,9 +195,20 @@ TagsBehavior.responses["remove tag"] = {
       if params.tag ~= nil and params.tag ~= '' then
          for tag in params.tag:gmatch("%S+") do
             tag = tag:lower()
+            local lostTag = component._tags[tag] == true
             component._tags[tag] = nil
             if self._tagToActorIds[tag] then
                self._tagToActorIds[tag][actorId] = nil
+            end
+
+            if lostTag then
+               self:fireTrigger("lose tag", actorId, {},
+                  {
+                     filter = function(params)
+                        return params.tag ~= nil and params.tag:lower() == tag
+                     end,
+                  }
+               )
             end
          end
       end
