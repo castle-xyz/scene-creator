@@ -164,6 +164,15 @@ function Client:moveActorToBack(actorId)
 end
 
 function Client:duplicateSelection()
+    -- Skip if any ghosts
+    for actorId in pairs(self.selectedActorIds) do
+        local actor = self.actors[actorId]
+        if actor and actor.isGhost then
+            self:notify("duplicating blueprint not supported yet")
+            return
+        end
+    end
+
     -- Generate map of actor ids to new ids for their duplicates
     local newActorIds = {}
     for actorId in pairs(self.selectedActorIds) do
@@ -217,6 +226,15 @@ function Client:duplicateSelection()
 end
 
 function Client:deleteSelection()
+    -- Skip if any ghosts
+    for actorId in pairs(self.selectedActorIds) do
+        local actor = self.actors[actorId]
+        if actor and actor.isGhost then
+            self:notify("deleting blueprint not supported yet")
+            return
+        end
+    end
+
     -- Save actor data
     local saves = {}
     for actorId in pairs(self.selectedActorIds) do
