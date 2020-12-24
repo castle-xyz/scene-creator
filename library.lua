@@ -131,7 +131,7 @@ function Common:startLibrary()
         local entryId = self:generateLibraryId()
         local entry = util.deepCopyTable(entrySpec)
         entry.entryId = entryId
-        entry.isCore = true
+        --entry.isCore = true -- NOTE(nikki): We're dropping core blueprints for now till new belt UX
         self.library[entryId] = entry
     end
 
