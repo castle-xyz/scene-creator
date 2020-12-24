@@ -267,10 +267,34 @@ function Client:deleteSelection()
                 end
             end
 
+            -- If this is the last body blueprint or last text blueprint, don't delete it
+            local isLast = true
+            for otherEntryId, otherEntry in pairs(self.library) do
+                if otherEntryId ~= entry.entryId and otherEntry.entryType == 'actorBlueprint' then
+                    if entry.actorBlueprint.components.Text and otherEntry.actorBlueprint.components.Text then
+                        isLast = false
+                        break
+                    end
+                    if entry.actorBlueprint.components.Body and otherEntry.actorBlueprint.components.Body then
+                        isLast = false
+                        break
+                    end
+                end
+            end
+            if isLast then
+                castle.system.alert(
+                    "Cannot delete '" .. entry.title .. "'",
+                    entry.actorBlueprint.components.Text and
+                    "This is the last blueprint with text." or
+                    "This is the last blueprint with movement.")
+                return
+            end
+
             local weakActorId = actorId
             self:command('delete blueprint', {
                 params = { 'entry', 'weakActorId' },
             }, function(params, live)
+                self:deselectAllActors()
                 if live then
                     self:send('removeActor', self.clientId, weakActorId)
                 end
