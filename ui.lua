@@ -39,6 +39,7 @@ function Client:uiTextActorsData()
              actor = actor,
              isSelected = self.selectedActorIds[actorId] ~= nil,
              hasTapTrigger = self:_textActorHasTapTrigger(actor),
+             isGhost = actor.isGhost,
           }
       end
    end
