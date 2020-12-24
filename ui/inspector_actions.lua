@@ -248,7 +248,7 @@ function Client:duplicateSelection()
 end
 
 function Client:deleteSelection()
-    -- Skip if any ghosts
+    -- Got a ghost? Delete the blueprint
     for actorId in pairs(self.selectedActorIds) do
         local actor = self.actors[actorId]
         if actor and actor.isGhost then
@@ -262,7 +262,7 @@ function Client:deleteSelection()
                 if otherActorId ~= actorId and otherActor.parentEntryId == actor.parentEntryId then
                     castle.system.alert(
                         "Cannot delete '" .. entry.title .. "'",
-                        "Some actors in the scene have this blueprint, so it cannot be deleted.")
+                        "There are actors in the scene with this blueprint, so it cannot be deleted.")
                     return
                 end
             end
