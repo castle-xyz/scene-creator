@@ -192,14 +192,9 @@ function Common:syncBelt()
     do
         local numElems = #self.beltElems
         local filledI = 1
-        for i = 1, numElems do
-            local elem = self.beltElems[i]
-            if self.library[elem.entryId] then
-                if filledI ~= i then
-                    self.beltElems[filledI] = elem
-                    self.beltElems[i] = nil
-                end
-                filledI = filledI + 1
+        for i = numElems, 1, -1 do
+            if not self.library[self.beltElems[i].entryId] then
+                table.remove(self.beltElems, i)
             end
         end
     end
