@@ -252,7 +252,32 @@ function Client:deleteSelection()
     for actorId in pairs(self.selectedActorIds) do
         local actor = self.actors[actorId]
         if actor and actor.isGhost then
-            self:notify("deleting blueprint not supported yet")
+            local entry = self.library[actor.parentEntryId]
+            if not entry then
+                return
+            end
+
+            -- Make sure no other actors have this
+            for otherActorId, otherActor in pairs(self.actors) do
+                if otherActorId ~= actorId and otherActor.parentEntryId == actor.parentEntryId then
+                    castle.system.alert(
+                        "Cannot delete '" .. entry.title .. "'",
+                        "Some actors in the scene have this blueprint, so it cannot be deleted.")
+                    return
+                end
+            end
+
+            local weakActorId = actorId
+            self:command('delete blueprint', {
+                params = { 'entry', 'weakActorId' },
+            }, function(params, live)
+                if live then
+                    self:send('removeActor', self.clientId, weakActorId)
+                end
+                self:send('removeLibraryEntry', entry.entryId)
+            end, function()
+                self:send('addLibraryEntry', entry.entryId, entry)
+            end)
             return
         end
     end
