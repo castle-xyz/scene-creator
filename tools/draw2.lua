@@ -636,7 +636,7 @@ function DrawTool.handlers:uiData()
         self:saveDrawing('clear all collision shapes', c)
     end
 
-    ui.data({
+    ui.fastData("draw-tools", {
         selectedSubtools = self._selectedSubtools,
         color = self._drawData.color,
     }, {
@@ -668,9 +668,7 @@ function DrawTool.handlers:uiData()
         self:saveDrawing('reorder layer', c)
     end
 
-    ui.pane('drawingLayers', function()
-        ui.data(self._drawData:getLayerData(), {
-            actions = layerActions,
-        })
-    end)
+    ui.fastData('draw-layers', self._drawData:getLayerData(), {
+        actions = layerActions,
+    })
 end
