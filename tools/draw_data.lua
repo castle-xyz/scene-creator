@@ -898,7 +898,7 @@ function DrawData:reorderLayers(layerIds)
 
     self.layers = {}
 
-    for i = 1, #layerIds do
+    for i = #layerIds, 1, -1  do
         table.insert(self.layers, layerIdToLayer[layerIds[i]])
     end
 
