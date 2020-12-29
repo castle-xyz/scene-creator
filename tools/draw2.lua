@@ -655,8 +655,22 @@ function DrawTool.handlers:uiData()
         self:saveDrawing('add layer', c)
     end
 
+    layerActions['onAddFrame'] = function()
+        self._drawData:addFrame()
+        self:saveDrawing('add frame', c)
+    end
+
     layerActions['onSelectLayer'] = function(layerId)
         self._drawData:selectLayer(layerId)
+    end
+
+    layerActions['onSelectFrame'] = function(frame)
+        self._drawData:selectFrame(frame)
+    end
+
+    layerActions['onSelectLayerAndFrame'] = function(layerAndFrame)
+        self._drawData:selectLayer(layerAndFrame.layerId)
+        self._drawData:selectFrame(layerAndFrame.frame)
     end
 
     layerActions['onDeleteLayer'] = function(layerId)

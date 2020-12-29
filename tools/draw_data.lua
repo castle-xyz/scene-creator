@@ -658,9 +658,11 @@ function DrawData:getLayerData()
             for f = 1, #layer.frames do
                 local frame = layer.frames[f]
                 local frameData = {
+                    order = f,
+                    isLinked = frame.isLinked,
                     base64Png = frame.base64Png,
                 }
-                table.insert(layerData.frames, frameData)
+                layerData.frames['frame' .. f] = frameData
             end
 
             data.layers[layer.id] = layerData
@@ -848,6 +850,7 @@ function DrawData:serialize()
         for f = 1, #self.layers[l].frames do
             local frame = self.layers[l].frames[f]
             local frameData = {
+                isLinked = frame.isLinked,
                 pathDataList = {},
                 fillImageBounds = frame.fillImageBounds,
                 fillCanvasSize = frame.fillCanvasSize,
@@ -904,6 +907,11 @@ end
 
 function DrawData:selectLayer(layerId)
     self.selectedLayerId = layerId
+    self:touchLayerData()
+end
+
+function DrawData:selectFrame(frame)
+    self.selectedFrame = frame
     self:touchLayerData()
 end
 
@@ -984,11 +992,29 @@ function DrawData:addLayer()
         title = 'Layer ' .. self.numTotalLayers,
         id = 'layer' .. self.numTotalLayers,
         isVisible = true,
-        frames = {newFrame},
+        frames = {},
     }
+
+    local frameCount = 1
+    if #self.layers > 0 then
+        frameCount = #self.layers[1].frames
+    end
+
+    for i = 1, frameCount do
+        table.insert(newLayer.frames, self._newFrame())
+    end
 
     table.insert(self.layers, newLayer)
     self.selectedLayerId = newLayer.id
+    self:touchLayerData()
+end
+
+function DrawData:addFrame()
+    for l = 1, #self.layers do
+        table.insert(self.layers[l].frames, self:_newFrame())
+    end
+
+    self.selectedFrame = #self.layers[1].frames
     self:touchLayerData()
 end
 
