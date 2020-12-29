@@ -482,7 +482,7 @@ function DrawData:new(obj)
 
     for l = 1, #newObj.layers do
         local layer = newObj.layers[l]
-        if not layer.isVisible then
+        if layer.isVisible == nil then
             layer.isVisible = true
         end
         if not layer.id then
@@ -775,6 +775,54 @@ function DrawData:arePathDatasMergable(pd1, pd2)
     return true
 end
 
+function DrawData:saveEditorSettings()
+    local result = {
+        selectedLayerId = self.selectedLayerId,
+        selectedFrame = self.selectedFrame,
+        layerIdToLayer = {}
+    }
+
+    for l = 1, #self.layers do
+        local layer = {
+            isVisible = self.layers[l].isVisible
+        }
+
+        result.layerIdToLayer[self.layers[l].id] = layer
+    end
+
+    return result
+end
+
+function DrawData:applyEditorSettings(editorSettings)
+    if not editorSettings then
+        return
+    end
+
+    self.selectedLayerId = editorSettings.selectedLayerId
+    self.selectedFrame = editorSettings.selectedFrame
+
+    local foundSelectedLayer = false
+
+    for l = 1, #self.layers do
+        local layerData = editorSettings.layerIdToLayer[self.layers[l].id]
+        if layerData then
+            self.layers[l].isVisible = layerData.isVisible
+        end
+
+        if self.layers[l].id == self.selectedLayerId then
+            foundSelectedLayer = true
+        end
+    end
+
+    if not foundSelectedLayer then
+        self.selectedLayerId = self.layers[1].id
+    end
+
+    if self.selectedFrame > #self.layers[1].frames then
+        self.selectedFrame = #self.layers[1].frames
+    end
+end
+
 function DrawData:serialize()
     local data = {
         pathDataList = {},
@@ -786,8 +834,6 @@ function DrawData:serialize()
         fillPixelsPerUnit = self.fillPixelsPerUnit,
         bounds = self.bounds,
         numTotalLayers = self.numTotalLayers,
-        selectedLayerId = self.selectedLayerId,
-        selectedFrame = self.selectedFrame,
         initialFrame = self.initialFrame,
         layers = {},
     }

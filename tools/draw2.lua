@@ -375,7 +375,12 @@ function DrawTool:loadLastSave()
     local drawingComponent = self.dependencies.Drawing2:get(c.actorId)
 
     c._lastHash = drawingComponent.properties.hash
+    local editorSettings = nil
+    if self._drawData then
+        editorSettings = self._drawData:saveEditorSettings()
+    end
     self._drawData = DrawData:new(drawingComponent.properties.drawData or {})
+    self._drawData:applyEditorSettings(editorSettings)
     self._physicsBodyData = PhysicsBodyData:new(drawingComponent.properties.physicsBodyData or {})
 
     if self._scaleRotateData and self._scaleRotateData.index and self._scaleRotateData.index > self._physicsBodyData:getNumShapes() then
