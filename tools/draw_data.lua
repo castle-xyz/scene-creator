@@ -467,7 +467,7 @@ function DrawData:new(obj)
         layers = obj.layers or {},
         numTotalLayers = obj.numTotalLayers or 1,
         selectedLayerId = obj.selectedLayerId or nil,
-        selectedFrame = obj.selectedFrame or 1,
+        selectedFrame = obj.initialFrame or obj.selectedFrame or 1,
         initialFrame = obj.initialFrame or 1,
         framesPerSecond = obj.framesPerSecond or 4,
         _layerDataChanged = true,
@@ -976,11 +976,35 @@ function DrawData:addFrame()
     self:touchLayerData()
 end
 
-function DrawData:animateNextFrame()
-    self.selectedFrame = self.selectedFrame + 1
+function DrawData:newAnimationState()
+    return {
+        animationFrame = 1,
+        animationFrameTime = 0.0,
+    }
+end
 
-    if self.selectedFrame > #self.layers[1].frames then
-        self.selectedFrame = 1
+function DrawData:runAnimation(animationState, dt)
+    if not animationState then
+        return
+    end
+
+    animationState.animationFrameTime = animationState.animationFrameTime + dt
+    local secondsPerFrame = 1.0 / self.framesPerSecond
+    if animationState.animationFrameTime > secondsPerFrame then
+        animationState.animationFrameTime = animationState.animationFrameTime - secondsPerFrame
+        self:animateNextFrame(animationState)
+    end
+end
+
+function DrawData:animateNextFrame(animationState)
+    if not animationState then
+        return
+    end
+
+    animationState.animationFrame = animationState.animationFrame + 1
+
+    if animationState.animationFrame > #self.layers[1].frames then
+        animationState.animationFrame = 1
     end
 end
 
@@ -1028,9 +1052,15 @@ function DrawData:preload()
     self:graphics()
 end
 
-function DrawData:render()
+function DrawData:render(animationState)
+    local frameIdx = self.selectedFrame
+
+    if animationState then
+        frameIdx = animationState.animationFrame
+    end
+
     for l = 1, #self.layers do
-        local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, self.selectedFrame)
+        local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, frameIdx)
         local frame = self.layers[l].frames[realFrame]
         frame:renderFill()
         frame:graphics():draw()
@@ -1054,10 +1084,16 @@ function DrawData:renderOnionSkinning()
     end
 end
 
-function DrawData:renderForTool(tempTranslateX, tempTranslateY, tempGraphics)
+function DrawData:renderForTool(animationState, tempTranslateX, tempTranslateY, tempGraphics)
+    local frameIdx = self.selectedFrame
+
+    if animationState then
+        frameIdx = animationState.animationFrame
+    end
+
     for l = 1, #self.layers do
         local layer = self.layers[l]
-        local realFrame = self:getRealFrameIndexForLayerId(layer.id, self.selectedFrame)
+        local realFrame = self:getRealFrameIndexForLayerId(layer.id, frameIdx)
         local frame = self.layers[l].frames[realFrame]
 
         if layer.isVisible then

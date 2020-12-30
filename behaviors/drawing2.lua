@@ -108,6 +108,10 @@ end
 
 function Drawing2Behavior.handlers:enableComponent(component, opts)
     self:updateBodyShape(component)
+
+    local data = self:cacheDrawing(component, component.properties)
+    local drawData = data.drawData
+    component.animationState = drawData:newAnimationState()
 end
 
 function Drawing2Behavior.handlers:disableComponent(component, opts)
@@ -144,6 +148,23 @@ function Drawing2Behavior.setters:base64Png(component, ...)
 end
 
 -- Draw
+
+function Drawing2Behavior.handlers:update(dt)
+    if not self.game.performing then
+        return
+    end
+
+    self.game:forEachActorByDrawOrder(
+        function(actor)
+            local component = self.components[actor.actorId]
+            if component then
+                local data = self:cacheDrawing(component, component.properties)
+                local drawData = data.drawData
+                drawData:runAnimation(component.animationState, dt)
+            end
+        end
+    )
+end
 
 function Drawing2Behavior.handlers:drawComponent(component)
     local bodyComponent = self.dependencies.Body.components[component.actorId]
@@ -197,7 +218,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
 
     -- Draw!
     love.graphics.setColor(1, 1, 1, 1)
-    drawData:render()
+    drawData:render(component.animationState)
 
     -- Pop transform
     love.graphics.pop()

@@ -263,7 +263,7 @@ function DrawTool.handlers:onSetActive()
     self.viewX, self.viewY = 0, 0
     self.viewInContext = false
     self.isPlayingAnimation = false
-    self.animationFrameTime = 0.0
+    self.animationState = nil
     self.isOnionSkinningEnabled = false
     self.tempTranslateX, self.tempTranslateY = 0, 0
 end
@@ -477,12 +477,7 @@ function DrawTool.handlers:update(dt)
     end
 
     if self.isPlayingAnimation then
-        self.animationFrameTime = self.animationFrameTime + dt
-        local secondsPerFrame = 1.0 / self._drawData.framesPerSecond
-        if self.animationFrameTime > secondsPerFrame then
-            self.animationFrameTime = self.animationFrameTime - secondsPerFrame
-            self._drawData:animateNextFrame()
-        end
+        self._drawData:runAnimation(self.animationState, dt)
     end
 end
 
@@ -557,7 +552,7 @@ function DrawTool.handlers:drawOverlay()
     love.graphics.setColor(1, 1, 1, 1)
 
     if self._selectedSubtools.root ~= 'artwork' then
-        self._drawData:render()
+        self._drawData:render(self.animationState)
 
         love.graphics.setColor(0, 0, 0, 0.5)
         love.graphics.rectangle('fill', -DRAW_MAX_SIZE * 2.0, -DRAW_MAX_SIZE * 2.0, DRAW_MAX_SIZE * 4.0, DRAW_MAX_SIZE * 4.0)
@@ -575,7 +570,7 @@ function DrawTool.handlers:drawOverlay()
     if self._selectedSubtools.root == 'artwork' then
         love.graphics.setColor(1, 1, 1, 1)
 
-        self._drawData:renderForTool(self.tempTranslateX, self.tempTranslateY, self._tempGraphics)
+        self._drawData:renderForTool(self.animationState, self.tempTranslateX, self.tempTranslateY, self._tempGraphics)
 
         self._physicsBodyData:draw()
     end
@@ -639,12 +634,11 @@ end
 
 function DrawTool:setIsPlayingAnimation(isPlayingAnimation)
     self.isPlayingAnimation = isPlayingAnimation
-    self.animationFrameTime = 0.0
 
     if isPlayingAnimation then
-        self._initialSelectedFrame = self._drawData.selectedFrame
+        self.animationState = self._drawData:newAnimationState()
     else
-        self._drawData.selectedFrame = self._initialSelectedFrame
+        self.animationState = nil
     end
 end
 
