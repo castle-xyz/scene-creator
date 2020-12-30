@@ -308,6 +308,10 @@ function DrawDataFrame:renderFill()
 end
 
 function DrawDataFrame:renderPreviewPng(size)
+    if self.isLinked then
+        return nil
+    end
+
     if not size then
         size = 256
     end

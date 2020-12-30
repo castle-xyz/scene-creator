@@ -660,6 +660,11 @@ function DrawTool.handlers:uiData()
         self:saveDrawing('add frame', c)
     end
 
+    layerActions['onAddFrameAtPosition'] = function(position)
+        self._drawData:addFrameAtPosition(position)
+        self:saveDrawing('add frame', c)
+    end
+
     layerActions['onSelectLayer'] = function(layerId)
         self._drawData:selectLayer(layerId)
     end
@@ -676,6 +681,21 @@ function DrawTool.handlers:uiData()
     layerActions['onDeleteLayer'] = function(layerId)
         self._drawData:deleteLayer(layerId)
         self:saveDrawing('delete layer', c)
+    end
+
+    layerActions['onDeleteFrame'] = function(frame)
+        self._drawData:deleteFrame(frame)
+        self:saveDrawing('delete frame', c)
+    end
+
+    layerActions['onSetCellLinked'] = function(opts)
+        self._drawData:setCellLinked(opts.layerId, opts.frame, opts.isLinked)
+
+        if opts.isLinked then
+            self:saveDrawing('link cell', c)
+        else
+            self:saveDrawing('unlink cell', c)
+        end
     end
 
     layerActions['onSetLayerIsVisible'] = function(opts)

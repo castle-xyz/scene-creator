@@ -397,6 +397,20 @@ function DrawData:selectedLayer()
     return self:layerForId(self.selectedLayerId)
 end
 
+function DrawData:getRealFrameIndexForLayerId(layerId, frame)
+    local layer = self:layerForId(layerId)
+
+    while frame > 0 do
+        if not layer.frames[frame].isLinked then
+            return frame
+        end
+
+        frame = frame - 1
+    end
+
+    return frame
+end
+
 function DrawData:layerForId(id)
     for i = 1, #self.layers do
         if self.layers[i].id == id then
@@ -408,7 +422,8 @@ function DrawData:layerForId(id)
 end
 
 function DrawData:currentLayerFrame()
-    return self:selectedLayer().frames[self.selectedFrame]
+    local realFrame = self:getRealFrameIndexForLayerId(self:selectedLayer().id, self.selectedFrame)
+    return self:selectedLayer().frames[realFrame]
 end
 
 function DrawData:currentPathDataList()
@@ -678,7 +693,8 @@ function DrawData:updateBounds()
     local bounds = nil
     for l = 1, #self.layers do
         local layer = self.layers[l]
-        local frame = layer.frames[self.initialFrame]
+        local realFrame = self:getRealFrameIndexForLayerId(layer.id, self.initialFrame)
+        local frame = layer.frames[realFrame]
         bounds = frame:getPathDataBounds(bounds)
     end
 
@@ -943,6 +959,23 @@ function DrawData:deleteLayer(layerId)
     self:touchLayerData()
 end
 
+function DrawData:deleteFrame(frame)
+    for i = 1, #self.layers do
+        table.remove(self.layers[i].frames, frame)
+    end
+
+    if #self.layers[1].frames == 0 then
+        self:addFrame()
+        return
+    end
+
+    if self.selectedFrame > #self.layers[1].frames then
+        self.selectedFrame = #self.layers[1].frames
+    end
+
+    self:touchLayerData()
+end
+
 function DrawData:reorderLayers(layerIds)
     local layerIdToLayer = {}
 
@@ -964,8 +997,9 @@ function DrawData:setLayerIsVisible(layerId, isVisible)
     self:touchLayerData()
 end
 
-function DrawData:_newFrame()
+function DrawData:_newFrame(isLinked)
     local newFrame = {
+        isLinked = isLinked,
         pathDataList = {},
         fillImageBounds = {
             maxX = 0,
@@ -983,10 +1017,17 @@ function DrawData:_newFrame()
     return newFrame
 end
 
+function DrawData:setCellLinked(layerId, frame, isLinked)
+    if frame < 2 then
+        return
+    end
+
+    self:layerForId(layerId).frames[frame] = self:_newFrame(isLinked)
+    self:touchLayerData()
+end
+
 function DrawData:addLayer()
     self.numTotalLayers = self.numTotalLayers + 1
-
-    local newFrame = self:_newFrame()
 
     local newLayer = {
         title = 'Layer ' .. self.numTotalLayers,
@@ -1001,7 +1042,7 @@ function DrawData:addLayer()
     end
 
     for i = 1, frameCount do
-        table.insert(newLayer.frames, self._newFrame())
+        table.insert(newLayer.frames, self._newFrame(i ~= 1))
     end
 
     table.insert(self.layers, newLayer)
@@ -1010,8 +1051,21 @@ function DrawData:addLayer()
 end
 
 function DrawData:addFrame()
+    local isLinked = #self.layers[1].frames > 0
+
     for l = 1, #self.layers do
-        table.insert(self.layers[l].frames, self:_newFrame())
+        table.insert(self.layers[l].frames, self:_newFrame(isLinked))
+    end
+
+    self.selectedFrame = #self.layers[1].frames
+    self:touchLayerData()
+end
+
+function DrawData:addFrameAtPosition(position)
+    local isLinked = #self.layers[1].frames > 0
+
+    for l = 1, #self.layers do
+        table.insert(self.layers[l].frames, position + 1, self:_newFrame(isLinked))
     end
 
     self.selectedFrame = #self.layers[1].frames
@@ -1019,7 +1073,8 @@ function DrawData:addFrame()
 end
 
 function DrawData:clearFrame()
-    self:selectedLayer().frames[self.selectedFrame] = self:_newFrame()
+    local realFrame = self:getRealFrameIndexForLayerId(self:selectedLayer().id, self.selectedFrame)
+    self:selectedLayer().frames[realFrame] = self:_newFrame(false)
 end
 
 function DrawData:graphics()
@@ -1032,7 +1087,8 @@ end
 
 function DrawData:render()
     for l = 1, #self.layers do
-        local frame = self.layers[l].frames[self.selectedFrame]
+        local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, self.selectedFrame)
+        local frame = self.layers[l].frames[realFrame]
         frame:renderFill()
         frame:graphics():draw()
     end
@@ -1041,7 +1097,8 @@ end
 function DrawData:renderForTool(tempTranslateX, tempTranslateY, tempGraphics)
     for l = 1, #self.layers do
         local layer = self.layers[l]
-        local frame = self.layers[l].frames[self.selectedFrame]
+        local realFrame = self:getRealFrameIndexForLayerId(layer.id, self.selectedFrame)
+        local frame = self.layers[l].frames[realFrame]
 
         if layer.isVisible then
             if layer.id == self.selectedLayerId then
@@ -1115,6 +1172,7 @@ function DrawData:clearGraphics()
     for l = 1, #self.layers do
         for f = 1, #self.layers[l].frames do
             local frame = self.layers[l].frames[f]
+
             frame._graphics = nil
             frame._graphicsNeedsReset = true
 
