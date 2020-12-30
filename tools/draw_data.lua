@@ -469,6 +469,7 @@ function DrawData:new(obj)
         selectedLayerId = obj.selectedLayerId or nil,
         selectedFrame = obj.selectedFrame or 1,
         initialFrame = obj.initialFrame or 1,
+        framesPerSecond = obj.framesPerSecond or 4,
         _layerDataChanged = true,
         _layerData = nil,
     }
@@ -512,26 +513,7 @@ function DrawData:new(obj)
                 return newObj
             end
 
-            local newPathDataList = {}
-            for i = 1, #frame.pathDataList do
-                local pathData = frame.pathDataList[i]
-                if #pathData.points > 2 then
-                    local pathData = util.deepCopyTable(pathData)
-                    pathData.subpathDataList = nil
-                    pathData.tovePath = nil
-
-                    for j = 1, #pathData.points - 1 do
-                        local newPathData = util.deepCopyTable(pathData)
-                        newPathData.points = util.deepCopyTable({pathData.points[j], pathData.points[j + 1]})
-
-                        table.insert(newPathDataList, newPathData)
-                    end
-                else
-                    table.insert(newPathDataList, pathData)
-                end
-            end
-
-            frame.pathDataList = newPathDataList
+            frame:deserializePathDataList()
         end
     end
 
@@ -544,13 +526,7 @@ function DrawData:new(obj)
     for l = 1, #newObj.layers do
         for f = 1, #newObj.layers[l].frames do
             local frame = newObj.layers[l].frames[f]
-            if frame.fillPng then
-                local fileDataString = love.data.decode("string", "base64", frame.fillPng)
-                local fileData = love.filesystem.newFileData(fileDataString, "fill.png")
-                frame.fillImageData = love.image.newImageData(fileData)
-            end
-
-            frame.base64Png = frame:renderPreviewPng()
+            frame:deserializeFillAndPreview()
         end
     end
 
@@ -706,23 +682,6 @@ function DrawData:getBounds()
     return self.bounds
 end
 
-local function round(num, numDecimalPlaces)
-    local mult = 10^(numDecimalPlaces or 0)
-    return math.floor(num * mult + 0.5) / mult
-end
-
-local function roundFloatArray(a)
-    if a == nil then
-        return a
-    end
-
-    for i = 1, #a do
-        a[i] = round(a[i], 4)
-    end
-
-    return a
-end
-
 function floatArrayEquals(a1, a2)
     if a1 == nil and a2 == nil then
         return true
@@ -759,30 +718,6 @@ end
 
 function DrawData:arePathDatasFloodFillable(pd1, pd2)
     if not coordinatesEqual(pd1.points[#pd1.points], pd2.points[1]) then
-        return false
-    end
-
-    if not floatArrayEquals(pd1.color, pd2.color) then
-        return false
-    end
-
-    return true
-end
-
-function DrawData:arePathDatasMergable(pd1, pd2)
-    if not coordinatesEqual(pd1.points[#pd1.points], pd2.points[1]) then
-        return false
-    end
-
-    if pd1.style ~= pd2.style then
-        return false
-    end
-
-    if not floatArrayEquals(pd1.bendPoint, pd2.bendPoint) then
-        return false
-    end
-
-    if pd1.isFreehand ~= pd2.isFreehand then
         return false
     end
 
@@ -853,6 +788,7 @@ function DrawData:serialize()
         bounds = self.bounds,
         numTotalLayers = self.numTotalLayers,
         initialFrame = self.initialFrame,
+        framesPerSecond = self.framesPerSecond,
         layers = {},
     }
 
@@ -865,45 +801,7 @@ function DrawData:serialize()
 
         for f = 1, #self.layers[l].frames do
             local frame = self.layers[l].frames[f]
-            local frameData = {
-                isLinked = frame.isLinked,
-                pathDataList = {},
-                fillImageBounds = frame.fillImageBounds,
-                fillCanvasSize = frame.fillCanvasSize,
-            }
-
-            local lastSerializedPathData = nil
-            for i = 1, #frame.pathDataList do
-                local pathData = frame.pathDataList[i]
-        
-                local serializedPathData = {
-                    points = util.deepCopyTable(pathData.points),
-                    style = pathData.style,
-                    bendPoint = roundFloatArray(pathData.bendPoint),
-                    isFreehand = pathData.isFreehand,
-                    color = roundFloatArray(pathData.color),
-                    isTransparent = pathData.isTransparent,
-                }
-        
-                for j = 1, #serializedPathData.points do
-                    serializedPathData.points[j].x = round(serializedPathData.points[j].x, 4)
-                    serializedPathData.points[j].y = round(serializedPathData.points[j].y, 4)
-                end
-        
-                if lastSerializedPathData ~= nil and self:arePathDatasMergable(lastSerializedPathData, serializedPathData) then
-                    table.insert(lastSerializedPathData.points, serializedPathData.points[2])
-                else
-                    table.insert(frameData.pathDataList, serializedPathData)
-                    lastSerializedPathData = serializedPathData
-                end
-            end
-        
-            if frame.fillImageData then
-                local fileData = frame.fillImageData:encode("png")
-                frameData.fillPng = love.data.encode("string", "base64", fileData:getString())
-            end
-
-            table.insert(layerData.frames, frameData)
+            table.insert(layerData.frames, frame:serialize())
         end
 
         table.insert(data.layers, layerData)
@@ -1022,7 +920,24 @@ function DrawData:setCellLinked(layerId, frame, isLinked)
         return
     end
 
-    self:layerForId(layerId).frames[frame] = self:_newFrame(isLinked)
+    if isLinked then
+        self:layerForId(layerId).frames[frame] = self:_newFrame(isLinked)
+    else
+        local realFrame = self:getRealFrameIndexForLayerId(layerId, frame)
+        local oldFrame = self:layerForId(layerId).frames[realFrame]
+        local newFrame = oldFrame:serialize()
+
+        setmetatable(newFrame, {__index = DrawDataFrame})
+        newFrame.parent = function()
+            return self
+        end
+
+        newFrame:deserializePathDataList()
+        newFrame:deserializeFillAndPreview()
+
+        self:layerForId(layerId).frames[frame] = newFrame
+    end
+
     self:touchLayerData()
 end
 
@@ -1061,6 +976,34 @@ function DrawData:addFrame()
     self:touchLayerData()
 end
 
+function DrawData:animateNextFrame()
+    self.selectedFrame = self.selectedFrame + 1
+
+    if self.selectedFrame > #self.layers[1].frames then
+        self.selectedFrame = 1
+    end
+end
+
+function DrawData:stepBackward()
+    self.selectedFrame = self.selectedFrame - 1
+
+    if self.selectedFrame < 1 then
+        self.selectedFrame = #self.layers[1].frames
+    end
+
+    self:touchLayerData()
+end
+
+function DrawData:stepForward()
+    self.selectedFrame = self.selectedFrame + 1
+
+    if self.selectedFrame > #self.layers[1].frames then
+        self.selectedFrame = 1
+    end
+
+    self:touchLayerData()
+end
+
 function DrawData:addFrameAtPosition(position)
     local isLinked = #self.layers[1].frames > 0
 
@@ -1088,6 +1031,20 @@ end
 function DrawData:render()
     for l = 1, #self.layers do
         local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, self.selectedFrame)
+        local frame = self.layers[l].frames[realFrame]
+        frame:renderFill()
+        frame:graphics():draw()
+    end
+end
+
+function DrawData:renderOnionSkinning()
+    local frame = self.selectedFrame - 1
+    if frame < 1 then
+        frame = #self.layers[1].frames
+    end
+
+    for l = 1, #self.layers do
+        local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, frame)
         local frame = self.layers[l].frames[realFrame]
         frame:renderFill()
         frame:graphics():draw()

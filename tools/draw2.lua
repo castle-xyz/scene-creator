@@ -262,6 +262,9 @@ function DrawTool.handlers:onSetActive()
     self.hasResetViewWidth = false
     self.viewX, self.viewY = 0, 0
     self.viewInContext = false
+    self.isPlayingAnimation = false
+    self.animationFrameTime = 0.0
+    self.isOnionSkinningEnabled = false
     self.tempTranslateX, self.tempTranslateY = 0, 0
 end
 
@@ -433,31 +436,33 @@ function DrawTool.handlers:update(dt)
     local subtool = self:getCurrentSubtool()
 
     if touchData.numTouches == 1 and touchData.maxNumTouches == 1 then
-        -- Get the single touch
-        local touchId, touch = next(touchData.touches)
-        local touchX, touchY = self._viewTransform:inverseTransformPoint(touch.x, touch.y)
+        if not self.isPlayingAnimation then
+            -- Get the single touch
+            local touchId, touch = next(touchData.touches)
+            local touchX, touchY = self._viewTransform:inverseTransformPoint(touch.x, touch.y)
 
-        local roundedX, roundedY = self._drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
-        local roundedCoord = {x = roundedX, y = roundedY}
-        local clampedX, clampedY = self._drawData:clampGlobalCoordinates(touchX, touchY)
-    
-        local childTouchData = {
-            touch = touch,
-            touchX = touchX,
-            touchY = touchY,
-            roundedX = roundedX,
-            roundedY = roundedY,
-            roundedCoord = roundedCoord,
-            clampedX = clampedX,
-            clampedY = clampedY,
-        }
+            local roundedX, roundedY = self._drawData:roundGlobalCoordinatesToGrid(touchX, touchY)
+            local roundedCoord = {x = roundedX, y = roundedY}
+            local clampedX, clampedY = self._drawData:clampGlobalCoordinates(touchX, touchY)
 
-        if subtool then
-            self:callSubtoolHandler(subtool, "onTouch", c, childTouchData)
-            if touch.released then
-                subtool._hasTouch = false
-            else
-                subtool._hasTouch = true
+            local childTouchData = {
+                touch = touch,
+                touchX = touchX,
+                touchY = touchY,
+                roundedX = roundedX,
+                roundedY = roundedY,
+                roundedCoord = roundedCoord,
+                clampedX = clampedX,
+                clampedY = clampedY,
+            }
+
+            if subtool then
+                self:callSubtoolHandler(subtool, "onTouch", c, childTouchData)
+                if touch.released then
+                    subtool._hasTouch = false
+                else
+                    subtool._hasTouch = true
+                end
             end
         end
     else
@@ -469,6 +474,15 @@ function DrawTool.handlers:update(dt)
         end
 
         self:twoFingerPan(touchData)
+    end
+
+    if self.isPlayingAnimation then
+        self.animationFrameTime = self.animationFrameTime + dt
+        local secondsPerFrame = 1.0 / self._drawData.framesPerSecond
+        if self.animationFrameTime > secondsPerFrame then
+            self.animationFrameTime = self.animationFrameTime - secondsPerFrame
+            self._drawData:animateNextFrame()
+        end
     end
 end
 
@@ -507,6 +521,38 @@ function DrawTool.handlers:drawOverlay()
 
     local bgColor = self.game.sceneProperties.backgroundColor
     love.graphics.clear(bgColor.r, bgColor.g, bgColor.b)
+
+    if self.isOnionSkinningEnabled and not self.isPlayingAnimation then
+        if not self.onionSkinningCanvas then
+            self.onionSkinningCanvas = love.graphics.newCanvas(
+                512,
+                512,
+                {
+                    dpiscale = 1,
+                    msaa = 4,
+                }
+            )
+        end
+
+        self.onionSkinningCanvas:renderTo(
+            function()
+                love.graphics.push("all")
+
+                love.graphics.origin()
+                love.graphics.scale(512 / (DRAW_MAX_SIZE * 2.0))
+                love.graphics.translate(DRAW_MAX_SIZE, DRAW_MAX_SIZE)
+
+                love.graphics.clear(0.0, 0.0, 0.0, 0.0)
+                love.graphics.setColor(1, 1, 1, 1)
+                self._drawData:renderOnionSkinning()
+
+                love.graphics.pop()
+            end
+        )
+
+        love.graphics.setColor(0.7, 0.7, 0.7, 0.4)
+        love.graphics.draw(self.onionSkinningCanvas, -DRAW_MAX_SIZE, -DRAW_MAX_SIZE, 0, DRAW_MAX_SIZE * 2.0 / 512.0, DRAW_MAX_SIZE * 2.0 / 512.0)
+    end
 
     love.graphics.setColor(1, 1, 1, 1)
 
@@ -707,7 +753,33 @@ function DrawTool.handlers:uiData()
         self:saveDrawing('reorder layer', c)
     end
 
-    ui.fastData('draw-layers', self._drawData:getLayerData(), {
+    layerActions['onSetIsPlayingAnimation'] = function(isPlayingAnimation)
+        self.isPlayingAnimation = isPlayingAnimation
+        self.animationFrameTime = 0.0
+
+        if isPlayingAnimation then
+            self._initialSelectedFrame = self._drawData.selectedFrame
+        else
+            self._drawData.selectedFrame = self._initialSelectedFrame
+        end
+    end
+
+    layerActions['onStepBackward'] = function(opts)
+        self._drawData:stepBackward(opts)
+    end
+
+    layerActions['onStepForward'] = function(opts)
+        self._drawData:stepForward(opts)
+    end
+
+    layerActions['onSetIsOnionSkinningEnabled'] = function(isOnionSkinningEnabled)
+        self.isOnionSkinningEnabled = isOnionSkinningEnabled
+    end
+
+    local layerData = self._drawData:getLayerData()
+    layerData.isPlayingAnimation = self.isPlayingAnimation
+    layerData.isOnionSkinningEnabled = self.isOnionSkinningEnabled
+    ui.fastData('draw-layers', layerData, {
         actions = layerActions,
     })
 end

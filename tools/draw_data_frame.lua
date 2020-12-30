@@ -1,5 +1,133 @@
 DrawDataFrame = {}
 
+function DrawDataFrame:deserializePathDataList()
+    local newPathDataList = {}
+    for i = 1, #self.pathDataList do
+        local pathData = self.pathDataList[i]
+        if #pathData.points > 2 then
+            local pathData = util.deepCopyTable(pathData)
+            pathData.subpathDataList = nil
+            pathData.tovePath = nil
+
+            for j = 1, #pathData.points - 1 do
+                local newPathData = util.deepCopyTable(pathData)
+                newPathData.points = util.deepCopyTable({pathData.points[j], pathData.points[j + 1]})
+
+                table.insert(newPathDataList, newPathData)
+            end
+        else
+            table.insert(newPathDataList, pathData)
+        end
+    end
+
+    self.pathDataList = newPathDataList
+end
+
+function DrawDataFrame:deserializeFillAndPreview()
+    if self.fillPng then
+        local fileDataString = love.data.decode("string", "base64", self.fillPng)
+        local fileData = love.filesystem.newFileData(fileDataString, "fill.png")
+        self.fillImageData = love.image.newImageData(fileData)
+    end
+
+    self.base64Png = self:renderPreviewPng()
+end
+
+local function coordinatesEqual(c1, c2)
+    if not floatEquals(c1.x, c2.x) then
+        return false
+    end
+
+    if not floatEquals(c1.y, c2.y) then
+        return false
+    end
+
+    return true
+end
+
+function DrawDataFrame:arePathDatasMergable(pd1, pd2)
+    if not coordinatesEqual(pd1.points[#pd1.points], pd2.points[1]) then
+        return false
+    end
+
+    if pd1.style ~= pd2.style then
+        return false
+    end
+
+    if not floatArrayEquals(pd1.bendPoint, pd2.bendPoint) then
+        return false
+    end
+
+    if pd1.isFreehand ~= pd2.isFreehand then
+        return false
+    end
+
+    if not floatArrayEquals(pd1.color, pd2.color) then
+        return false
+    end
+
+    return true
+end
+
+local function round(num, numDecimalPlaces)
+    local mult = 10^(numDecimalPlaces or 0)
+    return math.floor(num * mult + 0.5) / mult
+end
+
+local function roundFloatArray(a)
+    if a == nil then
+        return a
+    end
+
+    for i = 1, #a do
+        a[i] = round(a[i], 4)
+    end
+
+    return a
+end
+
+function DrawDataFrame:serialize()
+    local frameData = {
+        isLinked = self.isLinked,
+        pathDataList = {},
+        fillImageBounds = self.fillImageBounds,
+        fillCanvasSize = self.fillCanvasSize,
+    }
+
+    local lastSerializedPathData = nil
+    for i = 1, #self.pathDataList do
+        local pathData = self.pathDataList[i]
+
+        local serializedPathData = {
+            points = util.deepCopyTable(pathData.points),
+            style = pathData.style,
+            bendPoint = roundFloatArray(pathData.bendPoint),
+            isFreehand = pathData.isFreehand,
+            color = roundFloatArray(pathData.color),
+            isTransparent = pathData.isTransparent,
+        }
+
+        for j = 1, #serializedPathData.points do
+            serializedPathData.points[j].x = round(serializedPathData.points[j].x, 4)
+            serializedPathData.points[j].y = round(serializedPathData.points[j].y, 4)
+        end
+
+        if lastSerializedPathData ~= nil and self:arePathDatasMergable(lastSerializedPathData, serializedPathData) then
+            table.insert(lastSerializedPathData.points, serializedPathData.points[2])
+        else
+            table.insert(frameData.pathDataList, serializedPathData)
+            lastSerializedPathData = serializedPathData
+        end
+    end
+
+    if self.fillImageData then
+        local fileData = self.fillImageData:encode("png")
+        frameData.fillPng = love.data.encode("string", "base64", fileData:getString())
+    end
+
+    return frameData
+end
+
 function DrawDataFrame:cleanUpPaths()
     for i = 1, #self.pathDataList do
         self:parent():updatePathDataRendering(self.pathDataList[i])
