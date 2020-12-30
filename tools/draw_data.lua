@@ -1044,10 +1044,13 @@ function DrawData:renderOnionSkinning()
     end
 
     for l = 1, #self.layers do
-        local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, frame)
-        local frame = self.layers[l].frames[realFrame]
-        frame:renderFill()
-        frame:graphics():draw()
+        local layer = self.layers[l]
+        if layer.isVisible then
+            local realFrame = self:getRealFrameIndexForLayerId(layer.id, frame)
+            local frame = layer.frames[realFrame]
+            frame:renderFill()
+            frame:graphics():draw()
+        end
     end
 end
 
