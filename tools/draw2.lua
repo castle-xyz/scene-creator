@@ -637,6 +637,17 @@ end
 
 -- UI
 
+function DrawTool:setIsPlayingAnimation(isPlayingAnimation)
+    self.isPlayingAnimation = isPlayingAnimation
+    self.animationFrameTime = 0.0
+
+    if isPlayingAnimation then
+        self._initialSelectedFrame = self._drawData.selectedFrame
+    else
+        self._drawData.selectedFrame = self._initialSelectedFrame
+    end
+end
+
 function DrawTool.handlers:uiData()
     if not self:isActive() then
         return
@@ -712,14 +723,17 @@ function DrawTool.handlers:uiData()
     end
 
     layerActions['onSelectLayer'] = function(layerId)
+        self:setIsPlayingAnimation(false)
         self._drawData:selectLayer(layerId)
     end
 
     layerActions['onSelectFrame'] = function(frame)
+        self:setIsPlayingAnimation(false)
         self._drawData:selectFrame(frame)
     end
 
     layerActions['onSelectLayerAndFrame'] = function(layerAndFrame)
+        self:setIsPlayingAnimation(false)
         self._drawData:selectLayer(layerAndFrame.layerId)
         self._drawData:selectFrame(layerAndFrame.frame)
     end
@@ -754,14 +768,7 @@ function DrawTool.handlers:uiData()
     end
 
     layerActions['onSetIsPlayingAnimation'] = function(isPlayingAnimation)
-        self.isPlayingAnimation = isPlayingAnimation
-        self.animationFrameTime = 0.0
-
-        if isPlayingAnimation then
-            self._initialSelectedFrame = self._drawData.selectedFrame
-        else
-            self._drawData.selectedFrame = self._initialSelectedFrame
-        end
+        self:setIsPlayingAnimation(isPlayingAnimation)
     end
 
     layerActions['onStepBackward'] = function(opts)

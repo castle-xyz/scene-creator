@@ -957,7 +957,7 @@ function DrawData:addLayer()
     end
 
     for i = 1, frameCount do
-        table.insert(newLayer.frames, self._newFrame(i ~= 1))
+        table.insert(newLayer.frames, self:_newFrame(i > 1))
     end
 
     table.insert(self.layers, newLayer)
