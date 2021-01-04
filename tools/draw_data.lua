@@ -976,6 +976,10 @@ function DrawData:newAnimationState()
     }
 end
 
+function DrawData:getNumFrames()
+    return #self.layers[1].frames
+end
+
 function DrawData:runAnimation(animationState, componentProperties, dt)
     if not animationState or not componentProperties then
         return
