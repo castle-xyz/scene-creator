@@ -271,9 +271,21 @@ function Drawing2Behavior.setters:currentFrame(component, value)
     component.properties.currentFrame = value
 end
 
+Drawing2Behavior.triggers["animation end"] = {
+    description = "When the animation ends",
+    category = "draw",
+}
+
+Drawing2Behavior.triggers["animation loop"] = {
+    description = "When the animation loops",
+    category = "draw",
+}
+
 -- Draw
 
-function Drawing2Behavior.handlers:update(dt)
+-- use postPerform so that destroying/hiding an actor in the
+-- "animation loop" trigger happens the same frame as the loop
+function Drawing2Behavior.handlers:postPerform(dt)
     if not self.game.performing then
         return
     end
@@ -282,9 +294,13 @@ function Drawing2Behavior.handlers:update(dt)
         function(actor)
             local component = self.components[actor.actorId]
             if component and component.animationState then
+                local fireTrigger = function (eventName)
+                    self:fireTrigger(eventName, actor.actorId)
+                end
+
                 local data = self:cacheDrawing(component, component.properties)
                 local drawData = data.drawData
-                drawData:runAnimation(component.animationState, component.properties, dt)
+                drawData:runAnimation(component.animationState, component.properties, dt, fireTrigger)
             end
         end
     )
