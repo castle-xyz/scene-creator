@@ -987,18 +987,32 @@ function DrawData:runAnimation(animationState, componentProperties, dt)
 
     animationState.animationFrameTime = animationState.animationFrameTime + dt
     local secondsPerFrame = 1.0 / componentProperties.framesPerSecond
-    if animationState.animationFrameTime > secondsPerFrame then
-        animationState.animationFrameTime = animationState.animationFrameTime - secondsPerFrame
+    if animationState.animationFrameTime > math.abs(secondsPerFrame) then
+        animationState.animationFrameTime = animationState.animationFrameTime - math.abs(secondsPerFrame)
 
-        componentProperties.currentFrame = componentProperties.currentFrame + 1
+        if secondsPerFrame > 0.0 then
+            componentProperties.currentFrame = componentProperties.currentFrame + 1
 
-        if componentProperties.currentFrame > #self.layers[1].frames then
-            if componentProperties.loop then
-                componentProperties.currentFrame = 1
-            else
-                componentProperties.currentFrame = #self.layers[1].frames
-                componentProperties.playing = false
-                animationState.animationFrameTime = 0.0
+            if componentProperties.currentFrame > #self.layers[1].frames then
+                if componentProperties.loop then
+                    componentProperties.currentFrame = 1
+                else
+                    componentProperties.currentFrame = #self.layers[1].frames
+                    componentProperties.playing = false
+                    animationState.animationFrameTime = 0.0
+                end
+            end
+        else
+            componentProperties.currentFrame = componentProperties.currentFrame - 1
+
+            if componentProperties.currentFrame < 1 then
+                if componentProperties.loop then
+                    componentProperties.currentFrame = #self.layers[1].frames
+                else
+                    componentProperties.currentFrame = 1
+                    componentProperties.playing = false
+                    animationState.animationFrameTime = 0.0
+                end
             end
         end
     end
