@@ -30,9 +30,13 @@ local Drawing2Behavior =
             set = true,
          },
        },
-       loopStyle = {
-        method = 'numberInput',
-        props = { min = 0, max = 2 },
+       playMode = {
+        method = 'dropdown',
+        label = 'Play mode',
+        props = { items = {"still", "play once", "loop"} },
+        rules = {
+            set = true,
+         },
        }, -- this isn't stored in the bp. only used for the rn ui
        loop = {},
        playing = {},
@@ -225,23 +229,23 @@ function Drawing2Behavior.setters:initialFrame(component, value)
     end
 end
 
-function Drawing2Behavior.getters:loopStyle(component)
+function Drawing2Behavior.getters:playMode(component)
     if not component.properties.playing then
-        return 0
+        return "still"
     end
 
     if component.properties.loop then
-        return 2
+        return "loop"
     else
-        return 1
+        return "play once"
     end
  end
 
-function Drawing2Behavior.setters:loopStyle(component, value)
-    if value == 0 then
+function Drawing2Behavior.setters:playMode(component, value)
+    if value == "still" then
         component.properties.playing = false
         component.properties.loop = false
-    elseif value == 1 then
+    elseif value == "play once" then
         component.properties.playing = true
         component.properties.loop = false
     else
