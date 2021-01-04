@@ -458,20 +458,13 @@ function DrawData:new(obj)
         fillPng = obj.fillPng or nil,
         version = obj.version or nil,
         fillPixelsPerUnit = obj.fillPixelsPerUnit or 25.6,
-        bounds = obj.bounds or {
-            maxX = 0,
-            maxY = 0,
-            minX = 0,
-            minY = 0
-        },
         layers = obj.layers or {},
         numTotalLayers = obj.numTotalLayers or 1,
         selectedLayerId = obj.selectedLayerId or nil,
-        selectedFrame = obj.initialFrame or obj.selectedFrame or 1,
-        initialFrame = obj.initialFrame or 1,
-        framesPerSecond = obj.framesPerSecond or 4,
+        selectedFrame = obj.selectedFrame or 1,
         _layerDataChanged = true,
         _layerData = nil,
+        _cachedBounds = {},
     }
 
     for l = 1, #newObj.layers do
@@ -666,20 +659,24 @@ function DrawData:getLayerData()
 end
 
 function DrawData:updateBounds()
+    self._cachedBounds[self.selectedFrame] = nil
+end
+
+function DrawData:getBounds(frame)
+    if self._cachedBounds[self.selectedFrame] then
+        return self._cachedBounds[self.selectedFrame]
+    end
+
     local bounds = nil
     for l = 1, #self.layers do
         local layer = self.layers[l]
-        local realFrame = self:getRealFrameIndexForLayerId(layer.id, self.initialFrame)
+        local realFrame = self:getRealFrameIndexForLayerId(layer.id, frame)
         local frame = layer.frames[realFrame]
         bounds = frame:getPathDataBounds(bounds)
     end
 
-    self.bounds = bounds
-    return self.bounds
-end
-
-function DrawData:getBounds()
-    return self.bounds
+    self._cachedBounds[self.selectedFrame] = bounds
+    return bounds
 end
 
 function floatArrayEquals(a1, a2)
@@ -785,10 +782,7 @@ function DrawData:serialize()
         scale = self.scale,
         version = self.version,
         fillPixelsPerUnit = self.fillPixelsPerUnit,
-        bounds = self.bounds,
         numTotalLayers = self.numTotalLayers,
-        initialFrame = self.initialFrame,
-        framesPerSecond = self.framesPerSecond,
         layers = {},
     }
 
@@ -978,33 +972,35 @@ end
 
 function DrawData:newAnimationState()
     return {
-        animationFrame = 1,
         animationFrameTime = 0.0,
     }
 end
 
-function DrawData:runAnimation(animationState, dt)
-    if not animationState then
+function DrawData:runAnimation(animationState, componentProperties, dt)
+    if not animationState or not componentProperties then
+        return
+    end
+
+    if not componentProperties.playing then
         return
     end
 
     animationState.animationFrameTime = animationState.animationFrameTime + dt
-    local secondsPerFrame = 1.0 / self.framesPerSecond
+    local secondsPerFrame = 1.0 / componentProperties.framesPerSecond
     if animationState.animationFrameTime > secondsPerFrame then
         animationState.animationFrameTime = animationState.animationFrameTime - secondsPerFrame
-        self:animateNextFrame(animationState)
-    end
-end
 
-function DrawData:animateNextFrame(animationState)
-    if not animationState then
-        return
-    end
+        componentProperties.currentFrame = componentProperties.currentFrame + 1
 
-    animationState.animationFrame = animationState.animationFrame + 1
-
-    if animationState.animationFrame > #self.layers[1].frames then
-        animationState.animationFrame = 1
+        if componentProperties.currentFrame > #self.layers[1].frames then
+            if componentProperties.loop then
+                componentProperties.currentFrame = 1
+            else
+                componentProperties.currentFrame = #self.layers[1].frames
+                componentProperties.playing = false
+                animationState.animationFrameTime = 0.0
+            end
+        end
     end
 end
 
@@ -1052,11 +1048,11 @@ function DrawData:preload()
     self:graphics()
 end
 
-function DrawData:render(animationState)
+function DrawData:render(componentProperties)
     local frameIdx = self.selectedFrame
 
-    if animationState then
-        frameIdx = animationState.animationFrame
+    if componentProperties and componentProperties.currentFrame then
+        frameIdx = componentProperties.currentFrame
     end
 
     for l = 1, #self.layers do
@@ -1131,7 +1127,7 @@ function DrawData:renderPreviewPng(size)
 
     previewCanvas:renderTo(
         function()
-            local pathBounds = self:getBounds()
+            local pathBounds = self:getBounds(1)
 
             local width = pathBounds.maxX - pathBounds.minX
             local height = pathBounds.maxY - pathBounds.minY

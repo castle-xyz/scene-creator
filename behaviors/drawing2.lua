@@ -14,6 +14,29 @@ local Drawing2Behavior =
        base64Png = {  -- derived from drawData
           method = 'data',
        },
+       initialFrame = {},
+       currentFrame = {
+        label = 'Current frame',
+        rules = {
+            get = true,
+            set = true,
+         },
+       },
+       loopStyle = {
+        method = 'numberInput',
+        props = { min = 0, max = 2 },
+       }, -- this isn't stored in the bp. only used for the rn ui
+       loop = {},
+       playing = {},
+       framesPerSecond = {
+        method = 'numberInput',
+        label = 'Frames per second',
+        props = { min = -30, max = 30, decimalDigits = 1 },
+        rules = {
+            set = true,
+            get = true,
+         },
+       },
     },
 }
 
@@ -91,7 +114,9 @@ function Drawing2Behavior:updateBodyShape(componentOrActorId)
     local physicsBodyData = data.physicsBodyData
 
     self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
-    self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getBounds())
+    if not self.game.performing then
+        self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getBounds(component.properties.initialFrame))
+    end
     self.dependencies.Body:setShapes(component.actorId, physicsBodyData:getShapesForBody())
 
     component._hash = component.properties.hash
@@ -104,6 +129,19 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
     component.properties.drawData = bp.drawData or DEFAULT_DATA
     component.properties.physicsBodyData = bp.physicsBodyData or DEFAULT_DATA
     component.properties.hash = bp.hash or self:hash(component.properties.drawData, component.properties.physicsBodyData)
+
+    -- animation properties
+    component.properties.initialFrame = bp.initialFrame or 1
+    component.properties.currentFrame = component.properties.initialFrame
+    component.properties.loop = bp.loop
+    if component.properties.loop == nil then
+        component.properties.loop = true
+    end
+    component.properties.playing = bp.playing
+    if component.properties.playing == nil then
+        component.properties.playing = true
+    end
+    component.properties.framesPerSecond = bp.framesPerSecond or 4
 end
 
 function Drawing2Behavior.handlers:enableComponent(component, opts)
@@ -127,6 +165,12 @@ function Drawing2Behavior.handlers:blueprintComponent(component, bp)
     bp.physicsBodyData = component.properties.physicsBodyData
     bp.hash = component.properties.hash
     -- don't blueprint base64Png, derive from drawing data
+
+    -- animation properties
+    bp.initialFrame = component.properties.initialFrame
+    bp.loop = component.properties.loop
+    bp.playing = component.properties.playing
+    bp.framesPerSecond = component.properties.framesPerSecond
 end
 
 function Drawing2Behavior.handlers:blueprintPng(component)
@@ -147,6 +191,32 @@ function Drawing2Behavior.setters:base64Png(component, ...)
    -- noop, this is derived from drawData
 end
 
+function Drawing2Behavior.getters:loopStyle(component)
+    if not component.properties.playing then
+        return 0
+    end
+
+    if component.properties.loop then
+        return 2
+    else
+        return 1
+    end
+ end
+
+function Drawing2Behavior.setters:loopStyle(component, value)
+    if value == 0 then
+        component.properties.playing = false
+        component.properties.loop = false
+    elseif value == 1 then
+        component.properties.playing = true
+        component.properties.loop = false
+    else
+        component.properties.playing = true
+        component.properties.loop = true
+    end
+end
+
+
 -- Draw
 
 function Drawing2Behavior.handlers:update(dt)
@@ -157,10 +227,10 @@ function Drawing2Behavior.handlers:update(dt)
     self.game:forEachActorByDrawOrder(
         function(actor)
             local component = self.components[actor.actorId]
-            if component then
+            if component and component.animationState then
                 local data = self:cacheDrawing(component, component.properties)
                 local drawData = data.drawData
-                drawData:runAnimation(component.animationState, dt)
+                drawData:runAnimation(component.animationState, component.properties, dt)
             end
         end
     )
@@ -218,7 +288,7 @@ function Drawing2Behavior.handlers:drawComponent(component)
 
     -- Draw!
     love.graphics.setColor(1, 1, 1, 1)
-    drawData:render(component.animationState)
+    drawData:render(component.properties)
 
     -- Pop transform
     love.graphics.pop()
