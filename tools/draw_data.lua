@@ -919,7 +919,7 @@ function DrawData:setCellLinked(layerId, frame, isLinked)
     else
         local realFrame = self:getRealFrameIndexForLayerId(layerId, frame)
         local oldFrame = self:layerForId(layerId).frames[realFrame]
-        local newFrame = oldFrame:serialize()
+        local newFrame = util.deepCopyTable(oldFrame:serialize())
 
         setmetatable(newFrame, {__index = DrawDataFrame})
         newFrame.parent = function()

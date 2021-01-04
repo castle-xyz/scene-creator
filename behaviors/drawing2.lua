@@ -143,11 +143,11 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
     component.properties.currentFrame = component.properties.initialFrame
     component.properties.loop = bp.loop
     if component.properties.loop == nil then
-        component.properties.loop = true
+        component.properties.loop = false
     end
     component.properties.playing = bp.playing
     if component.properties.playing == nil then
-        component.properties.playing = true
+        component.properties.playing = false
     end
     component.properties.framesPerSecond = bp.framesPerSecond or 4
 end
