@@ -15,7 +15,12 @@ local Drawing2Behavior =
        base64Png = {  -- derived from drawData
           method = 'data',
        },
-       initialFrame = {},
+       base64PngFrames = {  -- derived from drawData
+          method = 'data',
+       },
+       initialFrame = {
+          method = 'numberInput',
+       },
        currentFrame = {
         label = 'Current frame',
         rules = {
@@ -74,7 +79,8 @@ function Drawing2Behavior:cacheDrawing(component, data)
     if not cache[hash].base64Png and not self.game.isPerforming then
        local selectedActorId = next(self.game.selectedActorIds)
        if component ~= nil and component.actorId == selectedActorId then
-          cache[hash].base64Png = cache[hash].drawData:renderPreviewPng(256)
+          cache[hash].base64Png = cache[hash].drawData:renderPreviewPng(component.properties.initialFrame, 256)
+          cache[hash].base64PngFrames = cache[hash].drawData:renderPreviewPngForFrames(256)
        end
     end
 
@@ -99,6 +105,7 @@ function Drawing2Behavior:deserialize(payload)
         result.drawData = DrawData:new({})
         result.physicsBodyData = PhysicsBodyData:new({})
         result.base64Png = nil
+        result.base64PngFrames = nil
     else
         result.drawData = DrawData:new(payload.drawData or {})
         result.physicsBodyData = PhysicsBodyData:new(payload.physicsBodyData or {})
@@ -165,7 +172,7 @@ function Drawing2Behavior.handlers:blueprintComponent(component, bp)
     bp.drawData = component.properties.drawData
     bp.physicsBodyData = component.properties.physicsBodyData
     bp.hash = component.properties.hash
-    -- don't blueprint base64Png, derive from drawing data
+    -- don't blueprint base64Png or base64PngFrames, derive from drawing data
 
     -- animation properties
     bp.initialFrame = component.properties.initialFrame
@@ -176,7 +183,7 @@ end
 
 function Drawing2Behavior.handlers:blueprintPng(component)
     local data = self:cacheDrawing(component, component.properties)
-    return data.drawData:renderPreviewPng(256)
+    return data.drawData:renderPreviewPng(component.properties.initialFrame, 256)
 end
 
 function Drawing2Behavior.getters:base64Png(component)
@@ -190,6 +197,30 @@ end
 
 function Drawing2Behavior.setters:base64Png(component, ...)
    -- noop, this is derived from drawData
+end
+
+function Drawing2Behavior.getters:base64PngFrames(component)
+    if self.game.activeToolBehaviorId == self.game.behaviorsByName.Draw2.behaviorId then
+       -- no need to render drawing previews when the draw tool is active
+       return nil
+    end
+    local data = self:cacheDrawing(component, component.properties)
+    return data.base64PngFrames
+end
+
+function Drawing2Behavior.setters:base64PngFrames(component, ...)
+    -- noop, this is derived from drawData
+end
+
+function Drawing2Behavior.setters:initialFrame(component, value)
+    component.properties.initialFrame = value
+    component.properties.currentFrame = value
+
+    if not self.game.performing then
+        local data = self:cacheDrawing(component, component.properties)
+        local drawData = data.drawData
+        self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getBounds(component.properties.initialFrame))
+    end
 end
 
 function Drawing2Behavior.getters:loopStyle(component)

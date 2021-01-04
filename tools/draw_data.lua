@@ -663,8 +663,8 @@ function DrawData:updateBounds()
 end
 
 function DrawData:getBounds(frame)
-    if self._cachedBounds[self.selectedFrame] then
-        return self._cachedBounds[self.selectedFrame]
+    if self._cachedBounds[frame] then
+        return self._cachedBounds[frame]
     end
 
     local bounds = nil
@@ -675,7 +675,7 @@ function DrawData:getBounds(frame)
         bounds = frame:getPathDataBounds(bounds)
     end
 
-    self._cachedBounds[self.selectedFrame] = bounds
+    self._cachedBounds[frame] = bounds
     return bounds
 end
 
@@ -1125,7 +1125,19 @@ function DrawData:renderForTool(animationState, tempTranslateX, tempTranslateY, 
     end
 end
 
-function DrawData:renderPreviewPng(size)
+function DrawData:renderPreviewPngForFrames(size)
+    local results = {
+        numFrames = #self.layers[1].frames,
+    }
+
+    for i = 1, #self.layers[1].frames do
+        results['frame' .. (i - 1)] = self:renderPreviewPng(i, size)
+    end
+
+    return results
+end
+
+function DrawData:renderPreviewPng(frame, size)
     if not size then
         size = 256
     end
@@ -1141,7 +1153,7 @@ function DrawData:renderPreviewPng(size)
 
     previewCanvas:renderTo(
         function()
-            local pathBounds = self:getBounds(1)
+            local pathBounds = self:getBounds(frame)
 
             local width = pathBounds.maxX - pathBounds.minX
             local height = pathBounds.maxY - pathBounds.minY
@@ -1164,7 +1176,9 @@ function DrawData:renderPreviewPng(size)
 
             love.graphics.clear(0.0, 0.0, 0.0, 0.0)
             love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
-            self:render()
+            self:render({
+                currentFrame = frame,
+            })
 
             love.graphics.pop()
         end
