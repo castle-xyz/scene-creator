@@ -477,7 +477,7 @@ function DrawTool.handlers:update(dt)
     end
 
     if self.isPlayingAnimation then
-        self._drawData:runAnimation(self.animationState, dt)
+        self._drawData:runAnimation(self.animationState, self.animationState, dt)
     end
 end
 
@@ -637,6 +637,10 @@ function DrawTool:setIsPlayingAnimation(isPlayingAnimation)
 
     if isPlayingAnimation then
         self.animationState = self._drawData:newAnimationState()
+        self.animationState.playing = true
+        self.animationState.loop = true
+        self.animationState.framesPerSecond = 2
+        self.animationState.currentFrame = 1
     else
         self.animationState = nil
     end

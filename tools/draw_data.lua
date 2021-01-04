@@ -1098,7 +1098,7 @@ function DrawData:renderForTool(animationState, tempTranslateX, tempTranslateY, 
     local frameIdx = self.selectedFrame
 
     if animationState then
-        frameIdx = animationState.animationFrame
+        frameIdx = animationState.currentFrame
     end
 
     for l = 1, #self.layers do
