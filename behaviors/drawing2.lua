@@ -4,6 +4,7 @@ require('tools.physics_body_data')
 local Drawing2Behavior =
     defineCoreBehavior {
     name = "Drawing2",
+    displayName = "Drawing",
     dependencies = {
         "Body"
     },
