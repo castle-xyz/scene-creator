@@ -758,6 +758,7 @@ function DrawTool.handlers:uiData()
 
     layerActions['onSetLayerIsVisible'] = function(opts)
         self._drawData:setLayerIsVisible(opts.layerId, opts.isVisible)
+        self:saveDrawing('update layer visibility', c)
     end
 
     layerActions['onReorderLayers'] = function(opts)

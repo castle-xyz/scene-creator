@@ -732,16 +732,7 @@ function DrawData:saveEditorSettings()
     local result = {
         selectedLayerId = self.selectedLayerId,
         selectedFrame = self.selectedFrame,
-        layerIdToLayer = {}
     }
-
-    for l = 1, #self.layers do
-        local layer = {
-            isVisible = self.layers[l].isVisible
-        }
-
-        result.layerIdToLayer[self.layers[l].id] = layer
-    end
 
     return result
 end
@@ -757,11 +748,6 @@ function DrawData:applyEditorSettings(editorSettings)
     local foundSelectedLayer = false
 
     for l = 1, #self.layers do
-        local layerData = editorSettings.layerIdToLayer[self.layers[l].id]
-        if layerData then
-            self.layers[l].isVisible = layerData.isVisible
-        end
-
         if self.layers[l].id == self.selectedLayerId then
             foundSelectedLayer = true
         end
@@ -794,6 +780,7 @@ function DrawData:serialize()
         local layerData = {
             title = self.layers[l].title,
             id = self.layers[l].id,
+            isVisible = self.layers[l].isVisible,
             frames = {},
         }
 
@@ -1120,10 +1107,12 @@ function DrawData:render(componentProperties)
     end
 
     for l = 1, #self.layers do
-        local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, frameIdx)
-        local frame = self.layers[l].frames[realFrame]
-        frame:renderFill()
-        frame:graphics():draw()
+        if self.layers[l].isVisible then
+            local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, frameIdx)
+            local frame = self.layers[l].frames[realFrame]
+            frame:renderFill()
+            frame:graphics():draw()
+        end
     end
 end
 
