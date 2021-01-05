@@ -980,6 +980,21 @@ function DrawData:getNumFrames()
     return #self.layers[1].frames
 end
 
+function DrawData:modFrameIndex(value)
+    value = math.floor(value + 0.5)
+    local numFrames = self:getNumFrames()
+
+    while value > numFrames do
+        value = value - numFrames
+    end
+
+    while value < 1 do
+        value = value + numFrames
+    end
+
+    return value
+end
+
 function DrawData:runAnimation(animationState, componentProperties, dt, fireTrigger)
     if not animationState or not componentProperties then
         return
@@ -994,18 +1009,25 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
     if animationState.animationFrameTime > math.abs(secondsPerFrame) then
         animationState.animationFrameTime = animationState.animationFrameTime - math.abs(secondsPerFrame)
 
-        if secondsPerFrame > 0.0 then
-            componentProperties.currentFrame = componentProperties.currentFrame + 1
+        local firstFrame = componentProperties.firstFrame
+        if not firstFrame or firstFrame < 1 or firstFrame > self:getNumFrames() then
+            firstFrame = 1
+        end
 
-            if componentProperties.currentFrame > #self.layers[1].frames then
+        local lastFrame = componentProperties.lastFrame
+        if not lastFrame or lastFrame < 1 or lastFrame > self:getNumFrames() then
+            lastFrame = self:getNumFrames()
+        end
+
+        if secondsPerFrame > 0.0 then
+            if componentProperties.currentFrame == lastFrame then
                 if componentProperties.loop then
-                    componentProperties.currentFrame = 1
+                    componentProperties.currentFrame = firstFrame
 
                     if fireTrigger then
                         fireTrigger("animation loop")
                     end
                 else
-                    componentProperties.currentFrame = #self.layers[1].frames
                     componentProperties.playing = false
                     animationState.animationFrameTime = 0.0
 
@@ -1013,19 +1035,18 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
                         fireTrigger("animation end")
                     end
                 end
+            else
+                componentProperties.currentFrame = componentProperties.currentFrame + 1
             end
         else
-            componentProperties.currentFrame = componentProperties.currentFrame - 1
-
-            if componentProperties.currentFrame < 1 then
+            if componentProperties.currentFrame == firstFrame then
                 if componentProperties.loop then
-                    componentProperties.currentFrame = #self.layers[1].frames
+                    componentProperties.currentFrame = lastFrame
 
                     if fireTrigger then
                         fireTrigger("animation loop")
                     end
                 else
-                    componentProperties.currentFrame = 1
                     componentProperties.playing = false
                     animationState.animationFrameTime = 0.0
 
@@ -1033,6 +1054,8 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
                         fireTrigger("animation end")
                     end
                 end
+            else
+                componentProperties.currentFrame = componentProperties.currentFrame - 1
             end
         end
     end
@@ -1086,7 +1109,7 @@ function DrawData:render(componentProperties)
     local frameIdx = self.selectedFrame
 
     if componentProperties and componentProperties.currentFrame then
-        frameIdx = componentProperties.currentFrame
+        frameIdx = self:modFrameIndex(componentProperties.currentFrame)
     end
 
     for l = 1, #self.layers do

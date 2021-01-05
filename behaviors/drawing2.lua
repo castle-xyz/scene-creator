@@ -24,7 +24,7 @@ local Drawing2Behavior =
        currentFrame = {
         method = 'numberInput',
         label = 'Current frame',
-        props = { min = 1, max = 99, decimalDigits = 1 },
+        props = { decimalDigits = 1 },
         rules = {
             get = true,
             set = true,
@@ -252,23 +252,6 @@ function Drawing2Behavior.setters:playMode(component, value)
         component.properties.playing = true
         component.properties.loop = true
     end
-end
-
-function Drawing2Behavior.getters:currentFrame(component)
-    -- this is only used for the "set property" response default value
-    return 1
-end
-
-function Drawing2Behavior.setters:currentFrame(component, value)
-    local data = self:cacheDrawing(component, component.properties)
-    local drawData = data.drawData
-    local numFrames = drawData:getNumFrames()
-
-    while value > numFrames do
-        value = value - numFrames
-    end
-
-    component.properties.currentFrame = value
 end
 
 Drawing2Behavior.triggers["animation end"] = {
