@@ -1010,21 +1010,24 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
 
     animationState.animationFrameTime = animationState.animationFrameTime + dt
     local secondsPerFrame = 1.0 / componentProperties.framesPerSecond
+
     if animationState.animationFrameTime > math.abs(secondsPerFrame) then
         animationState.animationFrameTime = animationState.animationFrameTime - math.abs(secondsPerFrame)
 
-        local firstFrame = componentProperties.firstFrame
+        local firstFrame = componentProperties.loopStartFrame
         if not firstFrame or firstFrame < 1 or firstFrame > self:getNumFrames() then
             firstFrame = 1
         end
 
-        local lastFrame = componentProperties.lastFrame
+        local lastFrame = componentProperties.loopEndFrame
         if not lastFrame or lastFrame < 1 or lastFrame > self:getNumFrames() then
             lastFrame = self:getNumFrames()
         end
 
+        local currentFrame = self:modFrameIndex(componentProperties.currentFrame)
+
         if secondsPerFrame > 0.0 then
-            if componentProperties.currentFrame == lastFrame then
+            if floatEquals(currentFrame, lastFrame) then
                 if componentProperties.loop then
                     componentProperties.currentFrame = firstFrame
 
@@ -1040,10 +1043,10 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
                     end
                 end
             else
-                componentProperties.currentFrame = componentProperties.currentFrame + 1
+                componentProperties.currentFrame = currentFrame + 1
             end
         else
-            if componentProperties.currentFrame == firstFrame then
+            if floatEquals(currentFrame, firstFrame) then
                 if componentProperties.loop then
                     componentProperties.currentFrame = lastFrame
 
@@ -1059,7 +1062,7 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
                     end
                 end
             else
-                componentProperties.currentFrame = componentProperties.currentFrame - 1
+                componentProperties.currentFrame = currentFrame - 1
             end
         end
     end

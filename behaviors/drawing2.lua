@@ -49,6 +49,24 @@ local Drawing2Behavior =
             get = true,
          },
        },
+       loopStartFrame = {
+        method = 'numberInput',
+        label = 'Loop start frame',
+        props = { decimalDigits = 1 },
+        rules = {
+            get = true,
+            set = true,
+         },
+       },
+       loopEndFrame = {
+        method = 'numberInput',
+        label = 'Loop end frame',
+        props = { decimalDigits = 1 },
+        rules = {
+            get = true,
+            set = true,
+         },
+       },
     },
 }
 
@@ -154,6 +172,10 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
         component.properties.playing = false
     end
     component.properties.framesPerSecond = bp.framesPerSecond or 4
+
+    -- these can only be set from "set property" responses
+    component.properties.loopStartFrame = nil
+    component.properties.loopEndFrame = nil
 end
 
 function Drawing2Behavior.handlers:enableComponent(component, opts)
