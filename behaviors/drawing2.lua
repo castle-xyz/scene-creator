@@ -128,9 +128,7 @@ function Drawing2Behavior:updateBodyShape(componentOrActorId)
     local physicsBodyData = data.physicsBodyData
 
     self.dependencies.Body:sendSetProperties(component.actorId, "isNewDrawingTool", true)
-    if not self.game.performing then
-        self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getBounds(component.properties.initialFrame))
-    end
+    self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getBounds(component.properties.initialFrame))
     self.dependencies.Body:setShapes(component.actorId, physicsBodyData:getShapesForBody())
 
     component._hash = component.properties.hash
@@ -222,11 +220,9 @@ function Drawing2Behavior.setters:initialFrame(component, value)
     component.properties.initialFrame = value
     component.properties.currentFrame = value
 
-    if not self.game.performing then
-        local data = self:cacheDrawing(component, component.properties)
-        local drawData = data.drawData
-        self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getBounds(component.properties.initialFrame))
-    end
+    local data = self:cacheDrawing(component, component.properties)
+    local drawData = data.drawData
+    self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getBounds(component.properties.initialFrame))
 end
 
 function Drawing2Behavior.getters:playMode(component)

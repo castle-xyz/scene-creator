@@ -458,13 +458,14 @@ function DrawData:new(obj)
         fillPng = obj.fillPng or nil,
         version = obj.version or nil,
         fillPixelsPerUnit = obj.fillPixelsPerUnit or 25.6,
+        bounds = obj.bounds or nil,
+        framesBounds = obj.framesBounds or {},
         layers = obj.layers or {},
         numTotalLayers = obj.numTotalLayers or 1,
         selectedLayerId = obj.selectedLayerId or nil,
         selectedFrame = obj.selectedFrame or 1,
         _layerDataChanged = true,
         _layerData = nil,
-        _cachedBounds = {},
     }
 
     for l = 1, #newObj.layers do
@@ -617,6 +618,8 @@ function DrawData:migrateV2ToV3()
     self.fillImageBounds = nil
     self.fillCanvasSize = nil
     self.fillPng = nil
+    self.framesBounds = {self.bounds}
+    self.bounds = nil
 end
 
 function DrawData:getLayerData()
@@ -659,12 +662,12 @@ function DrawData:getLayerData()
 end
 
 function DrawData:updateBounds()
-    self._cachedBounds[self.selectedFrame] = nil
+    self.framesBounds[self.selectedFrame] = nil
 end
 
 function DrawData:getBounds(frame)
-    if self._cachedBounds[frame] then
-        return self._cachedBounds[frame]
+    if self.framesBounds[frame] then
+        return self.framesBounds[frame]
     end
 
     local bounds = nil
@@ -675,7 +678,7 @@ function DrawData:getBounds(frame)
         bounds = frame:getPathDataBounds(bounds)
     end
 
-    self._cachedBounds[frame] = bounds
+    self.framesBounds[frame] = bounds
     return bounds
 end
 
@@ -784,6 +787,7 @@ function DrawData:serialize()
         fillPixelsPerUnit = self.fillPixelsPerUnit,
         numTotalLayers = self.numTotalLayers,
         layers = {},
+        framesBounds = self.framesBounds,
     }
 
     for l = 1, #self.layers do
