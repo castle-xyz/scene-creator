@@ -730,8 +730,6 @@ end
 
 function DrawData:saveEditorSettings()
     local result = {
-        selectedLayerId = self.selectedLayerId,
-        selectedFrame = self.selectedFrame,
     }
 
     return result
@@ -740,25 +738,6 @@ end
 function DrawData:applyEditorSettings(editorSettings)
     if not editorSettings then
         return
-    end
-
-    self.selectedLayerId = editorSettings.selectedLayerId
-    self.selectedFrame = editorSettings.selectedFrame
-
-    local foundSelectedLayer = false
-
-    for l = 1, #self.layers do
-        if self.layers[l].id == self.selectedLayerId then
-            foundSelectedLayer = true
-        end
-    end
-
-    if not foundSelectedLayer then
-        self.selectedLayerId = self.layers[1].id
-    end
-
-    if self.selectedFrame > #self.layers[1].frames then
-        self.selectedFrame = #self.layers[1].frames
     end
 end
 
@@ -778,6 +757,8 @@ function DrawData:serialize()
         numTotalLayers = self.numTotalLayers,
         layers = {},
         framesBounds = self.framesBounds,
+        selectedLayerId = self.selectedLayerId,
+        selectedFrame = self.selectedFrame,
     }
 
     for l = 1, #self.layers do

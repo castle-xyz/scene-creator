@@ -723,17 +723,20 @@ function DrawTool.handlers:uiData()
     layerActions['onSelectLayer'] = function(layerId)
         self:setIsPlayingAnimation(false)
         self._drawData:selectLayer(layerId)
+        self:saveDrawing('select layer', c)
     end
 
     layerActions['onSelectFrame'] = function(frame)
         self:setIsPlayingAnimation(false)
         self._drawData:selectFrame(frame)
+        self:saveDrawing('select frame', c)
     end
 
     layerActions['onSelectLayerAndFrame'] = function(layerAndFrame)
         self:setIsPlayingAnimation(false)
         self._drawData:selectLayer(layerAndFrame.layerId)
         self._drawData:selectFrame(layerAndFrame.frame)
+        self:saveDrawing('select cell', c)
     end
 
     layerActions['onDeleteLayer'] = function(layerId)
