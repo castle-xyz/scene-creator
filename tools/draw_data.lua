@@ -763,6 +763,10 @@ function DrawData:applyEditorSettings(editorSettings)
 end
 
 function DrawData:serialize()
+    for i = 1, self:getNumFrames() do
+        self:getBounds(i)
+    end
+
     local data = {
         pathDataList = {},
         color = self.color,
@@ -843,6 +847,8 @@ function DrawData:deleteLayer(layerId)
 end
 
 function DrawData:deleteFrame(frame)
+    self.framesBounds = {}
+
     for i = 1, #self.layers do
         table.remove(self.layers[i].frames, frame)
     end
@@ -1076,6 +1082,8 @@ function DrawData:stepForward()
 end
 
 function DrawData:addFrameAtPosition(position)
+    self.framesBounds = {}
+
     local isLinked = #self.layers[1].frames > 0
 
     for l = 1, #self.layers do
