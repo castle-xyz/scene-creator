@@ -288,6 +288,81 @@ Drawing2Behavior.triggers["animation loop"] = {
     category = "draw",
 }
 
+Drawing2Behavior.triggers["animation reaches frame"] = {
+    description = "When the animation reaches a specific frame",
+    category = "draw",
+    paramSpecs = {
+        comparison = {
+           label = "comparison",
+           method = "dropdown",
+           initialValue = "equal",
+           props = {
+              items = {
+                 "equal",
+                 "less or equal",
+                 "greater or equal",
+              },
+           },
+        },
+       frame = {
+          label = "frame number",
+          method = "numberInput",
+          initialValue = 1,
+       },
+    },
+}
+
+Drawing2Behavior.triggers["animation frame changes"] = {
+    description = "When the animation frame changes",
+    category = "draw",
+}
+
+Drawing2Behavior.responses["animation frame meets condition"] = {
+    description = "If the animation frame meets a condition",
+    category = "draw",
+    returnType = "boolean",
+    paramSpecs = {
+       comparison = {
+          method = "dropdown",
+          initialValue = "equal",
+          props = {
+             items = {
+                "equal",
+                "less or equal",
+                "greater or equal",
+             },
+          },
+       },
+       frame = {
+          method = "numberInput",
+          initialValue = 1,
+       },
+    },
+    run = function(self, actorId, params, context)
+        local component = self.components[actorId]
+        if not component then
+            return false
+        end
+
+        local data = self:cacheDrawing(component, component.properties)
+        local drawData = data.drawData
+
+        local value = drawData:modFrameIndex(component.properties.currentFrame)
+        local compareTo = drawData:modFrameIndex(self.game:evalExpression(params.frame, actorId, context))
+
+        if params.comparison == "equal" and floatEquals(value, compareTo) then
+            return true
+        end
+        if params.comparison == "less or equal" and value <= compareTo then
+            return true
+        end
+        if params.comparison == "greater or equal" and value >= compareTo then
+            return true
+        end
+        return false
+    end
+}
+
 -- Draw
 
 -- use postPerform so that destroying/hiding an actor in the
@@ -301,8 +376,18 @@ function Drawing2Behavior.handlers:postPerform(dt)
         function(actor)
             local component = self.components[actor.actorId]
             if component and component.animationState then
-                local fireTrigger = function (eventName)
-                    self:fireTrigger(eventName, actor.actorId)
+                local fireTrigger = function (eventName, filterFn)
+                    if filterFn then
+                        -- 3rd argument is context which isn't used right now
+                        self:fireTrigger(eventName, actor.actorId, {}, {
+                            filter = function(params)
+                                print('here')
+                                return filterFn(params, actor.actorId, self.game)
+                            end
+                        })
+                    else
+                        self:fireTrigger(eventName, actor.actorId)
+                    end
                 end
 
                 local data = self:cacheDrawing(component, component.properties)

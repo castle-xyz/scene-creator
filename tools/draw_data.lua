@@ -999,11 +999,13 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
         end
 
         local currentFrame = self:modFrameIndex(componentProperties.currentFrame)
+        local changedFrames = false
 
         if secondsPerFrame > 0.0 then
             if floatEquals(currentFrame, lastFrame) then
                 if componentProperties.loop then
                     componentProperties.currentFrame = firstFrame
+                    changedFrames = true
 
                     if fireTrigger then
                         fireTrigger("animation loop")
@@ -1018,11 +1020,13 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
                 end
             else
                 componentProperties.currentFrame = currentFrame + 1
+                changedFrames = true
             end
         else
             if floatEquals(currentFrame, firstFrame) then
                 if componentProperties.loop then
                     componentProperties.currentFrame = lastFrame
+                    changedFrames = true
 
                     if fireTrigger then
                         fireTrigger("animation loop")
@@ -1037,6 +1041,28 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
                 end
             else
                 componentProperties.currentFrame = currentFrame - 1
+                changedFrames = true
+            end
+        end
+
+        if changedFrames then
+            local newValue = self:modFrameIndex(componentProperties.currentFrame)
+            if fireTrigger then
+                fireTrigger("animation frame changes")
+
+                fireTrigger("animation reaches frame", function(params, actorId, game)
+                    local compareTo = self:modFrameIndex(game:evalExpression(params.frame, actorId))
+                    if params.comparison == "equal" and floatEquals(newValue, compareTo) then
+                        return true
+                    end
+                    if params.comparison == "less or equal" and newValue <= compareTo then
+                        return true
+                    end
+                    if params.comparison == "greater or equal" and newValue >= compareTo then
+                        return true
+                    end
+                    return false
+                end)
             end
         end
     end
