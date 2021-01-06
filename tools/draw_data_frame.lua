@@ -134,7 +134,6 @@ function DrawDataFrame:cleanUpPaths()
     end
 end
 
--- should this be combination of all frames?
 function DrawDataFrame:getPathDataBounds(bounds)
     if not bounds or bounds == nil then
         bounds = {
@@ -147,6 +146,10 @@ function DrawDataFrame:getPathDataBounds(bounds)
 
     -- https://poke1024.github.io/tove2d-api/classes/Graphics.html#Graphics:computeAABB
     local minX, minY, maxX, maxY = self:graphics():computeAABB()
+    minX = minX + DRAW_LINE_WIDTH / 2.0
+    minY = minY + DRAW_LINE_WIDTH / 2.0
+    maxX = maxX - DRAW_LINE_WIDTH / 2.0
+    maxY = maxY - DRAW_LINE_WIDTH / 2.0
 
     -- we still need this because of isTransparent
     for i = 1, #self.pathDataList do
