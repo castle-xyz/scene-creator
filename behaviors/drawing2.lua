@@ -253,6 +253,11 @@ function Drawing2Behavior.setters:initialFrame(component, value)
     self.dependencies.Body:sendSetProperties(component.actorId, "editorBounds", drawData:getBounds(component.properties.initialFrame))
 end
 
+function Drawing2Behavior.setters:currentFrame(component, value)
+    component.properties.currentFrame = value
+    self:onChangeFrame(component)
+end
+
 function Drawing2Behavior.getters:playMode(component)
     if not component.properties.playing then
         return "still"
@@ -276,6 +281,32 @@ function Drawing2Behavior.setters:playMode(component, value)
         component.properties.playing = true
         component.properties.loop = true
     end
+end
+
+function Drawing2Behavior:onChangeFrame(component)
+    local data = self:cacheDrawing(component, component.properties)
+    local drawData = data.drawData
+
+    local newValue = drawData:modFrameIndex(component.properties.currentFrame)
+
+    self:fireTrigger("animation frame changes", component.actorId)
+
+    -- 3rd argument is context which isn't used right now
+    self:fireTrigger("animation reaches frame", component.actorId, {}, {
+        filter = function(params)
+            local compareTo = drawData:modFrameIndex(self.game:evalExpression(params.frame, component.actorId))
+            if params.comparison == "equal" and floatEquals(newValue, compareTo) then
+                return true
+            end
+            if params.comparison == "less or equal" and newValue <= compareTo then
+                return true
+            end
+            if params.comparison == "greater or equal" and newValue >= compareTo then
+                return true
+            end
+            return false
+        end
+    })
 end
 
 Drawing2Behavior.triggers["animation end"] = {
@@ -376,23 +407,17 @@ function Drawing2Behavior.handlers:postPerform(dt)
         function(actor)
             local component = self.components[actor.actorId]
             if component and component.animationState then
-                local fireTrigger = function (eventName, filterFn)
-                    if filterFn then
-                        -- 3rd argument is context which isn't used right now
-                        self:fireTrigger(eventName, actor.actorId, {}, {
-                            filter = function(params)
-                                print('here')
-                                return filterFn(params, actor.actorId, self.game)
-                            end
-                        })
-                    else
-                        self:fireTrigger(eventName, actor.actorId)
-                    end
+                local fireTrigger = function (eventName)
+                    self:fireTrigger(eventName, actor.actorId)
+                end
+
+                local fireChangedFrame = function ()
+                    self:onChangeFrame(component)
                 end
 
                 local data = self:cacheDrawing(component, component.properties)
                 local drawData = data.drawData
-                drawData:runAnimation(component.animationState, component.properties, dt, fireTrigger)
+                drawData:runAnimation(component.animationState, component.properties, dt, fireTrigger, fireChangedFrame)
             end
         end
     )

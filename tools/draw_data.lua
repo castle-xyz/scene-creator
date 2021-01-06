@@ -973,7 +973,7 @@ function DrawData:modFrameIndex(value)
     return value
 end
 
-function DrawData:runAnimation(animationState, componentProperties, dt, fireTrigger)
+function DrawData:runAnimation(animationState, componentProperties, dt, fireTrigger, fireChangedFrame)
     if not animationState or not componentProperties then
         return
     end
@@ -1045,25 +1045,8 @@ function DrawData:runAnimation(animationState, componentProperties, dt, fireTrig
             end
         end
 
-        if changedFrames then
-            local newValue = self:modFrameIndex(componentProperties.currentFrame)
-            if fireTrigger then
-                fireTrigger("animation frame changes")
-
-                fireTrigger("animation reaches frame", function(params, actorId, game)
-                    local compareTo = self:modFrameIndex(game:evalExpression(params.frame, actorId))
-                    if params.comparison == "equal" and floatEquals(newValue, compareTo) then
-                        return true
-                    end
-                    if params.comparison == "less or equal" and newValue <= compareTo then
-                        return true
-                    end
-                    if params.comparison == "greater or equal" and newValue >= compareTo then
-                        return true
-                    end
-                    return false
-                end)
-            end
+        if changedFrames and fireChangedFrame then
+            fireChangedFrame()
         end
     end
 end
