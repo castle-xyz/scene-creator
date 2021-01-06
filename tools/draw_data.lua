@@ -591,7 +591,7 @@ function DrawData:migrateV1ToV2()
 end
 
 function DrawData:migrateV2ToV3()
-    if self.version >= 3 then
+    if self.version >= 3 and #self.layers > 0 then
         return
     end
 
