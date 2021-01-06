@@ -479,6 +479,19 @@ function DrawTool.handlers:update(dt)
     if self.isPlayingAnimation then
         self._drawData:runAnimation(self.animationState, self.animationState, dt)
     end
+
+    if self.viewInContext then
+        local actorId = c.actorId
+        local animationState = self.animationState
+
+        if animationState == nil then
+            animationState = {
+                currentFrame = self._drawData.selectedFrame
+            }
+        end
+
+        self.dependencies.Drawing2:setViewInContextAnimationState(self.dependencies.Drawing2:get(actorId), animationState)
+    end
 end
 
 -- Draw
@@ -632,14 +645,16 @@ end
 
 -- UI
 
-function DrawTool:setIsPlayingAnimation(isPlayingAnimation)
+function DrawTool:setIsPlayingAnimation(c, isPlayingAnimation)
     self.isPlayingAnimation = isPlayingAnimation
 
     if isPlayingAnimation then
+        local actorId = c.actorId
+
         self.animationState = self._drawData:newAnimationState()
         self.animationState.playing = true
         self.animationState.loop = true
-        self.animationState.framesPerSecond = 2
+        self.animationState.framesPerSecond = self.dependencies.Drawing2:get(actorId).properties.framesPerSecond
         self.animationState.currentFrame = 1
     else
         self.animationState = nil
@@ -674,10 +689,15 @@ function DrawTool.handlers:uiData()
     end
 
     actions['onViewInContext'] = function(viewInContext)
+        local actorId = c.actorId
+
         if viewInContext == 'true' then
             self.viewInContext = true
         else
             self.viewInContext = false
+
+            local actorId = c.actorId
+            self.dependencies.Drawing2:setViewInContextAnimationState(self.dependencies.Drawing2:get(actorId), nil)
         end
     end
 
@@ -721,19 +741,19 @@ function DrawTool.handlers:uiData()
     end
 
     layerActions['onSelectLayer'] = function(layerId)
-        self:setIsPlayingAnimation(false)
+        self:setIsPlayingAnimation(c, false)
         self._drawData:selectLayer(layerId)
         self:saveDrawing('select layer', c)
     end
 
     layerActions['onSelectFrame'] = function(frame)
-        self:setIsPlayingAnimation(false)
+        self:setIsPlayingAnimation(c, false)
         self._drawData:selectFrame(frame)
         self:saveDrawing('select frame', c)
     end
 
     layerActions['onSelectLayerAndFrame'] = function(layerAndFrame)
-        self:setIsPlayingAnimation(false)
+        self:setIsPlayingAnimation(c, false)
         self._drawData:selectLayer(layerAndFrame.layerId)
         self._drawData:selectFrame(layerAndFrame.frame)
         self:saveDrawing('select cell', c)
@@ -770,7 +790,7 @@ function DrawTool.handlers:uiData()
     end
 
     layerActions['onSetIsPlayingAnimation'] = function(isPlayingAnimation)
-        self:setIsPlayingAnimation(isPlayingAnimation)
+        self:setIsPlayingAnimation(c, isPlayingAnimation)
     end
 
     layerActions['onStepBackward'] = function(opts)

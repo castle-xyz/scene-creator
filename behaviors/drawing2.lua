@@ -176,6 +176,12 @@ function Drawing2Behavior.handlers:addComponent(component, bp, opts)
     -- these can only be set from "set property" responses
     component.properties.loopStartFrame = nil
     component.properties.loopEndFrame = nil
+
+    component._viewInContextAnimationState = nil
+end
+
+function Drawing2Behavior:setViewInContextAnimationState(component, animationState)
+    component._viewInContextAnimationState = animationState
 end
 
 function Drawing2Behavior.handlers:enableComponent(component, opts)
@@ -359,7 +365,12 @@ function Drawing2Behavior.handlers:drawComponent(component)
 
     -- Draw!
     love.graphics.setColor(1, 1, 1, 1)
-    drawData:render(component.properties)
+
+    local animationProperties = component.properties
+    if component._viewInContextAnimationState then
+        animationProperties = component._viewInContextAnimationState
+    end
+    drawData:render(animationProperties)
 
     -- Pop transform
     love.graphics.pop()
