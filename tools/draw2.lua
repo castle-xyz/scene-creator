@@ -562,6 +562,25 @@ function DrawTool.handlers:drawOverlay()
         drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.3)
     end
 
+
+
+    local movePoints = {}
+
+    for i = 1, #self._drawData:currentPathDataList() do
+        --if not self._drawData:currentPathDataList()[i].isFreehand then
+            for p = 1, #self._drawData:currentPathDataList()[i].points do
+                table.insert(movePoints, self._drawData:currentPathDataList()[i].points[p].x)
+                table.insert(movePoints, self._drawData:currentPathDataList()[i].points[p].y)
+            end
+        --end
+    end
+
+    love.graphics.setColor(1.0, 0.6, 0.6, 1.0)
+    love.graphics.setPointSize(20)
+    --love.graphics.points(movePoints)
+
+
+
     if self._selectedSubtools.root == 'artwork' then
         love.graphics.setColor(1, 1, 1, 1)
 
@@ -604,7 +623,7 @@ function DrawTool.handlers:drawOverlay()
 
     love.graphics.setColor(1, 1, 1, 1)
 
-    if self._selectedSubtools.root == "artwork" and self._selectedSubtools.artwork == "artwork_move" and self._selectedSubtools.artwork_move == "move" then
+    --[[if self._selectedSubtools.root == "artwork" and self._selectedSubtools.artwork == "artwork_move" and self._selectedSubtools.artwork_move == "move" then
         local movePoints = {}
 
         for i = 1, #self._drawData:currentPathDataList() do
@@ -619,7 +638,7 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.setColor(1.0, 0.6, 0.6, 1.0)
         love.graphics.setPointSize(30)
         love.graphics.points(movePoints)
-    end
+    end]]--
 
     if self._selectedSubtools.root == 'collision' then
         self._physicsBodyData:draw()

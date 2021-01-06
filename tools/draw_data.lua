@@ -71,6 +71,9 @@ local function makeSubpathsFromSubpathData(pathData)
             subpath:lineTo(subpathData.p2.x, subpathData.p2.y)
         elseif subpathData.type == 'arc' then
             subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle * 180 / math.pi, subpathData.endAngle * 180 / math.pi)
+        elseif subpathData.type == 'bezier' then
+            subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
+            subpath:curveTo(subpathData.p2.cp1x, subpathData.p2.cp1y, subpathData.p2.cp2x, subpathData.p2.cp2y, subpathData.p2.x, subpathData.p2.y)
         end
     end
 end
@@ -86,6 +89,14 @@ local function addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
             x = p2x,
             y = p2y
         }
+    })
+end
+
+local function addBezierCurveSubpathData(pathData, p1, p2)
+    table.insert(pathData.subpathDataList, {
+        type = 'bezier',
+        p1 = util.deepCopyTable(p1),
+        p2 = util.deepCopyTable(p2),
     })
 end
 
@@ -210,7 +221,11 @@ function DrawData:addSubpathDataForPoints(pathData, p1, p2)
         end]]--
     else
         if style == 1 then
-            addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+            if p2.cp1x then
+                addBezierCurveSubpathData(pathData, p1, p2)
+            else
+                addLineSubpathData(pathData, p1.x, p1.y, p2.x, p2.y)
+            end
             return
         end
 

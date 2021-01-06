@@ -421,7 +421,8 @@ function DrawDataFrame:graphics()
         self:cleanUpPaths()
 
         self._graphics = tove.newGraphics()
-        self._graphics:setDisplay("mesh", 1024)
+        self._graphics:setDisplay("mesh", 2048)
+        self._graphics:setResolution(2)
 
         for i = 1, #self.pathDataList do
             self._graphics:addPath(self.pathDataList[i].tovePath)
