@@ -254,7 +254,8 @@ end
 
 -- Update
 
-function DrawTool.handlers:onSetActive()
+function DrawTool.handlers:onSetActive(toolOptions)
+    self._toolOptions = toolOptions
     self._drawData = DrawData:new()
     self._physicsBodyData = PhysicsBodyData:new()
     self:clearTempGraphics()
@@ -413,6 +414,18 @@ function DrawTool:loadLastSave()
         if maxBound > 1.0 then
             self.viewWidth = maxBound * 2.0
         end
+    end
+
+    if self._toolOptions then
+        if self._toolOptions.selectedFrame then
+            self._drawData:selectFrame(self._toolOptions.selectedFrame)
+            self:saveDrawing('select frame', c)
+        elseif self._toolOptions.addNewFrame then
+            self._drawData:addFrame()
+            self:saveDrawing('add frame', c)
+        end
+
+        self._toolOptions = nil
     end
 end
 

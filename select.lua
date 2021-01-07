@@ -190,7 +190,7 @@ function Client:deselectAllActors()
     end
 end
 
-function Client:setActiveTool(toolBehaviorId)
+function Client:setActiveTool(toolBehaviorId, toolOptions)
     if self.activeToolBehaviorId == toolBehaviorId then
         return -- Already active, skip
     end
@@ -220,7 +220,7 @@ function Client:setActiveTool(toolBehaviorId)
         end
 
         if activeTool.handlers['onSetActive'] then
-            activeTool.handlers['onSetActive'](activeTool)
+            activeTool.handlers['onSetActive'](activeTool, toolOptions)
         end
     end
 end

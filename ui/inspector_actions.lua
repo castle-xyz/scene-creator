@@ -286,6 +286,7 @@ function Client:uiInspectorActions()
     end
     
     actions['setActiveTool'] = function(id) self:setActiveTool(id) end
+    actions['setActiveToolWithOptions'] = function(opts) self:setActiveTool(opts.id, opts) end
     actions['closeInspector'] = function() self:deselectAllActors() end
 
     local tools = {}
