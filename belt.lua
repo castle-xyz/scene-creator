@@ -206,7 +206,7 @@ function Common:syncBelt()
         if entryA.beltOrder ~= entryB.beltOrder then
             return (entryA.beltOrder or 0) < (entryB.beltOrder or 0)
         end
-        return entryA.title < entryB.title
+        return entryA.title:lower() < entryB.title:lower()
     end)
 
     -- Calculate positions
@@ -252,6 +252,16 @@ function Common:syncBelt()
     end
 
     self.beltDirty = false
+
+    -- Focus the currently selected entry again (mostly helps if its order changed)
+    if self.beltEntryId then
+        for i, elem in ipairs(self.beltElems) do
+            if elem.entryId == self.beltEntryId then
+                self.beltTargetIndex = i
+                return
+            end
+        end
+    end
 end
 
 function Common:syncSelectionsWithBelt()
