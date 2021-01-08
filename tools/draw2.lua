@@ -544,6 +544,32 @@ function DrawTool.handlers:drawOverlay()
     local bgColor = self.game.sceneProperties.backgroundColor
     love.graphics.clear(bgColor.r, bgColor.g, bgColor.b)
 
+    love.graphics.setColor(1, 1, 1, 1)
+
+    if self._selectedSubtools.root ~= 'artwork' then
+        self._drawData:render(self.animationState)
+
+        love.graphics.setColor(0, 0, 0, 0.5)
+        love.graphics.rectangle('fill', -DRAW_MAX_SIZE * 2.0, -DRAW_MAX_SIZE * 2.0, DRAW_MAX_SIZE * 4.0, DRAW_MAX_SIZE * 4.0)
+    end
+
+    -- grid
+    if self:getIsBackgroundDark() then
+        love.graphics.setColor(1.0, 1.0, 1.0, 0.2)
+        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.5)
+    else
+        love.graphics.setColor(0.0, 0.0, 0.0, 0.1)
+        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.3)
+    end
+
+    if self._selectedSubtools.root == 'artwork' then
+        love.graphics.setColor(1, 1, 1, 1)
+
+        self._drawData:renderForTool(self.animationState, self.tempTranslateX, self.tempTranslateY, self._tempGraphics)
+
+        self._physicsBodyData:draw()
+    end
+
     if self.isOnionSkinningEnabled and not self.isPlayingAnimation then
         if not self.onionSkinningCanvas then
             self.onionSkinningCanvas = love.graphics.newCanvas(
@@ -572,34 +598,8 @@ function DrawTool.handlers:drawOverlay()
             end
         )
 
-        love.graphics.setColor(0.7, 0.7, 0.7, 0.4)
-        love.graphics.draw(self.onionSkinningCanvas, -DRAW_MAX_SIZE, -DRAW_MAX_SIZE, 0, DRAW_MAX_SIZE * 2.0 / 512.0, DRAW_MAX_SIZE * 2.0 / 512.0)
-    end
-
-    love.graphics.setColor(1, 1, 1, 1)
-
-    if self._selectedSubtools.root ~= 'artwork' then
-        self._drawData:render(self.animationState)
-
-        love.graphics.setColor(0, 0, 0, 0.5)
-        love.graphics.rectangle('fill', -DRAW_MAX_SIZE * 2.0, -DRAW_MAX_SIZE * 2.0, DRAW_MAX_SIZE * 4.0, DRAW_MAX_SIZE * 4.0)
-    end
-
-    -- grid
-    if self:getIsBackgroundDark() then
         love.graphics.setColor(1.0, 1.0, 1.0, 0.2)
-        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.5)
-    else
-        love.graphics.setColor(0.0, 0.0, 0.0, 0.1)
-        drawGrid(self._drawData:gridCellSize(), DRAW_MAX_SIZE + self._drawData:gridCellSize() * 0.5, self:getViewScale(), self.viewX, self.viewY, 0.5 * self.viewWidth, topOffset, 2, true, 0.3)
-    end
-
-    if self._selectedSubtools.root == 'artwork' then
-        love.graphics.setColor(1, 1, 1, 1)
-
-        self._drawData:renderForTool(self.animationState, self.tempTranslateX, self.tempTranslateY, self._tempGraphics)
-
-        self._physicsBodyData:draw()
+        love.graphics.draw(self.onionSkinningCanvas, -DRAW_MAX_SIZE, -DRAW_MAX_SIZE, 0, DRAW_MAX_SIZE * 2.0 / 512.0, DRAW_MAX_SIZE * 2.0 / 512.0)
     end
 
     love.graphics.setColor(1, 1, 1, 1)
