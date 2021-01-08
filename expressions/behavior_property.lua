@@ -54,6 +54,28 @@ Common:defineExpression(
    }
 )
 
+Common:defineExpression(
+   "counter value", {
+      returnType = "number",
+      description = "the value of a counter",
+      paramSpecs = {
+         actorRef = {
+            label = "actor type",
+            method = "actorRef",
+            initialValue = { kind = "self" },
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         -- this expression type is just a wrapper for behavior property
+         -- with a fixed behavior (Counter) and property (value)
+         local behaviorExpression = util.deepCopyTable(expression)
+         behaviorExpression.params.behaviorId = game.behaviorsByName.Counter.behaviorId
+         behaviorExpression.params.propertyName = "value"
+         return Expression.expressions["behavior property"].eval(game, behaviorExpression, actorId, context)
+      end,
+   }
+)
+
 function Common:closestActorWithTag(actorId, tag)
    local members = self.behaviorsByName.Body:getMembers(actorId)
    local x, y = 0, 0
