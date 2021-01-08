@@ -353,6 +353,7 @@ function Client:uiInspectorActions()
     if not actorId then
         return
     end
+    local actor = self.actors[actorId]
 
     local actions = {}
 
@@ -391,7 +392,6 @@ function Client:uiInspectorActions()
        )
     end
 
-    local actor = self.actors[actorId]
     local entry = self.library[actor.parentEntryId]
     local title = entry and entry.title or ''
     actions['setTitle'] = function(newTitle)
@@ -414,6 +414,7 @@ function Client:uiInspectorActions()
 
     ui.data(
        {
+          isBlueprint = actor.isGhost or false,
           title = title,
           applicableTools = util.noArray(tools),
           activeToolBehaviorId = self.activeToolBehaviorId,
