@@ -349,7 +349,8 @@ function Client:deleteSelection()
 end
 
 function Client:uiInspectorActions()
-    if not next(self.selectedActorIds) then
+    local actorId = next(self.selectedActorIds)
+    if not actorId then
         return
     end
 
@@ -373,7 +374,7 @@ function Client:uiInspectorActions()
     actions['deleteSelection'] = function()
        self:deleteSelection()
     end
-    
+
     actions['setActiveTool'] = function(id) self:setActiveTool(id) end
     actions['setActiveToolWithOptions'] = function(opts) self:setActiveTool(opts.id, opts) end
     actions['closeInspector'] = function() self:deselectAllActors() end
@@ -390,8 +391,30 @@ function Client:uiInspectorActions()
        )
     end
 
+    local actor = self.actors[actorId]
+    local entry = self.library[actor.parentEntryId]
+    local title = entry and entry.title or ''
+    actions['setTitle'] = function(newTitle)
+        if newTitle ~= title then
+            local newEntry = util.deepCopyTable(entry)
+            newEntry.title = newTitle
+            self:command('change title', {
+                params = { 'entry', 'newEntry' },
+            }, function()
+                self:send('updateLibraryEntry', self.clientId, entry.entryId, newEntry, {
+                    updateActors = false,
+                })
+            end, function()
+                self:send('updateLibraryEntry', self.clientId, entry.entryId, entry, {
+                    updateActors = false,
+                })
+            end)
+        end
+    end
+
     ui.data(
        {
+          title = title,
           applicableTools = util.noArray(tools),
           activeToolBehaviorId = self.activeToolBehaviorId,
        },
