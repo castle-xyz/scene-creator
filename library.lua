@@ -265,11 +265,12 @@ function Client:duplicateBlueprint(entry, opts)
     newEntry.isCore = nil
     newEntry.beltOrder = nil
 
-    local titleSuffix = 1
-    while self:haveLibraryEntryWithTitle(entry.title .. ' ' .. titleSuffix) do
+    local titlePrefix = entry.title:gsub(' %d*$', '')
+    local titleSuffix = 2
+    while self:haveLibraryEntryWithTitle(titlePrefix .. ' ' .. titleSuffix) do
         titleSuffix = titleSuffix + 1
     end
-    newEntry.title = entry.title .. ' ' .. titleSuffix
+    newEntry.title = titlePrefix .. ' ' .. titleSuffix
 
     self:send('addLibraryEntry', newEntry.entryId, newEntry)
 
