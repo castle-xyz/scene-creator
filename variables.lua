@@ -209,20 +209,24 @@ function Common:variableChangeByValue(variableId, changeBy)
     end
 end
 
+function Common:forceSendVariableUpdate()
+    self._updateQueued = false
+    self._framesSinceUpdate = 0
+
+    jsEvents.send(
+        "GHOST_MESSAGE",
+        {
+            messageType = "CHANGE_DECK_STATE",
+            data = {
+                variables = self.variables
+            }
+        }
+    )
+end
+
 function Common:sendVariableUpdate()
     if self._updateQueued and self._framesSinceUpdate > 10 then
-        self._updateQueued = false
-        self._framesSinceUpdate = 0
-
-        jsEvents.send(
-            "GHOST_MESSAGE",
-            {
-                messageType = "CHANGE_DECK_STATE",
-                data = {
-                    variables = self.variables
-                }
-            }
-        )
+        self:forceSendVariableUpdate()
     else
         self._framesSinceUpdate = self._framesSinceUpdate + 1
     end
