@@ -750,7 +750,9 @@ function Client:drawInner()
 end
 
 function Client:draw()
-    if self.isEditable then
+    local activeTool = self.activeToolBehaviorId and self.tools[self.activeToolBehaviorId]
+    local hideBelt = activeTool and activeTool.tool and activeTool.tool.hideBelt
+    if not hideBelt and self.isEditable then
         local windowWidth, windowHeight = love.graphics.getDimensions()
         local cardWidth, cardHeight = windowWidth, windowHeight - BELT_HEIGHT
 
