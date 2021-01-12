@@ -190,6 +190,7 @@ function Common:updateBlueprintFromActor(actorId, opts)
 
     self:send('updateLibraryEntry', self.clientId, oldEntry.entryId, newEntry, {
         updateActors = true,
+        applyLayoutChanges = opts.applyLayoutChanges,
         skipActorId = actorId,
     })
 end
@@ -206,22 +207,25 @@ function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, 
                     local oldBp = self:blueprintActor(actorId)
                     local updateBp = util.deepCopyTable(newBp)
                     if updateBp.components.Body then
-                        -- Keep local overrides of layout properties
-                        -- TODO(nikki): Allow pushing updates to these some times
+                        -- Keep local override of position
                         if oldBp.components.Body.x then
                             updateBp.components.Body.x = oldBp.components.Body.x
                         end
                         if oldBp.components.Body.y then
                             updateBp.components.Body.y = oldBp.components.Body.y
                         end
-                        if oldBp.components.Body.angle then
-                            updateBp.components.Body.angle = oldBp.components.Body.angle
-                        end
-                        if oldBp.components.Body.widthScale then
-                            updateBp.components.Body.widthScale = oldBp.components.Body.widthScale
-                        end
-                        if oldBp.components.Body.heightScale then
-                            updateBp.components.Body.heightScale = oldBp.components.Body.heightScale
+
+                        -- Keep local overrides of other layout properties if not applying
+                        if not opts.applyLayoutChanges then
+                            if oldBp.components.Body.angle then
+                                updateBp.components.Body.angle = oldBp.components.Body.angle
+                            end
+                            if oldBp.components.Body.widthScale then
+                                updateBp.components.Body.widthScale = oldBp.components.Body.widthScale
+                            end
+                            if oldBp.components.Body.heightScale then
+                                updateBp.components.Body.heightScale = oldBp.components.Body.heightScale
+                            end
                         end
                     end
                     self:send("removeActor", self.clientId, actorId)
