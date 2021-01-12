@@ -312,6 +312,45 @@ function Client:uiInspector()
          for _, dep in ipairs(behavior.dependencies) do
             table.insert(dependencies, dep)
          end
+
+         if behavior.behaviorId == self.behaviorsByName.Body.behaviorId then
+             actions['applyLayoutChangesToBlueprint'] = function()
+                 local actor = self.actors[actorId]
+                 if not actor or not actor.parentEntryId then
+                     return
+                 end
+                 local saves = {}
+                 for otherActorId, otherActor in pairs(self.actors) do
+                     if otherActor.parentEntryId == actor.parentEntryId then
+                         table.insert(saves, {
+                             actorId = otherActorId,
+                             bp = self:blueprintActor(otherActorId),
+                             drawOrder = otherActor.drawOrder,
+                             isGhost = otherActor.isGhost,
+                         })
+                     end
+                 end
+                 table.sort(saves, function(save1, save2)
+                     return save1.drawOrder < save2.drawOrder
+                 end)
+                 local entryId = actor.parentEntryId
+                 self:command('apply layout',  {
+                     params = { 'saves', 'entryId' },
+                 }, function()
+                     self:updateBlueprintFromActor(actorId, { applyLayoutChanges = true })
+                 end, function()
+                     for _, save in ipairs(saves) do
+                         self:send("removeActor", self.clientId, save.actorId)
+                         self:sendAddActor(save.bp, {
+                             actorId = save.actorId,
+                             parentEntryId = entryId,
+                             drawOrder = save.drawOrder,
+                             isGhost = save.isGhost,
+                         })
+                     end
+                 end)
+             end
+         end
          
          ui.data(
             {
