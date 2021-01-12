@@ -47,6 +47,7 @@ local DrawTool =
         iconFamily = "FontAwesome5",
         needsPerformingOff = true,
         hideBodyOutline = true,
+        hideBelt = true,
     }
 }
 
