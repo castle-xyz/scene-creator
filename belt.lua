@@ -455,7 +455,7 @@ function Common:updateBelt(dt)
             placeElem.placeY = touch.screenY + placeElem.placeRelY
 
             -- Touch dragged far enough into scene? Place actor!
-            if touch.screenY > self.beltBottom + 0.6 * BELT_HEIGHT then
+            if not self.isInspectorSheetMaximized and touch.screenY > self.beltBottom + 0.6 * BELT_HEIGHT then
                 touch.beltUsed = false
                 touch.beltPlacing = nil
                 touch.beltIndex = nil
