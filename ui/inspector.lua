@@ -1,6 +1,16 @@
 local Inspector = {
 }
 
+jsEvents.listen(
+    "SCENE_CREATOR_INSPECTOR_SHEET_MAXIMIZED",
+    function(params)
+        local self = currentInstance()
+        if self then
+            self.isInspectorSheetMaximized = params.isMaximized
+        end
+    end
+)
+
 function Client:_uiActorAllowsBehavior(actor, behavior)
    -- if actor has body and this is text, return false
    if (actor.components[self.behaviorsByName.Body.behaviorId] and behavior == self.behaviorsByName.Text) then
