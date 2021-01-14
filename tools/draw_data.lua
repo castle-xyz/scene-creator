@@ -60,57 +60,18 @@ function DrawData:roundGlobalDistanceToGrid(d)
     return x
 end
 
-local function makeSubpathsFromSubpathData(pathData)
-    for i = 1, #pathData.subpathDataList do
-        local subpathData = pathData.subpathDataList[i]
-        local subpath = tove.newSubpath()
-        pathData.tovePath:addSubpath(subpath)
-
-        if subpathData.type == 'line' then
-            subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
-            subpath:lineTo(subpathData.p2.x, subpathData.p2.y)
-        elseif subpathData.type == 'arc' then
-            subpath:arc(subpathData.center.x, subpathData.center.y, subpathData.radius, subpathData.startAngle * 180 / math.pi, subpathData.endAngle * 180 / math.pi)
-        elseif subpathData.type == 'bezier' then
-            subpath:moveTo(subpathData.p1.x, subpathData.p1.y)
-            subpath:curveTo(subpathData.p2.cp1x, subpathData.p2.cp1y, subpathData.p2.cp2x, subpathData.p2.cp2y, subpathData.p2.x, subpathData.p2.y)
-        end
-    end
-end
-
 local function addLineSubpathData(pathData, p1x, p1y, p2x, p2y)
-    table.insert(pathData.subpathDataList, {
-        type = 'line',
-        p1 = {
-            x = p1x,
-            y = p1y
-        },
-        p2 = {
-            x = p2x,
-            y = p2y
-        }
-    })
+    pathData.tovePath.subpaths[1]:moveTo(p1x, p1y)
+    pathData.tovePath.subpaths[1]:lineTo(p2x, p2y)
 end
 
 local function addBezierCurveSubpathData(pathData, p1, p2)
-    table.insert(pathData.subpathDataList, {
-        type = 'bezier',
-        p1 = util.deepCopyTable(p1),
-        p2 = util.deepCopyTable(p2),
-    })
+    pathData.tovePath.subpaths[1]:moveTo(p1.x, p1.y)
+    pathData.tovePath.subpaths[1]:curveTo(p2.cp1x, p2.cp1y, p2.cp2x, p2.cp2y, p2.x, p2.y)
 end
 
 local function addCircleSubpathData(pathData, centerX, centerY, radius, startAngle, endAngle)
-    table.insert(pathData.subpathDataList, {
-        type = 'arc',
-        center = {
-            x = centerX,
-            y = centerY
-        },
-        radius = radius,
-        startAngle = startAngle,
-        endAngle = endAngle
-    })
+    pathData.tovePath.subpaths[1]:arc(centerX, centerY, radius, startAngle * 180 / math.pi, endAngle * 180 / math.pi)
 end
 
 function DrawData:drawEndOfArc(pathData, p1x, p1y, p2x, p2y)
@@ -392,11 +353,12 @@ function DrawData:updatePathDataRendering(pathData)
     path:setLineJoin("round")
     pathData.tovePath = path
 
-    pathData.subpathDataList = {}
-
     if pathData.isTransparent then
         return
     end
+
+    local subpath = tove.newSubpath()
+    pathData.tovePath:addSubpath(subpath)
 
     for i = 1, #pathData.points - 1 do
         local p1 = pathData.points[i]
@@ -404,8 +366,54 @@ function DrawData:updatePathDataRendering(pathData)
 
         self:addSubpathDataForPoints(pathData, p1, p2)
     end
+end
 
-    makeSubpathsFromSubpathData(pathData)
+function DrawData:updatePencilPathDataRendering(pathData)
+    if not pathData.tovePath then
+        local path = tove.newPath()
+        if pathData.color then
+            path:setLineColor(pathData.color[1], pathData.color[2], pathData.color[3], 1.0)
+        else
+            path:setLineColor(self.color[1], self.color[2], self.color[3], 1.0)
+        end
+        path:setLineWidth(DRAW_LINE_WIDTH)
+        path:setMiterLimit(1)
+        path:setLineJoin("round")
+        pathData.tovePath = path
+    end
+
+    for i = 1, #pathData.points - 1 do
+        local p1 = pathData.points[i]
+        local p2 = pathData.points[i + 1]
+
+        if p1.touched or p2.touched then
+            if p1.subpath then
+                local subpath = tove.newSubpath()
+                subpath:moveTo(p1.x, p1.y)
+
+                if p2.cp1x then
+                    subpath:curveTo(p2.cp1x, p2.cp1y, p2.cp2x, p2.cp2y, p2.x, p2.y)
+                else
+                    subpath:lineTo(p2.x, p2.y)
+                end
+
+                p1.subpath:set(subpath)
+
+                --p1.subpath:setPoints(p1.x, p1.y, p2.x, p2.y)
+            else
+                local subpath = tove.newSubpath()
+                pathData.tovePath:addSubpath(subpath)
+                p1.subpath = subpath
+                subpath:moveTo(p1.x, p1.y)
+
+                if p2.cp1x then
+                    subpath:curveTo(p2.cp1x, p2.cp1y, p2.cp2x, p2.cp2y, p2.x, p2.y)
+                else
+                    subpath:lineTo(p2.x, p2.y)
+                end
+            end
+        end
+    end
 end
 
 function DrawData:selectedLayer()
@@ -1124,7 +1132,10 @@ function DrawData:render(componentProperties)
             local realFrame = self:getRealFrameIndexForLayerId(self.layers[l].id, frameIdx)
             local frame = self.layers[l].frames[realFrame]
             frame:renderFill()
-            frame:graphics():draw()
+
+            profileFunction('DrawDataFrame:render()', function()
+                frame:graphics():draw()
+            end)
         end
     end
 end
@@ -1250,7 +1261,6 @@ function DrawData:clearGraphics()
 
             for i = 1, #frame.pathDataList do
                 frame.pathDataList[i].tovePath = nil
-                frame.pathDataList[i].subpathDataList = nil
             end
         end
     end

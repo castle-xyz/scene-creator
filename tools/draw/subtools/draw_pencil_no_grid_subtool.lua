@@ -6,6 +6,7 @@ local PencilNoGridTool = defineDrawSubtool {
 function PencilNoGridTool.handlers:addSubtool()
     self._lastSegmentAngle = nil
     self._pathData = nil
+    collectgarbage("restart")
 end
 
 local function diffAngle(a1, a2)
@@ -21,10 +22,12 @@ local function diffAngle(a1, a2)
     return d
 end
 
+local p1, p2, xPoints, yPoints
+
 -- view-source:https://www.particleincell.com/wp-content/uploads/2012/06/circles.svg
 local function computeControlPoints(knots)
-    local p1 = {}
-    local p2 = {}
+    p1 = {}
+    p2 = {}
 
     -- rhs vector
     local a = {}
@@ -78,23 +81,43 @@ local function computeControlPoints(knots)
 end
 
 local function updateControlPoints(pathData)
-    local xPoints = {}
-    local yPoints = {}
+    xPoints = {}
+    yPoints = {}
     for i = 1, #pathData.points do
         table.insert(xPoints, pathData.points[i].x)
         table.insert(yPoints, pathData.points[i].y)
     end
-
 
     if #xPoints > 2 then
         local xControlPoints = computeControlPoints(xPoints)
         local yControlPoints = computeControlPoints(yPoints)
 
         for i = 2, #pathData.points do
-            pathData.points[i].cp1x = xControlPoints.p1[i - 1]
-            pathData.points[i].cp2x = xControlPoints.p2[i - 1]
-            pathData.points[i].cp1y = yControlPoints.p1[i - 1]
-            pathData.points[i].cp2y = yControlPoints.p2[i - 1]
+            local newCp1x = xControlPoints.p1[i - 1]
+            local newCp2x = xControlPoints.p2[i - 1]
+            local newCp1y = yControlPoints.p1[i - 1]
+            local newCp2y = yControlPoints.p2[i - 1]
+
+            if not floatEquals(newCp1x, pathData.points[i].cp1x) then
+                pathData.points[i].touched = true
+                pathData.points[i].cp1x = newCp1x
+            end
+
+            if not floatEquals(newCp2x, pathData.points[i].cp2x) then
+                pathData.points[i].touched = true
+                pathData.points[i].cp2x = newCp2x
+            end
+
+
+            if not floatEquals(newCp1y, pathData.points[i].cp1y) then
+                pathData.points[i].touched = true
+                pathData.points[i].cp1y = newCp1y
+            end
+
+            if not floatEquals(newCp2y, pathData.points[i].cp2y) then
+                pathData.points[i].touched = true
+                pathData.points[i].cp2y = newCp2y
+            end
         end
     end
 end
@@ -104,18 +127,26 @@ function PencilNoGridTool.handlers:onTouch(component, touchData)
        local initialCoord = {
             x = touchData.clampedX,
             y = touchData.clampedY,
+            touched = true,
         }
 
         self._pathData = {}
-        self._pathData.points = {initialCoord, initialCoord}
+        self._pathData.points = {util.deepCopyTable(initialCoord), util.deepCopyTable(initialCoord)}
         self._pathData.style = 1
         self._pathData.isFreehand = true
         self._lastSegmentAngle = nil
+
+        self:resetTempGraphics()
+        self:drawData():updatePencilPathDataRendering(self._pathData)
+        self:addTempPathData(self._pathData)
+
+        collectgarbage("stop")
     end
 
     local newCoord = {
         x = touchData.clampedX,
         y = touchData.clampedY,
+        touched = true,
     }
 
     local lastCoord = self._pathData.points[#self._pathData.points - 1]
@@ -125,20 +156,38 @@ function PencilNoGridTool.handlers:onTouch(component, touchData)
     local angle = math.atan2(lastCoord.y - touchData.clampedY, lastCoord.x - touchData.clampedX)
     local addPoint = false
 
-    if dist > 0.8 * self:getZoomAmount() then
+    if dist > 0.2 * self:getZoomAmount() then
         addPoint = true
     elseif self._lastSegmentAngle and dist > 0.3 * self:getZoomAmount() and diffAngle(self._lastSegmentAngle, angle) > 0.5 then
         --addPoint = true
     end
 
     if touchData.touch.released then
-        updateControlPoints(self._pathData)
-        self:addPathData(util.deepCopyTable(self._pathData))
+        collectgarbage("restart")
+        print('here1')
+        --updateControlPoints(self._pathData)
+        print('here2')
+
+        self._pathData.tovePath = nil
+        for i = 1, #self._pathData.points do
+            self._pathData.points[i].subpath = nil
+        end
+
+        print('here3')
+        local cp = util.deepCopyTable(self._pathData)
+        print('here4')
+        self:addPathData(cp)
+        print('here5')
 
         self:drawDataFrame():resetGraphics()
+        print('here6')
         self:drawDataFrame():resetFill()
+        print('here7')
         self:drawData():updateBounds()
+
+        print('here8')
         self:saveDrawing("freehand pencil", component)
+        print('here9')
 
         self._pathData = nil
         self._lastSegmentAngle = nil
@@ -146,12 +195,15 @@ function PencilNoGridTool.handlers:onTouch(component, touchData)
     else
         if addPoint then
             self._lastSegmentAngle = angle
-            table.insert(self._pathData.points, newCoord)
+            table.insert(self._pathData.points, util.deepCopyTable(newCoord))
         end
 
-        updateControlPoints(self._pathData)
+        --updateControlPoints(self._pathData)
 
-        self:resetTempGraphics()
-        self:addTempPathData(util.deepCopyTable(self._pathData))
+
+        --self:resetTempGraphics()
+        --self:addTempPathData(util.deepCopyTable(self._pathData))
+
+        self:drawData():updatePencilPathDataRendering(self._pathData)
     end
 end

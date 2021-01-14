@@ -1,6 +1,10 @@
 -- for dragging points with a fill, we can render to a bmp and then test each affected slab against the bmp
 
 function floatEquals(f1, f2)
+    if not f1 or not f2 then
+        return false
+    end
+
     return f1 > f2 - 0.001 and f1 < f2 + 0.001
 end
 
@@ -12,26 +16,6 @@ function floatUnit(f)
     else
         return -1
     end
-end
-
-function idToSubpath(pathDataList, id)
-    return pathDataList[id.pathIdx].subpathDataList[id.subpathIdx]
-end
-
-function makeSubpathId(pathIdx, subpathIdx, subpathData)
-    return {
-        stringId = subpathData.id,
-        pathIdx = pathIdx,
-        subpathIdx = subpathIdx,
-    }
-end
-
-function makeSubpathStringId(subpathData)
-    return subpathData.id
-end
-
-function subpathIdToSubpathStringId(subpathId)
-    return subpathId.stringId
 end
 
 function directionForPathData(pathData)

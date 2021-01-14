@@ -361,13 +361,23 @@ function DrawDataFrame:floodClear(x, y, radius)
 end
 
 function DrawDataFrame:resetFill()
+    print('rf1')
     self:cleanUpPaths()
+    print('rf2')
     self:updatePathsCanvas()
+    print('rf3')
     local pathsImageData = self.pathsCanvas:newImageData()
+    print('rf4')
 
-    self:getFillImageDataSizedToPathBounds():updateFloodFillForNewPaths(pathsImageData)
+    local fi = self:getFillImageDataSizedToPathBounds()
+    print('rf5')
+    fi:updateFloodFillForNewPaths(pathsImageData)
+    print('rf6')
+
     self:compressFillCanvas()
+    print('rf7')
     self:updateFillImageWithFillImageData()
+    print('rf8')
 end
 
 function DrawDataFrame:updatePathsCanvas()
@@ -408,7 +418,9 @@ function DrawDataFrame:updatePathsCanvas()
 
             love.graphics.clear(0.0, 0.0, 0.0, 0.0)
             love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+            print('updatePathsCanvas 1')
             self:graphics():draw()
+            print('updatePathsCanvas 2')
 
             love.graphics.pop()
         end
@@ -417,16 +429,18 @@ end
 
 function DrawDataFrame:graphics()
     if self._graphicsNeedsReset or not self._graphics then
-        self._graphicsNeedsReset = false
-        self:cleanUpPaths()
-
-        self._graphics = tove.newGraphics()
-        self._graphics:setDisplay("mesh", 2048)
-        self._graphics:setResolution(2)
-
-        for i = 1, #self.pathDataList do
-            self._graphics:addPath(self.pathDataList[i].tovePath)
-        end
+        local ddfSelf = self
+        profileFunction('DrawDataFrame:graphics()', function()
+            ddfSelf._graphicsNeedsReset = false
+            ddfSelf:cleanUpPaths()
+    
+            ddfSelf._graphics = tove.newGraphics()
+            ddfSelf._graphics:setDisplay("mesh", 1024)
+    
+            for i = 1, #ddfSelf.pathDataList do
+                ddfSelf._graphics:addPath(ddfSelf.pathDataList[i].tovePath)
+            end
+        end)
     end
     
     return self._graphics

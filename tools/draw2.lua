@@ -187,7 +187,8 @@ end
 
 function DrawTool:resetTempGraphics()
     self._tempGraphics = tove.newGraphics()
-    self._tempGraphics:setDisplay("mesh", 1024)
+    self._tempGraphics:setDisplay("mesh", "rigid", 4)
+    self._tempGraphics:setUsage("points", "dynamic")
 end
 
 function DrawTool:clearTempGraphics()
@@ -471,7 +472,9 @@ function DrawTool.handlers:update(dt)
             }
 
             if subtool then
-                self:callSubtoolHandler(subtool, "onTouch", c, childTouchData)
+                profileFunction('draw onTouch', function()
+                    self:callSubtoolHandler(subtool, "onTouch", c, childTouchData)
+                end)
                 if touch.released then
                     subtool._hasTouch = false
                 else
@@ -584,7 +587,9 @@ function DrawTool.handlers:drawOverlay()
     if self._selectedSubtools.root == 'artwork' then
         love.graphics.setColor(1, 1, 1, 1)
 
-        self._drawData:renderForTool(self.animationState, self.tempTranslateX, self.tempTranslateY, self._tempGraphics)
+        profileFunction('temp graphics', function()
+            self._drawData:renderForTool(self.animationState, self.tempTranslateX, self.tempTranslateY, self._tempGraphics)
+        end)
 
         self._physicsBodyData:draw()
     end
