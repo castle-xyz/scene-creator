@@ -471,9 +471,14 @@ function DrawTool.handlers:update(dt)
             }
 
             if subtool then
+                if touch.pressed then
+                    self._drawData:unlinkCurrentCell()
+                end
+
                 self:callSubtoolHandler(subtool, "onTouch", c, childTouchData)
                 if touch.released then
                     subtool._hasTouch = false
+                    self:loadLastSave()
                 else
                     subtool._hasTouch = true
                 end

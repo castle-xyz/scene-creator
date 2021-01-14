@@ -789,6 +789,14 @@ function DrawData:updateFramePreview()
     self:currentLayerFrame().base64Png = self:currentLayerFrame():renderPreviewPng()
 end
 
+function DrawData:unlinkCurrentCell()
+    if not self:selectedLayer().frames[self.selectedFrame].isLinked then
+        return
+    end
+
+    self:setCellLinked(self.selectedLayerId, self.selectedFrame, false)
+end
+
 function DrawData:selectLayer(layerId)
     self.selectedLayerId = layerId
     self:touchLayerData()
@@ -889,6 +897,10 @@ end
 
 function DrawData:setCellLinked(layerId, frame, isLinked)
     if frame < 2 then
+        return
+    end
+
+    if self:layerForId(layerId).frames[frame].isLinked == isLinked then
         return
     end
 
