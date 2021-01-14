@@ -566,8 +566,6 @@ function DrawTool.handlers:drawOverlay()
         love.graphics.setColor(1, 1, 1, 1)
 
         self._drawData:renderForTool(self.animationState, self.tempTranslateX, self.tempTranslateY, self._tempGraphics)
-
-        self._physicsBodyData:draw()
     end
 
     if self.isOnionSkinningEnabled and not self.isPlayingAnimation then
@@ -603,6 +601,10 @@ function DrawTool.handlers:drawOverlay()
     end
 
     love.graphics.setColor(1, 1, 1, 1)
+
+    if self._selectedSubtools.root == 'artwork' then
+        self._physicsBodyData:draw()
+    end
 
     if self._selectedSubtools.root == "artwork" and self._selectedSubtools.artwork == "artwork_move" and self._selectedSubtools.artwork_move == "move" then
         local movePoints = {}
