@@ -98,6 +98,7 @@ function DrawTool.handlers:addBehavior(opts)
         collision_draw = "rectangle",
         collision_move = "move",
     }
+    self._copiedCell = nil
 
     self._subtools = {}
     for _, SUBTOOL in pairs(SUBTOOLS) do
@@ -826,9 +827,21 @@ function DrawTool.handlers:uiData()
         self.isOnionSkinningEnabled = isOnionSkinningEnabled
     end
 
+    layerActions['onCopyCell'] = function(opts)
+        self._copiedCell = self._drawData:copyCell(opts.layerId, opts.frame)
+    end
+
+    layerActions['onPasteCell'] = function(opts)
+        if self._copiedCell then
+            self._drawData:pasteCell(opts.layerId, opts.frame, self._copiedCell)
+            self:saveDrawing('paste cell', c)
+        end
+    end
+
     local layerData = self._drawData:getLayerData()
     layerData.isPlayingAnimation = self.isPlayingAnimation
     layerData.isOnionSkinningEnabled = self.isOnionSkinningEnabled
+    layerData.canPaste = self._copiedCell ~= nil
     ui.fastData('draw-layers', layerData, {
         actions = layerActions,
     })

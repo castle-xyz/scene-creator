@@ -907,20 +907,29 @@ function DrawData:setCellLinked(layerId, frame, isLinked)
     if isLinked then
         self:layerForId(layerId).frames[frame] = self:_newFrame(isLinked)
     else
-        local realFrame = self:getRealFrameIndexForLayerId(layerId, frame)
-        local oldFrame = self:layerForId(layerId).frames[realFrame]
-        local newFrame = util.deepCopyTable(oldFrame:serialize())
-
-        setmetatable(newFrame, {__index = DrawDataFrame})
-        newFrame.parent = function()
-            return self
-        end
-
-        newFrame:deserializePathDataList()
-        newFrame:deserializeFillAndPreview()
-
-        self:layerForId(layerId).frames[frame] = newFrame
+        local data = self:copyCell(layerId, frame)
+        self:pasteCell(layerId, frame, data)
     end
+
+    self:touchLayerData()
+end
+
+function DrawData:copyCell(layerId, frame)
+    local realFrame = self:getRealFrameIndexForLayerId(layerId, frame)
+    local oldFrame = self:layerForId(layerId).frames[realFrame]
+    return util.deepCopyTable(oldFrame:serialize())
+end
+
+function DrawData:pasteCell(layerId, frame, newFrame)
+    setmetatable(newFrame, {__index = DrawDataFrame})
+    newFrame.parent = function()
+        return self
+    end
+
+    newFrame:deserializePathDataList()
+    newFrame:deserializeFillAndPreview()
+
+    self:layerForId(layerId).frames[frame] = newFrame
 
     self:touchLayerData()
 end
