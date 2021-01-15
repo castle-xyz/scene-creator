@@ -55,7 +55,7 @@ function Sound.makeSource(params)
    
    local sounddata = sound:generateSoundData()
    local source = love.audio.newSource(sounddata)
-   source:setVolume(1)
+   source:setVolume(0.4)
    return source
 end
 
