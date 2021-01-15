@@ -225,7 +225,10 @@ function Common:forceSendVariableUpdate()
 end
 
 function Common:sendVariableUpdate()
-    if self._updateQueued and self._framesSinceUpdate > 10 then
+    -- this update doesn't matter very much. text actors with variables
+    -- get sent in the ui update, and when we navigatie to a different card
+    -- forceSendVariableUpdate() gets called
+    if self._updateQueued and self._framesSinceUpdate > 60 then
         self:forceSendVariableUpdate()
     else
         self._framesSinceUpdate = self._framesSinceUpdate + 1
