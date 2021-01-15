@@ -833,7 +833,7 @@ function DrawTool.handlers:uiData()
 
     layerActions['onPasteCell'] = function(opts)
         if self._copiedCell then
-            self._drawData:pasteCell(opts.layerId, opts.frame, self._copiedCell)
+            self._drawData:pasteCell(opts.layerId, opts.frame, util.deepCopyTable(self._copiedCell))
             self:saveDrawing('paste cell', c)
         end
     end
