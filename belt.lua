@@ -352,7 +352,7 @@ function Common:updateBelt(dt)
         if touch.beltIndex or touch.screenY < self.beltBottom then -- Touch on belt
             ui.setUpdatesPaused(false) -- Update inspector eagerly to reflect focused blueprint
 
-            if next(self.selectedActorIds) then
+            if not touch.beltPlaced and next(self.selectedActorIds) then
                 self:deselectAllActors({ noDeselectBelt = true })
             end
 
@@ -419,7 +419,7 @@ function Common:updateBelt(dt)
             end
 
             -- This is a drag scroll if not placing
-            if not touch.beltPlacing then
+            if not (touch.beltPlacing or touch.beltPlaced) then
                 self.beltHapticsGesture = true -- Enable haptics on a scroll
 
                 self.beltCursorX = self.beltCursorX - touch.screenDX
@@ -459,6 +459,7 @@ function Common:updateBelt(dt)
                 touch.beltUsed = false
                 touch.beltPlacing = nil
                 touch.beltIndex = nil
+                touch.beltPlaced = true
                 placeElem.placeX, placeElem.placeY = nil, nil
                 placeElem.placeRelX, placeElem.placeRelY = nil, nil
                 self:_addBlueprintToScene(placeElem.entryId, touch.x, touch.y)
@@ -466,6 +467,20 @@ function Common:updateBelt(dt)
                 -- Sync immediately with placed actor
                 self:syncSelectionsWithBelt()
                 self.beltLastGhostSelectTime = nil
+            end
+        end
+        if touch.beltPlaced and touch.screenY < self.beltBottom then
+            -- Dragged back into belt -- cancel placing, remove undos
+            for actorId in pairs(self.selectedActorIds) do
+                local actor = self.actors[actorId]
+                if actor and not actor.isGhost then
+                    self:deselectActor(actorId)
+                    self:applySelections()
+                    self:send('removeActor', self.clientId, actorId)
+                    table.remove(self.undos)
+                    table.remove(self.undos)
+                    break
+                end
             end
         end
     else
