@@ -84,39 +84,41 @@ function Common:command(description, opts, doFunc, undoFunc)
     end
 
     -- Insert into undos, coalescing with an applicable previous command. Limit undo list size.
-    local coalesced = false
-    if command.coalesceId then
-        for i = #self.undos, 1, -1 do
-            local prevCommand = self.undos[i]
-            if
-                (command.coalesceId == prevCommand.coalesceId and
-                    command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL))
-             then
-                -- Use undo part of `prevCommand`
-                command.funcs.undo = prevCommand.funcs.undo
-                command.paramOverrides = command.paramOverrides or {}
-                command.paramOverrides.undo = prevCommand.params
-                if prevCommand.paramOverrides and prevCommand.paramOverrides.undo then
-                    for name, value in pairs(prevCommand.paramOverrides.undo) do
-                        command.paramOverrides.undo[name] = value
+    if not opts.noSaveUndo then
+        local coalesced = false
+        if command.coalesceId then
+            for i = #self.undos, 1, -1 do
+                local prevCommand = self.undos[i]
+                if
+                    (command.coalesceId == prevCommand.coalesceId and
+                        command.localTime - prevCommand.localTime < (opts.coalesceInterval or DEFAULT_COALESCE_INTERVAL))
+                 then
+                    -- Use undo part of `prevCommand`
+                    command.funcs.undo = prevCommand.funcs.undo
+                    command.paramOverrides = command.paramOverrides or {}
+                    command.paramOverrides.undo = prevCommand.params
+                    if prevCommand.paramOverrides and prevCommand.paramOverrides.undo then
+                        for name, value in pairs(prevCommand.paramOverrides.undo) do
+                            command.paramOverrides.undo[name] = value
+                        end
                     end
-                end
 
-                -- Replace in undo list
-                self.undos[i] = command
-                coalesced = true
-                break
-            end
-            if opts.coalesceLast ~= false then
-                break
+                    -- Replace in undo list
+                    self.undos[i] = command
+                    coalesced = true
+                    break
+                end
+                if opts.coalesceLast ~= false then
+                    break
+                end
             end
         end
-    end
-    if not coalesced then
-        table.insert(self.undos, command)
-    end
-    while #self.undos > MAX_UNDOS do
-        table.remove(self.undos, 1)
+        if not coalesced then
+            table.insert(self.undos, command)
+        end
+        while #self.undos > MAX_UNDOS do
+            table.remove(self.undos, 1)
+        end
     end
 
     -- Reset redos
