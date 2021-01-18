@@ -71,8 +71,20 @@ function DragBehavior.handlers:prePerform(dt)
                     touch.actorId = actorId
 
                     local bodyId, body = self.dependencies.Body:getBody(actorId)
-                    touch._mouseJoint = love.physics.newMouseJoint(body, touch.x, touch.y)
-                    touch._localX, touch._localY = body:getLocalPoint(touch.x, touch.y)
+                    local members = self.dependencies.Body:getMembers(actorId)
+                    local touchX = touch.x
+                    local touchY = touch.y
+                    touch._mouseJointRelative = false
+
+                    if members.layer and members.layer.relativeToCamera then
+                        local cameraX, cameraY = self.game:getCameraPosition()
+                        touchX = touchX - cameraX
+                        touchY = touchY - cameraY
+                        touch._mouseJointRelative = true
+                    end
+
+                    touch._mouseJoint = love.physics.newMouseJoint(body, touchX, touchY)
+                    touch._localX, touch._localY = body:getLocalPoint(touchX, touchY)
 
                     component._numTouches = component._numTouches + 1
                     component._clientId = self.game.clientId
@@ -109,7 +121,16 @@ function DragBehavior.handlers:perform(dt)
             else
                 if not touch._mouseJoint:isDestroyed() then
                     -- Drag, move
-                    touch._mouseJoint:setTarget(touch.x, touch.y)
+                    local touchX = touch.x
+                    local touchY = touch.y
+
+                    if touch._mouseJointRelative then
+                        local cameraX, cameraY = self.game:getCameraPosition()
+                        touchX = touchX - cameraX
+                        touchY = touchY - cameraY
+                    end
+
+                    touch._mouseJoint:setTarget(touchX, touchY)
                 end
             end
         end
@@ -133,6 +154,11 @@ function DragBehavior.handlers:drawOverlay()
             local bodyId, body = self.dependencies.Body:getBody(touch.actorId)
             if body then
                 local worldX, worldY = body:getWorldPoint(touch._localX, touch._localY)
+                if touch._mouseJointRelative then
+                    local cameraX, cameraY = self.game:getCameraPosition()
+                    worldX = worldX + cameraX
+                    worldY = worldY + cameraY
+                end
 
                 love.graphics.setColor(1, 1, 1, 0.8)
                 love.graphics.setLineWidth(1.25 * self.game:getPixelScale())
