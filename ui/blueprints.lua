@@ -112,7 +112,8 @@ function Client:uiBlueprints()
    ui.data(data, { actions = actions })
 end
 
-function Client:_addBlueprintToScene(entryId, x, y)
+function Client:_addBlueprintToScene(entryId, x, y, opts)
+   opts = opts or {}
    local entry = self.library[entryId]
 
    -- If core entry, duplicate the entry and use that instead
@@ -131,11 +132,12 @@ function Client:_addBlueprintToScene(entryId, x, y)
         bp.components.Body.x = util.quantize(x, gridSize)
         bp.components.Body.y = util.quantize(y, gridSize)
     end
-    local newActorId = self:generateActorId()
+    local newActorId = opts.actorId or self:generateActorId()
 
     local entryId = entry.entryId
     self:command('add', {
         params = { 'bp', 'newActorId', 'entryId' },
+        noSaveUndo = opts.noSaveUndo,
     }, function()
         -- Add the actor
         self:sendAddActor(bp, {
