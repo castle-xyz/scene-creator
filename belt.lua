@@ -459,10 +459,13 @@ function Common:updateBelt(dt)
                 touch.beltUsed = false
                 touch.beltPlacing = nil
                 touch.beltIndex = nil
-                touch.beltPlaced = true
                 placeElem.placeX, placeElem.placeY = nil, nil
                 placeElem.placeRelX, placeElem.placeRelY = nil, nil
-                self:_addBlueprintToScene(placeElem.entryId, touch.x, touch.y)
+                self:_addBlueprintToScene(placeElem.entryId, touch.x, touch.y, {
+                    noSaveUndo = true, -- We'll add a coalesced undo on touch release (see below)
+                })
+                touch.beltPlaced = true
+                touch.beltPlacedEntryId = placeElem.entryId
 
                 -- Sync immediately with placed actor
                 self:syncSelectionsWithBelt()
@@ -470,16 +473,34 @@ function Common:updateBelt(dt)
             end
         end
         if touch.beltPlaced and touch.screenY < self.beltBottom then
-            -- Dragged back into belt -- cancel placing, remove undos
+            -- Dragged back into belt -- cancel placing
             for actorId in pairs(self.selectedActorIds) do
                 local actor = self.actors[actorId]
                 if actor and not actor.isGhost then
                     self:deselectActor(actorId)
                     self:applySelections()
                     self:send('removeActor', self.clientId, actorId)
-                    table.remove(self.undos)
-                    table.remove(self.undos)
                     break
+                end
+            end
+        end
+        if touch.beltPlaced and touch.released then
+            local entryId = touch.beltPlacedEntryId
+            for actorId in pairs(self.selectedActorIds) do
+                local actor = self.actors[actorId]
+                if actor and not actor.isGhost and actor.parentEntryId == entryId then
+                    -- Do at end of frame to allow grab tool to apply any last motions
+                    table.insert(self.onEndOfFrames, function()
+                        local x, y = 0, 0
+                        local bodyId, body = self.behaviorsByName.Body:getBody(actorId)
+                        if body then
+                            x, y = body:getPosition()
+                        end
+                        self:send('removeActor', self.clientId, actorId)
+                        self:_addBlueprintToScene(entryId, x, y, {
+                            actorId = actorId,
+                        })
+                    end)
                 end
             end
         end

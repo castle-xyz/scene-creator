@@ -46,6 +46,15 @@ function GrabTool:move(moveX, moveY)
 
     local touchData = self:getTouchData()
 
+    -- Don't save undos when placing from belt, belt logic adds a coalesced
+    -- "add actor" command at the end of the gesture
+    local noSaveUndo = false
+    for touchId, touch in pairs(touchData.touches) do
+        if touch.beltPlaced then
+            noSaveUndo = true
+        end
+    end
+
     self:command(
         "move",
         {
@@ -56,7 +65,8 @@ function GrabTool:move(moveX, moveY)
             },
             params = {
                 gestureEnded = touchData.allTouchesReleased
-            }
+            },
+            noSaveUndo = noSaveUndo
         },
         function(params, live)
             -- Make sure actors still exist
