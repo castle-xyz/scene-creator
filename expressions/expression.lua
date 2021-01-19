@@ -63,14 +63,12 @@ Expression.expressions["random"] = {
          label = "Minimum value",
          method = "numberInput",
          initialValue = 0,
-         expression = false, -- TODO: allow expression
          order = 1,
       },
       max = {
          label = "Maximum value",
          method = "numberInput",
          initialValue = 1,
-         expression = false, -- TODO: allow expression
          order = 2,
       },
       discrete = {
