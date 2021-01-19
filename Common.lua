@@ -87,6 +87,7 @@ require "scene_properties"
 require "camera"
 require "expressions.expression"
 require "expressions.behavior_property"
+require "expressions.arithmetic"
 
 function Common:start(isPerforming)
     self.onEndOfFrames = {}
