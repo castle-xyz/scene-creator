@@ -33,13 +33,13 @@ Common:defineExpression(
          lhs = {
             label = "Left operand",
             method = "numberInput",
-            initialValue = 0,
+            initialValue = 1,
             order = 1,
          },
          rhs = {
             label = "Right operand",
             method = "numberInput",
-            initialValue = 0,
+            initialValue = 1,
             order = 2,
          },
       },
@@ -85,13 +85,13 @@ Common:defineExpression(
          lhs = {
             label = "Numerator",
             method = "numberInput",
-            initialValue = 0,
+            initialValue = 1,
             order = 1,
          },
          rhs = {
             label = "Denominator",
             method = "numberInput",
-            initialValue = 0,
+            initialValue = 1,
             order = 2,
          },
       },
@@ -114,13 +114,13 @@ Common:defineExpression(
          lhs = {
             label = "Left operand",
             method = "numberInput",
-            initialValue = 0,
+            initialValue = 1,
             order = 1,
          },
          rhs = {
             label = "Right operand",
             method = "numberInput",
-            initialValue = 0,
+            initialValue = 1,
             order = 2,
          },
       },
@@ -143,13 +143,13 @@ Common:defineExpression(
          lhs = {
             label = "Base",
             method = "numberInput",
-            initialValue = 0,
+            initialValue = 1,
             order = 1,
          },
          rhs = {
             label = "Exponent",
             method = "numberInput",
-            initialValue = 0,
+            initialValue = 1,
             order = 2,
          },
       },
