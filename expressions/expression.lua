@@ -2,6 +2,7 @@ Expression = {
    expressions = {},
    BaseExpression = {
       expressionType = "base",
+      category = "values",
       returnType = "nil",
       params = nil,
    },

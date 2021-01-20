@@ -4,6 +4,7 @@ function Client:uiExpressions()
       expressions[name] = {
          description = spec.description,
          returnType = spec.returnType,
+         category = spec.category and spec.category or 'values',
          paramSpecs = spec.paramSpecs,
       }
    end

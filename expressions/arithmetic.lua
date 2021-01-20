@@ -2,7 +2,7 @@ Common:defineExpression(
    "+", {
       returnType = "number",
       category = "operators",
-      description = "the sum of two values",
+      description = "add",
       paramSpecs = {
          lhs = {
             label = "Left operand",
@@ -28,7 +28,7 @@ Common:defineExpression(
    "*", {
       returnType = "number",
       category = "operators",
-      description = "the product of two values",
+      description = "multiply",
       paramSpecs = {
          lhs = {
             label = "Left operand",
@@ -54,7 +54,7 @@ Common:defineExpression(
    "-", {
       returnType = "number",
       category = "operators",
-      description = "the difference between two values",
+      description = "subtract",
       paramSpecs = {
          lhs = {
             label = "Left operand",
@@ -80,7 +80,7 @@ Common:defineExpression(
    "/", {
       returnType = "number",
       category = "operators",
-      description = "the quotient of two values",
+      description = "divide",
       paramSpecs = {
          lhs = {
             label = "Numerator",
@@ -109,7 +109,7 @@ Common:defineExpression(
    "%", {
       returnType = "number",
       category = "operators",
-      description = "one value modulo another",
+      description = "modulo",
       paramSpecs = {
          lhs = {
             label = "Left operand",
@@ -138,7 +138,7 @@ Common:defineExpression(
    "^", {
       returnType = "number",
       category = "operators",
-      description = "one value to the power of another",
+      description = "power",
       paramSpecs = {
          lhs = {
             label = "Base",
