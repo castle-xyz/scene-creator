@@ -1,7 +1,7 @@
 Common:defineExpression(
    "+", {
       returnType = "number",
-      category = "operators",
+      category = "arithmetic",
       description = "add",
       paramSpecs = {
          lhs = {
@@ -27,7 +27,7 @@ Common:defineExpression(
 Common:defineExpression(
    "*", {
       returnType = "number",
-      category = "operators",
+      category = "arithmetic",
       description = "multiply",
       paramSpecs = {
          lhs = {
@@ -53,7 +53,7 @@ Common:defineExpression(
 Common:defineExpression(
    "-", {
       returnType = "number",
-      category = "operators",
+      category = "arithmetic",
       description = "subtract",
       paramSpecs = {
          lhs = {
@@ -79,7 +79,7 @@ Common:defineExpression(
 Common:defineExpression(
    "/", {
       returnType = "number",
-      category = "operators",
+      category = "arithmetic",
       description = "divide",
       paramSpecs = {
          lhs = {
@@ -108,7 +108,7 @@ Common:defineExpression(
 Common:defineExpression(
    "%", {
       returnType = "number",
-      category = "operators",
+      category = "arithmetic",
       description = "modulo",
       paramSpecs = {
          lhs = {
@@ -137,7 +137,7 @@ Common:defineExpression(
 Common:defineExpression(
    "^", {
       returnType = "number",
-      category = "operators",
+      category = "arithmetic",
       description = "power",
       paramSpecs = {
          lhs = {

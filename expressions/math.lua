@@ -1,7 +1,7 @@
 Common:defineExpression(
    "abs", {
       returnType = "number",
-      category = "math",
+      category = "arithmetic",
       description = "absolute value",
       paramSpecs = {
          number = {
@@ -20,7 +20,7 @@ Common:defineExpression(
 Common:defineExpression(
    "log", {
       returnType = "number",
-      category = "math",
+      category = "arithmetic",
       description = "logarithm",
       paramSpecs = {
          base = {
@@ -46,7 +46,7 @@ Common:defineExpression(
 Common:defineExpression(
    "min", {
       returnType = "number",
-      category = "math",
+      category = "choices",
       description = "minimum",
       paramSpecs = {
          lhs = {
@@ -70,7 +70,7 @@ Common:defineExpression(
 Common:defineExpression(
    "max", {
       returnType = "number",
-      category = "math",
+      category = "choices",
       description = "maximum",
       paramSpecs = {
          lhs = {
@@ -94,7 +94,7 @@ Common:defineExpression(
 Common:defineExpression(
    "choose", {
       returnType = "number",
-      category = "math",
+      category = "choices",
       description = "choose",
       paramSpecs = {
          lhs = {
