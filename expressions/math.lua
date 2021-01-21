@@ -114,3 +114,41 @@ Common:defineExpression(
       end,
    }
 )
+
+Common:defineExpression(
+   "weighted choose", {
+      returnType = "number",
+      category = "choices",
+      description = "weighted choose",
+      paramSpecs = {
+         lhs = {
+            label = "First outcome",
+            method = "numberInput",
+            initialValue = 0,
+         },
+         rhs = {
+            label = "Second outcome",
+            method = "numberInput",
+            initialValue = 1,
+         },
+         lhw = {
+            label = "Weight of first outcome",
+            method = "numberInput",
+            initialValue = 0.5,
+         },
+         rhw = {
+            label = "Weight of second outcome",
+            method = "numberInput",
+            initialValue = 0.5,
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local lhs, rhs = game:evalExpression(expression.params.lhs, actorId, context), game:evalExpression(expression.params.rhs, actorId, context)
+         local lhw, rhw = game:evalExpression(expression.params.lhw, actorId, context), game:evalExpression(expression.params.rhw, actorId, context)
+         if rhw == 0 then return lhs end
+         if lhw == 0 then return rhs end
+         lhw = lhw / (lhw + rhw)
+         if math.random() < lhw then return lhs else return rhs end
+      end,
+   }
+)
