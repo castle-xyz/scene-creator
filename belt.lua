@@ -405,7 +405,7 @@ function Common:updateBelt(dt)
             end
 
             -- Start placing if the touch began on an element and it's a long-ish vertical drag
-            if touch.beltIndex and not touch.beltPlacing then
+            if not touch.beltNeverPlace and touch.beltIndex and not touch.beltPlacing then
                 self.beltHapticsGesture = false -- Don't distract user with haptics in placing mode
 
                 local totalDX = touch.screenX - touch.initialScreenX
@@ -441,6 +441,12 @@ function Common:updateBelt(dt)
                     end
                 end
                 self.beltCursorVX = maxVel
+
+                -- If the touch moves far enough along X without exiting belt
+                -- bottom, keep as drag scroll forever
+                if touch.screenY < self.beltBottom and math.abs(touch.screenX - touch.initialScreenX) > 1.2 * ELEM_SIZE then
+                    touch.beltNeverPlace = true
+                end
             end
         end
 
