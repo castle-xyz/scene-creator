@@ -349,7 +349,7 @@ function Common:updateBelt(dt)
     if not self:isActiveToolFullscreen() and self.numTouches == 1 and self.maxNumTouches == 1 then -- Single touch
         local touchId, touch = next(self.touches)
 
-        if touch.beltIndex or touch.screenY < self.beltBottom then -- Touch on belt
+        if touch.beltIndex or (not touch.used and touch.screenY < self.beltBottom) then -- Touch on belt
             ui.setUpdatesPaused(false) -- Update inspector eagerly to reflect focused blueprint
 
             if not touch.beltPlaced and next(self.selectedActorIds) then
