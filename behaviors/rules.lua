@@ -353,6 +353,8 @@ RulesBehavior.responses["set variable"] = {
     end
 }
 
+-- TODO: convert to boolean expression
+-- if comparison(variable expression, value expression)
 RulesBehavior.responses["variable meets condition"] = {
     description = 'If a variable meets a condition',
     category = "state",
@@ -394,6 +396,52 @@ RulesBehavior.responses["variable meets condition"] = {
             return true
         end
         if params.comparison == "greater or equal" and value >= compareTo then
+            return true
+        end
+        return false
+    end
+}
+
+-- TODO: convert to a single boolean expression
+-- if comparison(expression1, expression2)
+RulesBehavior.responses["expression meets condition"] = {
+    description = "If an expression meets a condition",
+    category = "state",
+    returnType = "boolean",
+    paramSpecs = {
+       lhs = {
+          label = "Left value",
+          method = "numberInput",
+          initialValue = 0,
+       },
+       comparison = {
+          label = "comparison",
+          method = "dropdown",
+          initialValue = "equal",
+          props = {
+             items = {
+                "equal",
+                "less or equal",
+                "greater or equal",
+             },
+          },
+       },
+       rhs = {
+          label = "Right value",
+          method = "numberInput",
+          initialValue = 0,
+       },
+    },
+    run = function(self, actorId, params, context)
+        local lhs = self.game:evalExpression(params.lhs, actorId, context)
+        local rhs = self.game:evalExpression(params.rhs, actorId, context)
+        if params.comparison == "equal" and lhs == rhs then
+            return true
+        end
+        if params.comparison == "less or equal" and lhs <= rhs then
+            return true
+        end
+        if params.comparison == "greater or equal" and lhs >= rhs then
             return true
         end
         return false

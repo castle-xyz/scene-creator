@@ -156,6 +156,8 @@ CounterBehavior.responses["set counter"] = {
     end
 }
 
+-- TODO: convert to boolean expression
+-- if comparison(counter expression, value expression)
 CounterBehavior.responses["counter meets condition"] = {
     description = "If the actor's counter meets a condition",
     category = "state",
