@@ -1,3 +1,15 @@
+local function evalActorRef(actorRef, sourceActorId, game, context)
+   local targetActorId
+   if actorRef.kind == "self" then
+      targetActorId = sourceActorId
+   elseif actorRef.kind == "closest" then
+      targetActorId = game:closestActorWithTag(sourceActorId, actorRef.tag)
+   elseif actorRef.kind == "other" then
+      targetActorId = context.otherActorId
+   end
+   return targetActorId
+end
+
 Common:defineExpression(
    "behavior property", {
       returnType = "number",
@@ -32,14 +44,7 @@ Common:defineExpression(
          end
 
          -- identify actor whose property to read
-         local targetActorId
-         if expression.params.actorRef.kind == "self" then
-            targetActorId = actorId
-         elseif expression.params.actorRef.kind == "closest" then
-            targetActorId = game:closestActorWithTag(actorId, expression.params.actorRef.tag)
-         elseif expression.params.actorRef.kind == "other" then
-            targetActorId = context.otherActorId
-         end
+         local targetActorId = evalActorRef(expression.params.actorRef, actorId, game, context)
 
          local component = behavior.components[targetActorId]
          if component then
@@ -72,6 +77,75 @@ Common:defineExpression(
          behaviorExpression.params.behaviorId = game.behaviorsByName.Counter.behaviorId
          behaviorExpression.params.propertyName = "value"
          return Expression.expressions["behavior property"].eval(game, behaviorExpression, actorId, context)
+      end,
+   }
+)
+
+Common:defineExpression(
+   "actor distance", {
+      returnType = "number",
+      description = "the distance between two actors",
+      category = "spatial relationships",
+      paramSpecs = {
+         fromActor= {
+            label = "from actor",
+            method = "actorRef",
+            initialValue = { kind = "self" },
+         },
+         toActor = {
+            label = "to actor",
+            method = "actorRef",
+            initialValue = { kind = "self" },
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local fromActorId, toActorId = evalActorRef(expression.params.fromActor, actorId, game, context), evalActorRef(expression.params.toActor, actorId, game, context)
+
+         local body = game.behaviorsByName.Body
+         local fromBody = body.components[fromActorId]
+         local toBody = body.components[toActorId]
+
+         if fromBody and toBody then
+            local x1, y1 = body.getters.x(body, fromBody), body.getters.y(body, fromBody)
+            local x2, y2 = body.getters.x(body, toBody), body.getters.y(body, toBody)
+            local dx, dy = x2 - x1, y2 - y1
+            return math.sqrt(dx * dx + dy * dy)
+         end
+         return 0
+      end,
+   }
+)
+
+Common:defineExpression(
+   "actor angle", {
+      returnType = "number",
+      description = "the angle from one actor to another (degrees)",
+      category = "spatial relationships",
+      paramSpecs = {
+         fromActor= {
+            label = "from actor",
+            method = "actorRef",
+            initialValue = { kind = "self" },
+         },
+         toActor = {
+            label = "to actor",
+            method = "actorRef",
+            initialValue = { kind = "self" },
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local fromActorId, toActorId = evalActorRef(expression.params.fromActor, actorId, game, context), evalActorRef(expression.params.toActor, actorId, game, context)
+
+         local body = game.behaviorsByName.Body
+         local fromBody = body.components[fromActorId]
+         local toBody = body.components[toActorId]
+
+         if fromBody and toBody then
+            local x1, y1 = body.getters.x(body, fromBody), body.getters.y(body, fromBody)
+            local x2, y2 = body.getters.x(body, toBody), body.getters.y(body, toBody)
+            return math.deg(math.atan2(y2 - y1, x2 - x1))
+         end
+         return 0
       end,
    }
 )
