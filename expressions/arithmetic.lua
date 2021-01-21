@@ -159,3 +159,27 @@ Common:defineExpression(
       end,
    }
 )
+
+Common:defineExpression(
+   "log", {
+      returnType = "number",
+      category = "arithmetic",
+      description = "logarithm",
+      paramSpecs = {
+         base = {
+            label = "Base",
+            method = "numberInput",
+            initialValue = 2,
+         },
+         number = {
+            label = "Number",
+            method = "numberInput",
+            initialValue = 1,
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local base, x = game:evalExpression(expression.params.base, actorId, context), game:evalExpression(expression.params.number, actorId, context)
+         return math.log(x) / math.log(base)
+      end,
+   }
+)

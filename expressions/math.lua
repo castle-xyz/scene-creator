@@ -1,7 +1,7 @@
 Common:defineExpression(
    "abs", {
       returnType = "number",
-      category = "arithmetic",
+      category = "functions",
       description = "absolute value",
       paramSpecs = {
          number = {
@@ -18,25 +18,83 @@ Common:defineExpression(
 )
 
 Common:defineExpression(
-   "log", {
+   "floor", {
       returnType = "number",
-      category = "arithmetic",
-      description = "logarithm",
+      category = "functions",
+      description = "round down",
       paramSpecs = {
-         base = {
-            label = "Base",
-            method = "numberInput",
-            initialValue = 2,
-         },
          number = {
             label = "Number",
+            method = "numberInput",
+            initialValue = 0,
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local x = game:evalExpression(expression.params.number, actorId, context)
+         return math.floor(x)
+      end,
+   }
+)
+
+Common:defineExpression(
+   "mix", {
+      returnType = "number",
+      category = "functions",
+      description = "mix two values",
+      paramSpecs = {
+         lhs = {
+            label = "First input",
+            method = "numberInput",
+            initialValue = 0,
+         },
+         rhs = {
+            label = "Second input",
+            method = "numberInput",
+            initialValue = 1,
+         },
+         mix = {
+            label = "Mix",
+            method = "numberInput",
+            initialValue = 0.5,
+            props = { min = 0, max = 1, step = 0.1 },
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local lhs, rhs = game:evalExpression(expression.params.lhs, actorId, context), game:evalExpression(expression.params.rhs, actorId, context)
+         local mix = game:evalExpression(expression.params.mix, actorId, context)
+         return lhs * (1 - mix) + rhs * mix
+      end,
+   }
+)
+
+Common:defineExpression(
+   "clamp", {
+      returnType = "number",
+      category = "functions",
+      description = "clamp a value between two bounds",
+      paramSpecs = {
+         number = {
+            label = "Value to clamp",
+            method = "numberInput",
+            initialValue = 0,
+         },
+         min = {
+            label = "Minimum value",
+            method = "numberInput",
+            initialValue = 0,
+         },
+         max = {
+            label = "Maximum value",
             method = "numberInput",
             initialValue = 1,
          },
       },
       eval = function(game, expression, actorId, context)
-         local base, x = game:evalExpression(expression.params.base, actorId, context), game:evalExpression(expression.params.number, actorId, context)
-         return math.log(x) / math.log(base)
+         local min, max = game:evalExpression(expression.params.min, actorId, context), game:evalExpression(expression.params.max, actorId, context)
+         local x = game:evalExpression(expression.params.number, actorId, context)
+         if x < min then x = min end
+         if x > max then x = max end
+         return x
       end,
    }
 )
@@ -135,16 +193,20 @@ Common:defineExpression(
             label = "Weight of first outcome",
             method = "numberInput",
             initialValue = 0.5,
+            props = { min = 0, step = 0.1 },
          },
          rhw = {
             label = "Weight of second outcome",
             method = "numberInput",
             initialValue = 0.5,
+            props = { min = 0, step = 0.1 },
          },
       },
       eval = function(game, expression, actorId, context)
          local lhs, rhs = game:evalExpression(expression.params.lhs, actorId, context), game:evalExpression(expression.params.rhs, actorId, context)
          local lhw, rhw = game:evalExpression(expression.params.lhw, actorId, context), game:evalExpression(expression.params.rhw, actorId, context)
+         if lhw < 0 then lhw = 0 end
+         if rhw < 0 then rhw = 0 end
          if rhw == 0 then return lhs end
          if lhw == 0 then return rhs end
          lhw = lhw / (lhw + rhw)
