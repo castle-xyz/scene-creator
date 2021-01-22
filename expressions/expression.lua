@@ -56,39 +56,6 @@ Expression.expressions["number"] = {
    end
 }
 
-Expression.expressions["random"] = {
-   returnType = "number",
-   description = "a random number",
-   paramSpecs = {
-      min = {
-         label = "Minimum value",
-         method = "numberInput",
-         initialValue = 0,
-         order = 1,
-      },
-      max = {
-         label = "Maximum value",
-         method = "numberInput",
-         initialValue = 1,
-         order = 2,
-      },
-      discrete = {
-         label = "Only choose whole numbers",
-         method = "toggle",
-         initialValue = false,
-         order = 3,
-      },
-   },
-   eval = function(game, expression, actorId, context)
-      local min, max = game:evalExpression(expression.params.min, actorId, context), game:evalExpression(expression.params.max, actorId, context)
-      local result = min + math.random() * (max - min)
-      if expression.params.discrete == true then
-         result = math.floor(result + 0.5)
-      end
-      return result
-   end
-}
-
 Expression.expressions["variable"] = {
    returnType = "number",
    description = "the value of a variable",

@@ -89,6 +89,7 @@ require "expressions.expression"
 require "expressions.behavior_property"
 require "expressions.arithmetic"
 require "expressions.math"
+require "expressions.random"
 
 function Common:start(isPerforming)
     self.onEndOfFrames = {}
