@@ -46,17 +46,20 @@ Common:defineExpression(
             label = "First input",
             method = "numberInput",
             initialValue = 0,
+            order = 1,
          },
          rhs = {
             label = "Second input",
             method = "numberInput",
             initialValue = 1,
+            order = 2,
          },
          mix = {
             label = "Mix",
             method = "numberInput",
             initialValue = 0.5,
             props = { min = 0, max = 1, step = 0.1 },
+            order = 3,
          },
       },
       eval = function(game, expression, actorId, context)
@@ -77,16 +80,19 @@ Common:defineExpression(
             label = "Value to clamp",
             method = "numberInput",
             initialValue = 0,
+            order = 1,
          },
          min = {
             label = "Minimum value",
             method = "numberInput",
             initialValue = 0,
+            order = 2,
          },
          max = {
             label = "Maximum value",
             method = "numberInput",
             initialValue = 1,
+            order = 3,
          },
       },
       eval = function(game, expression, actorId, context)
@@ -111,11 +117,13 @@ Common:defineExpression(
             label = "First input",
             method = "numberInput",
             initialValue = 0,
+            order = 1,
          },
          rhs = {
             label = "Second input",
             method = "numberInput",
             initialValue = 1,
+            order = 2,
          },
       },
       eval = function(game, expression, actorId, context)
@@ -135,11 +143,13 @@ Common:defineExpression(
             label = "First input",
             method = "numberInput",
             initialValue = 0,
+            order = 1,
          },
          rhs = {
             label = "Second input",
             method = "numberInput",
             initialValue = 1,
+            order = 2,
          },
       },
       eval = function(game, expression, actorId, context)
@@ -159,11 +169,13 @@ Common:defineExpression(
             label = "First outcome",
             method = "numberInput",
             initialValue = 0,
+            order = 1,
          },
          rhs = {
             label = "Second outcome",
             method = "numberInput",
             initialValue = 1,
+            order = 2,
          },
       },
       eval = function(game, expression, actorId, context)
@@ -183,23 +195,27 @@ Common:defineExpression(
             label = "First outcome",
             method = "numberInput",
             initialValue = 0,
+            order = 1,
          },
          rhs = {
             label = "Second outcome",
             method = "numberInput",
             initialValue = 1,
+            order = 2,
          },
          lhw = {
             label = "Weight of first outcome",
             method = "numberInput",
             initialValue = 0.5,
             props = { min = 0, step = 0.1 },
+            order = 3,
          },
          rhw = {
             label = "Weight of second outcome",
             method = "numberInput",
             initialValue = 0.5,
             props = { min = 0, step = 0.1 },
+            order = 4,
          },
       },
       eval = function(game, expression, actorId, context)
