@@ -2,6 +2,7 @@ Common:defineExpression(
    "random", {
       returnType = "number",
       description = "a random number in a range",
+      order = 1,
       category = "randomness",
       paramSpecs = {
          min = {

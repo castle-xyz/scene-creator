@@ -2,6 +2,7 @@ Common:defineExpression(
    "abs", {
       returnType = "number",
       category = "functions",
+      order = 1,
       description = "absolute value",
       paramSpecs = {
          number = {
@@ -21,6 +22,7 @@ Common:defineExpression(
    "floor", {
       returnType = "number",
       category = "functions",
+      order = 2,
       description = "round down",
       paramSpecs = {
          number = {
@@ -111,6 +113,7 @@ Common:defineExpression(
    "min", {
       returnType = "number",
       category = "choices",
+      order = 3,
       description = "minimum",
       paramSpecs = {
          lhs = {
@@ -137,6 +140,7 @@ Common:defineExpression(
    "max", {
       returnType = "number",
       category = "choices",
+      order = 4,
       description = "maximum",
       paramSpecs = {
          lhs = {
@@ -163,6 +167,7 @@ Common:defineExpression(
    "choose", {
       returnType = "number",
       category = "choices",
+      order = 1,
       description = "choose",
       paramSpecs = {
          lhs = {
@@ -189,6 +194,7 @@ Common:defineExpression(
    "weighted choose", {
       returnType = "number",
       category = "choices",
+      order = 2,
       description = "weighted choose",
       paramSpecs = {
          lhs = {

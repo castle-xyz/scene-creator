@@ -5,6 +5,7 @@ function Client:uiExpressions()
          description = spec.description,
          returnType = spec.returnType,
          category = spec.category and spec.category or 'values',
+         order = spec.order,
          paramSpecs = spec.paramSpecs,
       }
    end

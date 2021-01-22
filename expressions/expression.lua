@@ -43,6 +43,7 @@ end
 Expression.expressions["number"] = {
    returnType = "number",
    description = "a constant number",
+   order = 1,
    paramSpecs = {
       value = {
          label = "Value",
@@ -59,6 +60,7 @@ Expression.expressions["number"] = {
 Expression.expressions["variable"] = {
    returnType = "number",
    description = "the value of a variable",
+   order = 2,
    paramSpecs = {
       variableId = {
          label = "Variable name",

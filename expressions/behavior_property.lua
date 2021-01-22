@@ -14,6 +14,7 @@ Common:defineExpression(
    "behavior property", {
       returnType = "number",
       description = "the value of a behavior property",
+      order = 4,
       paramSpecs = {
          behaviorId = {
             label = "behavior",
@@ -63,6 +64,7 @@ Common:defineExpression(
    "counter value", {
       returnType = "number",
       description = "the value of a counter",
+      order = 3,
       paramSpecs = {
          actorRef = {
             label = "actor type",

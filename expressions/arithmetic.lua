@@ -2,6 +2,7 @@ Common:defineExpression(
    "+", {
       returnType = "number",
       category = "arithmetic",
+      order = 1,
       description = "add",
       paramSpecs = {
          lhs = {
@@ -28,6 +29,7 @@ Common:defineExpression(
    "*", {
       returnType = "number",
       category = "arithmetic",
+      order = 2,
       description = "multiply",
       paramSpecs = {
          lhs = {
@@ -54,6 +56,7 @@ Common:defineExpression(
    "-", {
       returnType = "number",
       category = "arithmetic",
+      order = 3,
       description = "subtract",
       paramSpecs = {
          lhs = {
@@ -80,6 +83,7 @@ Common:defineExpression(
    "/", {
       returnType = "number",
       category = "arithmetic",
+      order = 4,
       description = "divide",
       paramSpecs = {
          lhs = {
