@@ -26,6 +26,16 @@ local AnalogStickBehavior =
              get = true,
           },
        },
+       axes = {
+          method = 'dropdown',
+          label = 'Axes affected',
+          props = { items = { "x and y", "x", "y" } },
+          initialValue = "x and y",
+          rules = {
+             get = true,
+             set = true,
+          },
+       },
     },
 }
 
@@ -43,11 +53,13 @@ local TRIANGLE_WIDTH = 10 * UNIT
 function AnalogStickBehavior.handlers:addComponent(component, bp, opts)
     component.properties.speed = bp.speed or 6
     component.properties.turnFriction = bp.turnFriction or 3
+    component.properties.axes = bp.axes or "x and y"
 end
 
 function AnalogStickBehavior.handlers:blueprintComponent(component, bp)
     bp.speed = component.properties.speed
     bp.turnFriction = component.properties.turnFriction
+    bp.axes = component.properties.axes
 end
 
 function AnalogStickBehavior.getters:isInteractive(component)
@@ -152,7 +164,13 @@ function AnalogStickBehavior.handlers:postPerform(dt)
                    impulsePerFrame = impulsePerFrame * (1 + math.abs(diffAngle(actorDirection, dragDirection) / math.pi) * component.properties.turnFriction)
                 end
 
-                body:applyLinearImpulse(m * impulsePerFrame * dragX, m * impulsePerFrame * dragY)
+                local ix, iy = m * impulsePerFrame * dragX, m * impulsePerFrame * dragY
+                if component.properties.axes == "y" then
+                   ix = 0
+                elseif component.properties.axes == "x" then
+                   iy = 0
+                end
+                body:applyLinearImpulse(ix, iy)
 
                 if gestureStarted then
                    self:fireTrigger("analog stick begins", actorId)
