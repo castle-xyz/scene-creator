@@ -64,7 +64,7 @@ function TextBehavior:parseContent(component, performing, variableNameToValue)
 
    -- parse variables
    local output = component.properties.content:gsub(
-      "(%$%w+)",
+      "(%$[%w_-]+)",
       function(maybeVariable)
             local variableName = string.sub(maybeVariable, 2)
             if variableNameToValue[variableName] ~= nil then
