@@ -25,7 +25,9 @@ function Common:variablesNamesToValues()
    local variableNameToValue = {}
    if self.variables ~= nil then
       for _, variable in ipairs(self.variables) do
-         variableNameToValue[variable.name] = variable.value
+         if variable.name ~= nil then
+            variableNameToValue[variable.name] = variable.value
+         end
       end
    end
    return variableNameToValue
