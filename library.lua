@@ -2,7 +2,8 @@
 
 local DrawingData = require 'library_drawing_data'
 
-local CORE_LIBRARY = {
+local CORE_LIBRARY = {}
+local CORE_LIBRARY_OLD = {
     {
         entryType = "actorBlueprint",
         title = "Brick",
