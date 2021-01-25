@@ -284,8 +284,10 @@ TextBehavior.responses["send player to card"] = {
       },
    },
    run = function(self, actorId, params, context)
-      self.game:forceSendVariableUpdate()
-      jsEvents.send("NAVIGATE_TO_CARD", { card = params.card })
+      if params.card ~= nil then
+         self.game:forceSendVariableUpdate()
+         jsEvents.send("NAVIGATE_TO_CARD", { card = params.card })
+      end
    end
 }
 
