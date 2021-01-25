@@ -27,7 +27,7 @@ function Common:startBelt()
     self.beltGhostActorIds = {} -- `entryId` -> `actorId` for ghost actors
     self.beltLastGhostSelectTime = nil
 
-    self.beltCursorX = 0
+    self.beltCursorX = -(ELEM_SIZE + ELEM_GAP) -- Start with focus on add button
     self.beltCursorVX = 0
 
     self.beltVisible = true
@@ -349,7 +349,7 @@ function Common:updateBelt(dt)
     if not self:isActiveToolFullscreen() and self.numTouches == 1 and self.maxNumTouches == 1 then -- Single touch
         local touchId, touch = next(self.touches)
 
-        if touch.beltIndex or (not touch.used and touch.screenY < self.beltBottom) then -- Touch on belt
+        if touch.beltUsed or (not touch.used and touch.screenY < self.beltBottom) then -- Touch on belt
             ui.setUpdatesPaused(false) -- Update inspector eagerly to reflect focused blueprint
 
             if not touch.beltPlaced and next(self.selectedActorIds) then
@@ -386,6 +386,9 @@ function Common:updateBelt(dt)
                 else
                     -- Scrolling slow, target the tapped element
                     self.beltTargetIndex = touchBeltIndex
+                    if touchBeltIndex == 0 then
+                        self:beltOnTouchNewBlueprint()
+                    end
                 end
                 if self.beltTargetIndex then
                     self.beltHighlightEnabled = true -- Enable highlight on belt touch
@@ -552,16 +555,22 @@ function Common:updateBelt(dt)
         local rubberBandMode = false
         -- Strong rubber band on ends
         if not dragScrolling then
-            if self.beltCursorX < 0 then
+            if #self.beltElems == 0 then
                 self.beltCursorVX = 0.5 * self.beltCursorVX
-                self.beltCursorX = 0.85 * self.beltCursorX
+                self.beltCursorX = 0.85 * self.beltCursorX + 0.15 * -(ELEM_SIZE + ELEM_GAP)
                 rubberBandMode = true
-            end
-            local maxX = self.beltElems[#self.beltElems].x
-            if self.beltCursorX > maxX then
-                self.beltCursorVX = 0.5 * self.beltCursorVX
-                self.beltCursorX = 0.85 * self.beltCursorX + 0.15 * maxX
-                rubberBandMode = true
+            else
+                if self.beltCursorX < 0 then
+                    self.beltCursorVX = 0.5 * self.beltCursorVX
+                    self.beltCursorX = 0.85 * self.beltCursorX
+                    rubberBandMode = true
+                end
+                local maxX = self.beltElems[#self.beltElems].x
+                if self.beltCursorX > maxX then
+                    self.beltCursorVX = 0.5 * self.beltCursorVX
+                    self.beltCursorX = 0.85 * self.beltCursorX + 0.15 * maxX
+                    rubberBandMode = true
+                end
             end
         end
 
@@ -655,6 +664,53 @@ function Common:updateBelt(dt)
     end
 
     self:syncBeltGhostSelection()
+end
+
+local DrawingData = require 'library_drawing_data'
+
+function Common:beltOnTouchNewBlueprint()
+    local entry = {
+        entryType = "actorBlueprint",
+        title = "Ball",
+        description = "Solid circle that obeys gravity",
+        actorBlueprint = {
+            components = {
+                Drawing2 = DrawingData.Ball.Drawing2,
+                Body = {
+                    gravityScale = 1,
+                    widthScale = 0.1,
+                    heightScale = 0.1,
+                },
+                Solid = {},
+                Falling = {},
+                Tags = {},
+            }
+        },
+        base64Png = DrawingData.Ball.base64Png,
+    }
+    local newEntryId = util.uuid()
+    self:command('duplicate blueprint', {
+        params = { 'entry', 'newEntryId' },
+    }, function(params, live)
+        self:duplicateBlueprint(entry, { newEntryId = newEntryId })
+        if live then
+            -- Immediately select entry
+            self:syncBelt()
+            self:deselectAllActors()
+            for i, elem in ipairs(self.beltElems) do
+                if elem.entryId == newEntryId then
+                    self.beltTargetIndex = i
+                    self.beltEntryId = newEntryId
+                    self.beltHighlightEnabled = true
+                    break
+                end
+            end
+            self:syncBeltGhostSelection()
+        end
+    end, function()
+        self:send('removeLibraryEntry', newEntryId)
+    end)
+    return
 end
 
 -- Draw
@@ -772,8 +828,8 @@ function Common:drawBelt()
         0, self.beltTop,
         windowWidth, BELT_HEIGHT)
 
+    local elemsY = self.beltTop + 0.5 * BELT_HEIGHT
     if not self.performing then -- Empty when playtesting
-        local elemsY = self.beltTop + 0.5 * BELT_HEIGHT
 
         -- Elements
         love.graphics.setColor(1, 1, 1)
@@ -815,6 +871,21 @@ function Common:drawBelt()
             love.graphics.rectangle("line",
                 0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
                 boxSize, boxSize)
+        end
+
+        -- New blueprint button
+        do
+            local buttonX = 0.5 * windowWidth - (ELEM_SIZE + ELEM_GAP) - self.beltCursorX
+
+            local BUTTON_RADIUS = 0.7 * 0.5 * ELEM_SIZE
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.circle('fill', buttonX, elemsY, BUTTON_RADIUS)
+
+            local PLUS_FACTOR = 0.5
+            love.graphics.setColor(0, 0, 0)
+            love.graphics.setLineWidth(0.04 * ELEM_SIZE)
+            love.graphics.line(buttonX - PLUS_FACTOR * BUTTON_RADIUS, elemsY, buttonX + PLUS_FACTOR * BUTTON_RADIUS, elemsY)
+            love.graphics.line(buttonX, elemsY - PLUS_FACTOR * BUTTON_RADIUS, buttonX, elemsY + PLUS_FACTOR * BUTTON_RADIUS)
         end
 
         -- Title for current element
