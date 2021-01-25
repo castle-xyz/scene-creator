@@ -66,10 +66,11 @@ function TextBehavior:parseContent(component, performing, variableNameToValue)
    local output = component.properties.content:gsub(
       "(%$[%w_-]+)",
       function(maybeVariable)
-            local variableName = string.sub(maybeVariable, 2)
-            if variableNameToValue[variableName] ~= nil then
-               return variableNameToValue[variableName]
-            end
+         local variableName = string.sub(maybeVariable, 2)
+         local sub = variableNameToValue[variableName]
+         if sub ~= nil and type(sub) ~= "table" then
+            return tostring(sub)
+         end
          return maybeVariable
       end
    )
