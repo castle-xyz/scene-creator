@@ -81,6 +81,10 @@ function Client:_pasteBlueprint(entry)
    self:send('pasteLibraryEntry', entry)
 end
 
+function Client:uiNewBlueprintTemplates()
+    ui.data({ templates = CORE_TEMPLATES })
+end
+
 function Client:uiBlueprints()
    local data = { library = self.library }
    local actions = {}
