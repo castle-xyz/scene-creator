@@ -680,7 +680,7 @@ jsEvents.listen(
             return
         end
         local newEntryId = util.uuid()
-        self:command('new blueprint', {
+        self:command('add blueprint', {
             params = { 'entry', 'newEntryId' },
         }, function(params, live)
             self:duplicateBlueprint(entry, { keepTitle = true, newEntryId = newEntryId })
