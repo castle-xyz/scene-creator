@@ -77,6 +77,10 @@ function Client:_addBlueprint(actor, saveBlueprintData)
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
 end
 
+function Client:uiNewBlueprintTemplates()
+    ui.data({ templates = CORE_TEMPLATES })
+end
+
 function Client:uiBlueprints()
    local data = { library = self.library }
    local actions = {}

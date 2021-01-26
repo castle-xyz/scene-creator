@@ -3,24 +3,7 @@
 local DrawingData = require 'library_drawing_data'
 
 local CORE_LIBRARY = {}
-local CORE_LIBRARY_OLD = {
-    {
-        entryType = "actorBlueprint",
-        title = "Brick",
-        description = "Solid square that doesn't move",
-        actorBlueprint = {
-            components = {
-                Drawing2 = DrawingData.Wall.Drawing2,
-                Body = {
-                    widthScale = 0.1,
-                    heightScale = 0.1,
-                },
-                Solid = {},
-                Tags = {},
-            }
-        },
-        base64Png = DrawingData.Wall.base64Png,
-    },
+CORE_TEMPLATES = {
     {
         entryType = "actorBlueprint",
         title = "Ball",
@@ -39,6 +22,23 @@ local CORE_LIBRARY_OLD = {
             }
         },
         base64Png = DrawingData.Ball.base64Png,
+    },
+    {
+        entryType = "actorBlueprint",
+        title = "Wall",
+        description = "Solid square that doesn't move",
+        actorBlueprint = {
+            components = {
+                Drawing2 = DrawingData.Wall.Drawing2,
+                Body = {
+                    widthScale = 0.1,
+                    heightScale = 0.1,
+                },
+                Solid = {},
+                Tags = {},
+            }
+        },
+        base64Png = DrawingData.Wall.base64Png,
     },
     {
         entryType = "actorBlueprint",
@@ -270,12 +270,14 @@ function Client:duplicateBlueprint(entry, opts)
     newEntry.isCore = nil
     newEntry.beltOrder = nil
 
-    local titlePrefix = entry.title:gsub(' %d*$', '')
-    local titleSuffix = 2
-    while self:haveLibraryEntryWithTitle(titlePrefix .. ' ' .. titleSuffix) do
-        titleSuffix = titleSuffix + 1
+    if not opts.keepTitle or self:haveLibraryEntryWithTitle(newEntry.title) then
+        local titlePrefix = entry.title:gsub(' %d*$', '')
+        local titleSuffix = 2
+        while self:haveLibraryEntryWithTitle(titlePrefix .. ' ' .. titleSuffix) do
+            titleSuffix = titleSuffix + 1
+        end
+        newEntry.title = titlePrefix .. ' ' .. titleSuffix
     end
-    newEntry.title = titlePrefix .. ' ' .. titleSuffix
 
     self:send('addLibraryEntry', newEntry.entryId, newEntry)
 

@@ -668,49 +668,44 @@ end
 
 local DrawingData = require 'library_drawing_data'
 
-function Common:beltOnTouchNewBlueprint()
-    local entry = {
-        entryType = "actorBlueprint",
-        title = "Ball",
-        description = "Solid circle that obeys gravity",
-        actorBlueprint = {
-            components = {
-                Drawing2 = DrawingData.Ball.Drawing2,
-                Body = {
-                    gravityScale = 1,
-                    widthScale = 0.1,
-                    heightScale = 0.1,
-                },
-                Solid = {},
-                Falling = {},
-                Tags = {},
-            }
-        },
-        base64Png = DrawingData.Ball.base64Png,
-    }
-    local newEntryId = util.uuid()
-    self:command('duplicate blueprint', {
-        params = { 'entry', 'newEntryId' },
-    }, function(params, live)
-        self:duplicateBlueprint(entry, { newEntryId = newEntryId })
-        if live then
-            -- Immediately select entry
-            self:syncBelt()
-            self:deselectAllActors()
-            for i, elem in ipairs(self.beltElems) do
-                if elem.entryId == newEntryId then
-                    self.beltTargetIndex = i
-                    self.beltEntryId = newEntryId
-                    self.beltHighlightEnabled = true
-                    break
-                end
-            end
-            self:syncBeltGhostSelection()
+jsEvents.listen(
+    "NEW_BLUEPRINT",
+    function(params)
+        local self = currentInstance()
+        if not self then
+            return
         end
-    end, function()
-        self:send('removeLibraryEntry', newEntryId)
-    end)
-    return
+        local entry = CORE_TEMPLATES[params.templateIndex + 1]
+        if not entry then
+            return
+        end
+        local newEntryId = util.uuid()
+        self:command('new blueprint', {
+            params = { 'entry', 'newEntryId' },
+        }, function(params, live)
+            self:duplicateBlueprint(entry, { keepTitle = true, newEntryId = newEntryId })
+            if live then
+                -- Immediately select entry
+                self:syncBelt()
+                self:deselectAllActors()
+                for i, elem in ipairs(self.beltElems) do
+                    if elem.entryId == newEntryId then
+                        self.beltTargetIndex = i
+                        self.beltEntryId = newEntryId
+                        self.beltHighlightEnabled = true
+                        break
+                    end
+                end
+                self:syncBeltGhostSelection()
+            end
+        end, function()
+            self:send('removeLibraryEntry', newEntryId)
+        end)
+    end
+)
+
+function Common:beltOnTouchNewBlueprint()
+    jsEvents.send('SHOW_NEW_BLUEPRINT_SHEET', {})
 end
 
 -- Draw

@@ -179,6 +179,13 @@ function Client:uiupdate()
    end
 
    profileFunction('uiupdate.uiBlueprints', function()
+      -- New blueprint templates
+      ui.pane('sceneCreatorNewBlueprint', function()
+         uiSelf:uiNewBlueprintTemplates()
+      end)
+   end)
+
+   profileFunction('uiupdate.uiBlueprints', function()
       -- Blueprints
       ui.pane('sceneCreatorBlueprints', function()
          uiSelf:uiBlueprints()
