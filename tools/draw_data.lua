@@ -1,3 +1,5 @@
+-- DrawData
+
 require('tools.draw_data_frame')
 
 DrawData = {}
@@ -10,6 +12,7 @@ function DrawData:gridCellSize()
 end
 
 function DrawData:globalToGridCoordinates(x, y)
+    -- types: float
     local gridX = x / self:gridCellSize()
     local gridY = y / self:gridCellSize()
     return gridX, gridY

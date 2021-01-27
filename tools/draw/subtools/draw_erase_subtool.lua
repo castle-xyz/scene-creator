@@ -47,7 +47,7 @@ local function onTouch(obj, component, touchData)
                     if isP1InCircle and isP2InCircle then
                         -- both points are in circle, can erase this segment completely
                     else
-                        local intersections = subpathDataIntersection({
+                        local intersections = love.ghost.subpathDataIntersection({
                             type = "line",
                             p1 = p1,
                             p2 = p2,
