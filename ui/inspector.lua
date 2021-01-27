@@ -364,6 +364,7 @@ function Client:uiInspector()
          
          ui.data(
             {
+               isBlueprint = actor.isGhost or false,
                behaviorId = behavior.behaviorId,
                name = behaviorName,
                displayName = behavior.displayName,
