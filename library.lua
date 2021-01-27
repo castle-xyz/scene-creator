@@ -207,11 +207,21 @@ function Common:updateBlueprintFromActor(actorId, opts)
         base64Png = base64Png,
     }
 
-    self:send('updateLibraryEntry', self.clientId, oldEntry.entryId, newEntry, {
-        updateActors = true,
-        applyLayoutChanges = opts.applyLayoutChanges,
-        skipActorId = actorId,
-    })
+    local numOtherInstances = 0
+    for otherActorId, otherActor in pairs(self.actors) do
+        if not otherActor.isGhost and otherActorId ~= actorId and otherActor.parentEntryId == actor.parentEntryId then
+            numOtherInstances = numOtherInstances + 1
+        end
+    end
+    if numOtherInstances == 0 then
+        self:send('updateLibraryEntry', self.clientId, oldEntry.entryId, newEntry, {
+            updateActors = true,
+            applyLayoutChanges = opts.applyLayoutChanges,
+            skipActorId = actorId,
+        })
+    else
+        actor.parentEntryId = self:duplicateBlueprint(newEntry).entryId
+    end
 end
 
 function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, opts)
