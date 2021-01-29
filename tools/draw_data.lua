@@ -953,7 +953,15 @@ function DrawData:addLayer()
         table.insert(newLayer.frames, self:_newFrame(i > 1))
     end
 
-    table.insert(self.layers, newLayer)
+    -- add new layer 1 above currently selected layer
+    local selectedLayerIndex = 1
+    for i = 1, #self.layers do
+        if self.layers[i].id == self.selectedLayerId then
+            selectedLayerIndex = i
+        end
+    end
+
+    table.insert(self.layers, selectedLayerIndex + 1, newLayer)
     self.selectedLayerId = newLayer.id
     self:touchLayerData()
 end
