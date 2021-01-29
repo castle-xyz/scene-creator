@@ -107,6 +107,38 @@ Common:defineExpression(
    }
 )
 
+Common:defineExpression(
+   "number of actors", {
+      returnType = "number",
+      category = "functions",
+      description = "the number of actors with a tag",
+      paramSpecs = {
+         tag = {
+            label = "tag",
+            method = "tagPicker",
+            props = { singleSelect = true },
+         }
+      },
+      eval = function(game, expression, actorId, context)
+         local count = 0
+         if expression.params.tag ~= nil then
+            local tags = game.behaviorsByName.Tags
+            local tagToActorIds = tags.getters.tagToActorIds(tags)
+            local withTag = tagToActorIds[expression.params.tag]
+            if withTag ~= nil then
+               for actorId, _ in pairs(withTag) do
+                  count = count + 1
+               end
+            end
+            return count
+         else
+            -- no tag provided, count all actors
+            return #game.actorsByDrawOrder
+         end
+      end,
+   }
+)
+
 -- TODO: flexible number of inputs for min, max, choose
 
 Common:defineExpression(
