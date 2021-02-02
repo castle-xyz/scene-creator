@@ -39,8 +39,30 @@ function Common:restoreSnapshot(snapshot)
 
         -- Add new actors
         for _, actorSp in pairs(snapshot.actors or {}) do
+            local actorBp = actorSp.bp -- Already a duplicate so we can edit in-place
+            local entry = snapshot.library[actorSp.parentEntryId]
+
+            local actorComps = actorBp.components
+            if entry and entry.actorBlueprint then
+                local entryComps = entry.actorBlueprint.components
+                for compName, entryComp in pairs(entryComps) do
+                    local actorComp = actorComps[compName]
+                    if not actorComp then
+                        -- Actor doesn't have this component at all, just use entry data
+                        actorComps[compName] = entryComp
+                    else
+                        -- Use entry property wherever there's no actor property
+                        for propName, entryProp in pairs(entryComp) do
+                            if actorComp[propName] == nil then
+                                actorComp[propName] = entryProp
+                            end
+                        end
+                    end
+                end
+            end
+
             self:sendAddActor(
-                actorSp.bp,
+                actorBp,
                 {
                     actorId = actorSp.actorId,
                     parentEntryId = actorSp.parentEntryId
@@ -53,6 +75,15 @@ function Common:restoreSnapshot(snapshot)
     end
 end
 
+local function valueEqual(value1, value2)
+    if type(value1) == "table" and type(value2) == "table" then
+        -- Quick hack for checking table equality...
+        return serpent.dump(value1, {sortkeys = true}) == serpent.dump(value2, {sortkeys = true})
+    else
+        return value1 == value2
+    end
+end
+            
 function Common:createSnapshot()
     snapshot = {}
 
@@ -69,6 +100,35 @@ function Common:createSnapshot()
     self:forEachActorByDrawOrder(
         function(actor)
             local actorBp = self:blueprintActor(actor.actorId)
+            local entry = self.library[actor.parentEntryId]
+
+            -- Remove properties that are equal to corresponding property from blueprint
+            if entry and entry.actorBlueprint then
+                local entryComps = entry.actorBlueprint.components
+                for compName, actorComp in pairs(actorBp.components) do
+                    local entryComp = entryComps[compName]
+                    if entryComp then
+                        for propName, actorProp in pairs(actorComp) do
+                            local entryProp = entryComp[propName]
+                            local propValueEqual = false
+                            if compName == 'Drawing2' and propName == 'drawData' or propName == 'physicsBodyData' then
+                                -- Compare drawing data by hash
+                                propValueEqual = actorComp.hash == entryComp.hash
+                            else
+                                propValueEqual = valueEqual(actorProp, entryProp)
+                            end
+                            if propValueEqual then
+                                actorComp[propName] = nil
+                            end
+                        end
+                        if not next(actorComp) then
+                            -- No actor overrides in this component, just remove
+                            actorBp.components[compName] = nil
+                        end
+                    end
+                end
+            end
+            
             table.insert(
                 snapshot.actors,
                 {
@@ -82,7 +142,7 @@ function Common:createSnapshot()
 
     -- Save scene properties
     snapshot.sceneProperties = self.sceneProperties
-    
+
     return snapshot
 end
 
@@ -97,6 +157,7 @@ function Common:saveScene(snapshot)
             }
         )
         if data ~= self.lastSuccessfulSaveData then
+            --print('size', #data)
             if next(self.actors) then
                 pcall(
                     function()
