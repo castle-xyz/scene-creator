@@ -5,6 +5,7 @@ local DrawingData = require 'library_drawing_data'
 local CORE_LIBRARY = {}
 CORE_TEMPLATES = {
     {
+        isBlank = true,
         entryType = "actorBlueprint",
         title = "Object",
         description = "Blank actor",
@@ -21,6 +22,7 @@ CORE_TEMPLATES = {
         base64Png = DrawingData.Object.base64Png,
     },
     {
+        isBlank = true,
         entryType = "actorBlueprint",
         title = "Text box",
         description = "Block of text, pinned to the bottom of the card",
