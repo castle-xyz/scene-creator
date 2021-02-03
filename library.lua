@@ -6,6 +6,36 @@ local CORE_LIBRARY = {}
 CORE_TEMPLATES = {
     {
         entryType = "actorBlueprint",
+        title = "Object",
+        description = "Blank actor",
+        actorBlueprint = {
+            components = {
+                Drawing2 = {},
+                Body = {
+                    widthScale = 0.1,
+                    heightScale = 0.1,
+                },
+                Tags = {},
+            }
+        },
+        base64Png = DrawingData.Object.base64Png,
+    },
+    {
+        entryType = "actorBlueprint",
+        title = "Text box",
+        description = "Block of text, pinned to the bottom of the card",
+        actorBlueprint = {
+            components = {
+                Text = {
+                    content = "Your text goes here"
+                },
+                Tags = {},
+            }
+        },
+        base64Png = DrawingData.TextBox.base64Png,
+    },
+    {
+        entryType = "actorBlueprint",
         title = "Ball",
         description = "Solid circle that obeys gravity",
         actorBlueprint = {
@@ -39,20 +69,6 @@ CORE_TEMPLATES = {
             }
         },
         base64Png = DrawingData.Wall.base64Png,
-    },
-    {
-        entryType = "actorBlueprint",
-        title = "Text box",
-        description = "Block of text, pinned to the bottom of the card",
-        actorBlueprint = {
-            components = {
-                Text = {
-                    content = "Your text goes here"
-                },
-                Tags = {},
-            }
-        },
-        base64Png = DrawingData.TextBox.base64Png,
     },
     {
        entryType = "actorBlueprint",
