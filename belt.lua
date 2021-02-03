@@ -676,6 +676,11 @@ jsEvents.listen(
             return
         end
         local entry = CORE_TEMPLATES[params.templateIndex + 1]
+        entry = util.deepCopyTable(entry)
+        if entry.title == 'Object' or entry.actorBlueprint and entry.actorBlueprint.components and entry.actorBlueprint.components.Text then
+            -- Blank or text actor should have blank preview
+            entry.base64Png = nil
+        end
         if not entry then
             return
         end
@@ -828,22 +833,31 @@ function Common:drawBelt()
 
         -- Elements
         love.graphics.setColor(1, 1, 1)
+        love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
         local function drawElem(elem)
+            local x = 0.5 * windowWidth + elem.x - self.beltCursorX
+            local y = elemsY
+
+            if elem.placeX and elem.placeY then
+                -- Use placing coordinates if we're placing
+                x, y = elem.placeX, elem.placeY
+            end
+
             if elem.image then
                 local imgW, imgH = elem.image:getDimensions()
                 local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
 
-                local x = 0.5 * windowWidth + elem.x - self.beltCursorX
-                local y = elemsY
-
-                if elem.placeX and elem.placeY then
-                    -- Use placing coordinates if we're placing
-                    x, y = elem.placeX, elem.placeY
-                end
-
                 love.graphics.draw(elem.image,
                     x, y,
                     0, scale, scale, 0.5 * imgW, 0.5 * imgH)
+            else
+                love.graphics.push('all')
+                love.graphics.setColor(1, 1, 1, 0.8)
+                love.graphics.rectangle('line',
+                    x - 0.5 * ELEM_SIZE, y - 0.5 * ELEM_SIZE,
+                    ELEM_SIZE, ELEM_SIZE,
+                    0.1 * ELEM_SIZE)
+                love.graphics.pop()
             end
         end
         local placeElem -- If we have a placing elem, draw it on top of others
