@@ -399,6 +399,7 @@ end
 
 function DrawData:getRealFrameIndexForLayerId(layerId, frame)
     local layer = self:layerForId(layerId)
+    frame = self:modFrameIndex(frame)
 
     while frame > 0 do
         if not layer.frames[frame].isLinked then
