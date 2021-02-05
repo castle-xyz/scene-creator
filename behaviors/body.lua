@@ -905,7 +905,7 @@ function BodyBehavior:updatePhysicsFixturesFromProperties(componentOrActorId)
     end
 end
 
-function BodyBehavior:getScaledEditorBounds(componentOrActorId)
+function BodyBehavior:getScaledEditorBounds(componentOrActorId, skipMinSize)
     local component = self:getComponent(componentOrActorId)
 
     local bounds = util.deepCopyTable(component.properties.editorBounds)
@@ -920,11 +920,13 @@ function BodyBehavior:getScaledEditorBounds(componentOrActorId)
     bounds.width = math.abs(bounds.maxX - bounds.minX)
     bounds.height = math.abs(bounds.maxY - bounds.minY)
 
-    if bounds.width < EDITOR_BOUNDS_MIN_SIZE then
-        bounds.width = EDITOR_BOUNDS_MIN_SIZE
-    end
-    if bounds.height < EDITOR_BOUNDS_MIN_SIZE then
-        bounds.height = EDITOR_BOUNDS_MIN_SIZE
+    if not skipMinSize then
+        if bounds.width < EDITOR_BOUNDS_MIN_SIZE then
+            bounds.width = EDITOR_BOUNDS_MIN_SIZE
+        end
+        if bounds.height < EDITOR_BOUNDS_MIN_SIZE then
+            bounds.height = EDITOR_BOUNDS_MIN_SIZE
+        end
     end
 
     return bounds
@@ -970,7 +972,7 @@ end
 
 function BodyBehavior:resize(componentOrActorId, newScaledBoundsWidth, newScaledBoundsHeight)
     local component = self:getComponent(componentOrActorId)
-    local oldBounds = self:getScaledEditorBounds(component)
+    local oldBounds = self:getScaledEditorBounds(component, true)
 
     local oldWidth = oldBounds.width
     local oldHeight = oldBounds.height
