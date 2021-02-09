@@ -394,9 +394,22 @@ function Client:uiInspectorActions()
         end
     end
 
+    if actor.isGhost then
+        actions['setShared'] = function(isShared)
+            if isShared and not entry.sharedId then
+                local newEntry = util.deepCopyTable(entry)
+                newEntry.sharedId = util.uuid()
+                self:send('updateLibraryEntry', self.clientId, entry.entryId, newEntry, {
+                    updateActors = false,
+                })
+            end
+        end
+    end
+
     ui.data(
        {
           isBlueprint = actor.isGhost or false,
+          isShared = entry.sharedId ~= nil,
           title = title,
           applicableTools = util.noArray(tools),
           activeToolBehaviorId = self.activeToolBehaviorId,
