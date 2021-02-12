@@ -3,6 +3,7 @@
 local DrawingData = require 'library_drawing_data'
 
 local CORE_LIBRARY = {}
+
 CORE_TEMPLATES = {
     {
         isBlank = true,
@@ -11,7 +12,63 @@ CORE_TEMPLATES = {
         description = "Blank actor",
         actorBlueprint = {
             components = {
-                Drawing2 = {},
+                Drawing2 = {
+                    -- Based on serialized form of 'Wall' after clearing drawing
+                    disabled = false,
+                    drawData = {
+                        fillPixelsPerUnit = 25.600000000000001,
+                        framesBounds = {
+                            {
+                                maxX = 5,
+                                maxY = 5,
+                                minX = -5,
+                                minY = -5
+                            }
+                        },
+                        gridSize = 0.71428571428570997,
+                        layers = {
+                            {
+                                frames = {
+                                    {
+                                        fillImageBounds = {
+                                            maxX = 0,
+                                            maxY = 0,
+                                            minX = 0,
+                                            minY = 0
+                                        },
+                                        isLinked = false,
+                                        pathDataList = {}
+                                    }
+                                },
+                                id = "layer1",
+                                isVisible = true,
+                                title = "Layer 1"
+                            }
+                        },
+                        lineColor = {
+                            0.66037992589614003,
+                            0.40000000000000002,
+                            0.93333333333333002,
+                            1
+                        },
+                        numTotalLayers = 1,
+                        pathDataList = {},
+                        scale = 10,
+                        selectedFrame = 1,
+                        selectedLayerId = "layer1",
+                        version = 3
+                    },
+                    framesPerSecond = 4,
+                    initialFrame = 1,
+                    loop = false,
+                    physicsBodyData = {
+                        scale = 10,
+                        shapes = {},
+                        version = 2,
+                        zeroShapesInV1 = false
+                    },
+                    playing = false
+                },
                 Body = {
                     widthScale = 0.1,
                     heightScale = 0.1,
