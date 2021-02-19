@@ -26,11 +26,11 @@ Common:defineExpression(
       },
       eval = function(game, expression, actorId, context)
          local min, max = game:evalExpression(expression.params.min, actorId, context), game:evalExpression(expression.params.max, actorId, context)
-         local result = min + math.random() * (max - min)
          if expression.params.discrete == true then
-            result = math.floor(result + 0.5)
+            return min + math.floor(math.random() * (max + 1 - min))
+         else
+            return min + math.random() * (max - min)
          end
-         return result
       end
    }
 )
