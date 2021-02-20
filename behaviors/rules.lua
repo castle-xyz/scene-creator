@@ -875,8 +875,8 @@ RulesBehavior.responses["repeat"] = {
             coroutine.yield()
           end
 
-          local members = self.game.behaviorsByName.Body:getMembers(actorId)
-          if not (members.bodyId and members.body) then
+          local exists = self.game.actors[actorId] ~= nil
+          if not exists then
              -- actor was destroyed, abandon remaining iterations
              break
           end
@@ -915,8 +915,8 @@ RulesBehavior.responses["infinite repeat"] = {
                timeLeft = timeLeft - coroutine.yield()
          end
 
-         local members = self.game.behaviorsByName.Body:getMembers(actorId)
-         if not (members.bodyId and members.body) then
+         local exists = self.game.actors[actorId] ~= nil
+         if not exists then
             -- actor was destroyed, abandon remaining iterations
             break
          end
