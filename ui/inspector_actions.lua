@@ -404,7 +404,7 @@ function Client:uiInspectorActions()
     ui.data(
        {
           isBlueprint = actor.isGhost or false,
-          isShared = entry.sharedId ~= nil,
+          isShared = (entry and entry.sharedId) or false,
           title = title,
           applicableTools = util.noArray(tools),
           activeToolBehaviorId = self.activeToolBehaviorId,
