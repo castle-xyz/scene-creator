@@ -33,6 +33,7 @@ function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
     local entryId = existingEntry.entryId
     local oldEntry = existingEntry
     local newActorBp = self:blueprintActor(actor.actorId)
+    local origActorBp = util.deepCopyTable(newActorBp)
     if newActorBp.components.Body then
         newActorBp.components.Body.x, newActorBp.components.Body.y = nil, nil
     end
@@ -45,8 +46,12 @@ function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
         base64Png = base64Png,
     }
 
+    local actorId = actor.actorId
+    local drawOrder = actor.drawOrder
+    local isGhost = actor.isGhost
+
     self:command('update blueprint', {
-        params = { 'entryId', 'oldEntry', 'newEntry' },
+        params = { 'entryId', 'oldEntry', 'newEntry', 'actorId', 'drawOrder', 'isGhost', 'origActorBp' },
     }, function(params, live)
         self:send('updateLibraryEntry', self.clientId, entryId, newEntry, {
             updateActors = true,
@@ -56,6 +61,15 @@ function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
         self:send('updateLibraryEntry', self.clientId, entryId, oldEntry, {
             updateActors = true,
             skipActorId = actorId,
+        })
+
+        -- Restore actor-local changes on undo
+        self:send('removeActor', self.clientId, actorId)
+        self:sendAddActor(origActorBp, {
+            actorId = actorId,
+            parentEntryId = entryId,
+            drawOrder = drawOrder,
+            isGhost = isGhost,
         })
     end)
 end
