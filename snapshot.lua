@@ -42,19 +42,36 @@ function Common:restoreSnapshot(snapshot)
             local actorBp = actorSp.bp -- Already a duplicate so we can edit in-place
             local entry = snapshot.library[actorSp.parentEntryId]
 
-            local actorComps = actorBp.components
-            if entry and entry.actorBlueprint then
-                local entryComps = entry.actorBlueprint.components
-                for compName, entryComp in pairs(entryComps) do
-                    local actorComp = actorComps[compName]
-                    if not actorComp then
-                        -- Actor doesn't have this component at all, just use entry data
-                        actorComps[compName] = entryComp
+            if snapshot.actorBlueprintInherit then
+                local actorComps = actorBp.components
+                if entry and entry.actorBlueprint then
+                    local entryComps = entry.actorBlueprint.components
+                    for compName, entryComp in pairs(entryComps) do
+                        local actorComp = actorComps[compName]
+                        if actorComp ~= '_NIL' then
+                            if not actorComp then
+                                -- Actor doesn't have this component at all, just use entry data
+                                actorComps[compName] = entryComp
+                            else
+                                -- Use entry property wherever there's no actor property
+                                for propName, entryProp in pairs(entryComp) do
+                                    if actorComp[propName] == nil then
+                                        actorComp[propName] = entryProp
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                -- Clear `nil` overrides
+                for compName, actorComp in pairs(actorComps) do
+                    if actorComp == '_NIL' then
+                        actorComps[compName] = nil
                     else
-                        -- Use entry property wherever there's no actor property
-                        for propName, entryProp in pairs(entryComp) do
-                            if actorComp[propName] == nil then
-                                actorComp[propName] = entryProp
+                        for propName, value in pairs(actorComp) do
+                            if value == '_NIL' then
+                                actorComp[propName] = nil
                             end
                         end
                     end
@@ -102,28 +119,43 @@ function Common:createSnapshot()
             local actorBp = self:blueprintActor(actor.actorId)
             local entry = self.library[actor.parentEntryId]
 
-            -- Remove properties that are equal to corresponding property from blueprint
+            -- Remove properties that are equal to corresponding property from
+            -- blueprint. Also mark explicit `nil` overrides as `'_NIL'`.
             if entry and entry.actorBlueprint then
                 local entryComps = entry.actorBlueprint.components
+                for compName in pairs(entryComps) do
+                    if actorBp.components[compName] == nil then
+                        actorBp.components[compName] = '_NIL'
+                    end
+                end
                 for compName, actorComp in pairs(actorBp.components) do
-                    local entryComp = entryComps[compName]
-                    if entryComp then
-                        for propName, actorProp in pairs(actorComp) do
-                            local entryProp = entryComp[propName]
-                            local propValueEqual = false
-                            if compName == 'Drawing2' and propName == 'drawData' or propName == 'physicsBodyData' then
-                                -- Compare drawing data by hash
-                                propValueEqual = actorComp.hash == entryComp.hash
-                            else
-                                propValueEqual = valueEqual(actorProp, entryProp)
+                    if actorComp ~= '_NIL' then
+                        local entryComp = entryComps[compName]
+                        if entryComp then
+                            for propName in pairs(entryComp) do
+                                if actorComp[propName] == nil then
+                                    actorComp[propName] = '_NIL'
+                                end
                             end
-                            if propValueEqual then
-                                actorComp[propName] = nil
+                            for propName, actorProp in pairs(actorComp) do
+                                if actorProp ~= '_NIL' then
+                                    local entryProp = entryComp[propName]
+                                    local propValueEqual = false
+                                    if compName == 'Drawing2' and (propName == 'drawData' or propName == 'physicsBodyData') then
+                                        -- Compare drawing data by hash
+                                        propValueEqual = actorComp.hash == entryComp.hash
+                                    else
+                                        propValueEqual = valueEqual(actorProp, entryProp)
+                                    end
+                                    if propValueEqual then
+                                        actorComp[propName] = nil
+                                    end
+                                end
                             end
-                        end
-                        if not next(actorComp) then
-                            -- No actor overrides in this component, just remove
-                            actorBp.components[compName] = nil
+                            if not next(actorComp) then
+                                -- No actor overrides in this component, just remove
+                                actorBp.components[compName] = nil
+                            end
                         end
                     end
                 end
@@ -143,6 +175,8 @@ function Common:createSnapshot()
     -- Save scene properties
     snapshot.sceneProperties = self.sceneProperties
 
+    snapshot.actorBlueprintInherit = true
+
     return snapshot
 end
 
@@ -150,13 +184,16 @@ function Common:saveScene(snapshot)
     if not self.performing then
         self.lastSaveAttemptTime = love.timer.getTime()
 
+        local snapshot = snapshot or self:createSnapshot()
         local data =
             cjson.encode(
             {
-                snapshot = snapshot or self:createSnapshot()
+                snapshot = snapshot,
             }
         )
         if data ~= self.lastSuccessfulSaveData then
+            --print('---------------')
+            --print(serpent.block(snapshot))
             --print('size', #data)
             if next(self.actors) then
                 pcall(
