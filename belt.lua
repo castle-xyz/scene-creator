@@ -113,6 +113,8 @@ function Common:startBelt()
             return c / (2.0 * RADIUS + 1.0) * color;
         }
     ]])
+
+    self.beltTextCanvas = nil
 end
 
 -- Layout
@@ -141,11 +143,49 @@ end
 -- Update
 
 function Common:updateBeltElemImage(elem, entry)
+    elem.base64Png = entry.base64Png
     -- Create renderable texture from saved preview data in blueprint
     local decoded = love.data.decode("data", "base64", entry.base64Png)
     local imgData = love.image.newImageData(decoded)
     elem.image = love.graphics.newImage(imgData)
-    elem.base64Png = entry.base64Png
+    print('made new image', love.timer.getTime())
+end
+
+local textPreviewFont = love.graphics.newFont(32)
+local textPreviewFontHeight = textPreviewFont:getHeight()
+
+local textPreviewOffset = textPreviewFontHeight * 0.3
+local textPreviewSize = textPreviewFontHeight * 5 
+local textPreviewCanvasSize = textPreviewSize + 2 * textPreviewOffset
+
+function Common:updateBeltElemImageFromText(elem, text)
+    elem.lastPreviewedText = text
+    if not self.beltTextCanvas then
+        self.beltTextCanvas = love.graphics.newCanvas(textPreviewCanvasSize, textPreviewCanvasSize)
+    end
+    self.beltTextCanvas:renderTo(function()
+        love.graphics.push('all')
+        love.graphics.origin()
+        love.graphics.clear(0, 0, 0, 0)
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle('fill', 0, 0, textPreviewCanvasSize, textPreviewCanvasSize, 0.8 * textPreviewOffset)
+
+        love.graphics.setFont(textPreviewFont)
+        if #text > 0 then
+            love.graphics.setColor(0, 0, 0)
+            local width, wrapped = textPreviewFont:getWrap(text, textPreviewSize)
+            for i = 1, 4 do
+                if wrapped[i] then
+                    love.graphics.print(wrapped[i], textPreviewOffset, textPreviewOffset + textPreviewFontHeight * (i - 1))
+                end
+            end
+        end
+
+        love.graphics.pop()
+    end)
+    elem.image = love.graphics.newImage(self.beltTextCanvas:newImageData())
+    print('made new text image', love.timer.getTime())
 end
 
 function Common:markBeltDirty()
@@ -167,8 +207,16 @@ function Common:syncBelt()
     for _, elem in ipairs(self.beltElems) do
         local entry = self.library[elem.entryId]
         -- Lua interns strings so hopefully the comparison is quick when equal
-        if entry and entry.base64Png ~= elem.base64Png then 
-            self:updateBeltElemImage(elem, entry)
+        if entry then
+            local textComp = entry.actorBlueprint and entry.actorBlueprint.components and entry.actorBlueprint.components.Text
+            if textComp then
+                local newContent = textComp.content or ''
+                if newContent ~= entry.lastPreviewedText then
+                    self:updateBeltElemImageFromText(elem, textComp.content or '')
+                end
+            elseif entry and entry.base64Png ~= elem.base64Png then 
+                self:updateBeltElemImage(elem, entry)
+            end
         end
     end
 
@@ -181,7 +229,10 @@ function Common:syncBelt()
         if not currElemIds[entryId] then
             local newElem = {}
             newElem.entryId = entry.entryId
-            if entry.base64Png then
+            local textComp = entry.actorBlueprint and entry.actorBlueprint.components and entry.actorBlueprint.components.Text
+            if textComp then
+                self:updateBeltElemImageFromText(newElem, textComp.content or '')
+            elseif entry.base64Png then
                 self:updateBeltElemImage(newElem, entry)
             end
             table.insert(self.beltElems, newElem)
