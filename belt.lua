@@ -100,6 +100,23 @@ function Common:startBelt()
         }
     ]])
 
+    -- Same as first above shader but for icon previews (smaller size)
+    self.beltPreviewOutlineShader = love.graphics.newShader([[
+        vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
+            vec4 c = Texel(texture, texCoords);
+            if (c.a == 0.0) {
+                float l = Texel(texture, vec2(texCoords.x - 1.0 / 100.0, texCoords.y)).a - c.a;
+                float r = Texel(texture, vec2(texCoords.x + 1.0 / 100.0, texCoords.y)).a - c.a;
+                float u = Texel(texture, vec2(texCoords.x, texCoords.y - 1.0 / 100.0)).a - c.a;
+                float d = Texel(texture, vec2(texCoords.x, texCoords.y + 1.0 / 100.0)).a - c.a;
+                float m = max(max(abs(l), abs(r)), max(abs(u), abs(d)));
+                return vec4(m, m, m, 1.0);
+            } else {
+                return vec4(0.0, 0.0, 0.0, 1.0);
+            }
+        }
+    ]])
+
     -- Below from https://github.com/vrld/moonshine/blob/d39271e0c000e2fedbc2e3ad286b78b5a5146065/boxblur.lua#L20
     self.beltOutlineBlurShader = love.graphics.newShader([[
         #define RADIUS 1.0
@@ -115,6 +132,8 @@ function Common:startBelt()
     ]])
 
     self.beltTextCanvas = nil
+    self.beltPreviewCanvas = nil
+    self.beltPreviewCanvas2 = nil
 end
 
 -- Layout
@@ -143,24 +162,84 @@ end
 -- Update
 
 function Common:updateBeltElemImage(elem, entry)
+    --local padding = 0.05 * ELEM_SIZE
+    --local size = ELEM_SIZE
+    local padding = 4
+    local size = 256
+
     elem.base64Png = entry.base64Png
+
+    if not self.beltPreviewCanvas then
+        self.beltPreviewCanvas = love.graphics.newCanvas(size, size)
+    end
+    if not self.beltPreviewCanvas2 then
+        self.beltPreviewCanvas2 = love.graphics.newCanvas(size, size)
+    end
+
     -- Create renderable texture from saved preview data in blueprint
     local decoded = love.data.decode("data", "base64", entry.base64Png)
     local imgData = love.image.newImageData(decoded)
-    elem.image = love.graphics.newImage(imgData)
+    local img = love.graphics.newImage(imgData)
+
+    love.graphics.push('all')
+    love.graphics.origin()
+    love.graphics.push('all')
+    self.beltPreviewCanvas:renderTo(function()
+        love.graphics.clear(0, 0, 0, 0)
+        love.graphics.setShader(self.beltPreviewOutlineShader)
+        love.graphics.draw(img, padding, padding, 0, (size - 2 * padding) / img:getWidth())
+    end)
+    for i = 1, 3 do
+        self.beltPreviewCanvas2:renderTo(function()
+            love.graphics.clear(0, 0, 0, 0)
+            love.graphics.setShader(self.beltOutlineThickeningShader)
+            love.graphics.draw(self.beltPreviewCanvas)
+        end)
+        self.beltPreviewCanvas:renderTo(function()
+            love.graphics.clear(0, 0, 0, 0)
+            love.graphics.setShader(self.beltOutlineThickeningShader)
+            love.graphics.draw(self.beltPreviewCanvas2)
+        end)
+    end
+    --self.beltPreviewCanvas2:renderTo(function()
+    --    love.graphics.clear(0, 0, 0, 0)
+    --    self.beltOutlineBlurShader:send("direction", { 1 / 128, 0 })
+    --    love.graphics.setShader(self.beltOutlineBlurShader)
+    --    love.graphics.draw(self.beltPreviewCanvas)
+    --end)
+    --self.beltPreviewCanvas:renderTo(function()
+    --    love.graphics.clear(0, 0, 0, 0)
+    --    self.beltOutlineBlurShader:send("direction", { 0, 1 / 128 })
+    --    love.graphics.setShader(self.beltOutlineBlurShader)
+    --    love.graphics.draw(self.beltPreviewCanvas2)
+    --end)
+    love.graphics.pop()
+    self.beltPreviewCanvas2:renderTo(function()
+        love.graphics.clear(0, 0, 0, 0)
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(self.beltPreviewCanvas)
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(img, padding, padding, 0, (size - 2 * padding) / img:getWidth())
+    end)
+    love.graphics.pop()
+
+    elem.image = love.graphics.newImage(self.beltPreviewCanvas2:newImageData())
 end
 
-local textPreviewFont = love.graphics.newFont(32)
+local textPreviewFont = love.graphics.newFont('assets/Roboto-Regular.ttf', 32)
 local textPreviewFontHeight = textPreviewFont:getHeight()
 
 local textPreviewOffset = textPreviewFontHeight * 0.3
-local textPreviewSize = textPreviewFontHeight * 5 
+local textPreviewSize = textPreviewFontHeight * 4 
 local textPreviewCanvasSize = textPreviewSize + 2 * textPreviewOffset
 
 function Common:updateBeltElemImageFromText(elem, text)
     elem.lastPreviewedText = text
     if not self.beltTextCanvas then
-        self.beltTextCanvas = love.graphics.newCanvas(textPreviewCanvasSize, textPreviewCanvasSize)
+        self.beltTextCanvas = love.graphics.newCanvas(textPreviewCanvasSize, textPreviewCanvasSize, {
+            dpiscale = 1,
+            msaa = 4,
+        })
     end
     self.beltTextCanvas:renderTo(function()
         love.graphics.push('all')
