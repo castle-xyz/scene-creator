@@ -148,7 +148,6 @@ function Common:updateBeltElemImage(elem, entry)
     local decoded = love.data.decode("data", "base64", entry.base64Png)
     local imgData = love.image.newImageData(decoded)
     elem.image = love.graphics.newImage(imgData)
-    print('made new image', love.timer.getTime())
 end
 
 local textPreviewFont = love.graphics.newFont(32)
@@ -185,7 +184,6 @@ function Common:updateBeltElemImageFromText(elem, text)
         love.graphics.pop()
     end)
     elem.image = love.graphics.newImage(self.beltTextCanvas:newImageData())
-    print('made new text image', love.timer.getTime())
 end
 
 function Common:markBeltDirty()
