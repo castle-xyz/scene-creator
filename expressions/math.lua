@@ -139,6 +139,56 @@ Common:defineExpression(
    }
 )
 
+Common:defineExpression(
+   "sin", {
+      returnType = "number",
+      category = "functions",
+      description = "sine",
+      paramSpecs = {
+         number = {
+            label = "Number (radians)",
+            method = "numberInput",
+            initialValue = 0,
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local x = game:evalExpression(expression.params.number, actorId, context)
+         return math.sin(x)
+      end,
+   }
+)
+
+Common:defineExpression(
+   "rad", {
+      returnType = "number",
+      category = "functions",
+      description = "Degrees to radians",
+      paramSpecs = {
+         number = {
+            label = "Degrees",
+            method = "numberInput",
+            initialValue = 0,
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local number = game:evalExpression(expression.params.number, actorId, context)
+         return math.rad(number)
+      end,
+   }
+)
+
+Common:defineExpression(
+   "time", {
+      returnType = "number",
+      category = "functions",
+      description = "Time elapsed since the card started",
+      paramSpecs = {},
+      eval = function(game, expression, actorId, context)
+         return love.timer.getTime() - game:getStartTime()
+      end,
+   }
+)
+
 -- TODO: flexible number of inputs for min, max, choose
 
 Common:defineExpression(

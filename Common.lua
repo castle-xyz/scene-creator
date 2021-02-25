@@ -91,6 +91,8 @@ require "expressions.arithmetic"
 require "expressions.math"
 require "expressions.random"
 
+local startTime = 0
+
 function Common:start(isPerforming)
     self.onEndOfFrames = {}
 
@@ -106,6 +108,13 @@ function Common:start(isPerforming)
 
     self.performing = isPerforming
     self.paused = false
+    if isPerforming then
+       startTime = love.timer.getTime()
+    end
+end
+
+function Common:getStartTime()
+   return startTime
 end
 
 function Common:stop()
@@ -158,6 +167,9 @@ function Common.receivers:setPerforming(time, performing)
     if self.performing ~= performing then
         self.performing = performing
         self:callHandlers("setPerforming", performing)
+    end
+    if performing then
+       startTime = love.timer.getTime()
     end
 end
 
