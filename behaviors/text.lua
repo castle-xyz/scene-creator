@@ -53,11 +53,11 @@ end
 -- rendering text content
 
 function toMaxDecimals(num, max)
-   local prev = string.format("%.0f", num)
+   local prev = string.format("%." .. tostring(max) .. "f", num)
    local n
-   for ii = 1, max do
+   for ii = max - 1, 0, -1 do
       n = string.format("%." .. tostring(ii) .. "f", num)
-      if tonumber(n) == tonumber(prev) then
+      if tonumber(n) ~= tonumber(prev) then
          return prev
       end
       prev = n
