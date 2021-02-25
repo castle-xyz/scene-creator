@@ -100,7 +100,7 @@ function Common:startBelt()
         }
     ]])
 
-    -- Same as first above shader but for icon previews (smaller size)
+    -- Same as above but for icon previews (smaller size, transparent background)
     self.beltPreviewOutlineShader = love.graphics.newShader([[
         vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
             vec4 c = Texel(texture, texCoords);
@@ -112,8 +112,19 @@ function Common:startBelt()
                 float m = max(max(abs(l), abs(r)), max(abs(u), abs(d)));
                 return vec4(m, m, m, 1.0);
             } else {
-                return vec4(0.0, 0.0, 0.0, 1.0);
+                return vec4(0.0, 0.0, 0.0, 0.0);
             }
+        }
+    ]])
+    self.beltPreviewOutlineThickeningShader = love.graphics.newShader([[
+        vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
+            float c = Texel(texture, texCoords).r;
+            float l = Texel(texture, vec2(texCoords.x - 1.0 / love_ScreenSize.x, texCoords.y)).r;
+            float r = Texel(texture, vec2(texCoords.x + 1.0 / love_ScreenSize.x, texCoords.y)).r;
+            float u = Texel(texture, vec2(texCoords.x, texCoords.y - 1.0 / love_ScreenSize.y)).r;
+            float d = Texel(texture, vec2(texCoords.x, texCoords.y + 1.0 / love_ScreenSize.y)).r;
+            float m = max(c, max(max(l, r), max(u, d)));
+            return vec4(m, m, m, m == 0.0 ? 0.0 : 1.0);
         }
     ]])
 
@@ -192,12 +203,12 @@ function Common:updateBeltElemImage(elem, entry)
     for i = 1, 3 do
         self.beltPreviewCanvas2:renderTo(function()
             love.graphics.clear(0, 0, 0, 0)
-            love.graphics.setShader(self.beltOutlineThickeningShader)
+            love.graphics.setShader(self.beltPreviewOutlineThickeningShader)
             love.graphics.draw(self.beltPreviewCanvas)
         end)
         self.beltPreviewCanvas:renderTo(function()
             love.graphics.clear(0, 0, 0, 0)
-            love.graphics.setShader(self.beltOutlineThickeningShader)
+            love.graphics.setShader(self.beltPreviewOutlineThickeningShader)
             love.graphics.draw(self.beltPreviewCanvas2)
         end)
     end
