@@ -298,13 +298,7 @@ function Drawing2Behavior:onChangeFrame(component)
             if params.comparison == "equal" and floatEquals(newValue, compareTo) then
                 return true
             end
-            if params.comparison == "less or equal" and newValue <= compareTo then
-                return true
-            end
-            if params.comparison == "greater or equal" and newValue >= compareTo then
-                return true
-            end
-            return false
+            return self.game:compare(params.comparison, newValue, compareTo)
         end
     })
 end
@@ -328,11 +322,7 @@ Drawing2Behavior.triggers["animation reaches frame"] = {
            method = "dropdown",
            initialValue = "equal",
            props = {
-              items = {
-                 "equal",
-                 "less or equal",
-                 "greater or equal",
-              },
+              items = COMPARISON_OPERATORS,
            },
         },
        frame = {
@@ -357,11 +347,7 @@ Drawing2Behavior.responses["animation frame meets condition"] = {
           method = "dropdown",
           initialValue = "equal",
           props = {
-             items = {
-                "equal",
-                "less or equal",
-                "greater or equal",
-             },
+             items = COMPARISON_OPERATORS,
           },
        },
        frame = {
@@ -384,13 +370,7 @@ Drawing2Behavior.responses["animation frame meets condition"] = {
         if params.comparison == "equal" and floatEquals(value, compareTo) then
             return true
         end
-        if params.comparison == "less or equal" and value <= compareTo then
-            return true
-        end
-        if params.comparison == "greater or equal" and value >= compareTo then
-            return true
-        end
-        return false
+        return self.game:compare(params.comparison, value, compareTo)
     end
 }
 

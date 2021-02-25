@@ -53,16 +53,7 @@ function CounterBehavior.setters:value(component, newValue, opts)
                 {
                     filter = function(params)
                         local compareTo = self.game:evalExpression(params.value, component.actorId)
-                        if params.comparison == "equal" and newValue == compareTo then
-                            return true
-                        end
-                        if params.comparison == "less or equal" and newValue <= compareTo then
-                            return true
-                        end
-                        if params.comparison == "greater or equal" and newValue >= compareTo then
-                            return true
-                        end
-                        return false
+                        return self.game:compare(params.comparison, newValue, compareTo)
                     end
                 }
             )
@@ -83,11 +74,7 @@ CounterBehavior.triggers["counter reaches value"] = {
           method = "dropdown",
           initialValue = "equal",
           props = {
-             items = {
-                "equal",
-                "less or equal",
-                "greater or equal",
-             },
+             items = COMPARISON_OPERATORS,
           },
        },
        value = {
@@ -167,11 +154,7 @@ CounterBehavior.responses["counter meets condition"] = {
           method = "dropdown",
           initialValue = "equal",
           props = {
-             items = {
-                "equal",
-                "less or equal",
-                "greater or equal",
-             },
+             items = COMPARISON_OPERATORS,
           },
        },
        value = {
@@ -186,16 +169,6 @@ CounterBehavior.responses["counter meets condition"] = {
         end
         local value = component.properties.value
         local compareTo = self.game:evalExpression(params.value, actorId, context)
-
-        if params.comparison == "equal" and value == compareTo then
-            return true
-        end
-        if params.comparison == "less or equal" and value <= compareTo then
-            return true
-        end
-        if params.comparison == "greater or equal" and value >= compareTo then
-            return true
-        end
-        return false
+        return self.game:compare(params.comparison, value, compareTo)
     end
 }

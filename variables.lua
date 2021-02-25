@@ -98,16 +98,7 @@ local function variableReachesValueTrigger(self, actorId, variableId, newValue)
                    return false
                 end
 
-                if params.comparison == "equal" and lhs == rhs then
-                    return true
-                end
-                if params.comparison == "less or equal" and lhs <= rhs then
-                    return true
-                end
-                if params.comparison == "greater or equal" and lhs >= rhs then
-                    return true
-                end
-                return false
+                return self:compare(params.comparison, lhs, rhs)
             end
         }
     )
@@ -129,17 +120,7 @@ local function variableReachesValueTrigger(self, actorId, variableId, newValue)
              if params.value.params.variableId == variableId then
                  local lhs = component.properties.value
                  local rhs = newValue
-
-                 if params.comparison == "equal" and lhs == rhs then
-                    return true
-                 end
-                 if params.comparison == "less or equal" and lhs <= rhs then
-                    return true
-                 end
-                 if params.comparison == "greater or equal" and lhs >= rhs then
-                    return true
-                 end
-                 return false
+                 return self:compare(params.comparison, lhs, rhs)
              end
           end
        }

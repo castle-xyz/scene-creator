@@ -237,11 +237,7 @@ RulesBehavior.triggers["variable reaches value"] = {
           method = "dropdown",
           initialValue = "equal",
           props = {
-             items = {
-                "equal",
-                "less or equal",
-                "greater or equal",
-             },
+             items = COMPARISON_OPERATORS,
           },
        },
        value = {
@@ -373,11 +369,7 @@ RulesBehavior.responses["variable meets condition"] = {
           method = "dropdown",
           initialValue = "equal",
           props = {
-             items = {
-                "equal",
-                "less or equal",
-                "greater or equal",
-             },
+             items = COMPARISON_OPERATORS,
           },
        },
        value = {
@@ -389,16 +381,7 @@ RulesBehavior.responses["variable meets condition"] = {
     run = function(self, actorId, params, context)
         local value = self.game:variableIdToValue(params.variableId)
         local compareTo = self.game:evalExpression(params.value, actorId, context)
-        if params.comparison == "equal" and value == compareTo then
-            return true
-        end
-        if params.comparison == "less or equal" and value <= compareTo then
-            return true
-        end
-        if params.comparison == "greater or equal" and value >= compareTo then
-            return true
-        end
-        return false
+        return self.game:compare(params.comparison, value, compareTo)
     end
 }
 
@@ -419,11 +402,7 @@ RulesBehavior.responses["expression meets condition"] = {
           method = "dropdown",
           initialValue = "equal",
           props = {
-             items = {
-                "equal",
-                "less or equal",
-                "greater or equal",
-             },
+             items = COMPARISON_OPERATORS,
           },
        },
        rhs = {
@@ -435,16 +414,7 @@ RulesBehavior.responses["expression meets condition"] = {
     run = function(self, actorId, params, context)
         local lhs = self.game:evalExpression(params.lhs, actorId, context)
         local rhs = self.game:evalExpression(params.rhs, actorId, context)
-        if params.comparison == "equal" and lhs == rhs then
-            return true
-        end
-        if params.comparison == "less or equal" and lhs <= rhs then
-            return true
-        end
-        if params.comparison == "greater or equal" and lhs >= rhs then
-            return true
-        end
-        return false
+        return self.game:compare(params.comparison, lhs, rhs)
     end
 }
 

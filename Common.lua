@@ -41,6 +41,7 @@ util = require "util"
 helps = require "helps"
 
 require "actor_behavior" -- -- -- Message kind definition -- Start / stop
+require "expressions.boolean"
 
 require "behaviors.body"
 require "behaviors.image"
