@@ -754,7 +754,7 @@ function Client:draw()
     local hideBelt = activeTool and activeTool.tool and activeTool.tool.hideBelt
     if not hideBelt and self.isEditable then
         local windowWidth, windowHeight = love.graphics.getDimensions()
-        local cardWidth, cardHeight = windowWidth, windowHeight - BELT_HEIGHT
+        local cardWidth, cardHeight = windowWidth, windowHeight - self:getBeltYOffset()
 
         -- Draw to a canvas then render that canvas with a Y offset, to leave space for the belt above
         if not self.innerCanvas then
