@@ -1011,13 +1011,13 @@ function Common:drawBelt()
                 end
             end
             if actorSelected then
-                love.graphics.setColor(0.7, 0.7, 0.7)
+                love.graphics.setColor(0.8, 0.8, 0.8)
                 love.graphics.setLineWidth(2 * love.graphics.getDPIScale())
             else
                 love.graphics.setColor(0, 1, 0)
                 love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
             end
-            local boxSize = 1.05 * ELEM_SIZE
+            local boxSize = 1.08 * ELEM_SIZE
             love.graphics.rectangle("line",
                 0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
                 boxSize, boxSize, boxSize * 0.04)
