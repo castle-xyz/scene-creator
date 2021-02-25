@@ -1002,12 +1002,25 @@ function Common:drawBelt()
 
         -- Highlight box
         if self.beltEntryId then
-            love.graphics.setColor(0, 1, 0)
-            love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
+            local actorSelected = false
+            for actorId in pairs(self.selectedActorIds) do
+                local actor = self.actors[actorId]
+                if actor and not actor.isGhost then
+                    actorSelected = true
+                    break
+                end
+            end
+            if actorSelected then
+                love.graphics.setColor(0.7, 0.7, 0.7)
+                love.graphics.setLineWidth(2 * love.graphics.getDPIScale())
+            else
+                love.graphics.setColor(0, 1, 0)
+                love.graphics.setLineWidth(3 * love.graphics.getDPIScale())
+            end
             local boxSize = 1.05 * ELEM_SIZE
             love.graphics.rectangle("line",
                 0.5 * windowWidth - 0.5 * boxSize, elemsY - 0.5 * boxSize,
-                boxSize, boxSize)
+                boxSize, boxSize, boxSize * 0.04)
         end
 
         -- New blueprint button
