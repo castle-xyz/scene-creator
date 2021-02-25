@@ -52,6 +52,19 @@ end
 
 -- rendering text content
 
+function toMaxDecimals(num, max)
+   local prev = string.format("%.0f", num)
+   local n
+   for ii = 1, max do
+      n = string.format("%." .. tostring(ii) .. "f", num)
+      if tonumber(n) == tonumber(prev) then
+         return prev
+      end
+      prev = n
+   end
+   return n
+end
+
 function TextBehavior:parseContent(component, performing, variableNameToValue)
    if component.properties.content == nil then
       return nil
@@ -69,7 +82,7 @@ function TextBehavior:parseContent(component, performing, variableNameToValue)
          local variableName = string.sub(maybeVariable, 2)
          local sub = variableNameToValue[variableName]
          if sub ~= nil and type(sub) ~= "table" then
-            return tostring(sub)
+            return toMaxDecimals(sub, 5)
          end
          return maybeVariable
       end
