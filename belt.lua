@@ -110,10 +110,14 @@ function Common:startBelt()
         vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
             vec4 c = Texel(texture, texCoords);
             if (c.a == 0.0) {
-                float l = Texel(texture, vec2(texCoords.x - 1.0 / 100.0, texCoords.y)).a - c.a;
-                float r = Texel(texture, vec2(texCoords.x + 1.0 / 100.0, texCoords.y)).a - c.a;
-                float u = Texel(texture, vec2(texCoords.x, texCoords.y - 1.0 / 100.0)).a - c.a;
-                float d = Texel(texture, vec2(texCoords.x, texCoords.y + 1.0 / 100.0)).a - c.a;
+                vec4 ll = Texel(texture, vec2(texCoords.x - 1.0 / 100.0, texCoords.y));
+                float l = ll.a > 0.37 ? 1.0 : 0.0;
+                vec4 rr = Texel(texture, vec2(texCoords.x + 1.0 / 100.0, texCoords.y));
+                float r = rr.a > 0.37 ? 1.0 : 0.0;
+                vec4 uu = Texel(texture, vec2(texCoords.x, texCoords.y - 1.0 / 100.0));
+                float u = uu.a > 0.37 ? 1.0 : 0.0;
+                vec4 dd = Texel(texture, vec2(texCoords.x, texCoords.y + 1.0 / 100.0));
+                float d = dd.a > 0.37 ? 1.0 : 0.0;
                 float m = max(max(abs(l), abs(r)), max(abs(u), abs(d)));
                 return vec4(m, m, m, 1.0);
             } else {
@@ -123,6 +127,11 @@ function Common:startBelt()
     ]])
     self.beltPreviewOutlineThickeningShader = love.graphics.newShader([[
         vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
+            //float xx = floor(10.0 * texCoords.x);
+            //float yy = floor(10.0 * texCoords.y);
+            //if (mod(xx + yy, 2.0) == 0.0) {
+                //return vec4(0.0);
+            //}
             float c = Texel(texture, texCoords).r;
             float l = Texel(texture, vec2(texCoords.x - 1.0 / love_ScreenSize.x, texCoords.y)).r;
             float r = Texel(texture, vec2(texCoords.x + 1.0 / love_ScreenSize.x, texCoords.y)).r;
@@ -205,7 +214,7 @@ function Common:updateBeltElemImage(elem, entry)
         love.graphics.setShader(self.beltPreviewOutlineShader)
         love.graphics.draw(img, padding, padding, 0, (size - 2 * padding) / img:getWidth())
     end)
-    for i = 1, 3 do
+    for i = 1, 2 do
         self.beltPreviewCanvas2:renderTo(function()
             love.graphics.clear(0, 0, 0, 0)
             love.graphics.setShader(self.beltPreviewOutlineThickeningShader)
