@@ -3,6 +3,11 @@
 local OS = love.system.getOS()
 
 BELT_HEIGHT = 160
+local beltHeightFraction = castle.game.getInitialParams().beltHeightFraction
+if beltHeightFraction then
+    BELT_HEIGHT = beltHeightFraction * love.graphics.getHeight()
+end
+
 local ELEM_GAP = 20
 local ELEM_SIZE = BELT_HEIGHT - 30
 

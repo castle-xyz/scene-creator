@@ -537,7 +537,7 @@ function DrawTool.handlers:drawOverlay()
         return
     end
 
-    local windowWidth, windowHeight = love.graphics.getDimensions()
+    local windowWidth, windowHeight = CARD_WIDTH, CARD_HEIGHT
     -- DrawingCardHeader.js height is 180 and DrawingCardBottomActions.js height is 80
     local topOffset = 0.5 * (self.viewWidth * VIEW_HEIGHT_TO_WIDTH_RATIO - ((200 + 64) / (windowWidth / self.viewWidth)))
 
