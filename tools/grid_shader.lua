@@ -45,7 +45,7 @@ function drawGrid(gridCellSize, gridSize, viewScale, viewX, viewY, offsetX, offs
     if gridCellSize > 0 then
         love.graphics.push("all")
 
-        local windowWidth, windowHeight = love.graphics.getDimensions()
+        local windowWidth, windowHeight = CARD_WIDTH, CARD_HEIGHT
 
         local dpiScale = love.graphics.getDPIScale()
         gridShader:send("gridCellSize", dpiScale * gridCellSize * viewScale)

@@ -58,7 +58,7 @@ function Client:updateTouches()
         end
 
         local screenX, screenY = love.touch.getPosition(touchId)
-        local x, y = self.viewTransform:inverseTransformPoint(screenX, screenY - self:getBeltYOffset())
+        local x, y = self.viewTransform:inverseTransformPoint(screenX - CARD_SCREEN_X_OFFSET, screenY - self:getBeltYOffset())
 
         screenX, screenY = self.cameraTransform:inverseTransformPoint(screenX, screenY)
         x, y = self.cameraTransform:inverseTransformPoint(x, y)

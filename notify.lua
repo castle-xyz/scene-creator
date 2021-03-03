@@ -36,7 +36,7 @@ function Client:drawNotify()
 
     love.graphics.setFont(font)
 
-    local windowWidth, windowHeight = love.graphics.getDimensions()
+    local windowWidth, windowHeight = CARD_WIDTH, CARD_HEIGHT
 
     local rectangleBorderRadius = dpiScale * RECTANGLE_BORDER_RADIUS
     local padding = dpiScale * PADDING

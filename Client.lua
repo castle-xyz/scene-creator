@@ -559,7 +559,7 @@ function love.draw()
 end
 
 function Client:drawInner()
-    local windowWidth, windowHeight = love.graphics.getDimensions()
+    local windowWidth, windowHeight = CARD_WIDTH, CARD_HEIGHT
 
     --if not self.connected then -- Not connected?
     --    love.graphics.setFont(debugFont)
@@ -754,7 +754,15 @@ function Client:draw()
     local hideBelt = activeTool and activeTool.tool and activeTool.tool.hideBelt
     if not hideBelt and self.isEditable then
         local windowWidth, windowHeight = love.graphics.getDimensions()
-        local cardWidth, cardHeight = windowWidth, windowHeight - self:getBeltYOffset()
+        local availWidth, availHeight = windowWidth, windowHeight - self:getBeltYOffset()
+        local cardWidth, cardHeight
+        if availHeight / availWidth >= VIEW_HEIGHT_TO_WIDTH_RATIO then
+            cardWidth, cardHeight = availWidth, availWidth * VIEW_HEIGHT_TO_WIDTH_RATIO
+        else
+            cardWidth, cardHeight = availHeight / VIEW_HEIGHT_TO_WIDTH_RATIO, availHeight
+        end
+        CARD_SCREEN_X_OFFSET = 0.5 * (availWidth - cardWidth)
+        CARD_WIDTH, CARD_HEIGHT = cardWidth, cardHeight
 
         -- Draw to a canvas then render that canvas with a Y offset, to leave space for the belt above
         if not self.innerCanvas then
@@ -763,7 +771,7 @@ function Client:draw()
         self.innerCanvas:renderTo(function()
             self:drawInner()
         end)
-        love.graphics.draw(self.innerCanvas, 0, self:getBeltYOffset())
+        love.graphics.draw(self.innerCanvas, CARD_SCREEN_X_OFFSET, self:getBeltYOffset())
 
         -- Rounded corners
         love.graphics.push("all")
@@ -777,11 +785,12 @@ function Client:draw()
             end)
         end
         love.graphics.setBlendMode("multiply", "premultiplied")
-        love.graphics.draw(self.roundedCornersCanvas, 0, self:getBeltYOffset())
+        love.graphics.draw(self.roundedCornersCanvas, CARD_SCREEN_X_OFFSET, self:getBeltYOffset())
         love.graphics.pop()
 
         self:drawBelt()
     else
+        CARD_WIDTH, CARD_HEIGHT = love.graphics.getDimensions()
         self:drawInner()
     end
 end
