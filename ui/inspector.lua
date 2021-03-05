@@ -213,12 +213,16 @@ function Client:_setProperty(actorId, behaviorId, propertyName, oldValue, newVal
       function()
          local behavior = self.behaviors[behaviorId]
          behavior:sendSetProperties(actorId, propertyName, newValue)
-         self:updateBlueprintFromActor(actorId)
+         self:updateBlueprintFromActor(actorId, {
+            updateBase64Png = behaviorId == self.behaviorsByName.Drawing2.behaviorId and propertyName == 'initialFrame',
+         })
       end,
       function()
          local behavior = self.behaviors[behaviorId]
          behavior:sendSetProperties(actorId, propertyName, oldValue)
-         self:updateBlueprintFromActor(actorId)
+         self:updateBlueprintFromActor(actorId, {
+            updateBase64Png = behaviorId == self.behaviorsByName.Drawing2.behaviorId and propertyName == 'initialFrame',
+         })
       end
    )
 end
