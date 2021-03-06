@@ -109,7 +109,6 @@ function Common:startBelt()
     self.beltPreviewOutlineShader = love.graphics.newShader([[
         vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords) {
             vec4 c = Texel(texture, texCoords);
-            if (c.a == 0.0) {
                 vec4 ll = Texel(texture, vec2(texCoords.x - 1.0 / 100.0, texCoords.y));
                 float l = ll.a > 0.37 ? 1.0 : 0.0;
                 vec4 rr = Texel(texture, vec2(texCoords.x + 1.0 / 100.0, texCoords.y));
@@ -118,11 +117,20 @@ function Common:startBelt()
                 float u = uu.a > 0.37 ? 1.0 : 0.0;
                 vec4 dd = Texel(texture, vec2(texCoords.x, texCoords.y + 1.0 / 100.0));
                 float d = dd.a > 0.37 ? 1.0 : 0.0;
+
+                vec4 lulu = Texel(texture, vec2(texCoords.x - 1.0 / 100.0, texCoords.y - 1.0 / 100.0));
+                float lu = lulu.a > 0.37 ? 1.0 : 0.0;
+                vec4 ruru = Texel(texture, vec2(texCoords.x + 1.0 / 100.0, texCoords.y - 1.0 / 100.0));
+                float ru = ruru.a > 0.37 ? 1.0 : 0.0;
+                vec4 ldld = Texel(texture, vec2(texCoords.x - 1.0 / 100.0, texCoords.y + 1.0 / 100.0));
+                float ld = ldld.a > 0.37 ? 1.0 : 0.0;
+                vec4 rdrd = Texel(texture, vec2(texCoords.x + 1.0 / 100.0, texCoords.y + 1.0 / 100.0));
+                float rd = rdrd.a > 0.37 ? 1.0 : 0.0;
+
                 float m = max(max(abs(l), abs(r)), max(abs(u), abs(d)));
+                m = max(m, max(max(abs(lu), abs(ru)), max(abs(ld), abs(rd))));
+
                 return vec4(m, m, m, 1.0);
-            } else {
-                return vec4(0.0, 0.0, 0.0, 0.0);
-            }
         }
     ]])
     self.beltPreviewOutlineThickeningShader = love.graphics.newShader([[
@@ -137,7 +145,12 @@ function Common:startBelt()
             float r = Texel(texture, vec2(texCoords.x + 1.0 / love_ScreenSize.x, texCoords.y)).r;
             float u = Texel(texture, vec2(texCoords.x, texCoords.y - 1.0 / love_ScreenSize.y)).r;
             float d = Texel(texture, vec2(texCoords.x, texCoords.y + 1.0 / love_ScreenSize.y)).r;
+           //float lu = Texel(texture, vec2(texCoords.x - 1.0 / love_ScreenSize.x, texCoords.y - 1.0 / love_ScreenSize.y)).r;
+           //float ru = Texel(texture, vec2(texCoords.x + 1.0 / love_ScreenSize.x, texCoords.y - 1.0 / love_ScreenSize.y)).r;
+           //float ld = Texel(texture, vec2(texCoords.x - 1.0 / love_ScreenSize.x, texCoords.y + 1.0 / love_ScreenSize.y)).r;
+           //float rd = Texel(texture, vec2(texCoords.x + 1.0 / love_ScreenSize.x, texCoords.y + 1.0 / love_ScreenSize.y)).r;
             float m = max(c, max(max(l, r), max(u, d)));
+           //m = max(m, max(max(lu, ru), max(ld, rd)));
             return vec4(m, m, m, m == 0.0 ? 0.0 : 1.0);
         }
     ]])
@@ -145,6 +158,18 @@ function Common:startBelt()
     -- Below from https://github.com/vrld/moonshine/blob/d39271e0c000e2fedbc2e3ad286b78b5a5146065/boxblur.lua#L20
     self.beltOutlineBlurShader = love.graphics.newShader([[
         #define RADIUS 1.0
+        extern vec2 direction;
+        vec4 effect(vec4 color, Image texture, vec2 tc, vec2 _) {
+            vec4 c = vec4(0.0);
+            for (float i = -RADIUS; i <= RADIUS; i += 1.0)
+            {
+                c += Texel(texture, tc + i * direction);
+            }
+            return c / (2.0 * RADIUS + 1.0) * color;
+        }
+    ]])
+    self.beltPreviewOutlineBlurShader = love.graphics.newShader([[
+        #define RADIUS 3.0
         extern vec2 direction;
         vec4 effect(vec4 color, Image texture, vec2 tc, vec2 _) {
             vec4 c = vec4(0.0);
@@ -189,7 +214,7 @@ end
 function Common:updateBeltElemImage(elem, entry)
     --local padding = 0.05 * ELEM_SIZE
     --local size = ELEM_SIZE
-    local padding = 4
+    local padding = 16
     local size = 256
 
     elem.base64Png = entry.base64Png
@@ -214,7 +239,7 @@ function Common:updateBeltElemImage(elem, entry)
         love.graphics.setShader(self.beltPreviewOutlineShader)
         love.graphics.draw(img, padding, padding, 0, (size - 2 * padding) / img:getWidth())
     end)
-    for i = 1, 2 do
+    for i = 1, 10 do
         self.beltPreviewCanvas2:renderTo(function()
             love.graphics.clear(0, 0, 0, 0)
             love.graphics.setShader(self.beltPreviewOutlineThickeningShader)
@@ -226,22 +251,24 @@ function Common:updateBeltElemImage(elem, entry)
             love.graphics.draw(self.beltPreviewCanvas2)
         end)
     end
-    --self.beltPreviewCanvas2:renderTo(function()
-    --    love.graphics.clear(0, 0, 0, 0)
-    --    self.beltOutlineBlurShader:send("direction", { 1 / 128, 0 })
-    --    love.graphics.setShader(self.beltOutlineBlurShader)
-    --    love.graphics.draw(self.beltPreviewCanvas)
-    --end)
-    --self.beltPreviewCanvas:renderTo(function()
-    --    love.graphics.clear(0, 0, 0, 0)
-    --    self.beltOutlineBlurShader:send("direction", { 0, 1 / 128 })
-    --    love.graphics.setShader(self.beltOutlineBlurShader)
-    --    love.graphics.draw(self.beltPreviewCanvas2)
-    --end)
+    for i = 1, 3 do
+        self.beltPreviewCanvas2:renderTo(function()
+            love.graphics.clear(0, 0, 0, 0)
+            self.beltPreviewOutlineBlurShader:send("direction", { 1 / 128, 0 })
+            love.graphics.setShader(self.beltPreviewOutlineBlurShader)
+            love.graphics.draw(self.beltPreviewCanvas)
+        end)
+        self.beltPreviewCanvas:renderTo(function()
+            love.graphics.clear(0, 0, 0, 0)
+            self.beltPreviewOutlineBlurShader:send("direction", { 0, 1 / 128 })
+            love.graphics.setShader(self.beltPreviewOutlineBlurShader)
+            love.graphics.draw(self.beltPreviewCanvas2)
+        end)
+    end
     love.graphics.pop()
     self.beltPreviewCanvas2:renderTo(function()
         love.graphics.clear(0, 0, 0, 0)
-        love.graphics.setColor(0.8, 0.8, 0.8, 1)
+        love.graphics.setColor(0.4, 0.4, 0.4, 1)
         love.graphics.draw(self.beltPreviewCanvas)
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(img, padding, padding, 0, (size - 2 * padding) / img:getWidth())
