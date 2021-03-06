@@ -239,7 +239,7 @@ function Common:updateBeltElemImage(elem, entry)
         love.graphics.setShader(self.beltPreviewOutlineShader)
         love.graphics.draw(img, padding, padding, 0, (size - 2 * padding) / img:getWidth())
     end)
-    for i = 1, 10 do
+    for i = 1, 4 do
         self.beltPreviewCanvas2:renderTo(function()
             love.graphics.clear(0, 0, 0, 0)
             love.graphics.setShader(self.beltPreviewOutlineThickeningShader)
@@ -251,7 +251,7 @@ function Common:updateBeltElemImage(elem, entry)
             love.graphics.draw(self.beltPreviewCanvas2)
         end)
     end
-    for i = 1, 3 do
+    for i = 1, 0 do
         self.beltPreviewCanvas2:renderTo(function()
             love.graphics.clear(0, 0, 0, 0)
             self.beltPreviewOutlineBlurShader:send("direction", { 1 / 128, 0 })
@@ -268,7 +268,7 @@ function Common:updateBeltElemImage(elem, entry)
     love.graphics.pop()
     self.beltPreviewCanvas2:renderTo(function()
         love.graphics.clear(0, 0, 0, 0)
-        love.graphics.setColor(0.4, 0.4, 0.4, 1)
+        love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(self.beltPreviewCanvas)
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(img, padding, padding, 0, (size - 2 * padding) / img:getWidth())
