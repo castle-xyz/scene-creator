@@ -7,7 +7,6 @@ function Common.receivers:pasteLibraryEntry(time, entry)
       local oldEntry = self.library[entry.entryId]
       -- blueprint exists:
       -- override entryId in library, override all existing instances
-      -- TODO: maybe instantiate another one by entryId
       self:command('update blueprint from clipboard', {
           params = { 'entry', 'oldEntry' },
       }, function(params, live)
@@ -29,8 +28,9 @@ function Common.receivers:pasteLibraryEntry(time, entry)
          { params = { 'entry' } },
          function(params, live)
             self:send('addLibraryEntry', entry.entryId, entry)
-            -- TODO: if we instantiate an actor
-            -- self:send('setActorParentEntryId', actor.actorId, newEntryId)
+
+            -- TODO: after belt lands, adding an actor may not be the default behavior
+            self:_addBlueprintToScene(entry.entryId)
          end,
          function()
             -- TODO: seems to break belt
