@@ -77,6 +77,16 @@ function Client:_addBlueprint(actor, saveBlueprintData)
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
 end
 
+jsEvents.listen(
+    "COPY_LIBRARY_ENTRY",
+    function(params)
+        local self = currentInstance()
+        if self then
+           self.libraryEntryIdInClipboard = params.entryId
+        end
+    end
+)
+
 function Client:_pasteBlueprint(entry)
    self:send('pasteLibraryEntry', entry)
 end
@@ -111,6 +121,12 @@ function Client:uiBlueprints()
 
    actions['addBlueprintToScene'] = function(entryId)
       self:_addBlueprintToScene(entryId)
+   end
+
+   -- determine how many actors would be overridden by 'paste'
+   if self.libraryEntryIdInClipboard ~= nil then
+      local _, numActorsUsingClipboardEntry = self:_getExistingLibraryEntry(nil, self.libraryEntryIdInClipboard)
+      data['numActorsUsingClipboardEntry'] = numActorsUsingClipboardEntry
    end
 
    actions['pasteBlueprint'] = function(entry)
