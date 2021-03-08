@@ -80,6 +80,7 @@ require "tools.draw2"
 require "tools.scale_rotate"
 
 require "library"
+require "library_clipboard"
 require "belt"
 require "snapshot"
 require "command"

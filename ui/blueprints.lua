@@ -77,6 +77,10 @@ function Client:_addBlueprint(actor, saveBlueprintData)
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
 end
 
+function Client:_pasteBlueprint(entry)
+   self:send('pasteLibraryEntry', entry)
+end
+
 function Client:uiBlueprints()
    local data = { library = self.library }
    local actions = {}
@@ -108,7 +112,11 @@ function Client:uiBlueprints()
    actions['addBlueprintToScene'] = function(entryId)
       self:_addBlueprintToScene(entryId)
    end
-   
+
+   actions['pasteBlueprint'] = function(entry)
+      self:_pasteBlueprint(entry)
+   end
+
    ui.data(data, { actions = actions })
 end
 
