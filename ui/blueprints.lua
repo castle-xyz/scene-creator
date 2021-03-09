@@ -77,16 +77,6 @@ function Client:_addBlueprint(actor, saveBlueprintData)
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
 end
 
-jsEvents.listen(
-    "COPY_LIBRARY_ENTRY",
-    function(params)
-        local self = currentInstance()
-        if self then
-           self.libraryEntryIdInClipboard = params.entryId
-        end
-    end
-)
-
 function Client:_pasteBlueprint(entry)
    self:send('pasteLibraryEntry', entry)
 end

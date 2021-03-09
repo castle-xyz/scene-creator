@@ -1,5 +1,35 @@
 -- TODO: merge with other library code after belt lands.
 
+-- JS requests data to put a new entry into the clipboard
+jsEvents.listen(
+    "COPY_LIBRARY_ENTRY",
+    function(params)
+        local self = currentInstance()
+        if self then
+           local entry = self.library[params.entryId]
+           local data = cjson.encode(entry)
+           jsEvents.send(
+                "COPY_LIBRARY_ENTRY_DATA",
+                {
+                    data = data
+                }
+            )
+           self.libraryEntryIdInClipboard = params.entryId
+        end
+    end
+)
+
+-- JS may inform us that an entry already exists in the clipboard
+jsEvents.listen(
+    "SYNC_COPIED_LIBRARY_ENTRY",
+    function(params)
+        local self = currentInstance()
+        if self then
+           self.libraryEntryIdInClipboard = params.entryId
+        end
+    end
+)
+
 function Common.receivers:pasteLibraryEntry(time, entry)
    if entry == nil or entry.entryId == nil then return end
    
