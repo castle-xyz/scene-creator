@@ -211,6 +211,9 @@ end
 
 -- Update
 
+local EMPTY_BASE64_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQAAAAB0CZXLAAAAAnRSTlMAAHaTzTgAAAAfSURBVHic7cEBDQAAAMKg909tDjegAAAAAAAAAAC+DSEAAAHxZyHuAAAAAElFTkSuQmCC'
+local emptyDrawingIcon = love.graphics.newImage('./assets/artless-blueprint.png')
+
 function Common:updateBeltElemImage(elem, entry)
     --local padding = 0.05 * ELEM_SIZE
     --local size = ELEM_SIZE
@@ -218,6 +221,11 @@ function Common:updateBeltElemImage(elem, entry)
     local size = 256
 
     elem.base64Png = entry.base64Png
+
+    if entry.base64Png == EMPTY_BASE64_PNG then
+        elem.image = emptyDrawingIcon
+        return
+    end
 
     if not self.beltPreviewCanvas then
         self.beltPreviewCanvas = love.graphics.newCanvas(size, size)
