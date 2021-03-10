@@ -869,10 +869,22 @@ jsEvents.listen(
             -- Blank or text actor should have blank preview
             entry.base64Png = nil
         end
-        if not entry then
-            return
-        end
         local newEntryId = util.uuid()
+
+        -- Templates have some unfilled data, so we 'canonicalize' it by creating a temporary actor and loading back
+        if entry.actorBlueprint then
+            local newActorId = self:sendAddActor(entry.actorBlueprint, {
+                parentEntryId = newEntryId,
+                isGhost = true,
+            })
+            local actorBp = self:blueprintActor(newActorId)
+            if actorBp.components.Body then
+                actorBp.components.Body.x, actorBp.components.Body.y = nil, nil
+            end
+            entry.actorBlueprint = actorBp
+            self:send('removeActor', self.clientId, newActorId)
+        end
+
         self:command('add blueprint', {
             params = { 'entry', 'newEntryId' },
         }, function(params, live)
@@ -894,6 +906,76 @@ jsEvents.listen(
         end, function()
             self:send('removeLibraryEntry', newEntryId)
         end)
+    end
+)
+
+jsEvents.listen(
+    "PASTE_BLUEPRINT",
+    function(params)
+        local entry = params.entry
+        if not entry then
+            return
+        end
+
+        local self = currentInstance()
+        if not self then
+            return
+        end
+
+        local oldEntry = self.library[entry.entryId]
+        entry = util.deepCopyTable(entry)
+        local newEntryId = entry.entryId
+        if not oldEntry then
+            -- New entry by pasting
+            self:command('add blueprint from clipboard', {
+                params = { 'entry', 'newEntryId' },
+            }, function(params, live)
+                self:duplicateBlueprint(entry, { keepTitle = true, newEntryId = newEntryId })
+                if live then
+                    -- Immediately select entry
+                    self:syncBelt()
+                    self:deselectAllActors()
+                    for i, elem in ipairs(self.beltElems) do
+                        if elem.entryId == newEntryId then
+                            self.beltTargetIndex = i
+                            self.beltEntryId = newEntryId
+                            self.beltHighlightEnabled = true
+                            break
+                        end
+                    end
+                    self:syncBeltGhostSelection()
+                end
+            end, function()
+                self:send('removeLibraryEntry', newEntryId)
+            end)
+        else
+            -- Update existing entry by pasting
+            self:command('update blueprint from clipboard', {
+                params = { 'entry', 'oldEntry', 'newEntryId' },
+            }, function(params, live)
+                self:send('updateLibraryEntry', self.clientId, newEntryId, entry, {
+                    updateActors = true,
+                })
+                if live then
+                    -- Immediately select entry
+                    self:syncBelt()
+                    self:deselectAllActors()
+                    for i, elem in ipairs(self.beltElems) do
+                        if elem.entryId == newEntryId then
+                            self.beltTargetIndex = i
+                            self.beltEntryId = newEntryId
+                            self.beltHighlightEnabled = true
+                            break
+                        end
+                    end
+                    self:syncBeltGhostSelection()
+                end
+            end, function()
+                self:send('updateLibraryEntry', self.clientId, newEntryId, oldEntry, {
+                    updateActors = true,
+                })
+            end)
+        end
     end
 )
 
