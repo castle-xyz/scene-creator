@@ -21,7 +21,7 @@ function Client:_getExistingLibraryEntry(actorId, entryId)
     local numOtherActors = 0
     if existingEntry then
         for otherActorId, otherActor in pairs(self.actors) do
-            if otherActorId ~= actorId and otherActor.parentEntryId == existingEntry.entryId then
+            if not otherActor.isGhost and otherActorId ~= actorId and otherActor.parentEntryId == existingEntry.entryId then
                 numOtherActors = numOtherActors + 1
             end
         end
@@ -91,10 +91,6 @@ function Client:_addBlueprint(actor, saveBlueprintData)
     self:send('setActorParentEntryId', actor.actorId, newEntryId)
 end
 
-function Client:_pasteBlueprint(entry)
-   self:send('pasteLibraryEntry', entry)
-end
-
 function Client:uiNewBlueprintTemplates()
     ui.data({ templates = CORE_TEMPLATES })
 end
@@ -135,10 +131,6 @@ function Client:uiBlueprints()
    if self.libraryEntryIdInClipboard ~= nil then
       local _, numActorsUsingClipboardEntry = self:_getExistingLibraryEntry(nil, self.libraryEntryIdInClipboard)
       data['numActorsUsingClipboardEntry'] = numActorsUsingClipboardEntry
-   end
-
-   actions['pasteBlueprint'] = function(entry)
-      self:_pasteBlueprint(entry)
    end
 
    ui.data(data, { actions = actions })
