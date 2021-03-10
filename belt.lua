@@ -212,7 +212,7 @@ end
 -- Update
 
 local EMPTY_BASE64_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQAAAAB0CZXLAAAAAnRSTlMAAHaTzTgAAAAfSURBVHic7cEBDQAAAMKg909tDjegAAAAAAAAAAC+DSEAAAHxZyHuAAAAAElFTkSuQmCC'
-local emptyDrawingIcon = love.graphics.newImage('./assets/artless-blueprint.png')
+local emptyDrawingIcon = love.graphics.newImage('assets/artless-blueprint.png')
 
 function Common:updateBeltElemImage(elem, entry)
     --local padding = 0.05 * ELEM_SIZE
