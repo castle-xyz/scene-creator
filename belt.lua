@@ -1031,22 +1031,13 @@ function Common:drawBelt()
                 x, y = elem.placeX, elem.placeY
             end
 
-            if elem.image then
-                local imgW, imgH = elem.image:getDimensions()
-                local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
+            local img = elem.image or emptyDrawingIcon
+            local imgW, imgH = img:getDimensions()
+            local scale = math.min(ELEM_SIZE / imgW, ELEM_SIZE / imgH)
 
-                love.graphics.draw(elem.image,
-                    x, y,
-                    0, scale, scale, 0.5 * imgW, 0.5 * imgH)
-            else
-                love.graphics.push('all')
-                love.graphics.setColor(1, 1, 1, 0.8)
-                love.graphics.rectangle('line',
-                    x - 0.5 * ELEM_SIZE, y - 0.5 * ELEM_SIZE,
-                    ELEM_SIZE, ELEM_SIZE,
-                    0.1 * ELEM_SIZE)
-                love.graphics.pop()
-            end
+            love.graphics.draw(img,
+                x, y,
+                0, scale, scale, 0.5 * imgW, 0.5 * imgH)
         end
         local placeElem -- If we have a placing elem, draw it on top of others
         for i, elem in ipairs(self.beltElems) do
