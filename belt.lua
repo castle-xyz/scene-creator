@@ -19,7 +19,7 @@ local SHOW_HIDE_VY = 1200
 
 local ENABLE_HAPTICS = true
 
-local DEBUG_TOUCHES = true
+local DEBUG_TOUCHES = false
 
 -- Start / stop
 
