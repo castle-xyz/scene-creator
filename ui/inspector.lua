@@ -328,6 +328,7 @@ function Client:uiInspector()
          end
 
          if behavior.behaviorId == self.behaviorsByName.Body.behaviorId then
+             -- NOTE: This is no longer used, but leaving it here for posterity
              actions['applyLayoutChangesToBlueprint'] = function()
                  local actor = self.actors[actorId]
                  if not actor or not actor.parentEntryId then
