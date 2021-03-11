@@ -67,7 +67,7 @@ end
 
 function TextBehavior:parseContent(component, performing, variableNameToValue)
    if component.properties.content == nil then
-      return nil
+      return ''
    end
       
    if not performing then
@@ -87,6 +87,9 @@ function TextBehavior:parseContent(component, performing, variableNameToValue)
          return maybeVariable
       end
    )
+   if output == nil then
+      return ''
+   end
    return output
 end
 
