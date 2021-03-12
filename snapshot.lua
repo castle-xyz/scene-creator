@@ -40,7 +40,7 @@ function Common:restoreSnapshot(snapshot)
         -- Add new actors
         for _, actorSp in pairs(snapshot.actors or {}) do
             local actorBp = actorSp.bp -- Already a duplicate so we can edit in-place
-            local entry = snapshot.library[actorSp.parentEntryId]
+            local entry = snapshot.library[actorSp.parentEntryId] or self.library[actorSp.parentEntryId] -- Fallback to core entries
 
             if snapshot.actorBlueprintInherit then
                 local actorComps = actorBp.components
