@@ -404,7 +404,7 @@ function Common:syncBelt()
 
     -- Update ghost actors
     for entryId, entry in pairs(self.library) do
-        if not entry.isCore and not self.beltGhostActorIds[entryId] then
+        if not entry.isCore and (not self.beltGhostActorIds[entryId] or not self.actors[self.beltGhostActorIds[entryId]]) then
             -- Use a stable mapping from entry id -> ghost actor id so that
             -- it's preserved across undo / redo
             local ghostActorId = 'ghost:' .. entryId
