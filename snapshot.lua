@@ -121,7 +121,7 @@ function Common:createSnapshot()
 
             -- Remove properties that are equal to corresponding property from
             -- blueprint. Also mark explicit `nil` overrides as `'_NIL'`.
-            if entry and entry.actorBlueprint then
+            if entry and not entry.isCore and entry.actorBlueprint then
                 local entryComps = entry.actorBlueprint.components
                 for compName in pairs(entryComps) do
                     if actorBp.components[compName] == nil then
