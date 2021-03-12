@@ -14,7 +14,6 @@ jsEvents.listen(
                     }
                 )
                self.libraryEntryIdInClipboard = entry.entryId
-               print('set library entry to', self.libraryEntryIdInClipboard)
            end
         end
     end
@@ -27,7 +26,6 @@ jsEvents.listen(
         local self = currentInstance()
         if self then
            self.libraryEntryIdInClipboard = params.entryId
-           print('set library entry to', self.libraryEntryIdInClipboard)
         end
     end
 )
