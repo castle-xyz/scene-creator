@@ -156,7 +156,7 @@ function Client:load(isEditing, snapshot, variables, isNewScene)
     self:startUi()
 
     self:startNotify()
-    --self:startBelt()
+    self:startBelt()
 
     self:resetView()
     self.viewTransform = love.math.newTransform()
@@ -405,7 +405,7 @@ function Client:update(dt)
     self:updatePerformance(dt)
     self:applySelections() -- Performance may have added or removed actors or components, so apply changes
 
-    --self:updateBelt(dt) -- Early to allow belt to steal touches
+    self:updateBelt(dt) -- Early to allow belt to steal touches
 
     self:callHandlers("preUpdate", dt)
 
