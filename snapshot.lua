@@ -1,3 +1,89 @@
+local DrawingData = require 'library_drawing_data'
+local LEGACY_CORE_LIBRARY = {
+    ['0-2'] = {
+        entryType = "actorBlueprint",
+        title = "Wall",
+        description = "Solid square that doesn't move",
+        actorBlueprint = {
+            components = {
+                Drawing2 = DrawingData.Wall.Drawing2,
+                Body = {
+                    widthScale = 0.1,
+                    heightScale = 0.1,
+                },
+                Solid = {},
+                Tags = {},
+            }
+        },
+        base64Png = DrawingData.Wall.base64Png,
+    },
+    ['0-3'] = {
+        entryType = "actorBlueprint",
+        title = "Ball",
+        description = "Solid circle that obeys gravity",
+        actorBlueprint = {
+            components = {
+                Drawing2 = DrawingData.Ball.Drawing2,
+                Body = {
+                    gravityScale = 1,
+                    widthScale = 0.1,
+                    heightScale = 0.1,
+                },
+                Solid = {},
+                Falling = {},
+                Tags = {},
+            }
+        },
+        base64Png = DrawingData.Ball.base64Png,
+    },
+    ['0-4'] = {
+        entryType = "actorBlueprint",
+        title = "Text box",
+        description = "Block of text, pinned to the bottom of the card",
+        actorBlueprint = {
+            components = {
+                Text = {
+                    content = "Your text goes here"
+                },
+                Tags = {},
+            }
+        },
+        base64Png = DrawingData.TextBox.base64Png,
+    },
+    ['0-5'] = {
+       entryType = "actorBlueprint",
+       title = "Navigation button",
+       description = "Text box that sends the player to another card when tapped",
+       actorBlueprint = {
+          components = {
+             Text = {
+                content = "Tap me to go to the card specified in my rules",
+             },
+             Tags = {},
+             Rules = {
+                rules = {
+                   {
+                      trigger = {
+                         name = "tap",
+                         behaviorId = 19, -- TODO: fix when we fix behaviorId
+                         params = {},
+                      },
+                      response = {
+                         name = "send player to card",
+                         behaviorId = 19, -- TODO: fix when we fix behaviorId
+                         params = {
+                            card = nil,
+                         },
+                      },
+                   },
+                },
+             },
+          },
+       },
+       base64Png = DrawingData.NavigationButton.base64Png,
+    },
+}
+
 function Common:startSnapshot()
     self.lastSaveAttemptTime = nil
     self.lastSuccessfulSaveData = nil
@@ -40,7 +126,7 @@ function Common:restoreSnapshot(snapshot)
         -- Add new actors
         for _, actorSp in pairs(snapshot.actors or {}) do
             local actorBp = actorSp.bp -- Already a duplicate so we can edit in-place
-            local entry = snapshot.library[actorSp.parentEntryId] or self.library[actorSp.parentEntryId] -- Fallback to core entries
+            local entry = snapshot.library[actorSp.parentEntryId] or LEGACY_CORE_LIBRARY[actorSp.parentEntryId] -- Fallback to core entries
 
             if snapshot.actorBlueprintInherit then
                 local actorComps = actorBp.components
