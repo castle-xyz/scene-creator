@@ -165,7 +165,7 @@ function Common:createSnapshot()
                 snapshot.actors,
                 {
                     actorId = actor.actorId,
-                    parentEntryId = actor.parentEntryId,
+                    parentEntryId = (entry and not entry.isCore) and actor.parentEntryId or nil,
                     bp = actorBp
                 }
             )
