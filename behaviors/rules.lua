@@ -565,6 +565,55 @@ RulesBehavior.responses.create = {
     end
 }
 
+RulesBehavior.responses.createText = {
+    description = "Create a text box",
+    category = "general",
+    paramSpecs = {
+       content = {
+          label = "Content",
+          method = "textArea",
+          initialValue = "",
+       },
+       action = {
+          label = "When tapped",
+          method = "dropdown",
+          initialValue = "dismiss",
+          props = {
+             items = {
+                "none",
+                "dismiss",
+                "perform response",
+             },
+          },
+       },
+    },
+    run = function(self, actorId, params, context)
+       -- find text actor blueprint
+       local bp, entryId
+       for id, entry in pairs(self.game.library) do
+          if entry ~= nil and entry.isCore == true and entry.title == "Text box" then
+             entryId = id
+             bp = util.deepCopyTable(entry.actorBlueprint)
+             break
+          end
+       end
+
+       -- generate behaviors
+       bp.components.Text.content = params.content or ''
+       -- TODO: when tapped
+       -- dismiss / perform response
+
+       local newActorId = self.game:generateActorId()
+       self.game:sendAddActor(
+          bp,
+          {
+             actorId = self.game:generateActorId(),
+             parentEntryId = entryId,
+          }
+       )
+    end
+}
+
 RulesBehavior.responses.destroy = {
     description = "Destroy this actor",
     category = "general",
