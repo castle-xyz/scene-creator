@@ -602,7 +602,18 @@ RulesBehavior.responses.createText = {
        bp.components.Text.content = params.content or ''
 
        -- tap to dismiss
-       if params.action == "dismiss" then
+       if params.action ~= "none" then
+          local response
+
+          if params.action == "dismiss" then
+             response = {
+                 name = "destroy",
+                 behaviorId = 16, -- TODO: fix when we fix behaviorId
+                 params = {},
+             }
+          elseif params.action == "perform response" then
+             response = params["body"]
+          end
           bp.components.Rules = {
              rules = {
                 {
@@ -611,17 +622,11 @@ RulesBehavior.responses.createText = {
                       behaviorId = 19, -- TODO: fix when we fix behaviorId
                       params = {},
                    },
-                   response = {
-                      name = "destroy",
-                      behaviorId = 16, -- TODO: fix when we fix behaviorId
-                      params = {},
-                   },
+                   response = response,
                 },
              },
           }
        end
-
-       -- TODO: tap to perform response
 
        local newActorId = self.game:generateActorId()
        self.game:sendAddActor(
