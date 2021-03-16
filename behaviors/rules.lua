@@ -600,8 +600,28 @@ RulesBehavior.responses.createText = {
 
        -- generate behaviors
        bp.components.Text.content = params.content or ''
-       -- TODO: when tapped
-       -- dismiss / perform response
+
+       -- tap to dismiss
+       if params.action == "dismiss" then
+          bp.components.Rules = {
+             rules = {
+                {
+                   trigger = {
+                      name = "tap",
+                      behaviorId = 19, -- TODO: fix when we fix behaviorId
+                      params = {},
+                   },
+                   response = {
+                      name = "destroy",
+                      behaviorId = 16, -- TODO: fix when we fix behaviorId
+                      params = {},
+                   },
+                },
+             },
+          }
+       end
+
+       -- TODO: tap to perform response
 
        local newActorId = self.game:generateActorId()
        self.game:sendAddActor(
