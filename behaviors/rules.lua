@@ -565,7 +565,7 @@ RulesBehavior.responses.create = {
     end
 }
 
-RulesBehavior.responses.createText = {
+RulesBehavior.responses["create text"] = {
     description = "Create a text box",
     category = "general",
     paramSpecs = {
