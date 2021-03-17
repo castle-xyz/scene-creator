@@ -63,7 +63,15 @@ function DragBehavior.handlers:prePerform(dt)
         -- Mark touch presses on our bodies
         if touch.pressed then
             local hits = self.dependencies.Body:getActorsAtPoint(touch.x, touch.y)
-            for actorId in pairs(hits) do
+            local actorId, maxDrawOrder
+            for candidateActorId in pairs(hits) do -- Use topmost actor
+                local candidateActor = self.game.actors[candidateActorId]
+                if candidateActor and not maxDrawOrder or candidateActor.drawOrder > maxDrawOrder then
+                    actorId = candidateActor.actorId
+                    maxDrawOrder = candidateActor.drawOrder
+                end
+            end
+            if actorId then
                 local component = self.components[actorId]
                 if component and not component.disabled then
                     touch.used = true
