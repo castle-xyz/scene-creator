@@ -659,6 +659,17 @@ RulesBehavior.responses.destroy = {
     end
 }
 
+RulesBehavior.responses["hide text"] = {
+   description = "Hide all text boxes",
+   category = "general",
+   run = function(self, actorId, params, context)
+      local text = self.game.behaviorsByName.Text
+      for actorId, component in pairs(text.components) do
+         component.properties.visible = false
+      end
+   end
+}
+
 -- Scene responses
 
 RulesBehavior.responses["restart scene"] = {
