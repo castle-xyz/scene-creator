@@ -790,6 +790,7 @@ function Client:draw()
 
         self:drawBelt()
     else
+        CARD_SCREEN_X_OFFSET = 0
         CARD_WIDTH, CARD_HEIGHT = love.graphics.getDimensions()
         self:drawInner()
     end
