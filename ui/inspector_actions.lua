@@ -180,12 +180,17 @@ function Client:duplicateSelection()
             end
         end
 
-        -- Use blueprints to duplicate. Nudge position a little bit.
+        -- Use blueprints to duplicate.
         for actorId in pairs(newActorIds) do
             local bp = self:blueprintActor(actorId)
             if bp.components.Body then
+                -- Nudge position a little bit.
                 bp.components.Body.x = bp.components.Body.x + 0.5 * UNIT
                 bp.components.Body.y = bp.components.Body.y + 0.5 * UNIT
+            end
+            if bp.components.Text then
+                -- de-dup text ordering
+               bp.components.Text.order = bp.components.Text.order + 1
             end
 
             local actor = self.actors[actorId]
