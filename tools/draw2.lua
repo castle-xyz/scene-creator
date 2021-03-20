@@ -211,7 +211,7 @@ function DrawTool:physicsBodyData()
     return self._physicsBodyData
 end
 
-function DrawTool:saveDrawing(commandDescription, c)
+function DrawTool:saveDrawing(commandDescription, c, opts)
     self._drawData:updateFramePreview()
     local actorId = c.actorId
     local newDrawData = self._drawData:serialize()
@@ -222,22 +222,37 @@ function DrawTool:saveDrawing(commandDescription, c)
     local oldPhysicsBodyData = self.dependencies.Drawing2:get(actorId).properties.physicsBodyData
     local oldHash = self.dependencies.Drawing2:get(actorId).properties.hash
 
+    -- TODO(nikki): Make this less hacky -- shouldn't depend on command description!
+    local explicitBlueprintUpdateCommands = {
+        ['select cell'] = true,
+        ['select frame'] = true,
+        ['select layer'] = true,
+        ['update color'] = true,
+    }
+    local explicitBlueprintUpdate = explicitBlueprintUpdateCommands[commandDescription] ~= nil
+
     self.dependencies.Drawing2:command(
         commandDescription,
         {
-            params = {"oldDrawData", "newDrawData", "oldPhysicsBodyData", "newPhysicsBodyData", "oldHash", "newHash"}
+            params = {"oldDrawData", "newDrawData", "oldPhysicsBodyData", "newPhysicsBodyData", "oldHash", "newHash", "explicitBlueprintUpdate"}
         },
         function()
             self:sendSetProperties(actorId, "drawData", newDrawData)
             self:sendSetProperties(actorId, "physicsBodyData", newPhysicsBodyData)
             self:sendSetProperties(actorId, "hash", newHash)
-            self.game:updateBlueprintFromActor(actorId, { updateBase64Png = true })
+            self.game:updateBlueprintFromActor(actorId, {
+                updateBase64Png = true,
+                explicit = explicitBlueprintUpdate
+            })
         end,
         function()
             self:sendSetProperties(actorId, "drawData", oldDrawData)
             self:sendSetProperties(actorId, "physicsBodyData", oldPhysicsBodyData)
             self:sendSetProperties(actorId, "hash", oldHash)
-            self.game:updateBlueprintFromActor(actorId, { updateBase64Png = true })
+            self.game:updateBlueprintFromActor(actorId, {
+                updateBase64Png = true,
+                explicit = explicitBlueprintUpdate
+            })
         end
     )
 end

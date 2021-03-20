@@ -208,7 +208,7 @@ function Client:_setProperty(actorId, behaviorId, propertyName, oldValue, newVal
       {
          coalesceLast = false,
          coalesceSuffix = propertyName,
-         params = { "behaviorId", "actorId", "propertyName", "oldValue", "newValue" },
+         params = { "behaviorId", "actorId", "propertyName", "oldValue", "newValue", "skipBlueprintUpdate" },
       },
       function()
          local behavior = self.behaviors[behaviorId]
