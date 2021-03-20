@@ -56,11 +56,13 @@ function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
         self:send('updateLibraryEntry', self.clientId, entryId, newEntry, {
             updateActors = true,
             skipActorId = actorId,
+            applyLayoutChanges = true,
         })
     end, function()
         self:send('updateLibraryEntry', self.clientId, entryId, oldEntry, {
             updateActors = true,
             skipActorId = actorId,
+            applyLayoutChanges = true,
         })
 
         -- Restore actor-local changes on undo

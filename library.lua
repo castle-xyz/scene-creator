@@ -238,14 +238,16 @@ function Common:updateBlueprintFromActor(actorId, opts)
         return
     end
 
-    if not (opts.explicit or actor.isGhost) then
-        -- Not doing auto-updates from actors for now
-        return
-    end
-
     local oldEntry = actor.parentEntryId and self.library[actor.parentEntryId]
     if not oldEntry then
         print('tried to update blueprint from actor without parent entry id')
+        return
+    end
+
+    if self.currentCommand and self.currentCommandMode == 'undo' and self.currentCommand.autoForkedFromEntryId then
+        -- When undoing an auto-fork, remove the forked blueprint and restore actor to parent blueprint
+        self:send('removeLibraryEntry', oldEntry.entryId)
+        self:send('setActorParentEntryId', actorId, self.currentCommand.autoForkedFromEntryId)
         return
     end
 
@@ -269,11 +271,32 @@ function Common:updateBlueprintFromActor(actorId, opts)
         base64Png = base64Png,
     }
 
-    self:send('updateLibraryEntry', self.clientId, oldEntry.entryId, newEntry, {
-        updateActors = true,
-        applyLayoutChanges = opts.applyLayoutChanges,
-        skipActorId = actorId,
-    })
+    local shouldFork = false
+    if not (self.currentCommand and self.currentCommandMode == 'undo') and not (opts.explicit or actor.isGhost) then
+        -- If edited an actor, and there's other instances of this blueprint, we should "fork"
+        for otherActorId, otherActor in pairs(self.actors) do
+            if not otherActor.isGhost and otherActorId ~= actorId and otherActor.parentEntryId == actor.parentEntryId then
+                shouldFork = true
+                break
+            end
+        end
+    end
+
+    if not shouldFork then
+        -- Not forking, update the same entry
+        self:send('updateLibraryEntry', self.clientId, oldEntry.entryId, newEntry, {
+            updateActors = true,
+            applyLayoutChanges = opts.applyLayoutChanges,
+            skipActorId = actorId,
+        })
+    else
+        -- Forking. Create a new entry with parent as current, update actor to use this entry
+        local result = self:duplicateBlueprint(newEntry)
+        self:send('setActorParentEntryId', actorId, result.entryId)
+        if self.currentCommand then
+            self.currentCommand.autoForkedFromEntryId = oldEntry.entryId
+        end
+    end
 end
 
 function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, opts)
@@ -359,6 +382,8 @@ function Common.receivers:updateLibraryEntry(time, clientId, entryId, newEntry, 
                                 local equal = false
                                 if behaviorName == 'Drawing2' and (key == 'drawData' or key == 'physicsBodyData') then
                                     equal = oldBp.components[behaviorName].hash == bp.components[behaviorName].hash
+                                elseif not opts.applyLayoutChanges and behaviorName == 'Body' and (key == 'widthScale' or key == 'heightScale' or key == 'x' or key == 'y' or key == 'angle') then
+                                    -- Skip propagating layout changes unless explicitly asked for
                                 else
                                     equal = valueEqual(
                                         oldBp.components[behaviorName][key],

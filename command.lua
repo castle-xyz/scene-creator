@@ -194,7 +194,11 @@ function Common:runCommand(mode, command, live)
             end
         end
     )
+    self.currentCommandMode = mode
+    self.currentCommand = command
     local succeeded, err = pcall(func, params, not (not live))
+    self.currentCommandMode = nil
+    self.currentCommand = nil
     forEachUpvalue(
         func,
         function(name, value, i)
