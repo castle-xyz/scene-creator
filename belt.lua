@@ -781,7 +781,7 @@ function Common:updateBelt(dt)
                     end
                 end
                 local accel = 0.7 * SNAP_THRESHOLD_VX * (iX - projX)
-                local newVX = self.beltCursorVX + accel * dt
+                local newVX = self.beltCursorVX + accel * math.min(dt, 0.038)
                 self.beltCursorVX = 0.85 * newVX + 0.15 * self.beltCursorVX
 
                 -- Explonential damping
