@@ -62,10 +62,20 @@ CORE_TEMPLATES = {
                     initialFrame = 1,
                     loop = false,
                     physicsBodyData = {
-                        scale = 10,
-                        shapes = {},
-                        version = 2,
-                        zeroShapesInV1 = false
+                       scale = 10,
+                       shapes = { {
+                           p1 = {
+                             x = 5,
+                             y = 5
+                           },
+                           p2 = {
+                             x = -5,
+                             y = -5
+                           },
+                           type = "rectangle"
+                         } },
+                       version = 2,
+                       zeroShapesInV1 = false
                     },
                     playing = false
                 },
