@@ -293,8 +293,9 @@ local textPreviewOffset = textPreviewFontHeight * 0.3
 local textPreviewSize = textPreviewFontHeight * 4 
 local textPreviewCanvasSize = textPreviewSize + 2 * textPreviewOffset
 
-function Common:updateBeltElemImageFromText(elem, text)
+function Common:updateBeltElemImageFromText(elem, text, tappable)
     elem.lastPreviewedText = text
+    elem.lastPreviewedTextTappable = tappable
     if not self.beltTextCanvas then
         self.beltTextCanvas = love.graphics.newCanvas(textPreviewCanvasSize, textPreviewCanvasSize, {
             dpiscale = 1,
@@ -306,18 +307,32 @@ function Common:updateBeltElemImageFromText(elem, text)
         love.graphics.origin()
         love.graphics.clear(0, 0, 0, 0)
 
-        love.graphics.setColor(1, 1, 1)
+        if tappable then
+            love.graphics.setColor(0, 0, 0)
+        else
+            love.graphics.setColor(1, 1, 1)
+        end
         love.graphics.rectangle('fill', 0, 0, textPreviewCanvasSize, textPreviewCanvasSize, 0.8 * textPreviewOffset)
 
         love.graphics.setFont(textPreviewFont)
         if #text > 0 then
-            love.graphics.setColor(0, 0, 0)
+            if tappable then
+                love.graphics.setColor(1, 1, 1)
+            else
+                love.graphics.setColor(0, 0, 0)
+            end
             local width, wrapped = textPreviewFont:getWrap(text, textPreviewSize)
             for i = 1, 4 do
                 if wrapped[i] then
                     love.graphics.print(wrapped[i], textPreviewOffset, textPreviewOffset + textPreviewFontHeight * (i - 1))
                 end
             end
+        end
+
+        if tappable then
+            love.graphics.setLineWidth(3)
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.rectangle('line', 2, 2, textPreviewCanvasSize - 4, textPreviewCanvasSize - 4, 0.8 * textPreviewOffset)
         end
 
         love.graphics.pop()
@@ -328,6 +343,18 @@ end
 function Common:markBeltDirty()
     -- Mark belt as needing synchronization
     self.beltDirty = true
+end
+
+local function isTextTappable(entry)
+    local rulesComp = entry.actorBlueprint and entry.actorBlueprint.components and entry.actorBlueprint.components.Rules
+    if rulesComp then
+        for _, rule in ipairs(rulesComp.rules) do
+            if rule.trigger.name == 'tap' then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 function Common:syncBelt()
@@ -348,8 +375,9 @@ function Common:syncBelt()
             local textComp = entry.actorBlueprint and entry.actorBlueprint.components and entry.actorBlueprint.components.Text
             if textComp then
                 local newContent = textComp.content or ''
-                if newContent ~= entry.lastPreviewedText then
-                    self:updateBeltElemImageFromText(elem, textComp.content or '')
+                local newTappable = isTextTappable(entry)
+                if newContent ~= entry.lastPreviewedText or newTappable ~= entry.lastPreviewdTextTappable then
+                    self:updateBeltElemImageFromText(elem, textComp.content or '', newTappable)
                 end
             elseif entry and entry.base64Png ~= elem.base64Png then 
                 self:updateBeltElemImage(elem, entry)
@@ -368,7 +396,7 @@ function Common:syncBelt()
             newElem.entryId = entry.entryId
             local textComp = entry.actorBlueprint and entry.actorBlueprint.components and entry.actorBlueprint.components.Text
             if textComp then
-                self:updateBeltElemImageFromText(newElem, textComp.content or '')
+                self:updateBeltElemImageFromText(newElem, textComp.content or '', isTextTappable(entry))
             elseif entry.base64Png then
                 self:updateBeltElemImage(newElem, entry)
             end
