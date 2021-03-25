@@ -30,6 +30,10 @@ function Client:_getExistingLibraryEntry(actorId, entryId)
 end
 
 function Client:_updateBlueprint(actor, saveBlueprintData, existingEntry)
+    if existingEntry == nil then
+        print('blueprints.lua: cannot update nil existing entry')
+        return
+    end
     local entryId = existingEntry.entryId
     local oldEntry = existingEntry
     local newActorBp = self:blueprintActor(actor.actorId)
