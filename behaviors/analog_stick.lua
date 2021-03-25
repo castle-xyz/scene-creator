@@ -71,6 +71,9 @@ end
 -- this method causes the center of the analog stick to pull toward
 -- the touch.
 function AnalogStickBehavior:_updateCenter(touch, cameraX, cameraY)
+   if self._centerX == nil or self._centerY == nil then
+      self._centerX, self._centerY = touch.initialX - cameraX, touch.initialY - cameraY
+   end
    local dragX, dragY = (touch.x - cameraX) - self._centerX, (touch.y - cameraY) - self._centerY
    local dragLen = math.sqrt(dragX * dragX + dragY * dragY)
    local dragAngle = math.atan2(dragY, dragX)
