@@ -408,6 +408,7 @@ function Client:uiInspectorActions()
 
     ui.data(
        {
+          hasBlueprint = not not entry,
           isBlueprint = actor.isGhost or false,
           isShared = (entry and entry.sharedId) or false,
           title = title,
