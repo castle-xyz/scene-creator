@@ -176,7 +176,7 @@ CORE_TEMPLATES = {
 
 for _, template in ipairs(SpringTemplates) do
    print('adding spring template: ' .. tostring(template.title))
-   table.insert(CORE_TEMPLATES, template)
+   table.insert(CORE_TEMPLATES, #CORE_TEMPLATES - 3, template)
 end
 
 local assetNames = require "asset_names"
