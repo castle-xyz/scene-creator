@@ -1,6 +1,7 @@
 -- Core library
 
 local DrawingData = require 'library_drawing_data'
+local SpringTemplates = require 'library_spring_templates'
 
 local CORE_LIBRARY = {}
 
@@ -172,6 +173,11 @@ CORE_TEMPLATES = {
        base64Png = DrawingData.NavigationButton.base64Png,
     },
 }
+
+for _, template in ipairs(SpringTemplates) do
+   print('adding spring template: ' .. tostring(template.title))
+   table.insert(CORE_TEMPLATES, template)
+end
 
 local assetNames = require "asset_names"
 for _, assetName in ipairs(assetNames) do
