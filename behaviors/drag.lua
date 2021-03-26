@@ -66,7 +66,7 @@ function DragBehavior.handlers:prePerform(dt)
             local actorId, maxDrawOrder
             for candidateActorId in pairs(hits) do -- Use topmost actor
                 local candidateActor = self.game.actors[candidateActorId]
-                if candidateActor and not maxDrawOrder or candidateActor.drawOrder > maxDrawOrder then
+                if candidateActor and self.components[candidateActorId] and not maxDrawOrder or candidateActor.drawOrder > maxDrawOrder then
                     actorId = candidateActor.actorId
                     maxDrawOrder = candidateActor.drawOrder
                 end
