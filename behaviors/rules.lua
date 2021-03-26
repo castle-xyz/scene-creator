@@ -589,10 +589,9 @@ RulesBehavior.responses["create text"] = {
     },
     run = function(self, actorId, params, context)
        -- find text actor blueprint
-       local bp, entryId
-       for id, entry in pairs(self.game.library) do
-          if entry ~= nil and entry.isCore == true and entry.title == "Text box" then
-             entryId = id
+       local bp
+       for _, entry in pairs(CORE_TEMPLATES) do
+          if entry ~= nil and entry.title == "Text box" then
              bp = util.deepCopyTable(entry.actorBlueprint)
              break
           end
@@ -633,7 +632,6 @@ RulesBehavior.responses["create text"] = {
           bp,
           {
              actorId = self.game:generateActorId(),
-             parentEntryId = entryId,
           }
        )
     end
