@@ -1124,6 +1124,23 @@ RulesBehavior.responses["follow with camera"] = {
    end
 }
 
+-- Meta
+
+RulesBehavior.responses["note"] = {
+   description = "Add a note to this rule",
+   category = "meta",
+   paramSpecs = {
+      note = {
+         label = "note",
+         method = "textArea",
+         initialValue = "",
+      },
+   },
+   run = function(self)
+      -- noop
+   end,
+}
+
 -- Performance
 
 function RulesBehavior.handlers:postPerform(dt)
