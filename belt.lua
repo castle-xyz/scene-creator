@@ -201,7 +201,9 @@ function Common:fireBeltHaptic()
     local currTime = love.timer.getTime()
     if currTime - self.beltLastVibrated > 0.03 then
         if OS == 'iOS' then
-            love.system.vibrate(0.71) -- Tuned for our iOS vibration patch
+            if false then
+                love.system.vibrate(0.71) -- Tuned for our iOS vibration patch
+            end
         else
             love.system.vibrate(0.04)
         end
