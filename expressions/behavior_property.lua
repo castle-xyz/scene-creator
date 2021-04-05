@@ -152,6 +152,45 @@ Common:defineExpression(
    }
 )
 
+Common:defineExpression(
+   "angle of motion", {
+      returnType = "number",
+      description = "the angle of motion of an actor",
+      category = "spatial relationships",
+      paramSpecs = {
+         actorRef = {
+            label = "actor type",
+            method = "actorRef",
+            initialValue = { kind = "self" },
+         },
+      },
+      eval = function(game, expression, actorId, context)
+         local actorId = evalActorRef(expression.params.actorRef, actorId, game, context)
+
+         local vx, vy
+         local moving, rotatingMotion = game.behaviorsByName.Moving, game.behaviorsByName.RotatingMotion
+         local component = moving.components[actorId]
+         if component then
+            -- dynamic motion
+            vx = moving.getters.vx(moving, component)
+            vy = moving.getters.vy(moving, component)
+         else
+            component = rotatingMotion.components[actorId]
+            if component then
+               -- fixed motion
+               vx = component.properties.vx
+               vy = component.properties.vy
+            end
+         end
+
+         if vx ~= nil and vy ~= nil then
+            return math.deg(math.atan2(vy, vx))
+         end
+         return 0
+      end,
+   }
+)
+
 function Common:closestActorWithTag(actorId, tag)
    local members = self.behaviorsByName.Body:getMembers(actorId)
    local x, y = 0, 0
