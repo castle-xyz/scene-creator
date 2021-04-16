@@ -1,5 +1,5 @@
 local DEFAULT_SCENE_PROPERTIES = {
-   backgroundColor = { r = 227 / 255, g = 230 / 255, b = 252 / 255 },
+   backgroundColor = { r = 186 / 255, g = 190 / 255, b = 246 / 255 },
 }
 
 local NEW_CARD_SCENE_PROPERTIES = {
