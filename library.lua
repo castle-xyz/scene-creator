@@ -1,6 +1,7 @@
 -- Core library
 
 local DrawingData = require 'library_drawing_data'
+local ExtraTemplates = require 'library_extra_templates'
 
 local CORE_LIBRARY = {}
 
@@ -172,6 +173,11 @@ CORE_TEMPLATES = {
        base64Png = DrawingData.NavigationButton.base64Png,
     },
 }
+
+for _, template in ipairs(ExtraTemplates) do
+   print('adding template: ' .. tostring(template.title))
+   table.insert(CORE_TEMPLATES, #CORE_TEMPLATES - 3, template)
+end
 
 local assetNames = require "asset_names"
 for _, assetName in ipairs(assetNames) do
