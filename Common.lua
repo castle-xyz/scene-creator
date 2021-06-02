@@ -12,7 +12,7 @@ VIEW_HEIGHT_TO_WIDTH_RATIO = 7 / 5
 CARD_SCREEN_X_OFFSET = 0
 
 CHECKERBOARD_IMAGE_URL =
-    "https://raw.githubusercontent.com/nikki93/edit-world/4c9d0d6f92b3a67879c7a5714e6608530093b45a/assets/checkerboard.png"
+    "http://assets.castle.xyz/checkerboard.png"
 
 serpent = require "vendor.serpent"
 bitser = require "vendor.bitser"
